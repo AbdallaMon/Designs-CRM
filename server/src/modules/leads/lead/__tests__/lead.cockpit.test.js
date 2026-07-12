@@ -303,7 +303,7 @@ describe("computeCockpit — accountant (Phase 2)", () => {
   const acc = (payments) =>
     baseBundle({
       status: "FINALIZED",
-      contracts: [{ id: 1, status: "IN_PROGRESS", sessionStatus: "REGISTERED", stages: [], payments }],
+      contracts: [{ id: 1, status: "IN_PROGRESS", sessionStatus: "REGISTERED", stages: [], paymentsNew: payments }],
     });
 
   it("DOWNPAYMENT_DUE (critical) when the SIGNATURE payment is not yet received", () => {

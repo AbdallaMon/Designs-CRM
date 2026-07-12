@@ -52,7 +52,12 @@ const PROFILE_TO_RULESET = {
 };
 
 // Deal is actively being worked (chasing a touch / advancing the stage makes sense).
-const ACTIVE_STATUSES = ["IN_PROGRESS", "INTERESTED", "NEEDS_IDENTIFIED", "NEGOTIATING"];
+const ACTIVE_STATUSES = [
+  "IN_PROGRESS",
+  "INTERESTED",
+  "NEEDS_IDENTIFIED",
+  "NEGOTIATING",
+];
 
 // Early funnel statuses at which SPIN discovery should already be complete.
 const EARLY_STATUSES = ["NEW", "IN_PROGRESS", "INTERESTED", "NEEDS_IDENTIFIED"];
@@ -103,7 +108,8 @@ function sortActions(actions) {
   return actions
     .map((a, i) => ({ a, i }))
     .sort((x, y) => {
-      const bySeverity = SEVERITY_RANK[x.a.severity] - SEVERITY_RANK[y.a.severity];
+      const bySeverity =
+        SEVERITY_RANK[x.a.severity] - SEVERITY_RANK[y.a.severity];
       return bySeverity !== 0 ? bySeverity : x.i - y.i;
     })
     .map((x) => x.a);
@@ -132,7 +138,8 @@ function computeHealth(bundle) {
     .filter((i) => i >= 0);
   const maxIdx = presentIndices.length ? Math.max(...presentIndices) : -1;
   const currentStage = maxIdx >= 0 ? STAGE_ORDER[maxIdx] : null;
-  const nextStage = maxIdx + 1 < STAGE_ORDER.length ? STAGE_ORDER[maxIdx + 1] : null;
+  const nextStage =
+    maxIdx + 1 < STAGE_ORDER.length ? STAGE_ORDER[maxIdx + 1] : null;
   const status = bundle.status ?? null;
   const contract = firstContract(bundle);
   return {
@@ -143,7 +150,9 @@ function computeHealth(bundle) {
     nextStage, // SalesStageType or null (at/after the last stage)
     stageIndex: maxIdx, // 0-based index of the current stage; -1 = NOT_INITIATED
     stageCount: STAGE_ORDER.length,
-    hasAcceptedPriceOffer: arr(bundle.priceOffers).some((p) => p.isAccepted === true),
+    hasAcceptedPriceOffer: arr(bundle.priceOffers).some(
+      (p) => p.isAccepted === true,
+    ),
     // Contract track (null pre-contract): reconciles the misleading sales "N/10" post-finalize.
     contract: contract
       ? {
@@ -159,12 +168,14 @@ function computeHealth(bundle) {
 
 // Payment summary derived from the contract's ContractPayment rows (not ClientLead.paymentStatus).
 function paymentHealth(contract) {
-  const pays = arr(contract?.payments);
+  const pays = arr(contract?.paymentsNew);
   return {
     outstandingCount: pays.filter((p) => p.status === "DUE").length,
     hasDue: pays.some((p) => p.status === "DUE"),
     downpaymentReceived: pays.some(
-      (p) => p.paymentCondition === "SIGNATURE" && (p.status === "RECEIVED" || p.status === "TRANSFERRED"),
+      (p) =>
+        p.paymentCondition === "SIGNATURE" &&
+        (p.status === "RECEIVED" || p.status === "TRANSFERRED"),
     ),
   };
 }
@@ -174,21 +185,43 @@ function paymentHealth(contract) {
 // (SIGNATURE condition) is the critical gate that unblocks production.
 function computeAccountantActions(bundle) {
   const actions = [];
-  const payments = arr(firstContract(bundle)?.payments);
+  const payments = arr(firstContract(bundle)?.paymentsNew);
 
   const sigDue = payments.find(
-    (p) => p.paymentCondition === "SIGNATURE" && (p.status === "DUE" || p.status === "NOT_DUE"),
+    (p) =>
+      p.paymentCondition === "SIGNATURE" &&
+      (p.status === "DUE" || p.status === "NOT_DUE"),
   );
   if (sigDue) {
     actions.push(
-      action("DOWNPAYMENT_DUE", "critical", {}, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
+      action(
+        "DOWNPAYMENT_DUE",
+        "critical",
+        {},
+        {
+          kind: "OPEN_PAYMENT",
+          capability: "canAddPayment",
+          tabKey: "payments",
+        },
+      ),
     );
   }
 
-  const otherDue = payments.filter((p) => p.status === "DUE" && p.paymentCondition !== "SIGNATURE");
+  const otherDue = payments.filter(
+    (p) => p.status === "DUE" && p.paymentCondition !== "SIGNATURE",
+  );
   if (otherDue.length) {
     actions.push(
-      action("PAYMENT_DUE", "warning", { count: otherDue.length }, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
+      action(
+        "PAYMENT_DUE",
+        "warning",
+        { count: otherDue.length },
+        {
+          kind: "OPEN_PAYMENT",
+          capability: "canAddPayment",
+          tabKey: "payments",
+        },
+      ),
     );
   }
   return actions;
@@ -211,7 +244,8 @@ function computeSalesActions(bundle, now, health, status) {
 
     // 1. CALL_OVERDUE (critical) — an active call reminder is in the past.
     const overdueCalls = callReminders.filter(
-      (c) => c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) < now,
+      (c) =>
+        c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) < now,
     );
     if (overdueCalls.length) {
       const mostOverdueAt = overdueCalls
@@ -221,7 +255,11 @@ function computeSalesActions(bundle, now, health, status) {
         action(
           "CALL_OVERDUE",
           "critical",
-          { count: overdueCalls.length, mostOverdueAt: mostOverdueAt.toISOString(), overdueDays: daysBetween(mostOverdueAt, now) },
+          {
+            count: overdueCalls.length,
+            mostOverdueAt: mostOverdueAt.toISOString(),
+            overdueDays: daysBetween(mostOverdueAt, now),
+          },
           { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
         ),
       );
@@ -229,7 +267,8 @@ function computeSalesActions(bundle, now, health, status) {
 
     // 2. MEETING_OVERDUE (critical) — an active meeting reminder is in the past.
     const overdueMeetings = meetingReminders.filter(
-      (m) => m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) < now,
+      (m) =>
+        m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) < now,
     );
     if (overdueMeetings.length) {
       const mostOverdueAt = overdueMeetings
@@ -239,8 +278,16 @@ function computeSalesActions(bundle, now, health, status) {
         action(
           "MEETING_OVERDUE",
           "critical",
-          { count: overdueMeetings.length, mostOverdueAt: mostOverdueAt.toISOString(), overdueDays: daysBetween(mostOverdueAt, now) },
-          { kind: "OPEN_MEETING", capability: "canAddMeeting", tabKey: "meetings" },
+          {
+            count: overdueMeetings.length,
+            mostOverdueAt: mostOverdueAt.toISOString(),
+            overdueDays: daysBetween(mostOverdueAt, now),
+          },
+          {
+            kind: "OPEN_MEETING",
+            capability: "canAddMeeting",
+            tabKey: "meetings",
+          },
         ),
       );
     }
@@ -248,12 +295,23 @@ function computeSalesActions(bundle, now, health, status) {
     // 3. PAYMENT_OVERDUE (critical).
     if (bundle.paymentStatus === "OVERDUE") {
       actions.push(
-        action("PAYMENT_OVERDUE", "critical", {}, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
+        action(
+          "PAYMENT_OVERDUE",
+          "critical",
+          {},
+          {
+            kind: "OPEN_PAYMENT",
+            capability: "canAddPayment",
+            tabKey: "payments",
+          },
+        ),
       );
     }
 
     // 4. DISCOVERY_INCOMPLETE (warning) — unanswered SPIN questions while still early.
-    const unansweredDiscovery = sessionQuestions.filter((q) => q.answer == null);
+    const unansweredDiscovery = sessionQuestions.filter(
+      (q) => q.answer == null,
+    );
     if (unansweredDiscovery.length && EARLY_STATUSES.includes(status)) {
       actions.push(
         action(
@@ -281,20 +339,40 @@ function computeSalesActions(bundle, now, health, status) {
     // 6. NO_PRICE_OFFER (warning) — no offer sent while the deal expects one.
     if (priceOffers.length === 0 && PRICE_OFFER_STATUSES.includes(status)) {
       actions.push(
-        action("NO_PRICE_OFFER", "warning", {}, { kind: "OPEN_PRICE_OFFER", capability: "canAddPriceOffer", tabKey: "priceOffers" }),
+        action(
+          "NO_PRICE_OFFER",
+          "warning",
+          {},
+          {
+            kind: "OPEN_PRICE_OFFER",
+            capability: "canAddPriceOffer",
+            tabKey: "priceOffers",
+          },
+        ),
       );
     }
 
     // 7. NO_UPCOMING_TOUCH (warning) — no future call/meeting on an active deal.
     const hasFutureCall = callReminders.some(
-      (c) => c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now,
+      (c) =>
+        c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now,
     );
     const hasFutureMeeting = meetingReminders.some(
-      (m) => m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now,
+      (m) =>
+        m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now,
     );
-    if (!hasFutureCall && !hasFutureMeeting && ACTIVE_STATUSES.includes(status)) {
+    if (
+      !hasFutureCall &&
+      !hasFutureMeeting &&
+      ACTIVE_STATUSES.includes(status)
+    ) {
       actions.push(
-        action("NO_UPCOMING_TOUCH", "warning", {}, { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" }),
+        action(
+          "NO_UPCOMING_TOUCH",
+          "warning",
+          {},
+          { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+        ),
       );
     }
 
@@ -302,7 +380,11 @@ function computeSalesActions(bundle, now, health, status) {
     const hasBlocking = actions.length > 0;
 
     // 8. ADVANCE_STAGE (info) — a stage is complete, a next stage exists, nothing blocks.
-    if (!hasBlocking && health.currentStage != null && health.nextStage != null) {
+    if (
+      !hasBlocking &&
+      health.currentStage != null &&
+      health.nextStage != null
+    ) {
       actions.push(
         action(
           "ADVANCE_STAGE",
@@ -320,20 +402,41 @@ function computeSalesActions(bundle, now, health, status) {
     // not the old accepted-offer proxy).
     if (contract.sessionStatus === "SIGNING") {
       actions.push(
-        action("SIGNING_AWAITED", "warning", {}, { kind: "GOTO_TAB", capability: null, tabKey: "contracts" }),
+        action(
+          "SIGNING_AWAITED",
+          "warning",
+          {},
+          { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
+        ),
       );
     }
     if (contract.status === "COMPLETED") {
-      const afterSalesDone = arr(bundle.salesStages).some((s) => s.stage === "AFTER_SALES_FOLLOWUP");
+      const afterSalesDone = arr(bundle.salesStages).some(
+        (s) => s.stage === "AFTER_SALES_FOLLOWUP",
+      );
       if (!afterSalesDone) {
         // AFTER_SALES_DUE (info) — delivery done, after-sales follow-up not yet logged.
         actions.push(
-          action("AFTER_SALES_DUE", "info", {}, { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null }),
+          action(
+            "AFTER_SALES_DUE",
+            "info",
+            {},
+            {
+              kind: "OPEN_STATUS",
+              capability: "canChangeStatus",
+              tabKey: null,
+            },
+          ),
         );
       } else {
         // CONTRACT_COMPLETED (info) — fully delivered + followed up.
         actions.push(
-          action("CONTRACT_COMPLETED", "info", {}, { kind: "GOTO_TAB", capability: null, tabKey: "contracts" }),
+          action(
+            "CONTRACT_COMPLETED",
+            "info",
+            {},
+            { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
+          ),
         );
       }
     } else {
@@ -344,7 +447,11 @@ function computeSalesActions(bundle, now, health, status) {
           action(
             "CONTRACT_STAGE_IN_PROGRESS",
             "info",
-            { level: p.currentLevel, levelsDone: p.levelsDone, levelsTotal: p.levelsTotal },
+            {
+              level: p.currentLevel,
+              levelsDone: p.levelsDone,
+              levelsTotal: p.levelsTotal,
+            },
             { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
           ),
         );
@@ -367,7 +474,9 @@ export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
   // Determinism contract: the clock must be injected. No `new Date()` default here —
   // an omitted `now` fails loudly instead of silently reading the wall clock.
   if (!(now instanceof Date)) {
-    throw new TypeError("computeCockpit: `now` (a Date) is required — inject the clock for determinism.");
+    throw new TypeError(
+      "computeCockpit: `now` (a Date) is required — inject the clock for determinism.",
+    );
   }
   const health = computeHealth(bundle);
   const status = bundle.status ?? null;

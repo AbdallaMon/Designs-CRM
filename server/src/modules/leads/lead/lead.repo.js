@@ -34,23 +34,42 @@ class LeadRepository {
   // (no narrowing); a scoped user is restricted to leads assigned to them, PLUS the
   // unassigned NEW pool that legacy let anyone view/claim (status NEW, userId null).
   // `mode: "view"` includes the claimable pool; `mode: "mutate"` is owned-only.
-  hasFullScope({ role, currentProfileKey, isAdminTier, includeContactInitiator = false }) {
+  hasFullScope({
+    role,
+    currentProfileKey,
+    isAdminTier,
+    includeContactInitiator = false,
+  }) {
     if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
     if (FULL_SCOPE_ROLES.includes(role)) return true;
     if (includeContactInitiator && role === "CONTACT_INITIATOR") return true;
     return false;
   }
 
-  buildAuthUserLeadWhere({ authUser, where = {}, mode = "view", includeContactInitiator = false }) {
+  buildAuthUserLeadWhere({
+    authUser,
+    where = {},
+    mode = "view",
+    includeContactInitiator = false,
+  }) {
     if (this.hasFullScope({ ...authUser, includeContactInitiator })) {
       return { ...where };
     }
     const ownership =
       mode === "mutate"
         ? { userId: Number(authUser.id) }
-        : { OR: [{ userId: Number(authUser.id) }, { userId: null, status: "NEW" }] };
+        : {
+            OR: [
+              { userId: Number(authUser.id) },
+              { userId: null, status: "NEW" },
+            ],
+          };
     // Merge ownership into an AND so we never clobber a caller-supplied OR.
-    const existingAnd = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+    const existingAnd = Array.isArray(where.AND)
+      ? where.AND
+      : where.AND
+        ? [where.AND]
+        : [];
     return { ...where, AND: [...existingAnd, ownership] };
   }
 
@@ -108,7 +127,8 @@ class LeadRepository {
       select: { notAllowedCountries: true, role: true },
     });
     // notAllowedCountries is now a String? (LongText) JSON column — decode to the array.
-    if (user) user.notAllowedCountries = parseJsonField(user.notAllowedCountries);
+    if (user)
+      user.notAllowedCountries = parseJsonField(user.notAllowedCountries);
     return user;
   }
 
@@ -130,32 +150,57 @@ class LeadRepository {
     return prisma.clientLead.findMany({
       where,
       orderBy: { updatedAt: "desc" },
-      select: dealsSelect({ callRemindersWhere, updatesWhere, sharedUpdatesWhere }),
+      select: dealsSelect({
+        callRemindersWhere,
+        updatesWhere,
+        sharedUpdatesWhere,
+      }),
     });
   }
 
   // ── Columns (legacy getClientLeadsColumnStatus) ───────────────────────────────
-  findColumnLeads({ where, skip, take, callRemindersWhere, updatesWhere, sharedUpdatesWhere }) {
+  findColumnLeads({
+    where,
+    skip,
+    take,
+    callRemindersWhere,
+    updatesWhere,
+    sharedUpdatesWhere,
+  }) {
     return prisma.clientLead.findMany({
       where,
       skip,
       take,
       orderBy: { updatedAt: "desc" },
-      select: columnsSelect({ callRemindersWhere, updatesWhere, sharedUpdatesWhere }),
+      select: columnsSelect({
+        callRemindersWhere,
+        updatesWhere,
+        sharedUpdatesWhere,
+      }),
     });
   }
 
   aggregateColumn({ where }) {
-    return prisma.clientLead.aggregate({ where, _count: { id: true }, _sum: { averagePrice: true } });
+    return prisma.clientLead.aggregate({
+      where,
+      _count: { id: true },
+      _sum: { averagePrice: true },
+    });
   }
 
   aggregateExtraServices({ where }) {
-    return prisma.extraService.aggregate({ where: { clientLead: { ...where } }, _sum: { price: true } });
+    return prisma.extraService.aggregate({
+      where: { clientLead: { ...where } },
+      _sum: { price: true },
+    });
   }
 
   // ── Detail (staff view) — legacy getClientLeadDetails inner query ─────────────
   findLeadDetail({ where, fileWhere }) {
-    return prisma.clientLead.findUnique({ where, select: detailSelect(fileWhere) });
+    return prisma.clientLead.findUnique({
+      where,
+      select: detailSelect(fileWhere),
+    });
   }
 
   findFirstByUserId({ userId }) {
@@ -170,12 +215,17 @@ class LeadRepository {
   }
 
   findUnassignedNew({ id }) {
-    return prisma.clientLead.findUnique({ where: { id: Number(id), status: "NEW", userId: null } });
+    return prisma.clientLead.findUnique({
+      where: { id: Number(id), status: "NEW", userId: null },
+    });
   }
 
   // ── Detail (admin view) — legacy getAdminClientLeadDetails ────────────────────
   findAdminLeadDetail({ where }) {
-    return prisma.clientLead.findUnique({ where, include: ADMIN_DETAIL_INCLUDE });
+    return prisma.clientLead.findUnique({
+      where,
+      include: ADMIN_DETAIL_INCLUDE,
+    });
   }
 
   // ── Cockpit bundle (Sales Deal Cockpit) ───────────────────────────────────────
@@ -194,7 +244,10 @@ class LeadRepository {
       select: COCKPIT_BUNDLE_SELECT,
     });
     if (!bundle) return bundle;
-    return { ...bundle, versaModel: (bundle.versaModel ?? []).map(reduceVersaModel) };
+    return {
+      ...bundle,
+      versaModel: (bundle.versaModel ?? []).map(reduceVersaModel),
+    };
   }
 
   // ── Calls / meetings lists ────────────────────────────────────────────────────
@@ -202,7 +255,15 @@ class LeadRepository {
     const [items, total] = await Promise.all([
       prisma.callReminder.findMany({
         where,
-        include: { clientLead: { select: { id: true, client: { select: { name: true } }, status: true } } },
+        include: {
+          clientLead: {
+            select: {
+              id: true,
+              client: { select: { name: true } },
+              status: true,
+            },
+          },
+        },
         orderBy: { time: "asc" },
         take,
         skip,
@@ -216,7 +277,15 @@ class LeadRepository {
     const [items, total] = await Promise.all([
       prisma.meetingReminder.findMany({
         where,
-        include: { clientLead: { select: { id: true, client: { select: { name: true } }, status: true } } },
+        include: {
+          clientLead: {
+            select: {
+              id: true,
+              client: { select: { name: true } },
+              status: true,
+            },
+          },
+        },
         orderBy: { time: "asc" },
         take,
         skip,
@@ -248,14 +317,24 @@ class LeadRepository {
   findCallReminderOwner({ reminderId }) {
     return prisma.callReminder.findUnique({
       where: { id: Number(reminderId) },
-      select: { id: true, userId: true, clientLeadId: true, user: { select: { id: true } } },
+      select: {
+        id: true,
+        userId: true,
+        clientLeadId: true,
+        user: { select: { id: true } },
+      },
     });
   }
 
   findMeetingReminderOwner({ reminderId }) {
     return prisma.meetingReminder.findUnique({
       where: { id: Number(reminderId) },
-      select: { id: true, userId: true, clientLeadId: true, user: { select: { id: true } } },
+      select: {
+        id: true,
+        userId: true,
+        clientLeadId: true,
+        user: { select: { id: true } },
+      },
     });
   }
 
@@ -289,7 +368,8 @@ class LeadRepository {
       select: { notAllowedCountries: true },
     });
     // notAllowedCountries is now a String? (LongText) JSON column — decode to the array.
-    if (user) user.notAllowedCountries = parseJsonField(user.notAllowedCountries);
+    if (user)
+      user.notAllowedCountries = parseJsonField(user.notAllowedCountries);
     return user;
   }
 
@@ -826,7 +906,11 @@ function dealsSelect({ callRemindersWhere, updatesWhere, sharedUpdatesWhere }) {
     decisionMaker: true,
     bookingRequestStatus: true,
     bookingSubmittedAt: true,
-    callReminders: { where: callRemindersWhere, orderBy: { time: "desc" }, take: 2 },
+    callReminders: {
+      where: callRemindersWhere,
+      orderBy: { time: "desc" },
+      take: 2,
+    },
     contracts: {
       where: { status: "IN_PROGRESS" },
       orderBy: { id: "desc" },
@@ -894,7 +978,16 @@ function detailSelect(fileWhere) {
         stages: { select: { title: true, stageStatus: true } },
       },
     },
-    client: { select: { id: true, name: true, phone: true, email: true, arName: true, enName: true } },
+    client: {
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        arName: true,
+        enName: true,
+      },
+    },
     assignedTo: { select: { id: true, name: true, email: true } },
     selectedCategory: true,
     description: true,
@@ -935,7 +1028,13 @@ function detailSelect(fileWhere) {
     notes: {
       where: fileWhere,
       orderBy: { createdAt: "desc" },
-      select: { id: true, content: true, userId: true, user: { select: { name: true } }, createdAt: true },
+      select: {
+        id: true,
+        content: true,
+        userId: true,
+        user: { select: { name: true } },
+        createdAt: true,
+      },
     },
     callReminders: {
       where: fileWhere,
@@ -970,12 +1069,21 @@ function detailSelect(fileWhere) {
       orderBy: { time: "desc" },
     },
     payments: {
-      select: { id: true, status: true, amount: true, amountPaid: true, amountLeft: true, paymentReason: true },
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        amountPaid: true,
+        amountLeft: true,
+        paymentReason: true,
+      },
     },
     extraServices: { select: { id: true, price: true, note: true } },
     // Additive: related-record totals for the FE hub rail (independent of the take:1
     // IN_PROGRESS contracts select above — these are true counts of every relation).
-    _count: { select: { projects: true, contracts: true, imageSessions: true } },
+    _count: {
+      select: { projects: true, contracts: true, imageSessions: true },
+    },
   };
 }
 
@@ -1005,7 +1113,7 @@ const COCKPIT_BUNDLE_SELECT = {
       sessionStatus: true,
       stages: { select: { title: true, stageStatus: true, order: true } },
       // Payment truth (accountant signals) — derived at compute-time, no DB migration.
-      payments: { select: { status: true, paymentCondition: true } },
+      paymentsNew: { select: { status: true, paymentCondition: true } },
     },
   },
   salesStages: { select: { stage: true } },
@@ -1050,19 +1158,34 @@ function reduceVersaModel(vm) {
 const ADMIN_DETAIL_INCLUDE = {
   client: true,
   assignedTo: true,
-  priceOffers: { orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } },
+  priceOffers: {
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { name: true } } },
+  },
   payments: { include: { invoices: true } },
   contracts: {
     where: { status: "IN_PROGRESS" },
     orderBy: { id: "desc" },
     take: 1,
-    select: { id: true, stages: { select: { title: true, stageStatus: true } } },
+    select: {
+      id: true,
+      stages: { select: { title: true, stageStatus: true } },
+    },
   },
   extraServices: true,
-  notes: { orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } },
-  callReminders: { orderBy: { time: "desc" }, include: { user: { select: { name: true } } } },
+  notes: {
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { name: true } } },
+  },
+  callReminders: {
+    orderBy: { time: "desc" },
+    include: { user: { select: { name: true } } },
+  },
   meetingReminders: {
-    include: { user: { select: { name: true } }, admin: { select: { name: true } } },
+    include: {
+      user: { select: { name: true } },
+      admin: { select: { name: true } },
+    },
     orderBy: { time: "desc" },
   },
   files: { include: { user: { select: { name: true } } } },
