@@ -38,6 +38,7 @@ import {
   FiCreditCard,
   FiGlobe,
   FiUserCheck,
+  FiSunrise,
 } from "react-icons/fi";
 
 import SideNav, {
@@ -333,6 +334,7 @@ export function linksForRole(user) {
 const ICON_BY_KEY = {
   dashboard: <FiGrid size={20} />,
   "command-center": <FiActivity size={20} />,
+  "my-day": <FiSunrise size={20} />,
   "users-admin": <FiUsers size={20} />,
   "users-super-sales": <FiUsers size={20} />,
   leads: <FiTarget size={20} />,

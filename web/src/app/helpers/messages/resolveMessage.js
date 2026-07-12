@@ -15,6 +15,7 @@ import { coursesMessages } from "./maps/coursesMessages";
 import { dashboardMessages } from "./maps/dashboardMessages";
 import { imageSessionsMessages } from "./maps/imageSessionsMessages";
 import { leadsMessages } from "./maps/leadsMessages";
+import { myDayMessages } from "./maps/myDayMessages";
 import { notificationsMessages } from "./maps/notificationsMessages";
 import { projectsMessages } from "./maps/projectsMessages";
 import { questionsMessages } from "./maps/questionsMessages";
@@ -32,6 +33,7 @@ const MESSAGES = {
   ...auditMessages,
   ...calendarMessages,
   ...commandCenterMessages,
+  ...myDayMessages,
   ...chatMessages,
   ...contractsMessages,
   ...coursesMessages,

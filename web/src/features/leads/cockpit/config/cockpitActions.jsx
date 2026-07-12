@@ -107,6 +107,14 @@ export const COCKPIT_ACTION_CONFIG = {
     description: () => "No future call or meeting is scheduled.",
     ctaLabel: "Schedule a call",
   },
+  LEAD_STALE: {
+    icon: <IoMdCall />,
+    severity: "warning",
+    title: () => "Lead going stale",
+    description: (p = {}) =>
+      `No activity for ${p.daysSinceActivity ?? 0} days and nothing scheduled — reach out today.`,
+    ctaLabel: "Schedule a call",
+  },
   ADVANCE_STAGE: {
     icon: <MdTimeline />,
     severity: "info",
