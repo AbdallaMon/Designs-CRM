@@ -17,8 +17,8 @@ class SalaryController {
     return ok(res, { items: users ?? [], total: total ?? 0, page, pageSize: limit }, accountingMessagesCodes.USERS_FETCHED, TK);
   }
 
-  async userLastSeen(req, res) {
-    const data = await salaryUsecase.userLastSeen({
+  async getUserLastSeen(req, res) {
+    const data = await salaryUsecase.getUserLastSeen({
       userId: req.params.userId,
       month: req.query.month,
       year: req.query.year,
@@ -27,8 +27,8 @@ class SalaryController {
   }
 
   // salaries
-  async salaryData(req, res) {
-    const data = await salaryUsecase.salaryData({ query: req.query });
+  async getSalaryData(req, res) {
+    const data = await salaryUsecase.getSalaryData({ query: req.query });
     return ok(res, data, accountingMessagesCodes.SALARY_DATA_FETCHED, TK);
   }
 

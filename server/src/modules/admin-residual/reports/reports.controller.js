@@ -11,9 +11,9 @@
 import { reportsUsecase } from "./reports.usecase.js";
 
 class ReportsController {
-  async leadReportData(req, res) {
+  async getLeadReportData(req, res) {
     try {
-      const data = await reportsUsecase.leadReportData({ body: req.body });
+      const data = await reportsUsecase.getLeadReportData({ body: req.body });
       return res.json(data);
     } catch (error) {
       console.error("Error generating report:", error);
@@ -21,9 +21,9 @@ class ReportsController {
     }
   }
 
-  async staffReportData(req, res) {
+  async getStaffReportData(req, res) {
     try {
-      const data = await reportsUsecase.staffReportData({ body: req.body });
+      const data = await reportsUsecase.getStaffReportData({ body: req.body });
       return res.json(data);
     } catch (error) {
       console.error("Error generating staff report:", error);

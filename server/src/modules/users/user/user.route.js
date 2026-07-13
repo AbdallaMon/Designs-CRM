@@ -34,12 +34,12 @@ router.use(AuthMiddleware.requireAuth);
 router.get(
   "/directory",
   AuthMiddleware.requirePermissions([P.DIRECTORY]),
-  asyncHandler(userController.directory),
+  asyncHandler(userController.getDirectory),
 );
 router.get(
   "/related-chat-directory",
   AuthMiddleware.requirePermissions([P.DIRECTORY]),
-  asyncHandler(userController.relatedChatDirectory),
+  asyncHandler(userController.getRelatedChatDirectory),
 );
 // Consolidated chat member-picker directory — replaces the chat FE's TWO legacy calls
 // (`/admin/all-users` for admins, `/shared/all-related-chat-users?projectId=` for staff).
@@ -49,14 +49,14 @@ router.get(
 router.get(
   "/chat-directory",
   AuthMiddleware.requirePermissions([P.DIRECTORY]),
-  asyncHandler(userController.chatDirectory),
+  asyncHandler(userController.getChatDirectory),
 );
 
 // ── admin management lists (literal before /:userId) ─────────────────────────────
 router.get(
   "/all-users",
   AuthMiddleware.requirePermissions([P.LIST]),
-  asyncHandler(userController.allUsers),
+  asyncHandler(userController.getAllUsers),
 );
 // assignable permission profiles for the admin picker (literal — before /:userId)
 router.get(
@@ -170,7 +170,7 @@ router.patch(
   AuthMiddleware.requirePermissions([P.MANAGE_STAFF_EXTRA]),
   validate(UserValidation.userIdParams, "params"),
   validate(UserValidation.staffExtra),
-  asyncHandler(userController.staffExtra),
+  asyncHandler(userController.getStaffExtra),
 );
 
 // Status change is a workflow transition → dedicated action endpoint (not a generic PATCH).

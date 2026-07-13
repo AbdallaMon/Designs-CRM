@@ -39,55 +39,55 @@ router.get(
   "/key-metrics",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.keyMetrics),
+  asyncHandler(dashboardController.getKeyMetrics),
 );
 router.get(
   "/leads-status",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.leadsStatus),
+  asyncHandler(dashboardController.getLeadsStatus),
 );
 router.get(
   "/monthly-performance",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.monthlyPerformance),
+  asyncHandler(dashboardController.getMonthlyPerformance),
 );
 router.get(
   "/emirates-analytics",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.emiratesAnalytics),
+  asyncHandler(dashboardController.getEmiratesAnalytics),
 );
 router.get(
   "/leads-monthly-overview",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.leadsMonthlyOverview),
+  asyncHandler(dashboardController.getLeadsMonthlyOverview),
 );
 router.get(
   "/week-performance",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.weekPerformance),
+  asyncHandler(dashboardController.getWeekPerformance),
 );
 router.get(
   "/latest-leads",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.emptyQuery, "query"),
-  asyncHandler(dashboardController.latestLeads),
+  asyncHandler(dashboardController.getLatestLeads),
 );
 router.get(
   "/recent-activities",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.recentActivities),
+  asyncHandler(dashboardController.getRecentActivities),
 );
 router.get(
   "/designer-metrics",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(DashboardValidation.metricsQuery, "query"),
-  asyncHandler(dashboardController.designerMetrics),
+  asyncHandler(dashboardController.getDesignerMetrics),
 );
 
 export { router as dashboardRouter };

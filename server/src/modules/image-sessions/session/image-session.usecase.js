@@ -96,7 +96,7 @@ class ImageSessionUsecase {
 
   // GET /ids — global pick-list model-id helper. NOT lead-scoped (global config). Hardened:
   // the model must be in the allow-list, and the client `where` JSON is parse-guarded.
-  async modelIds({ model, searchParams }) {
+  async getModelIds({ model, searchParams }) {
     if (!model || !UTILITY_MODEL_ALLOWLIST.includes(model)) {
       throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
     }

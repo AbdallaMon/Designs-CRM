@@ -185,7 +185,7 @@ describe("UserUsecase.toggleStaffExtra whitelist (FIX 1)", () => {
 describe("UserUsecase.directory", () => {
   it("default shape excludes users already chatting with me (checkIfNotHasRelatedChat)", async () => {
     userRepository.findDirectory.mockResolvedValue([{ id: 5 }]);
-    const out = await userUsecase.directory({ query: { role: "STAFF" }, authUser: staff });
+    const out = await userUsecase.getDirectory({ query: { role: "STAFF" }, authUser: staff });
     expect(out).toEqual({ items: [{ id: 5 }] });
     expect(userRepository.findDirectory).toHaveBeenCalledWith(
       expect.objectContaining({ checkIfNotHasRelatedChat: true, checkIfHasRelatedChat: false }),
@@ -194,7 +194,7 @@ describe("UserUsecase.directory", () => {
 
   it("relatedOnly shape includes only users already chatting with me (checkIfHasRelatedChat)", async () => {
     userRepository.findDirectory.mockResolvedValue([]);
-    await userUsecase.directory({ query: {}, authUser: staff, relatedOnly: true });
+    await userUsecase.getDirectory({ query: {}, authUser: staff, relatedOnly: true });
     expect(userRepository.findDirectory).toHaveBeenCalledWith(
       expect.objectContaining({ checkIfNotHasRelatedChat: false, checkIfHasRelatedChat: true }),
     );

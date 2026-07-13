@@ -9,13 +9,13 @@ const TK = messagesNames.myDayMessages;
 
 class MyDayController {
   // GET /v2/my-day — the caller's own queue.
-  async myQueue(req, res) {
+  async getMyQueue(req, res) {
     const data = await myDayUsecase.getMyQueue({ authUser: req.auth });
     return ok(res, data, myDayMessagesCodes.MY_DAY_FETCHED, TK);
   }
 
   // GET /v2/my-day/team — supervisor rollup (domain gating inside the usecase).
-  async team(req, res) {
+  async getTeam(req, res) {
     const data = await myDayUsecase.getTeamOverview({ authUser: req.auth });
     return ok(res, data, myDayMessagesCodes.MY_DAY_TEAM_FETCHED, TK);
   }
@@ -26,7 +26,7 @@ class MyDayController {
   }
 
   // GET /v2/my-day/users/:userId — drill-down for the scope-checked target (req.scoped).
-  async userQueue(req, res) {
+  async getUserQueue(req, res) {
     const data = await myDayUsecase.getQueueForTarget({ targetUser: req.scoped });
     return ok(res, data, myDayMessagesCodes.MY_DAY_FETCHED, TK);
   }

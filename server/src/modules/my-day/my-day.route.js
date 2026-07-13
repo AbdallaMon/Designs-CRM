@@ -17,16 +17,16 @@ const router = Router();
 
 router.use(AuthMiddleware.requireAuth);
 
-router.get("/", AuthMiddleware.requirePermissions([P.VIEW]), asyncHandler(myDayController.myQueue));
+router.get("/", AuthMiddleware.requirePermissions([P.VIEW]), asyncHandler(myDayController.getMyQueue));
 
-router.get("/team", AuthMiddleware.requirePermissions([P.TEAM_VIEW]), asyncHandler(myDayController.team));
+router.get("/team", AuthMiddleware.requirePermissions([P.TEAM_VIEW]), asyncHandler(myDayController.getTeam));
 
 router.get(
   "/users/:userId",
   AuthMiddleware.requirePermissions([P.TEAM_VIEW]),
   validate(MyDayValidation.userIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(myDayController.checkTargetScope),
-  asyncHandler(myDayController.userQueue),
+  asyncHandler(myDayController.getUserQueue),
 );
 
 export { router as myDayRouter };

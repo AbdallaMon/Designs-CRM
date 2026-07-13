@@ -20,7 +20,7 @@ router.get(
   "/overview",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(CommandCenterValidation.overviewQuery, "query"),
-  asyncHandler(commandCenterController.overview),
+  asyncHandler(commandCenterController.getOverview),
 );
 
 export { router as commandCenterRouter };

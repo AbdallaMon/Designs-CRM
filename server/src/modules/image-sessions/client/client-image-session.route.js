@@ -80,7 +80,7 @@ router.delete(
 router.post("/generate-pdf", validate(ClientImageSessionValidation.generatePdf), asyncHandler(clientImageSessionController.generatePdf));
 
 // ── EXTRAS router endpoints (same base, no collision with the main router) ───────────────
-router.get("/data", validate(ClientImageSessionValidation.modelDataQuery, "query"), asyncHandler(clientImageSessionController.modelData));
+router.get("/data", validate(ClientImageSessionValidation.modelDataQuery, "query"), asyncHandler(clientImageSessionController.getModelData));
 router.post("/save-patterns", validate(ClientImageSessionValidation.savePatterns), asyncHandler(clientImageSessionController.savePatterns));
 router.post("/save-images", validate(ClientImageSessionValidation.saveSelection), asyncHandler(clientImageSessionController.saveSelectionByToken));
 

@@ -6,8 +6,8 @@ import { staffUsecase } from "./staff.usecase.js";
 const TK = messagesNames.adminResidualMessages;
 
 class StaffController {
-  async latestCalls(req, res) {
-    const data = await staffUsecase.latestCalls({ query: req.query, authUser: req.auth });
+  async getLatestCalls(req, res) {
+    const data = await staffUsecase.getLatestCalls({ query: req.query, authUser: req.auth });
     return ok(res, data, adminResidualMessagesCodes.LATEST_CALLS_FETCHED, TK);
   }
 }

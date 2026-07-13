@@ -22,7 +22,7 @@ class ReportsUsecase {
   // ── NON-frozen DATA endpoints (read + shape; controller owns res) ────────────────
   // Ported VERBATIM from the legacy generateLeadReport (minus the res.json / try-catch,
   // which the controller now owns).
-  async leadReportData({ body }) {
+  async getLeadReportData({ body }) {
     const filters = body;
 
     const where = {
@@ -72,7 +72,7 @@ class ReportsUsecase {
   }
 
   // Ported VERBATIM from the legacy generateStaffReport (minus the res.json / try-catch).
-  async staffReportData({ body }) {
+  async getStaffReportData({ body }) {
     const filters = body;
     const where = {
       AND: [

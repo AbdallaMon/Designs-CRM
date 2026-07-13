@@ -39,7 +39,7 @@ router.post(
   "/lead-report",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
   validate(ReportsValidation.leadReportBody),
-  asyncHandler(reportsController.leadReportData),
+  asyncHandler(reportsController.getLeadReportData),
 );
 
 // ── staff reports ────────────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ router.post(
   "/staff-report",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
   validate(ReportsValidation.staffReportBody),
-  asyncHandler(reportsController.staffReportData),
+  asyncHandler(reportsController.getStaffReportData),
 );
 
 export { router as reportsRouter };

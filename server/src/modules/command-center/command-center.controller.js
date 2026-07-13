@@ -10,7 +10,7 @@ const TK = messagesNames.commandCenterMessages;
 class CommandCenterController {
   // GET /v2/command-center/overview — composite admin cockpit (KPIs, pipeline, capacity,
   // delivery). Read-only; no mutations.
-  async overview(req, res) {
+  async getOverview(req, res) {
     const data = await commandCenterUsecase.getOverview({ query: req.query, authUser: req.auth });
     return ok(res, data, commandCenterMessagesCodes.COMMAND_CENTER_FETCHED, TK);
   }

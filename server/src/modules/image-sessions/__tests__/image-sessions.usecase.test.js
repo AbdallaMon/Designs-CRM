@@ -73,7 +73,6 @@ import {
 } from "../client/client-image-session.repo.js";
 import { uploadPdfAndApproveSession } from "../services/session-approval.js";
 
-const M = imageSessionsMessagesCodes;
 const P = PERMISSIONS.IMAGE_SESSION;
 
 function makeReq(role, isSuperSales = false) {
@@ -239,24 +238,24 @@ describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
   it("editFields: 404s a forged sessionId before the legacy edit runs", async () => {
     await expect(
       imageSessionUsecase.editFields({ clientLeadId: 100, sessionId: 999, data: { name: "x" }, authUser: AUTH }),
-    ).rejects.toMatchObject({ statusCode: 404, message: M.IMAGE_SESSION_NOT_FOUND });
+    ).rejects.toMatchObject({ statusCode: 404, message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND });
     expect(editSessionFileds).not.toHaveBeenCalled();
   });
 
-  it("modelIds: rejects a model OFF the allow-list (mass-read hardening)", async () => {
-    await expect(imageSessionUsecase.modelIds({ model: "user", searchParams: {} })).rejects.toMatchObject({
+  it("getModelIds: rejects a model OFF the allow-list (mass-read hardening)", async () => {
+    await expect(imageSessionUsecase.getModelIds({ model: "user", searchParams: {} })).rejects.toMatchObject({
       statusCode: 400,
-      message: M.IMAGE_SESSION_MODEL_NOT_ALLOWED,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED,
     });
     expect(getModelIds).not.toHaveBeenCalled();
   });
 
-  it("modelIds: allows an allow-listed model and rejects a malformed `where` JSON", async () => {
+  it("getModelIds: allows an allow-listed model and rejects a malformed `where` JSON", async () => {
     getModelIds.mockResolvedValue([{ id: 1 }]);
-    await imageSessionUsecase.modelIds({ model: "designImage", searchParams: {} });
+    await imageSessionUsecase.getModelIds({ model: "designImage", searchParams: {} });
     expect(getModelIds).toHaveBeenCalledWith({ model: "designImage", searchParams: {} });
     await expect(
-      imageSessionUsecase.modelIds({ model: "designImage", searchParams: { where: "{not json" } }),
+      imageSessionUsecase.getModelIds({ model: "designImage", searchParams: { where: "{not json" } }),
     ).rejects.toMatchObject({
       statusCode: 400,
     });
@@ -277,7 +276,7 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   it("changeStatus throws TOKEN_INVALID when no token", async () => {
     await expect(clientImageSessionUsecase.changeStatus({ token: "", sessionStatus: "INITIAL" })).rejects.toMatchObject({
       statusCode: 400,
-      message: M.IMAGE_SESSION_TOKEN_INVALID,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID,
     });
   });
 
@@ -336,7 +335,7 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
         signatureUrl: "/uploads/s.png",
         sessionStatus: "PDF_GENERATED",
       }),
-    ).rejects.toMatchObject({ statusCode: 500, message: M.IMAGE_SESSION_PDF_GENERATION_FAILED });
+    ).rejects.toMatchObject({ statusCode: 500, message: imageSessionsMessagesCodes.IMAGE_SESSION_PDF_GENERATION_FAILED });
   });
 
   it("deleteImage: REJECTS a missing/invalid token (404 NOT_FOUND) — frozen delete NOT called", async () => {
@@ -345,12 +344,12 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
     // missing token → TOKEN_INVALID (400) before any lookup.
     await expect(clientImageSessionUsecase.deleteImage({ token: "", imageId: 5 })).rejects.toMatchObject({
       statusCode: 400,
-      message: M.IMAGE_SESSION_TOKEN_INVALID,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID,
     });
     // present-but-unknown token → NOT_FOUND (404).
     await expect(clientImageSessionUsecase.deleteImage({ token: "bad", imageId: 5 })).rejects.toMatchObject({
       statusCode: 404,
-      message: M.IMAGE_SESSION_NOT_FOUND,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND,
     });
     expect(clientImageSessionRepository.findSelectedImageOwnerSessionId).not.toHaveBeenCalled();
     expect(deleteImage).not.toHaveBeenCalled();
@@ -362,7 +361,7 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
     clientImageSessionRepository.findSelectedImageOwnerSessionId.mockResolvedValue({ imageSessionId: 99 });
     await expect(clientImageSessionUsecase.deleteImage({ token: "tok", imageId: 5 })).rejects.toMatchObject({
       statusCode: 404,
-      message: M.IMAGE_SESSION_NOT_FOUND,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND,
     });
     expect(clientImageSessionRepository.findSelectedImageOwnerSessionId).toHaveBeenCalledWith({ imageId: 5 });
     expect(deleteImage).not.toHaveBeenCalled(); // the frozen wipe never runs cross-session
@@ -373,7 +372,7 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
     clientImageSessionRepository.findSelectedImageOwnerSessionId.mockResolvedValue(null);
     await expect(clientImageSessionUsecase.deleteImage({ token: "tok", imageId: 12345 })).rejects.toMatchObject({
       statusCode: 404,
-      message: M.IMAGE_SESSION_NOT_FOUND,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND,
     });
     expect(deleteImage).not.toHaveBeenCalled();
   });
@@ -397,10 +396,10 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
     expect(ClientImageSessionValidation.deleteImage.safeParse({ token: "t", imageSessionId: 99 }).success).toBe(false);
   });
 
-  it("modelData (extras /data): rejects a model OFF the allow-list", async () => {
-    await expect(clientImageSessionUsecase.modelData({ model: "user" })).rejects.toMatchObject({
+  it("getModelData (extras /data): rejects a model OFF the allow-list", async () => {
+    await expect(clientImageSessionUsecase.getModelData({ model: "user" })).rejects.toMatchObject({
       statusCode: 400,
-      message: M.IMAGE_SESSION_MODEL_NOT_ALLOWED,
+      message: imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED,
     });
     expect(getImageSesssionModel).not.toHaveBeenCalled();
   });
@@ -502,7 +501,7 @@ describe("image-sessions validation — mass-assignment + SSRF + enum", () => {
   });
 
   it("language-neutral codes: every image-sessions code is SCREAMING_SNAKE and self-valued", () => {
-    for (const [k, v] of Object.entries(M)) {
+    for (const [k, v] of Object.entries(imageSessionsMessagesCodes)) {
       expect(v).toBe(k);
       expect(k).toMatch(/^[A-Z0-9_]+$/);
     }

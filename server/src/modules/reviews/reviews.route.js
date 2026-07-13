@@ -38,7 +38,7 @@ router.get(
   "/oauth2callback",
   AuthMiddleware.requirePermissions([P.CONNECT]),
   validate(ReviewsValidation.oauthCallbackQuery, "query"),
-  asyncHandler(reviewsController.oauthCallback),
+  asyncHandler(reviewsController.handleOAuthCallback),
 );
 
 router.get(

@@ -29,8 +29,8 @@ class PublicLeadController {
     return ok(res, lead, leadsMessagesCodes.CLIENT_LEAD_REGISTER_COMPLETED, TK);
   }
 
-  async cooperationRequest(req, res) {
-    await publicLeadUsecase.cooperationRequest(req.body);
+  async createCooperationRequest(req, res) {
+    await publicLeadUsecase.createCooperationRequest(req.body);
     return ok(res, null, leadsMessagesCodes.COOPERATION_REQUEST_SENT, TK);
   }
 }

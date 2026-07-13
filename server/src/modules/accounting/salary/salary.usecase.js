@@ -132,12 +132,12 @@ class SalaryUsecase {
     return salaryRepository.getUsersWithSalaries(query, limit, skip);
   }
 
-  userLastSeen({ userId, month, year }) {
+  getUserLastSeen({ userId, month, year }) {
     return getUserLogs(userId, month, year);
   }
 
   // ── salaries ────────────────────────────────────────────────────────────────────
-  salaryData({ query }) {
+  getSalaryData({ query }) {
     return salaryRepository.getSalaryData(query);
   }
 

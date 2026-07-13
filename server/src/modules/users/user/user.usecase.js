@@ -189,7 +189,7 @@ export class UserUsecase {
   // only users already in a STAFF_TO_STAFF room with me. The default (`relatedOnly:
   // false`) is the 3rd-arg shape getAllUsers(.., true) — exclude users already chatting
   // with me. Both are role-narrowed for non-admins inside the repo (verbatim legacy).
-  async directory({ query, authUser, relatedOnly = false }) {
+  async getDirectory({ query, authUser, relatedOnly = false }) {
     const items = await userRepository.findDirectory({
       searchParams: { ...query },
       currentUser: authUser,
@@ -222,7 +222,7 @@ export class UserUsecase {
   // agents ONLY; without this flag the default OR(role, subRole) match leaks
   // THREE_D_DESIGNER / TWO_D_DESIGNER / TWO_D_EXECUTOR users that hold a `STAFF` subRole.
   // Other callers (e.g. the designer-assign modal) omit it and keep the legacy OR match.
-  async allUsers({ query, authUser }) {
+  async getAllUsers({ query, authUser }) {
     const { exactRole, ...searchParams } = query ?? {};
     const items = await userRepository.findDirectory({
       searchParams,
@@ -243,7 +243,7 @@ export class UserUsecase {
   // (an array) keeps working 1:1. `projectId` mirrors the legacy query param: getAllUsers
   // never read it (the related-chat scope is derived from the membership join, not the
   // project), so it is accepted-but-unused exactly as before.
-  async chatDirectory({ query, authUser }) {
+  async getChatDirectory({ query, authUser }) {
     const relatedOnly = !isAdminTier(authUser);
     return userRepository.findDirectory({
       searchParams: { ...query },

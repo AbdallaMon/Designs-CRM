@@ -105,8 +105,8 @@ class ClientImageSessionController {
   }
 
   // ── EXTRAS router (same base) ──────────────────────────────────────────────────────────
-  async modelData(req, res) {
-    const data = await clientImageSessionUsecase.modelData({ model: req.query.model });
+  async getModelData(req, res) {
+    const data = await clientImageSessionUsecase.getModelData({ model: req.query.model });
     return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_FETCHED, TK);
   }
   async savePatterns(req, res) {

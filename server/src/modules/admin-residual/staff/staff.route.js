@@ -26,7 +26,7 @@ router.get(
   "/dashboard/latest-calls",
   AuthMiddleware.requirePermissions([P.LATEST_CALLS_VIEW]),
   validate(StaffValidation.latestCallsQuery, "query"),
-  asyncHandler(staffController.latestCalls),
+  asyncHandler(staffController.getLatestCalls),
 );
 
 export { router as staffRouter };

@@ -7,7 +7,7 @@ import { reviewsUsecase } from "./reviews.usecase.js";
 const TK = messagesNames.reviewsMessages;
 
 export class ReviewsController {
-  async oauthCallback(req, res) {
+  async handleOAuthCallback(req, res) {
     const data = await reviewsUsecase.handleOAuthCallback({ code: req.query.code });
     return ok(res, data, reviewsMessagesCodes.REVIEW_OAUTH_CONNECTED, TK);
   }

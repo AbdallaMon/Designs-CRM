@@ -46,19 +46,19 @@ class ProjectController {
   }
 
   // ── designer board lists (no object checker — collection narrowed by role/self) ──
-  async designers(req, res) {
-    const items = await projectUsecase.designers({ query: req.query, authUser: req.auth });
+  async getDesigners(req, res) {
+    const items = await projectUsecase.getDesigners({ query: req.query, authUser: req.auth });
     return ok(res, { items: withProjectListCapabilities(items, req.auth) }, projectsMessagesCodes.DESIGNER_PROJECTS_FETCHED, TK);
   }
 
-  async designerColumns(req, res) {
-    const result = await projectUsecase.designerColumns({ query: req.query, authUser: req.auth });
+  async getDesignerColumns(req, res) {
+    const result = await projectUsecase.getDesignerColumns({ query: req.query, authUser: req.auth });
     const data = result?.data ? { ...result, data: withProjectListCapabilities(result.data, req.auth) } : result;
     return ok(res, data, projectsMessagesCodes.DESIGNER_PROJECTS_FETCHED, TK);
   }
 
-  async designerLeadDetail(req, res) {
-    const data = await projectUsecase.designerLeadDetail({ id: req.params.id, query: req.query, authUser: req.auth });
+  async getDesignerLeadDetail(req, res) {
+    const data = await projectUsecase.getDesignerLeadDetail({ id: req.params.id, query: req.query, authUser: req.auth });
     return ok(res, withProjectDetailCapabilities(data, req.auth), projectsMessagesCodes.DESIGNER_LEAD_FETCHED, TK);
   }
 
@@ -79,9 +79,9 @@ class ProjectController {
     );
   }
 
-  async userProjects(req, res) {
+  async getUserProjects(req, res) {
     const { limit, skip } = paginate(req.query);
-    const result = await projectUsecase.userProjects({ userId: req.params.userId, query: req.query, limit, skip });
+    const result = await projectUsecase.getUserProjects({ userId: req.params.userId, query: req.query, limit, skip });
     return ok(res, result, projectsMessagesCodes.USER_PROJECTS_FETCHED, TK);
   }
 

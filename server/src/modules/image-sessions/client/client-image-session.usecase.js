@@ -158,7 +158,7 @@ class ClientImageSessionUsecase {
   // GET /data?model= — generic-model read. Legacy did an OPEN prisma[model].findMany() with
   // no allow-list (mass-read). v2 rejects any model not in UTILITY_MODEL_ALLOWLIST; the
   // returned shape (full findMany) is preserved 1:1 for the legit reference models.
-  async modelData({ model }) {
+  async getModelData({ model }) {
     if (!model || !UTILITY_MODEL_ALLOWLIST.includes(model)) {
       throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
     }

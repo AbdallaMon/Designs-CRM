@@ -102,7 +102,7 @@ class ProjectUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   // Reproduce the legacy ROUTE narrowing exactly: ADMIN/SUPER_ADMIN → isAdmin=true;
   // everyone else → searchParams.userId = self. userRole is always forwarded.
-  async designers({ query, authUser }) {
+  async getDesigners({ query, authUser }) {
     const isAdmin = authUser.role === "ADMIN" || authUser.role === "SUPER_ADMIN";
     const searchParams = { ...query, userRole: authUser.role };
     if (isAdmin) searchParams.isAdmin = true;
@@ -110,7 +110,7 @@ class ProjectUsecase {
     return legacyDefaults.getLeadByPorjects({ searchParams, isAdmin });
   }
 
-  async designerColumns({ query, authUser }) {
+  async getDesignerColumns({ query, authUser }) {
     const isAdmin = authUser.role === "ADMIN" || authUser.role === "SUPER_ADMIN";
     const searchParams = { ...query, userRole: authUser.role };
     if (isAdmin) searchParams.isAdmin = true;
@@ -120,7 +120,7 @@ class ProjectUsecase {
 
   // GET /designers/:id — lead-by-project detail. Object scope already enforced by the
   // checker; here we reproduce the legacy admin/accountant-vs-self search narrowing.
-  async designerLeadDetail({ id, query, authUser }) {
+  async getDesignerLeadDetail({ id, query, authUser }) {
     const { role } = authUser;
     const searchParams = { ...query };
     if (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "ACCOUNTANT") {
@@ -176,7 +176,7 @@ class ProjectUsecase {
   // GET /user-profile/:userId — projects assigned to a user. Legacy did NOT object-scope
   // this (it returned by the path userId). We keep the legacy semantics but the route
   // requires PROJECT.LIST; the returned set is already assignment-narrowed by userId.
-  async userProjects({ userId, query, limit, skip }) {
+  async getUserProjects({ userId, query, limit, skip }) {
     const searchParams = { ...query, userId };
     return legacyDefaults.getUserProjects(searchParams, Number(limit), Number(skip));
   }

@@ -38,7 +38,7 @@ router.post(
 router.get(
   "/callback",
   AuthMiddleware.requirePermissions([P.GOOGLE_VIEW]),
-  asyncHandler(googleCalendarController.callback),
+  asyncHandler(googleCalendarController.handleOAuthCallback),
 );
 router.post(
   "/disconnect",

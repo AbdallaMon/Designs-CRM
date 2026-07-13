@@ -21,7 +21,7 @@ const router = Router();
 router.get(
   "/data",
   AuthMiddleware.requirePermissions([P.SALARY_VIEW]),
-  asyncHandler(salaryController.salaryData),
+  asyncHandler(salaryController.getSalaryData),
 );
 
 router.post(

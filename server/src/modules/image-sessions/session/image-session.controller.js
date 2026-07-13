@@ -46,9 +46,9 @@ class ImageSessionController {
     return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_DELETED, TK);
   }
 
-  async modelIds(req, res) {
+  async getModelIds(req, res) {
     const { model, ...searchParams } = req.query;
-    const data = await imageSessionUsecase.modelIds({ model, searchParams });
+    const data = await imageSessionUsecase.getModelIds({ model, searchParams });
     return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_IDS_FETCHED, TK);
   }
 }

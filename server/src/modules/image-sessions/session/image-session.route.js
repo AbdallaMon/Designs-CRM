@@ -39,7 +39,7 @@ router.get(
   "/ids",
   AuthMiddleware.requirePermissions([P.SESSION_VIEW]),
   validate(ImageSessionValidation.modelIdsQuery, "query"),
-  asyncHandler(imageSessionController.modelIds),
+  asyncHandler(imageSessionController.getModelIds),
 );
 
 // ── lead-scoped session list + create ─────────────────────────────────────────────────

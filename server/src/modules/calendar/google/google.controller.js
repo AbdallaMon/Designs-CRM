@@ -24,7 +24,7 @@ class GoogleCalendarController {
   // GET /google/callback — PUBLIC OAuth callback. Google redirects the browser here with
   // ?code&state. Behavior frozen: on success/failure redirect to the legacy dashboard URL.
   // We do NOT log code/state/tokens.
-  async callback(req, res) {
+  async handleOAuthCallback(req, res) {
     const { code, state } = req.query;
     if (!code || !state) {
       return res.status(400).send("Missing authorization code or state");

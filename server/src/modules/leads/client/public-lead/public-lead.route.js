@@ -49,7 +49,7 @@ router.post(
   "/cooperation-requests",
   generalLeadLimiter,
   validate(PublicLeadValidation.cooperationRequest),
-  asyncHandler(publicLeadController.cooperationRequest),
+  asyncHandler(publicLeadController.createCooperationRequest),
 );
 
 export { router as publicLeadRouter };

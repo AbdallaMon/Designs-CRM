@@ -130,13 +130,13 @@ describe("dashboard permission grant (every authed role)", () => {
 describe("DashboardUsecase scope (IDOR-class fix)", () => {
   // The metric endpoints that forward an effective staffId to a legacy aggregation.
   const METRIC_CASES = [
-    ["keyMetrics", "getKeyMetrics"],
-    ["leadsStatus", "getDashboardLeadStatusData"],
-    ["monthlyPerformance", "getMonthlyPerformanceData"],
-    ["emiratesAnalytics", "getEmiratesAnalytics"],
-    ["leadsMonthlyOverview", "getLeadsMonthlyOverview"],
-    ["weekPerformance", "getPerformanceMetrics"],
-    ["designerMetrics", "getDesignerMetrics"],
+    ["getKeyMetrics", "getKeyMetrics"],
+    ["getLeadsStatus", "getDashboardLeadStatusData"],
+    ["getMonthlyPerformance", "getMonthlyPerformanceData"],
+    ["getEmiratesAnalytics", "getEmiratesAnalytics"],
+    ["getLeadsMonthlyOverview", "getLeadsMonthlyOverview"],
+    ["getWeekPerformance", "getPerformanceMetrics"],
+    ["getDesignerMetrics", "getDesignerMetrics"],
   ];
 
   for (const role of SCOPED_ROLES) {
@@ -154,14 +154,14 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
   for (const role of ADMIN_TIER) {
     it(`${role} → keyMetrics: a client ?staffId=999 IS honored (privileged, preserved 1:1)`, async () => {
       const { usecase, legacy } = makeUsecase();
-      await usecase.keyMetrics({ query: { staffId: 999 }, authUser: authFor(role, 7) });
+      await usecase.getKeyMetrics({ query: { staffId: 999 }, authUser: authFor(role, 7) });
       const sp = legacy.getKeyMetrics.mock.calls[0][0];
       expect(sp.staffId).toBe("999");
     });
 
     it(`${role} → keyMetrics: NO staffId yields the GLOBAL aggregate (no staffId forwarded)`, async () => {
       const { usecase, legacy } = makeUsecase();
-      await usecase.keyMetrics({ query: {}, authUser: authFor(role, 7) });
+      await usecase.getKeyMetrics({ query: {}, authUser: authFor(role, 7) });
       const sp = legacy.getKeyMetrics.mock.calls[0][0];
       expect(sp.staffId).toBeUndefined();
     });
@@ -169,7 +169,7 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
 
   it("isSuperSales (non-admin base role) is treated as admin-tier (legacy isAdmin union)", async () => {
     const { usecase, legacy } = makeUsecase();
-    await usecase.keyMetrics({
+    await usecase.getKeyMetrics({
       query: { staffId: 999 },
       authUser: authFor(USER_ROLES.SUPER_SALES, 7, true),
     });
@@ -180,7 +180,7 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
     // Even if a scoped role's request carried role in the query, the usecase only reads
     // authUser.role; here we prove the auth role (STAFF) drives the scope, not the query.
     const { usecase, legacy } = makeUsecase();
-    await usecase.keyMetrics({
+    await usecase.getKeyMetrics({
       query: { staffId: 999, role: "ADMIN" }, // attacker tries to escalate via ?role=
       authUser: authFor(USER_ROLES.STAFF, 7),
     });
@@ -189,13 +189,13 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
 
   it("the TOKEN role is forwarded to getKeyMetrics (not a query role)", async () => {
     const { usecase, legacy } = makeUsecase();
-    await usecase.keyMetrics({ query: { role: "ADMIN" }, authUser: authFor(USER_ROLES.STAFF, 7) });
+    await usecase.getKeyMetrics({ query: { role: "ADMIN" }, authUser: authFor(USER_ROLES.STAFF, 7) });
     expect(legacy.getKeyMetrics.mock.calls[0][1]).toBe(USER_ROLES.STAFF);
   });
 
   it("date filters survive sanitization; profile flag is forwarded", async () => {
     const { usecase, legacy } = makeUsecase();
-    await usecase.keyMetrics({
+    await usecase.getKeyMetrics({
       query: { startDate: "2026-01-01", endDate: "2026-02-01", profile: "true" },
       authUser: authFor(USER_ROLES.ADMIN, 7),
     });
@@ -209,11 +209,11 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
 // ════════════════════════════════════════════════════════════════════════════
 //  RECENT ACTIVITIES — self-scoped feed; client ?userId / ?staffId cannot leak
 // ════════════════════════════════════════════════════════════════════════════
-describe("DashboardUsecase.recentActivities scope", () => {
+describe("DashboardUsecase.getRecentActivities scope", () => {
   for (const role of SCOPED_ROLES) {
     it(`${role}: feed is bound to req.auth.id; client ?userId/?staffId IGNORED`, async () => {
       const { usecase, repo } = makeUsecase();
-      await usecase.recentActivities({
+      await usecase.getRecentActivities({
         query: { userId: 999, staffId: 888 },
         authUser: authFor(role, 7),
       });
@@ -223,13 +223,13 @@ describe("DashboardUsecase.recentActivities scope", () => {
 
   it("admin-tier: may filter by an actor staffId (legacy passthrough)", async () => {
     const { usecase, repo } = makeUsecase();
-    await usecase.recentActivities({ query: { staffId: 5 }, authUser: authFor(USER_ROLES.ADMIN, 7) });
+    await usecase.getRecentActivities({ query: { staffId: 5 }, authUser: authFor(USER_ROLES.ADMIN, 7) });
     expect(repo.recentActivities).toHaveBeenCalledWith({ scope: { staffId: 5 } });
   });
 
   it("admin-tier: no staffId yields the global feed ({} scope)", async () => {
     const { usecase, repo } = makeUsecase();
-    await usecase.recentActivities({ query: {}, authUser: authFor(USER_ROLES.SUPER_ADMIN, 7) });
+    await usecase.getRecentActivities({ query: {}, authUser: authFor(USER_ROLES.SUPER_ADMIN, 7) });
     expect(repo.recentActivities).toHaveBeenCalledWith({ scope: {} });
   });
 
@@ -239,7 +239,7 @@ describe("DashboardUsecase.recentActivities scope", () => {
   it("non-admin: a numeric-string auth id is coerced and still self-scopes", async () => {
     const { usecase, repo } = makeUsecase();
     // a future token path could hand a numeric STRING id; coercion keeps the self-scope
-    await usecase.recentActivities({ query: {}, authUser: authFor(USER_ROLES.STAFF, "7") });
+    await usecase.getRecentActivities({ query: {}, authUser: authFor(USER_ROLES.STAFF, "7") });
     expect(repo.recentActivities).toHaveBeenCalledWith({ scope: { userId: 7 } });
   });
 
@@ -251,7 +251,7 @@ describe("DashboardUsecase.recentActivities scope", () => {
       new DashboardRepository().recentActivities(args),
     );
     await expect(
-      dashboardUsecase.recentActivities({ query: {}, authUser: authFor(USER_ROLES.STAFF, "abc") }),
+      dashboardUsecase.getRecentActivities({ query: {}, authUser: authFor(USER_ROLES.STAFF, "abc") }),
     ).rejects.toMatchObject({ statusCode: 403, message: authMessagesCodes.ACCESS_DENIED });
   });
 
@@ -267,10 +267,10 @@ describe("DashboardUsecase.recentActivities scope", () => {
 // ════════════════════════════════════════════════════════════════════════════
 //  LATEST LEADS — legacy global behavior preserved (no args, no scope)
 // ════════════════════════════════════════════════════════════════════════════
-describe("DashboardUsecase.latestLeads (legacy-preserved global pool)", () => {
+describe("DashboardUsecase.getLatestLeads (legacy-preserved global pool)", () => {
   it("calls the legacy service with NO args for every role", async () => {
     const { usecase, legacy } = makeUsecase();
-    await usecase.latestLeads();
+    await usecase.getLatestLeads();
     expect(legacy.getLatestNewLeads).toHaveBeenCalledWith();
   });
 });

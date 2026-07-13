@@ -23,13 +23,13 @@ export class UserController {
   }
 
   // ── directory (broad authed pick-lists) ──────────────────────────────────────
-  async directory(req, res) {
-    const data = await userUsecase.directory({ query: req.query, authUser: req.auth });
+  async getDirectory(req, res) {
+    const data = await userUsecase.getDirectory({ query: req.query, authUser: req.auth });
     return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
   }
 
-  async relatedChatDirectory(req, res) {
-    const data = await userUsecase.directory({ query: req.query, authUser: req.auth, relatedOnly: true });
+  async getRelatedChatDirectory(req, res) {
+    const data = await userUsecase.getDirectory({ query: req.query, authUser: req.auth, relatedOnly: true });
     return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
   }
 
@@ -40,16 +40,16 @@ export class UserController {
     return ok(res, data, userMessagesCodes.USERS_FETCHED, TK);
   }
 
-  async allUsers(req, res) {
-    const data = await userUsecase.allUsers({ query: req.query, authUser: req.auth });
+  async getAllUsers(req, res) {
+    const data = await userUsecase.getAllUsers({ query: req.query, authUser: req.auth });
     return ok(res, data, userMessagesCodes.ALL_USERS_FETCHED, TK);
   }
 
   // chat member-picker — one endpoint; the usecase branches on req.auth (admin-tier →
   // admin-wide list; non-admin → related-by-project). Returns the legacy bare user array
   // under `data` (the chat FE reads response.data directly).
-  async chatDirectory(req, res) {
-    const data = await userUsecase.chatDirectory({ query: req.query, authUser: req.auth });
+  async getChatDirectory(req, res) {
+    const data = await userUsecase.getChatDirectory({ query: req.query, authUser: req.auth });
     return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
   }
 
@@ -80,7 +80,7 @@ export class UserController {
     return ok(res, data, userMessagesCodes.USER_STATUS_TOGGLED, TK);
   }
 
-  async staffExtra(req, res) {
+  async getStaffExtra(req, res) {
     const data = await userUsecase.toggleStaffExtra({ userId: req.params.userId, body: req.body });
     return ok(res, data, userMessagesCodes.USER_STAFF_EXTRA_UPDATED, TK);
   }

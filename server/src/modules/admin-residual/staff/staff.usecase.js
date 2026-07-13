@@ -16,7 +16,7 @@
 import { getCallReminders } from "../../leads/lead/lead.usecase.js";
 
 class StaffUsecase {
-  latestCalls({ query, authUser }) {
+  getLatestCalls({ query, authUser }) {
     // Force self-scope: strip any client `staffId`, then key the frozen filter off the
     // caller's own id. A non-numeric/absent auth id surfaces as NaN at the frozen
     // `Number(searchParams.staffId)` rather than collapsing to the global (all-staff) list.

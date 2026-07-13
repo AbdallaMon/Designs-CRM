@@ -22,7 +22,7 @@ router.get(
   "/:userId/last-seen",
   AuthMiddleware.requirePermissions([P.USER_LAST_SEEN]),
   validate(SalaryValidation.userIdParams, "params"),
-  asyncHandler(salaryController.userLastSeen),
+  asyncHandler(salaryController.getUserLastSeen),
 );
 
 export { router as accountingUsersRouter };

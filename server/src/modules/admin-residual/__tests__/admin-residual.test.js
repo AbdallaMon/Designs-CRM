@@ -354,7 +354,7 @@ describe("staff latest-calls self-scope (FIX 2)", () => {
     getCallReminders.mockResolvedValue([]);
     const usecase = new StaffUsecase();
 
-    await usecase.latestCalls({
+    await usecase.getLatestCalls({
       query: { staffId: 999, startDate: "2026-01-01", endDate: "2026-02-01" },
       authUser: { id: 7, role: USER_ROLES.STAFF },
     });
@@ -370,7 +370,7 @@ describe("staff latest-calls self-scope (FIX 2)", () => {
     getCallReminders.mockResolvedValue([]);
     const usecase = new StaffUsecase();
 
-    await usecase.latestCalls({ query: {}, authUser: { id: 12, role: USER_ROLES.THREE_D_DESIGNER } });
+    await usecase.getLatestCalls({ query: {}, authUser: { id: 12, role: USER_ROLES.THREE_D_DESIGNER } });
     expect(getCallReminders.mock.calls[0][0].staffId).toBe(12);
   });
 });

@@ -210,7 +210,7 @@ class PublicLeadUsecase {
   }
 
   // POST /cooperation-requests — partner contact form → email only (no DB write).
-  async cooperationRequest(body) {
+  async createCooperationRequest(body) {
     const to =
       process.env.ISLOCAL === "true"
         ? "info@abdallaabdelsabour.com"

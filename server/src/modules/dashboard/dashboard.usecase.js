@@ -82,39 +82,39 @@ class DashboardUsecase {
   }
 
   // GET /key-metrics — role-scoped revenue/lead/commission aggregate.
-  keyMetrics({ query, authUser }) {
+  getKeyMetrics({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getKeyMetrics(sp, authUser.role);
   }
 
   // GET /leads-status — role-scoped lead-status breakdown (legacy also runs an ADMIN-only
   // commission recompute side-effect, gated on the TOKEN role — preserved).
-  leadsStatus({ query, authUser }) {
+  getLeadsStatus({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getDashboardLeadStatusData(sp, authUser.role);
   }
 
   // GET /monthly-performance — 12-month lead/revenue trend, scoped to the caller (legacy
   // was NOT role-scoped → over-exposed; now auth-scoped via the effective staffId).
-  monthlyPerformance({ query, authUser }) {
+  getMonthlyPerformance({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getMonthlyPerformanceData(sp);
   }
 
   // GET /emirates-analytics — per-emirate lead analytics, auth-scoped via effective staffId.
-  emiratesAnalytics({ query, authUser }) {
+  getEmiratesAnalytics({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getEmiratesAnalytics(sp);
   }
 
   // GET /leads-monthly-overview — inside/outside lead overview, auth-scoped via staffId.
-  leadsMonthlyOverview({ query, authUser }) {
+  getLeadsMonthlyOverview({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getLeadsMonthlyOverview(sp);
   }
 
   // GET /week-performance — weekly new/success/follow-up/meeting metrics, auth-scoped.
-  weekPerformance({ query, authUser }) {
+  getWeekPerformance({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getPerformanceMetrics(sp);
   }
@@ -122,14 +122,14 @@ class DashboardUsecase {
   // GET /latest-leads — the 5 newest NEW (unassigned) leads. Legacy takes NO args and
   // returns a GLOBAL list to every authed role; preserved 1:1 (this is the shared
   // new-lead pool, not a per-user metric). Flagged for documentation as legacy-preserved.
-  latestLeads() {
+  getLatestLeads() {
     return getLatestNewLeads();
   }
 
   // GET /recent-activities — the caller's recent activity feed. Legacy keyed it off a
   // client `staffId` AND a client `userId` → cross-user read. Here: admin-tier may filter
   // by an actor `staffId` (or global); every other role is bound to their own userId.
-  async recentActivities({ query, authUser }) {
+  async getRecentActivities({ query, authUser }) {
     let scope;
     if (this.#isAdminTier(authUser)) {
       scope = query?.staffId ? { staffId: query.staffId } : {};
@@ -145,7 +145,7 @@ class DashboardUsecase {
   // keyed off a client staffId → a scoped designer could read another designer's metrics.
   // Now auth-scoped: admin-tier may pass a staffId (or global), everyone else is forced to
   // their own id.
-  designerMetrics({ query, authUser }) {
+  getDesignerMetrics({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
     return getDesignerMetrics(sp);
   }

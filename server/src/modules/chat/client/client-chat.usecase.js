@@ -27,7 +27,7 @@ import { chatRepository } from "../chat.socket.js";
 import { addDayGrouping, addMonthGrouping } from "../chat.helpers.js";
 
 export class ClientChatUsecase {
-  async repo() {
+  async getChatRepository() {
     return chatRepository;
   }
 
@@ -36,7 +36,7 @@ export class ClientChatUsecase {
   // `:roomId` matches the token's room. Returns { room, chatMember } where
   // chatMember is the client member behind the token (used as the read scope).
   async resolveRoom({ token, roomId = null }) {
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     const resolved = await repo.findRoomByAccessToken(token);
     if (!resolved?.room) {
       // No token / token does not resolve to a room. 404 — do not leak whether the
@@ -73,7 +73,7 @@ export class ClientChatUsecase {
   // {id,name} users, no secrets). otherMembers/lastSeenAt mirror the authed shape.
   async getRoom({ token, roomId }) {
     const resolved = await this.resolveRoom({ token, roomId });
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     const clientId = this.clientIdOf(resolved);
 
     const room = await repo.getRoomById(resolved.room.id, null, clientId);
@@ -99,7 +99,7 @@ export class ClientChatUsecase {
   // the room read for the client member — the side effect legacy getMessages had.
   async getMessages({ token, roomId, page, limit }) {
     const resolved = await this.resolveRoom({ token, roomId });
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     const clientId = this.clientIdOf(resolved);
 
     const member = resolved.chatMember;
@@ -145,7 +145,7 @@ export class ClientChatUsecase {
   // getMessages). Best-effort — never blocks the read; socket emit is skipped here
   // (the public read path is not a socket connection).
   async markRoomRead({ resolved }) {
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     const member = resolved.chatMember;
     if (!member) return;
     const clientId = this.clientIdOf(resolved);
@@ -168,7 +168,7 @@ export class ClientChatUsecase {
   // the authed repository's getMessageIndexInRoom.
   async getMessagePage({ token, roomId, messageId, limit }) {
     const resolved = await this.resolveRoom({ token, roomId });
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
 
     const message = await repo.getMessageById(messageId);
     if (!message || Number(message.roomId) !== Number(resolved.room.id)) {
@@ -183,7 +183,7 @@ export class ClientChatUsecase {
   // projection (narrow {id,name} users). Returns the array (legacy `data`).
   async getPinnedMessages({ token, roomId }) {
     const resolved = await this.resolveRoom({ token, roomId });
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     const pins = await repo.getPinnedMessages(resolved.room.id);
     return pins.map((p) => p.message);
   }
@@ -194,7 +194,7 @@ export class ClientChatUsecase {
   // selects — no full User rows).
   async getMembers({ token, roomId }) {
     const resolved = await this.resolveRoom({ token, roomId });
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     return repo.getMembers(resolved.room.id);
   }
 
@@ -205,7 +205,7 @@ export class ClientChatUsecase {
   // addMonthGrouping helper. `sort`/`uniqueMonths` JSON parse is guarded.
   async getFiles({ token, roomId, query }) {
     const resolved = await this.resolveRoom({ token, roomId });
-    const repo = await this.repo();
+    const repo = await this.getChatRepository();
     const { page, limit, sort, type, search, from, to, uniqueMonths } = query;
 
     const parsedUniqueMonths = safeJsonParse(uniqueMonths, {});

@@ -21,8 +21,8 @@ const router = Router();
 router.use(AuthMiddleware.requireAuth);
 
 // ── designer board lists (collection reads; narrowed by role/self, no object checker) ──
-router.get("/designers", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.designers));
-router.get("/designers/columns", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.designerColumns));
+router.get("/designers", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.getDesigners));
+router.get("/designers/columns", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.getDesignerColumns));
 
 // ── designer-board project status change → workflow action (was PUT /designers/:leadId/status).
 //    Object scope keys off the PROJECT id in the BODY (body.id), not :leadId. Declared
@@ -42,7 +42,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(ProjectValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessProject),
-  asyncHandler(projectController.designerLeadDetail),
+  asyncHandler(projectController.getDesignerLeadDetail),
 );
 
 // ── other literal list surfaces (before /:id) ─────────────────────────────────────
@@ -52,7 +52,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(ProjectValidation.userIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessUserProfile),
-  asyncHandler(projectController.userProjects),
+  asyncHandler(projectController.getUserProjects),
 );
 
 // ── projects list by clientLead (?clientLeadId) — object-scoped on the lead ───────
