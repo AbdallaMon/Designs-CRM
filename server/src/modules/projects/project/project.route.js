@@ -46,7 +46,7 @@ router.get(
 );
 
 // ── other literal list surfaces (before /:id) ─────────────────────────────────────
-router.get("/archived", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.archived));
+router.get("/archived", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.getArchivedProjects));
 router.get(
   "/user-profile/:userId",
   AuthMiddleware.requirePermissions([P.LIST]),
@@ -70,7 +70,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(ProjectValidation.leadIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessLeadProjects),
-  asyncHandler(projectController.groups),
+  asyncHandler(projectController.getProjectGroups),
 );
 
 // ── project detail (object-scoped READ) ──────────────────────────────────────────
@@ -79,7 +79,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(ProjectValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessProject),
-  asyncHandler(projectController.getById),
+  asyncHandler(projectController.getProject),
 );
 
 // ── plain field/status edit (object-scoped MUTATE) ───────────────────────────────

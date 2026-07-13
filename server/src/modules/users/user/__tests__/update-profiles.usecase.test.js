@@ -5,27 +5,33 @@ vi.mock("../../../../infra/audit/auth-audit.repo.js", () => ({
   AUTH_AUDIT_ACTIONS: { PROFILE_ASSIGN: "PROFILE_ASSIGN", PROFILE_REMOVE: "PROFILE_REMOVE", PROFILE_SWITCH: "PROFILE_SWITCH" },
 }));
 
-import { UserUsecase } from "../user.usecase.js";
+// DI removed: the usecase calls the imported `userRepository` singleton directly.
+vi.mock("../user.repo.js", () => ({
+  userRepository: {
+    findProfilesByIds: vi.fn(),
+    getUserProfileIds: vi.fn(),
+    setUserProfiles: vi.fn(),
+  },
+}));
+
+import { userUsecase } from "../user.usecase.js";
+import { userRepository } from "../user.repo.js";
 import { authAuditRepository } from "../../../../infra/audit/auth-audit.repo.js";
 
-function makeUsecase() {
-  const repo = {
-    findProfilesByIds: vi.fn(async ({ ids }) =>
-      ids.map((id) => ({ id, key: id === 5 ? "ACCOUNTANT" : "NORMAL_SALES", baseRole: id === 5 ? "ACCOUNTANT" : "STAFF" })),
-    ),
-    getUserProfileIds: vi.fn(async () => [2]),
-    setUserProfiles: vi.fn(async (args) => args),
-  };
-  return { uc: new UserUsecase(repo), repo };
-}
-
 describe("updateUserProfiles", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default fixture (individual tests override): profile 5 = ACCOUNTANT, others NORMAL_SALES.
+    userRepository.findProfilesByIds.mockImplementation(async ({ ids }) =>
+      ids.map((id) => ({ id, key: id === 5 ? "ACCOUNTANT" : "NORMAL_SALES", baseRole: id === 5 ? "ACCOUNTANT" : "STAFF" })),
+    );
+    userRepository.getUserProfileIds.mockResolvedValue([2]);
+    userRepository.setUserProfiles.mockImplementation(async (args) => args);
+  });
 
   it("adds new profiles, sets current, syncs legacy columns, audits the add", async () => {
-    const { uc, repo } = makeUsecase();
-    const res = await uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 5 });
-    const args = repo.setUserProfiles.mock.calls[0][0];
+    const res = await userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 5 });
+    const args = userRepository.setUserProfiles.mock.calls[0][0];
     expect(args).toMatchObject({ userId: 1, addIds: [5], removeIds: [], currentProfileId: 5, assignedByUserId: 99 });
     expect(args.legacySync).toEqual({ role: "ACCOUNTANT", isPrimary: false, isSuperSales: false, profileKey: "ACCOUNTANT" });
     expect(authAuditRepository.record).toHaveBeenCalledWith(
@@ -35,10 +41,9 @@ describe("updateUserProfiles", () => {
   });
 
   it("removes de-selected profiles and audits removals; current defaults to first desired", async () => {
-    const { uc, repo } = makeUsecase();
-    repo.getUserProfileIds.mockResolvedValue([2, 5]);
-    await uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2] });
-    const args = repo.setUserProfiles.mock.calls[0][0];
+    userRepository.getUserProfileIds.mockResolvedValue([2, 5]);
+    await userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2] });
+    const args = userRepository.setUserProfiles.mock.calls[0][0];
     expect(args.removeIds).toEqual([5]);
     expect(args.currentProfileId).toBe(2);
     expect(authAuditRepository.record).toHaveBeenCalledWith(
@@ -47,44 +52,34 @@ describe("updateUserProfiles", () => {
   });
 
   it("rejects an empty profileIds list (a user must keep ≥1 profile)", async () => {
-    const { uc } = makeUsecase();
-    await expect(uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [] }))
+    await expect(userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [] }))
       .rejects.toMatchObject({ statusCode: 400 });
   });
 
   it("falls back current to the first desired when currentProfileId is not in the set", async () => {
-    const { uc, repo } = makeUsecase();
-    await uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 999 });
-    expect(repo.setUserProfiles.mock.calls[0][0].currentProfileId).toBe(2);
+    await userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 999 });
+    expect(userRepository.setUserProfiles.mock.calls[0][0].currentProfileId).toBe(2);
   });
 
   it("rejects more than one sales-tier profile (Sales/Primary/Super are mutually exclusive)", async () => {
-    const repo = {
-      findProfilesByIds: vi.fn(async () => [
-        { id: 2, key: "NORMAL_SALES", baseRole: "STAFF" },
-        { id: 3, key: "SUPER_SALES", baseRole: "STAFF" },
-      ]),
-      getUserProfileIds: vi.fn(async () => []),
-      setUserProfiles: vi.fn(async (a) => a),
-    };
-    const uc = new UserUsecase(repo);
+    userRepository.findProfilesByIds.mockResolvedValue([
+      { id: 2, key: "NORMAL_SALES", baseRole: "STAFF" },
+      { id: 3, key: "SUPER_SALES", baseRole: "STAFF" },
+    ]);
+    userRepository.getUserProfileIds.mockResolvedValue([]);
     await expect(
-      uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 3] }),
+      userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 3] }),
     ).rejects.toMatchObject({ statusCode: 400, code: "USER_SALES_TIER_EXCLUSIVE" });
-    expect(repo.setUserProfiles).not.toHaveBeenCalled();
+    expect(userRepository.setUserProfiles).not.toHaveBeenCalled();
   });
 
   it("allows one sales-tier profile combined with a different family", async () => {
-    const repo = {
-      findProfilesByIds: vi.fn(async () => [
-        { id: 2, key: "SUPER_SALES", baseRole: "STAFF" },
-        { id: 5, key: "ACCOUNTANT", baseRole: "ACCOUNTANT" },
-      ]),
-      getUserProfileIds: vi.fn(async () => []),
-      setUserProfiles: vi.fn(async (a) => a),
-    };
-    const uc = new UserUsecase(repo);
-    await uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 2 });
-    expect(repo.setUserProfiles).toHaveBeenCalledOnce();
+    userRepository.findProfilesByIds.mockResolvedValue([
+      { id: 2, key: "SUPER_SALES", baseRole: "STAFF" },
+      { id: 5, key: "ACCOUNTANT", baseRole: "ACCOUNTANT" },
+    ]);
+    userRepository.getUserProfileIds.mockResolvedValue([]);
+    await userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 2 });
+    expect(userRepository.setUserProfiles).toHaveBeenCalledOnce();
   });
 });

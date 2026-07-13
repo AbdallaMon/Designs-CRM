@@ -9,7 +9,7 @@
 //
 // 🔒 The Stripe SDK calls are FROZEN (relocated verbatim into payments.stripe.js); the billing
 // normalization (`first`/`asKV`) lives in payments.dto.js and is imported directly. The email
-// side effects use the frozen `src/infra/notifications/index.js` via lazy adapters.
+// side effects use the frozen `src/infra/notifications/index.js` senders directly.
 //
 // IDOR CLOSE (vs legacy): legacy `/payment-status` marked the lead identified by the
 // CLIENT-SUPPLIED `clientLeadId` as FULLY_PAID once ANY `sessionId` came back `paid` — a
@@ -27,51 +27,28 @@ import {
 } from "./payments.stripe.js";
 import { first, asKV } from "./payments.dto.js";
 import { paymentsRepository } from "./payments.repo.js";
-
-const C = clientPortalMessagesCodes;
-
-const legacyDefaults = {
-  sendPaymentReminderEmail: (...a) =>
-    import("../../../infra/notifications/index.js").then((m) =>
-      m.sendPaymentReminderEmail(...a),
-    ),
-  sendPaymentSuccessEmail: (...a) =>
-    import("../../../infra/notifications/index.js").then((m) =>
-      m.sendPaymentSuccessEmail(...a),
-    ),
-  leadPaymentSuccessed: (id) =>
-    import("../../../infra/notifications/index.js").then((m) =>
-      m.leadPaymentSuccessed(id),
-    ),
-};
+import {
+  sendPaymentReminderEmail,
+  sendPaymentSuccessEmail,
+  leadPaymentSuccessed,
+} from "../../../infra/notifications/index.js";
 
 export class PaymentsUsecase {
-  constructor(repository, stripe = {}, legacy = {}) {
-    this.repository = repository;
-    this.stripe = {
-      createCheckoutSession,
-      retrieveCheckoutSession,
-      listCheckoutSessions,
-      ...stripe,
-    };
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
   // POST /pay — create the checkout for the lead, email the reminder. Returns `{ url }` so the
   // FE redirect is unchanged.
   async pay({ clientId, clientLeadId, lng }) {
-    const lead = await this.repository.getLeadWithClient(clientLeadId);
+    const lead = await paymentsRepository.getLeadWithClient(clientLeadId);
     if (!lead?.client) {
-      throw new AppError(C.PAYMENT_LEAD_NOT_FOUND, 404);
+      throw new AppError(clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, 404);
     }
 
-    const session = await this.stripe.createCheckoutSession({
+    const session = await createCheckoutSession({
       clientId,
       clientLeadId,
       lng,
     });
 
-    await this.legacy.sendPaymentReminderEmail(
+    await sendPaymentReminderEmail(
       lead.client.email,
       lead.client.name,
       session.url,
@@ -84,7 +61,7 @@ export class PaymentsUsecase {
   // GET /payment-status — verify a checkout. On `paid`, the lead is the one named in the
   // VERIFIED session metadata; the client-supplied clientLeadId must match it.
   async paymentStatus({ sessionId, clientLeadId, lng }) {
-    const session = await this.stripe.retrieveCheckoutSession(sessionId);
+    const session = await retrieveCheckoutSession(sessionId);
 
     if (session.payment_status !== "paid") {
       // Legacy returned 402 with a prose message; we return a code (the controller maps the
@@ -95,23 +72,23 @@ export class PaymentsUsecase {
     // IDOR close: trust the SESSION, not the caller's clientLeadId.
     const metaLeadId = session.metadata?.clientLeadId;
     if (!metaLeadId || Number(metaLeadId) !== Number(clientLeadId)) {
-      throw new AppError(C.PAYMENT_NOT_ALLOWED, 403);
+      throw new AppError(clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, 403);
     }
 
-    const lead = await this.repository.getLeadPaymentState(metaLeadId);
+    const lead = await paymentsRepository.getLeadPaymentState(metaLeadId);
     if (!lead) {
-      throw new AppError(C.PAYMENT_LEAD_NOT_FOUND, 404);
+      throw new AppError(clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, 404);
     }
 
     if (lead.paymentStatus !== "FULLY_PAID") {
-      await this.repository.markFullyPaid(metaLeadId, session.id);
-      await this.legacy.leadPaymentSuccessed(metaLeadId);
+      await paymentsRepository.markFullyPaid(metaLeadId, session.id);
+      await leadPaymentSuccessed(metaLeadId);
     }
 
     const kv = await this.#buildBillingKV(session);
-    await this.repository.saveStripeMetadata(metaLeadId, kv);
+    await paymentsRepository.saveStripeMetadata(metaLeadId, kv);
 
-    await this.legacy.sendPaymentSuccessEmail(
+    await sendPaymentSuccessEmail(
       lead.client.email,
       lead.client.name,
       metaLeadId,
@@ -127,7 +104,7 @@ export class PaymentsUsecase {
     // Fail CLOSED: if the dedicated secret is unset, deny rather than open the gate
     // (the old `pass !== SECRET_KEY` opened when both sides were undefined).
     if (!env.BACKFILL_SECRET || pass !== env.BACKFILL_SECRET) {
-      throw new AppError(C.PAYMENT_NOT_ALLOWED, 403);
+      throw new AppError(clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, 403);
     }
     return { ok: true };
   }
@@ -211,7 +188,7 @@ export class PaymentsUsecase {
     let processed = 0;
 
     for (let page = 0; page < maxPages; page++) {
-      const list = await this.stripe.listCheckoutSessions({
+      const list = await listCheckoutSessions({
         limit: limitPerPage,
         starting_after,
         sinceEpoch,
@@ -231,10 +208,10 @@ export class PaymentsUsecase {
         const { normalized } = await normalizeFromSession(session);
         const kv = asKV(normalized);
 
-        const lead = await this.repository.findLeadById(leadId);
+        const lead = await paymentsRepository.findLeadById(leadId);
         if (!lead) continue;
 
-        await this.repository.saveStripeMetadata(leadId, kv);
+        await paymentsRepository.saveStripeMetadata(leadId, kv);
 
         processed++;
       }
@@ -246,4 +223,4 @@ export class PaymentsUsecase {
   }
 }
 
-export const paymentsUsecase = new PaymentsUsecase(paymentsRepository);
+export const paymentsUsecase = new PaymentsUsecase();

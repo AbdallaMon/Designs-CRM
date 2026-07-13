@@ -1,3 +1,5 @@
+import { chatRepository } from "./chat.repo.js";
+
 // Lazily resolve the socket server at call time. A static `import { getIo }`
 // here would recreate a load-order-fragile cycle:
 // infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
@@ -16,7 +18,7 @@ export const callMethods = {
   // ── Calls (socket-triggered) ───────────────────────────────────────────────
 
   async initiateCall({ roomId, callType, userId }) {
-    const call = await this.repository.createCall({
+    const call = await chatRepository.createCall({
       roomId,
       initiatorId: userId,
       type: callType,
@@ -33,8 +35,8 @@ export const callMethods = {
   },
 
   async answerCall({ callId, roomId, userId }) {
-    await this.repository.updateCall(callId, { status: "ONGOING" });
-    await this.repository.addCallParticipant({ callId, userId });
+    await chatRepository.updateCall(callId, { status: "ONGOING" });
+    await chatRepository.addCallParticipant({ callId, userId });
     const io = await getIo();
     io.to(`room:${roomId}`).emit("call:answered", {
       callId: Number(callId),
@@ -44,13 +46,13 @@ export const callMethods = {
   },
 
   async endCall({ callId, roomId, userId }) {
-    const call = await this.repository.updateCall(callId, {
+    const call = await chatRepository.updateCall(callId, {
       status: "ENDED",
       endedAt: new Date(),
     });
     if (call.startedAt) {
       const duration = Math.floor((new Date() - call.startedAt) / 1000);
-      await this.repository.updateCall(callId, { duration });
+      await chatRepository.updateCall(callId, { duration });
     }
     const io = await getIo();
     io.to(`room:${roomId}`).emit("call:ended", {

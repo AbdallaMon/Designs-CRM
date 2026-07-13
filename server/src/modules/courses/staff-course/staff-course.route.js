@@ -20,7 +20,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { staffCourseController } from "./staff-course.controller.js";
-import { StaffCourseValidation as V } from "./staff-course.validation.js";
+import { StaffCourseValidation } from "./staff-course.validation.js";
 
 const P = PERMISSIONS.STAFF_COURSE;
 const ctrl = staffCourseController;
@@ -32,7 +32,7 @@ staffCourseRouter.use(AuthMiddleware.requireAuth);
 staffCourseRouter.get(
   "/",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.listQuery, "query"),
+  validate(StaffCourseValidation.listQuery, "query"),
   asyncHandler(ctrl.listCourses),
 );
 staffCourseRouter.get(
@@ -45,39 +45,39 @@ staffCourseRouter.get(
 staffCourseRouter.get(
   "/tests/:testId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.testParams, "params"),
+  validate(StaffCourseValidation.testParams, "params"),
   asyncHandler(ctrl.getTest),
 );
 staffCourseRouter.get(
   "/tests/:testId/test-questions",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.testParams, "params"),
+  validate(StaffCourseValidation.testParams, "params"),
   asyncHandler(ctrl.getTestQuestions),
 );
 staffCourseRouter.get(
   "/tests/:testId/attampts",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.testParams, "params"),
+  validate(StaffCourseValidation.testParams, "params"),
   asyncHandler(ctrl.getUserAttempts),
 );
 staffCourseRouter.get(
   "/tests/:testId/attampts/:attamptId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.attemptParams, "params"),
+  validate(StaffCourseValidation.attemptParams, "params"),
   AuthMiddleware.requireSpecialChecker(ctrl.checkIfUserCanAccessAttempt),
   asyncHandler(ctrl.getUserAttempt),
 );
 staffCourseRouter.post(
   "/tests/:testId/attampts",
   AuthMiddleware.requirePermissions([P.TAKE]),
-  validate(V.testParams, "params"),
+  validate(StaffCourseValidation.testParams, "params"),
   asyncHandler(ctrl.createAttempt),
 );
 staffCourseRouter.post(
   "/tests/:testId/attampts/:attemptId/questions/:questionId",
   AuthMiddleware.requirePermissions([P.TAKE]),
-  validate(V.submitAnswerParams, "params"),
-  validate(V.submitAnswerBody),
+  validate(StaffCourseValidation.submitAnswerParams, "params"),
+  validate(StaffCourseValidation.submitAnswerBody),
   // C1: submit-answer is OWNER-scoped (param spelled `attemptId`). Blocks cross-user
   // answer injection (IDOR). Mounted after requirePermissions, before the handler.
   AuthMiddleware.requireSpecialChecker(ctrl.checkIfUserCanMutateAttempt),
@@ -86,7 +86,7 @@ staffCourseRouter.post(
 staffCourseRouter.put(
   "/tests/:testId/attampts/:attemptId",
   AuthMiddleware.requirePermissions([P.TAKE]),
-  validate(V.endAttemptParams, "params"),
+  validate(StaffCourseValidation.endAttemptParams, "params"),
   // C2: end-attempt is OWNER-scoped (param spelled `attemptId`). Blocks ending /
   // re-scoring another user's attempt (IDOR).
   AuthMiddleware.requireSpecialChecker(ctrl.checkIfUserCanMutateAttempt),
@@ -97,21 +97,21 @@ staffCourseRouter.put(
 staffCourseRouter.get(
   "/:courseId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.courseParams, "params"),
-  validate(V.roleQuery, "query"),
+  validate(StaffCourseValidation.courseParams, "params"),
+  validate(StaffCourseValidation.roleQuery, "query"),
   asyncHandler(ctrl.getCourse),
 );
 staffCourseRouter.get(
   "/:courseId/progress",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.courseParams, "params"),
+  validate(StaffCourseValidation.courseParams, "params"),
   asyncHandler(ctrl.getCourseProgress),
 );
 staffCourseRouter.get(
   "/:courseId/lessons/:lessonId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
-  validate(V.roleQuery, "query"),
+  validate(StaffCourseValidation.lessonParams, "params"),
+  validate(StaffCourseValidation.roleQuery, "query"),
   asyncHandler(ctrl.getLesson),
 );
 // Mark lesson complete — legacy `PATCH /:courseId/lessons/:lessonId` converted to the
@@ -119,20 +119,20 @@ staffCourseRouter.get(
 staffCourseRouter.post(
   "/:courseId/lessons/:lessonId/actions/complete",
   AuthMiddleware.requirePermissions([P.TAKE]),
-  validate(V.lessonParams, "params"),
+  validate(StaffCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.markLessonComplete),
 );
 staffCourseRouter.get(
   "/:courseId/lessons/:lessonId/home-work",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
+  validate(StaffCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.getHomeworks),
 );
 staffCourseRouter.post(
   "/:courseId/lessons/:lessonId/home-work",
   AuthMiddleware.requirePermissions([P.TAKE]),
-  validate(V.lessonParams, "params"),
-  validate(V.homeworkBody),
+  validate(StaffCourseValidation.lessonParams, "params"),
+  validate(StaffCourseValidation.homeworkBody),
   asyncHandler(ctrl.createHomework),
 );
 

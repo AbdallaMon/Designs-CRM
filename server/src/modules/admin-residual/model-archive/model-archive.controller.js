@@ -4,22 +4,18 @@ import { ok } from "../../../shared/http/response.js";
 import { adminResidualMessagesCodes, messagesNames } from "@dms/shared";
 import { modelArchiveUsecase } from "./model-archive.usecase.js";
 
-const M = adminResidualMessagesCodes;
 const TK = messagesNames.adminResidualMessages;
 
-export class ModelArchiveController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  archive = async (req, res) => {
-    const data = await this.usecase.archive({
+class ModelArchiveController {
+  async archiveModel(req, res) {
+    const data = await modelArchiveUsecase.archiveModel({
       model: req.query.model,
       id: req.params.id,
       isArchived: req.body.isArchived,
     });
-    return ok(res, data, M.MODEL_ARCHIVE_UPDATED, TK);
-  };
+    return ok(res, data, adminResidualMessagesCodes.MODEL_ARCHIVE_UPDATED, TK);
+  }
 }
 
-export const modelArchiveController = new ModelArchiveController(modelArchiveUsecase);
+export const modelArchiveController = new ModelArchiveController();
+export { ModelArchiveController };

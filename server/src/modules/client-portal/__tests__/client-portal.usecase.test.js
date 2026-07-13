@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { AppError } from "../../../shared/errors/AppError.js";
 import {
@@ -6,17 +6,83 @@ import {
   leadsMessagesCodes,
 } from "@dms/shared";
 
-import { PublicLeadUsecase } from "../../leads/client/public-lead/public-lead.usecase.js";
+// ── Module mocks for the DI-free notes/payments/languages usecases ───────────
+// These now call directly-imported singletons + lazy adapters (no constructor
+// injection). Mock those seams so the tests drive them like the old injection.
+vi.mock("../../notes/note.usecase.js", () => ({
+  getNotes: vi.fn(),
+  addNote: vi.fn(),
+}));
+vi.mock("../notes/notes.repo.js", () => ({
+  clientNotesRepository: {
+    findSessionIdByToken: vi.fn(),
+    findSelectedImageOwnerSessionId: vi.fn(),
+  },
+}));
+vi.mock("../payments/payments.stripe.js", () => ({
+  createCheckoutSession: vi.fn(),
+  retrieveCheckoutSession: vi.fn(),
+  listCheckoutSessions: vi.fn(),
+  getLeadIdFromUrl: vi.fn(),
+  normalizeFromSession: vi.fn(),
+}));
+vi.mock("../payments/payments.repo.js", () => ({
+  paymentsRepository: {
+    getLeadWithClient: vi.fn(),
+    getLeadPaymentState: vi.fn(),
+    markFullyPaid: vi.fn(),
+    saveStripeMetadata: vi.fn(),
+    findLeadById: vi.fn(),
+  },
+}));
+vi.mock("../../../infra/notifications/index.js", () => ({
+  sendPaymentReminderEmail: vi.fn(),
+  sendPaymentSuccessEmail: vi.fn(),
+  leadPaymentSuccessed: vi.fn(),
+  // public-lead funnel notifications (now statically imported by public-lead.usecase)
+  newLeadNotification: vi.fn(),
+  newClientLeadNotification: vi.fn(),
+  newLeadCompletedNotification: vi.fn(),
+}));
+vi.mock("../../image-sessions/services/languages.js", () => ({
+  getLanguages: vi.fn(),
+}));
+// The public-lead funnel now reaches the lead code generator + file attach via a STATIC
+// import from the lead repo (the former lazy `publicLeadDeps` adapters were removed) — and
+// the cooperation email via the mail infra. Mock both so the funnel side effects are inert.
+vi.mock("../../leads/lead/lead.repo.js", () => ({
+  leadRepository: {
+    generateCodeForNewLead: vi.fn(),
+    uploadFile: vi.fn(),
+  },
+}));
+vi.mock("../../../infra/mail/send-mail.js", () => ({
+  sendEmail: vi.fn(),
+}));
+
+import { publicLeadUsecase } from "../../leads/client/public-lead/public-lead.usecase.js";
+import { publicLeadRepository } from "../../leads/client/public-lead/public-lead.repo.js";
+import { leadRepository } from "../../leads/lead/lead.repo.js";
 import { PublicLeadValidation as LV } from "../../leads/client/public-lead/public-lead.validation.js";
-import { NotesUsecase } from "../notes/notes.usecase.js";
+import { notesUsecase } from "../notes/notes.usecase.js";
 import { NotesValidation as NV } from "../notes/notes.validation.js";
-import { PaymentsUsecase } from "../payments/payments.usecase.js";
+import { paymentsUsecase } from "../payments/payments.usecase.js";
 import { PaymentsValidation as PV } from "../payments/payments.validation.js";
-import { LanguagesUsecase } from "../languages/languages.usecase.js";
+import { languagesUsecase } from "../languages/languages.usecase.js";
 import { LanguagesValidation as LangV } from "../languages/languages.validation.js";
+
+import { addNote as mockAddNote } from "../../notes/note.usecase.js";
+import { clientNotesRepository } from "../notes/notes.repo.js";
+import { retrieveCheckoutSession } from "../payments/payments.stripe.js";
+import { paymentsRepository } from "../payments/payments.repo.js";
+import { getLanguages as mockGetLanguages } from "../../image-sessions/services/languages.js";
 
 const CP = clientPortalMessagesCodes;
 const LC = leadsMessagesCodes;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 // ════════════════════════════════════════════════════════════════════════════
 //  PUBLIC LEAD FUNNEL — distinct from booking-leads; public; prose→codes
@@ -41,18 +107,20 @@ describe("public lead funnel (legacy /client/leads.js)", () => {
     };
   }
 
-  const legacy = () => ({
-    generateCodeForNewLead: vi.fn(async () => "0000001.1"),
-    uploadFile: vi.fn(async () => ({ id: 9 })),
-    newLeadNotification: vi.fn(async () => {}),
-    newClientLeadNotification: vi.fn(async () => {}),
-    newLeadCompletedNotification: vi.fn(async () => {}),
-    sendEmail: vi.fn(async () => {}),
-  });
+  // Prime the statically-imported lead-repo adapters the funnel now calls directly. The
+  // notification + mail seams are already inert vi.fn()s from their module mocks above.
+  function primeLegacy() {
+    leadRepository.generateCodeForNewLead.mockResolvedValue("0000001.1");
+    leadRepository.uploadFile.mockResolvedValue({ id: 9 });
+  }
 
   it("createLead: new client → creates lead with NEW status and a code (no prose)", async () => {
     const repo = makeRepo();
-    const uc = new PublicLeadUsecase(repo, legacy());
+    // DI removed from PublicLeadUsecase — assign the mocks onto the singletons it now
+    // references directly, then use the singleton usecase.
+    Object.assign(publicLeadRepository, repo);
+    primeLegacy();
+    const uc = publicLeadUsecase;
     const lead = await uc.createLead({
       name: "A",
       phone: "050 111",
@@ -71,7 +139,11 @@ describe("public lead funnel (legacy /client/leads.js)", () => {
       findClientByEmail: vi.fn(async () => ({ id: 1, email: "a@x.com" })),
       findTodaysLeadByEmail: vi.fn(async () => ({ id: 7 })),
     });
-    const uc = new PublicLeadUsecase(repo, legacy());
+    // DI removed from PublicLeadUsecase — assign the mocks onto the singletons it now
+    // references directly, then use the singleton usecase.
+    Object.assign(publicLeadRepository, repo);
+    primeLegacy();
+    const uc = publicLeadUsecase;
     await expect(
       uc.createLead({ name: "A", phone: "050", email: "a@x.com", category: "DESIGN", item: "X" }),
     ).rejects.toMatchObject({ message: LC.CLIENT_LEAD_ALREADY_TODAY, statusCode: 422 });
@@ -80,7 +152,11 @@ describe("public lead funnel (legacy /client/leads.js)", () => {
 
   it("completeRegister: missing lead → LEAD_NOT_FOUND code", async () => {
     const repo = makeRepo({ findLeadById: vi.fn(async () => null) });
-    const uc = new PublicLeadUsecase(repo, legacy());
+    // DI removed from PublicLeadUsecase — assign the mocks onto the singletons it now
+    // references directly, then use the singleton usecase.
+    Object.assign(publicLeadRepository, repo);
+    primeLegacy();
+    const uc = publicLeadUsecase;
     await expect(uc.completeRegister(99, { category: "DESIGN", item: "X" })).rejects.toMatchObject(
       { message: LC.LEAD_NOT_FOUND, statusCode: 404 },
     );
@@ -96,7 +172,11 @@ describe("public lead funnel (legacy /client/leads.js)", () => {
         averagePrice: 100,
       })),
     });
-    const uc = new PublicLeadUsecase(repo, legacy());
+    // DI removed from PublicLeadUsecase — assign the mocks onto the singletons it now
+    // references directly, then use the singleton usecase.
+    Object.assign(publicLeadRepository, repo);
+    primeLegacy();
+    const uc = publicLeadUsecase;
     await expect(uc.completeRegister(5, { category: "DESIGN", item: "X" })).rejects.toMatchObject({
       message: LC.CLIENT_LEAD_ALREADY_COMPLETED,
       statusCode: 400,
@@ -122,9 +202,12 @@ describe("public lead funnel (legacy /client/leads.js)", () => {
 //  NOTES — dynamic-key allow-list (IDOR / mass-assignment close)
 // ════════════════════════════════════════════════════════════════════════════
 describe("client notes (legacy /client/notes.js)", () => {
-  it("validation: idKey is constrained to the lead allow-list", () => {
+  it("validation: idKey is constrained to the lead/image-session allow-list", () => {
     expect(NV.create.safeParse({ idKey: "clientLeadId", id: 1, content: "hi" }).success).toBe(true);
     expect(NV.create.safeParse({ idKey: "updateId", id: 1, content: "hi" }).success).toBe(true);
+    // image-session targets (token object-scope enforced in the usecase)
+    expect(NV.create.safeParse({ idKey: "imageSessionId", id: 1, content: "hi" }).success).toBe(true);
+    expect(NV.create.safeParse({ idKey: "selectedImageId", id: 1, content: "hi" }).success).toBe(true);
     // forbidden targets a client must never address
     expect(NV.create.safeParse({ idKey: "paymentId", id: 1, content: "hi" }).success).toBe(false);
     expect(NV.create.safeParse({ idKey: "userId", id: 1, content: "hi" }).success).toBe(false);
@@ -137,27 +220,70 @@ describe("client notes (legacy /client/notes.js)", () => {
   });
 
   it("usecase: rejects a non-allow-listed idKey even if it slips past validation", async () => {
-    const legacy = { getNotes: vi.fn(), addNote: vi.fn() };
-    const uc = new NotesUsecase(legacy);
-    await expect(uc.create({ idKey: "paymentId", id: 1, content: "x" })).rejects.toMatchObject({
+    await expect(notesUsecase.createNote({ idKey: "paymentId", id: 1, content: "x" })).rejects.toMatchObject({
       message: CP.NOTE_TARGET_INVALID,
       statusCode: 422,
     });
-    expect(legacy.addNote).not.toHaveBeenCalled();
+    expect(mockAddNote).not.toHaveBeenCalled();
   });
 
   it("usecase: forces client:true (author=ADMIN) and never forwards a userId", async () => {
-    const legacy = {
-      getNotes: vi.fn(),
-      addNote: vi.fn(async () => ({ data: { id: 1 }, message: "prose" })),
-    };
-    const uc = new NotesUsecase(legacy);
-    const out = await uc.create({ idKey: "clientLeadId", id: 7, content: "hi" });
-    expect(legacy.addNote).toHaveBeenCalledWith(
+    mockAddNote.mockResolvedValue({ data: { id: 1 }, message: "prose" });
+    const out = await notesUsecase.createNote({ idKey: "clientLeadId", id: 7, content: "hi" });
+    expect(mockAddNote).toHaveBeenCalledWith(
       expect.objectContaining({ idKey: "clientLeadId", id: 7, client: true }),
     );
-    expect(legacy.addNote.mock.calls[0][0]).not.toHaveProperty("userId");
+    expect(mockAddNote.mock.calls[0][0]).not.toHaveProperty("userId");
     expect(out).toEqual({ id: 1 }); // prose dropped
+  });
+
+  // ── token object-scope (image-session note targets) ──────────────────────────────────
+  it("usecase: selectedImageId requires a token whose session OWNS the image", async () => {
+    mockAddNote.mockResolvedValue({ data: { id: 9 } });
+    clientNotesRepository.findSessionIdByToken.mockResolvedValue({ id: 10 });
+    clientNotesRepository.findSelectedImageOwnerSessionId.mockResolvedValue({ imageSessionId: 10 });
+    const out = await notesUsecase.createNote({ idKey: "selectedImageId", id: 3, content: "hi", token: "t" });
+    expect(clientNotesRepository.findSessionIdByToken).toHaveBeenCalledWith("t");
+    expect(mockAddNote).toHaveBeenCalledWith(
+      expect.objectContaining({ idKey: "selectedImageId", id: 3, client: true }),
+    );
+    expect(out).toEqual({ id: 9 });
+  });
+
+  it("usecase: image-session target WITHOUT a token → 403 (IDOR close)", async () => {
+    clientNotesRepository.findSessionIdByToken.mockResolvedValue(null); // no token → no session
+    await expect(
+      notesUsecase.createNote({ idKey: "selectedImageId", id: 3, content: "x" }),
+    ).rejects.toMatchObject({ message: CP.NOTE_NOT_AUTHORIZED, statusCode: 403 });
+    expect(mockAddNote).not.toHaveBeenCalled();
+  });
+
+  it("usecase: selectedImageId owned by a DIFFERENT session → 403", async () => {
+    clientNotesRepository.findSessionIdByToken.mockResolvedValue({ id: 10 });
+    clientNotesRepository.findSelectedImageOwnerSessionId.mockResolvedValue({ imageSessionId: 99 });
+    await expect(
+      notesUsecase.createNote({ idKey: "selectedImageId", id: 3, content: "x", token: "t" }),
+    ).rejects.toMatchObject({ message: CP.NOTE_NOT_AUTHORIZED, statusCode: 403 });
+    expect(mockAddNote).not.toHaveBeenCalled();
+  });
+
+  it("usecase: imageSessionId must equal the token's own session id", async () => {
+    mockAddNote.mockResolvedValue({ data: {} });
+    clientNotesRepository.findSessionIdByToken.mockResolvedValue({ id: 5 });
+    // mismatch → 403
+    await expect(
+      notesUsecase.createNote({ idKey: "imageSessionId", id: 6, content: "x", token: "t" }),
+    ).rejects.toMatchObject({ message: CP.NOTE_NOT_AUTHORIZED, statusCode: 403 });
+    // match → allowed
+    await notesUsecase.createNote({ idKey: "imageSessionId", id: 5, content: "x", token: "t" });
+    expect(mockAddNote).toHaveBeenCalledTimes(1);
+  });
+
+  it("usecase: lead/update targets stay public (no token required)", async () => {
+    mockAddNote.mockResolvedValue({ data: { id: 1 } });
+    await notesUsecase.createNote({ idKey: "clientLeadId", id: 7, content: "hi" });
+    expect(clientNotesRepository.findSessionIdByToken).not.toHaveBeenCalled();
+    expect(mockAddNote).toHaveBeenCalled();
   });
 });
 
@@ -174,78 +300,55 @@ describe("client payments (legacy /client/payments.js)", () => {
     expect(PV.pay.safeParse({ clientLeadId: 5, paymentStatus: "FULLY_PAID" }).success).toBe(false);
   });
 
-  function makeRepo() {
-    return {
-      getLeadWithClient: vi.fn(async () => ({
-        id: 5,
-        client: { id: 1, name: "A", email: "a@x.com" },
-      })),
-      getLeadPaymentState: vi.fn(async () => ({
-        id: 5,
-        paymentStatus: "PENDING",
-        client: { name: "A", email: "a@x.com" },
-      })),
-      markFullyPaid: vi.fn(async () => ({})),
-      saveStripeMetadata: vi.fn(async () => ({})),
-    };
+  function seedPaymentsRepo() {
+    paymentsRepository.getLeadWithClient.mockResolvedValue({
+      id: 5,
+      client: { id: 1, name: "A", email: "a@x.com" },
+    });
+    paymentsRepository.getLeadPaymentState.mockResolvedValue({
+      id: 5,
+      paymentStatus: "PENDING",
+      client: { name: "A", email: "a@x.com" },
+    });
+    paymentsRepository.markFullyPaid.mockResolvedValue({});
+    paymentsRepository.saveStripeMetadata.mockResolvedValue({});
   }
 
-  const billingLegacy = {
-    first: (...a) => a.find((v) => v !== undefined && v !== null && `${v}`.trim() !== "") ?? "",
-    asKV: (o) => Object.entries(o).map(([key, value]) => ({ key, value: value ?? "" })),
-    sendPaymentReminderEmail: vi.fn(async () => {}),
-    sendPaymentSuccessEmail: vi.fn(async () => {}),
-    leadPaymentSuccessed: vi.fn(async () => {}),
-  };
-
   it("payment-status: paid session whose metadata.clientLeadId MISMATCHES the supplied id → 403 (IDOR close)", async () => {
-    const repo = makeRepo();
-    const stripe = {
-      createCheckoutSession: vi.fn(),
-      retrieveCheckoutSession: vi.fn(async () => ({
-        id: "cs_1",
-        payment_status: "paid",
-        metadata: { clientLeadId: "999" }, // session really belongs to lead 999
-      })),
-    };
-    const uc = new PaymentsUsecase(repo, stripe, billingLegacy);
+    seedPaymentsRepo();
+    retrieveCheckoutSession.mockResolvedValue({
+      id: "cs_1",
+      payment_status: "paid",
+      metadata: { clientLeadId: "999" }, // session really belongs to lead 999
+    });
     await expect(
-      uc.paymentStatus({ sessionId: "cs_1", clientLeadId: 5, lng: "en" }), // caller claims lead 5
+      paymentsUsecase.paymentStatus({ sessionId: "cs_1", clientLeadId: 5, lng: "en" }), // caller claims lead 5
     ).rejects.toMatchObject({ message: CP.PAYMENT_NOT_ALLOWED, statusCode: 403 });
-    expect(repo.markFullyPaid).not.toHaveBeenCalled();
+    expect(paymentsRepository.markFullyPaid).not.toHaveBeenCalled();
   });
 
   it("payment-status: paid + metadata MATCHES → marks the metadata lead paid", async () => {
-    const repo = makeRepo();
-    const stripe = {
-      createCheckoutSession: vi.fn(),
-      retrieveCheckoutSession: vi.fn(async () => ({
-        id: "cs_1",
-        payment_status: "paid",
-        metadata: { clientLeadId: "5" },
-      })),
-    };
-    const uc = new PaymentsUsecase(repo, stripe, billingLegacy);
-    const out = await uc.paymentStatus({ sessionId: "cs_1", clientLeadId: 5, lng: "en" });
+    seedPaymentsRepo();
+    retrieveCheckoutSession.mockResolvedValue({
+      id: "cs_1",
+      payment_status: "paid",
+      metadata: { clientLeadId: "5" },
+    });
+    const out = await paymentsUsecase.paymentStatus({ sessionId: "cs_1", clientLeadId: 5, lng: "en" });
     expect(out.paid).toBe(true);
-    expect(repo.markFullyPaid).toHaveBeenCalledWith("5", "cs_1");
+    expect(paymentsRepository.markFullyPaid).toHaveBeenCalledWith("5", "cs_1");
   });
 
   it("payment-status: unpaid session → { paid:false }, no DB write", async () => {
-    const repo = makeRepo();
-    const stripe = {
-      createCheckoutSession: vi.fn(),
-      retrieveCheckoutSession: vi.fn(async () => ({ id: "cs_1", payment_status: "unpaid" })),
-    };
-    const uc = new PaymentsUsecase(repo, stripe, billingLegacy);
-    const out = await uc.paymentStatus({ sessionId: "cs_1", clientLeadId: 5 });
+    seedPaymentsRepo();
+    retrieveCheckoutSession.mockResolvedValue({ id: "cs_1", payment_status: "unpaid" });
+    const out = await paymentsUsecase.paymentStatus({ sessionId: "cs_1", clientLeadId: 5 });
     expect(out.paid).toBe(false);
-    expect(repo.markFullyPaid).not.toHaveBeenCalled();
+    expect(paymentsRepository.markFullyPaid).not.toHaveBeenCalled();
   });
 
   it("backfill: wrong secret → 403", () => {
-    const uc = new PaymentsUsecase(makeRepo(), {}, billingLegacy);
-    expect(() => uc.backfill({ pass: "wrong" })).toThrow(AppError);
+    expect(() => paymentsUsecase.backfill({ pass: "wrong" })).toThrow(AppError);
   });
 });
 
@@ -260,10 +363,9 @@ describe("client languages (legacy /client/languages.js)", () => {
   });
 
   it("usecase passes notArchived through to the frozen getLanguages", async () => {
-    const legacy = { getLanguages: vi.fn(async () => [{ id: 1 }]) };
-    const uc = new LanguagesUsecase(legacy);
-    const out = await uc.list({ notArchived: true });
-    expect(legacy.getLanguages).toHaveBeenCalledWith({ notArchived: true });
+    mockGetLanguages.mockResolvedValue([{ id: 1 }]);
+    const out = await languagesUsecase.listLanguages({ notArchived: true });
+    expect(mockGetLanguages).toHaveBeenCalledWith({ notArchived: true });
     expect(out).toEqual([{ id: 1 }]);
   });
 });

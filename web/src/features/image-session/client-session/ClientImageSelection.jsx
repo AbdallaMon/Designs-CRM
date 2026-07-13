@@ -3,18 +3,12 @@
 import { Alert, Box, Container, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import PageInfoComponent from "@/features/image-session/client-session/PageInfo.jsx";
-import {
-  ClientImageAppBar,
-  SessionProgress,
-} from "@/features/image-session/client-session/Utility.jsx";
+import { ClientImageAppBar } from "@/features/image-session/client-session/Utility.jsx";
 import { PageInfoType } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import {
-  sessionStatusFlow,
-  clientStatusOrder,
-} from "@/features/image-session/client-session/helpers.js";
+import { sessionStatusFlow } from "@/features/image-session/client-session/helpers.js";
 import { ColorPalletes } from "@/features/image-session/client-session/colors/ColorPalletes.jsx";
 import { Styles } from "@/features/image-session/client-session/styles/Styles.jsx";
 import { Images } from "@/features/image-session/client-session/Images.jsx";
@@ -204,10 +198,6 @@ export default function ClientImageSelection({ token }) {
   }
 
   const showChrome = status !== "LOADING";
-  const isWizardStep =
-    clientStatusOrder.includes(status) &&
-    status !== "PDF_GENERATED" &&
-    status !== "SUBMITTED";
 
   return (
     <Container maxWidth="md" sx={{ py: 1, px: 0 }}>
@@ -216,7 +206,6 @@ export default function ClientImageSelection({ token }) {
           <ClientImageAppBar />
         </Box>
       )}
-      {isWizardStep && <SessionProgress status={status} />}
       {getSessionStatusComponent()}
     </Container>
   );

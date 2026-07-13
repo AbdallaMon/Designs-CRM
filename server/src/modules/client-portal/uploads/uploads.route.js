@@ -14,7 +14,7 @@
 // (dead) and is intentionally not mapped.
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
-import { uploadsController as c } from "./uploads.controller.js";
+import { uploadsController } from "./uploads.controller.js";
 import { chunkUpload, memoryUpload } from "./uploads.middleware.js";
 
 const router = Router();
@@ -23,14 +23,14 @@ const router = Router();
 router.post(
   "/upload-chunk",
   chunkUpload.single("chunk"),
-  asyncHandler(c.uploadChunk),
+  asyncHandler(uploadsController.uploadChunk),
 );
 
 // POST /v2/client/api/upload
 router.post(
   "/api/upload",
   memoryUpload.single("file"),
-  asyncHandler(c.uploadHttp),
+  asyncHandler(uploadsController.uploadHttp),
 );
 
 export { router as clientUploadsRouter };

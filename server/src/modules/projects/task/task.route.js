@@ -18,7 +18,7 @@ const router = Router();
 router.use(AuthMiddleware.requireAuth);
 
 // ── notes (literal — before /:id) ────────────────────────────────────────────────
-router.get("/notes", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(taskController.notes));
+router.get("/notes", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(taskController.getNotes));
 router.post(
   "/notes",
   AuthMiddleware.requirePermissions([P.NOTE_MANAGE]),
@@ -27,12 +27,12 @@ router.post(
 );
 
 // ── tasks list / create (collection; no object checker) ───────────────────────────
-router.get("/", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(taskController.list));
+router.get("/", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(taskController.getTasks));
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.CREATE]),
   validate(TaskValidation.createTask),
-  asyncHandler(taskController.create),
+  asyncHandler(taskController.createTask),
 );
 
 // ── task detail (object-scoped READ via parent project) ──────────────────────────
@@ -41,7 +41,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(TaskValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(taskController.checkIfUserCanAccessTask),
-  asyncHandler(taskController.getById),
+  asyncHandler(taskController.getTask),
 );
 
 // ── task update (object-scoped MUTATE via parent project) — param is :taskId ──────
@@ -51,7 +51,7 @@ router.put(
   validate(TaskValidation.taskIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(taskController.checkIfUserCanMutateTask),
   validate(TaskValidation.updateTask),
-  asyncHandler(taskController.update),
+  asyncHandler(taskController.updateTask),
 );
 
 // ── generic delete (object-scoped MUTATE when model === "Task") — param is :id ────
@@ -60,7 +60,7 @@ router.delete(
   AuthMiddleware.requirePermissions([P.DELETE]),
   validate(TaskValidation.idParams, "params"),
   validate(TaskValidation.remove),
-  asyncHandler(taskController.remove),
+  asyncHandler(taskController.deleteTask),
 );
 
 export { router as taskRouter };

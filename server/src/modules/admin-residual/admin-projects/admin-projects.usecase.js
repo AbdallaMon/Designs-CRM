@@ -13,6 +13,7 @@
 // `getAdminProjects`, verbatim). createGroupProjects still wraps the FROZEN projects usecase.
 import { adminProjectsRepository } from "./admin-projects.repo.js";
 import { groupAdminProjects } from "./admin-projects.dto.js";
+import { createGroupProjects } from "../../projects/project/project.usecase.js";
 
 // Ported VERBATIM from the legacy `getAdminProjects` (where-build + read + shape + count).
 export async function getAdminProjects(searchParams, limit, skip) {
@@ -42,19 +43,8 @@ export async function getAdminProjects(searchParams, limit, skip) {
   return { data, total };
 }
 
-const legacyDefaults = {
-  getAdminProjects: (searchParams, limit, skip) =>
-    getAdminProjects(searchParams, limit, skip),
-  createGroupProjects: (a) =>
-    import("../../projects/project/project.usecase.js").then((m) => m.createGroupProjects(a)),
-};
-
-export class AdminProjectsUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
-  list({ query, limit, skip }) {
+class AdminProjectsUsecase {
+  listAdminProjects({ query, limit, skip }) {
     // The frozen `getAdminProjects` does `JSON.parse(searchParams.filters)` unconditionally
     // → a missing/malformed `filters` would 500. Normalize to a valid JSON string here
     // (defaulting to "{}") without altering the frozen filter logic.
@@ -65,14 +55,15 @@ export class AdminProjectsUsecase {
         return "{}";
       }
     })();
-    return this.legacy.getAdminProjects({ ...query, filters }, limit, skip);
+    return getAdminProjects({ ...query, filters }, limit, skip);
   }
 
   // NOTE: the frozen service param is `clientleadId` (lowercase 'l') — a verbatim legacy
   // quirk, preserved.
-  createGroup({ clientLeadId, title }) {
-    return this.legacy.createGroupProjects({ clientleadId: clientLeadId, title });
+  createProjectGroup({ clientLeadId, title }) {
+    return createGroupProjects({ clientleadId: clientLeadId, title });
   }
 }
 
 export const adminProjectsUsecase = new AdminProjectsUsecase();
+export { AdminProjectsUsecase };

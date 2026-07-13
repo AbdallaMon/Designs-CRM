@@ -242,3 +242,5 @@ export class BookingLeadsRepository {
     return !!existingLead;
   }
 }
+
+export const bookingLeadsRepository = new BookingLeadsRepository();

@@ -10,30 +10,26 @@ import { adminResidualMessagesCodes, messagesNames } from "@dms/shared";
 import { adminLeadsUsecase } from "./admin-leads.usecase.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 
-const M = adminResidualMessagesCodes;
 const TK = messagesNames.adminResidualMessages;
 
-export class AdminLeadsController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
+class AdminLeadsController {
   // ── lead-scope checkers (reuse the leads-module keystone) ────────────────────────
   // The lead id arrives as :id (update / delete) or :leadId (telegram).
-  checkIfUserCanMutateLead = (req) =>
-    leadUsecase.checkIfUserCanMutateLead({
+  checkIfUserCanMutateLead(req) {
+    return leadUsecase.checkIfUserCanMutateLead({
       id: req.params.id ?? req.params.leadId,
       authUser: req.auth,
     });
+  }
 
   // ── bulk excel import (controller owns req/res; ported VERBATIM from the legacy
   //    createLeadFromExcelData handler's responses) ─────────────────────────────────
-  importLeads = async (req, res) => {
+  async importLeads(req, res) {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
-      await this.usecase.importLeadsFromExcel({ file: req.file });
+      await adminLeadsUsecase.importLeadsFromExcel({ file: req.file });
       return res.status(200).json({ message: "Data processed successfully" });
     } catch (error) {
       console.error(error);
@@ -41,42 +37,43 @@ export class AdminLeadsController {
         .status(500)
         .json({ error: "An error occurred while processing the data" });
     }
-  };
+  }
 
   // ── admin lead field update (lead-scoped) ────────────────────────────────────────
-  updateLead = async (req, res) => {
-    const data = await this.usecase.updateLeadField({ id: req.params.id, body: req.body });
-    return ok(res, data, M.LEAD_UPDATED, TK);
-  };
+  async updateLead(req, res) {
+    const data = await adminLeadsUsecase.updateLeadField({ id: req.params.id, body: req.body });
+    return ok(res, data, adminResidualMessagesCodes.LEAD_UPDATED, TK);
+  }
 
   // ── admin client field update (client-keyed; documented: no single lead to scope) ─
-  updateClient = async (req, res) => {
-    const data = await this.usecase.updateClientField({ clientId: req.params.clientId, body: req.body });
-    return ok(res, data, M.CLIENT_UPDATED, TK);
-  };
+  async updateClient(req, res) {
+    const data = await adminLeadsUsecase.updateClientField({ clientId: req.params.clientId, body: req.body });
+    return ok(res, data, adminResidualMessagesCodes.CLIENT_UPDATED, TK);
+  }
 
   // ── admin delete lead (base-role-ADMIN only + lead-scoped) ───────────────────────
-  deleteLead = async (req, res) => {
-    const data = await this.usecase.deleteLead({ id: req.params.id, authUser: req.auth });
-    return ok(res, data, M.LEAD_DELETED, TK);
-  };
+  async deleteLead(req, res) {
+    const data = await adminLeadsUsecase.deleteLead({ id: req.params.id, authUser: req.auth });
+    return ok(res, data, adminResidualMessagesCodes.LEAD_DELETED, TK);
+  }
 
   // ── telegram (lead-scoped) ────────────────────────────────────────────────────────
-  createTelegramLink = async (req, res) => {
-    const data = await this.usecase.createTelegramLink({ leadId: req.params.leadId });
-    return created(res, data, M.TELEGRAM_CHANNEL_CREATED, TK);
-  };
+  async createTelegramLink(req, res) {
+    const data = await adminLeadsUsecase.createTelegramLink({ leadId: req.params.leadId });
+    return created(res, data, adminResidualMessagesCodes.TELEGRAM_CHANNEL_CREATED, TK);
+  }
 
-  assignTelegramUsers = async (req, res) => {
-    const data = await this.usecase.assignTelegramUsers({ clientLeadId: req.params.leadId });
-    return ok(res, data, M.TELEGRAM_USERS_QUEUED, TK);
-  };
+  async assignTelegramUsers(req, res) {
+    const data = await adminLeadsUsecase.assignTelegramUsers({ clientLeadId: req.params.leadId });
+    return ok(res, data, adminResidualMessagesCodes.TELEGRAM_USERS_QUEUED, TK);
+  }
 
   // ── admin create new lead ─────────────────────────────────────────────────────────
-  createNewLead = async (req, res) => {
-    const data = await this.usecase.createNewLead({ body: req.body });
-    return created(res, data, M.LEAD_CREATED, TK);
-  };
+  async createNewLead(req, res) {
+    const data = await adminLeadsUsecase.createNewLead({ body: req.body });
+    return created(res, data, adminResidualMessagesCodes.LEAD_CREATED, TK);
+  }
 }
 
-export const adminLeadsController = new AdminLeadsController(adminLeadsUsecase);
+export const adminLeadsController = new AdminLeadsController();
+export { AdminLeadsController };

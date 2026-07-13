@@ -21,14 +21,7 @@ import { NotificationDto } from "./notification.dto.js";
 import { getIo } from "../../infra/socket/index.js";
 import { sendEmail } from "../../infra/mail/send-mail.js";
 
-export class NotificationUsecase {
-  /**
-   * @param {import("./notification.repo.js").NotificationRepository} repository
-   */
-  constructor(repository) {
-    this.repo = repository;
-  }
-
+class NotificationUsecase {
   // Parse the legacy `filters` JSON string for an optional date range only. Any
   // `staffId`/`userId` inside it is intentionally NOT used (the IDOR fix).
   #parseRange(query) {
@@ -42,13 +35,13 @@ export class NotificationUsecase {
 
   // GET own notifications (paginated). `unreadOnly` distinguishes the legacy `unread`
   // endpoint (true) from the all-notifications endpoint (false).
-  async list({ query, authUser, unreadOnly }) {
+  async listNotifications({ query, authUser, unreadOnly }) {
     const page = Number(query.page) || 1;
     const pageSize = Number(query.limit) || 9;
     const skip = (page - 1) * pageSize;
     const range = this.#parseRange(query);
 
-    const { notifications, total } = await this.repo.list({
+    const { notifications, total } = await notificationRepository.list({
       userId: authUser.id, // ← derived from the authenticated session, never client input
       range,
       unreadOnly,
@@ -61,12 +54,13 @@ export class NotificationUsecase {
 
   // POST mark own latest notifications as read. Self-scoped to authUser.id.
   async markRead({ authUser }) {
-    const result = await this.repo.markAllReadForUser({ userId: authUser.id });
+    const result = await notificationRepository.markAllReadForUser({ userId: authUser.id });
     return { updated: result.count };
   }
 }
 
-export const notificationUsecase = new NotificationUsecase(notificationRepository);
+export const notificationUsecase = new NotificationUsecase();
+export { NotificationUsecase };
 
 // ── Notification fan-out (ported VERBATIM from the former utilities/legacy/utility.js) ──
 // Orchestration only: resolves recipients + emits the socket event + sends the email via

@@ -1,4 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// DI removed — the usecases now call their singleton repos / lazily-imported side effects
+// directly, so the former constructor injection moves to module mocking (vi.mock is hoisted;
+// factories must be self-contained — no outer refs).
+vi.mock("../model-archive/model-archive.repo.js", () => ({
+  modelArchiveRepository: { toggleArchiveAModel: vi.fn() },
+}));
+vi.mock("../admin-leads/admin-leads.repo.js", () => ({
+  adminLeadsRepository: {
+    deleteALead: vi.fn(),
+    updateLeadField: vi.fn(),
+    updateClientField: vi.fn(),
+  },
+}));
+vi.mock("../../leads/lead/lead.usecase.js", () => ({
+  getCallReminders: vi.fn(),
+}));
 
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -11,6 +28,7 @@ import {
 } from "@dms/shared";
 
 import { ModelArchiveUsecase } from "../model-archive/model-archive.usecase.js";
+import { modelArchiveRepository } from "../model-archive/model-archive.repo.js";
 import { CommissionsValidation } from "../commissions/commissions.validation.js";
 import { ModelArchiveValidation } from "../model-archive/model-archive.validation.js";
 import { FixedDataValidation } from "../fixed-data/fixed-data.validation.js";
@@ -18,8 +36,12 @@ import { ReportsValidation } from "../reports/reports.validation.js";
 import { AdminLeadsUsecase } from "../admin-leads/admin-leads.usecase.js";
 import { adminLeadsRepository } from "../admin-leads/admin-leads.repo.js";
 import { StaffUsecase } from "../staff/staff.usecase.js";
+import { getCallReminders } from "../../leads/lead/lead.usecase.js";
 
-const C = adminResidualMessagesCodes;
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 const PA = PERMISSIONS.ADMIN_RESIDUAL;
 const PS = PERMISSIONS.STAFF;
 
@@ -121,34 +143,33 @@ describe("staff latest-calls route gate", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("model-archive allow-list", () => {
   it("resolves the FE-cased model names to real Prisma delegates and archives", async () => {
-    const toggle = vi.fn().mockResolvedValue({ id: 7, isArchived: true });
-    const usecase = new ModelArchiveUsecase({ toggleArchiveAModel: toggle });
+    modelArchiveRepository.toggleArchiveAModel.mockResolvedValue({ id: 7, isArchived: true });
+    const usecase = new ModelArchiveUsecase();
 
     // FE sends "ColorPattern" (capital C) — must resolve to the camelCase delegate.
-    await usecase.archive({ model: "ColorPattern", id: "7", isArchived: true });
-    expect(toggle).toHaveBeenCalledWith({ model: "colorPattern", id: 7, isArchived: true });
+    await usecase.archiveModel({ model: "ColorPattern", id: "7", isArchived: true });
+    expect(modelArchiveRepository.toggleArchiveAModel).toHaveBeenCalledWith({ model: "colorPattern", id: 7, isArchived: true });
 
-    await usecase.archive({ model: "designImage", id: 3, isArchived: false });
-    expect(toggle).toHaveBeenCalledWith({ model: "designImage", id: 3, isArchived: false });
+    await usecase.archiveModel({ model: "designImage", id: 3, isArchived: false });
+    expect(modelArchiveRepository.toggleArchiveAModel).toHaveBeenCalledWith({ model: "designImage", id: 3, isArchived: false });
   });
 
   it("REJECTS a non-whitelisted model with a 422 language-neutral code (never touches Prisma)", async () => {
-    const toggle = vi.fn();
-    const usecase = new ModelArchiveUsecase({ toggleArchiveAModel: toggle });
+    const usecase = new ModelArchiveUsecase();
 
     // the allow-list check is synchronous → archive() throws before any await.
     let err;
     try {
-      usecase.archive({ model: "user", id: 1, isArchived: true });
+      usecase.archiveModel({ model: "user", id: 1, isArchived: true });
     } catch (e) {
       err = e;
     }
     expect(err).toBeInstanceOf(AppError);
     expect(err.statusCode).toBe(422);
-    expect(err.message).toBe(C.MODEL_NOT_ALLOWED);
+    expect(err.message).toBe(adminResidualMessagesCodes.MODEL_NOT_ALLOWED);
 
-    expect(() => usecase.archive({ model: "clientLead", id: 1, isArchived: true })).toThrow(AppError);
-    expect(toggle).not.toHaveBeenCalled();
+    expect(() => usecase.archiveModel({ model: "clientLead", id: 1, isArchived: true })).toThrow(AppError);
+    expect(modelArchiveRepository.toggleArchiveAModel).not.toHaveBeenCalled();
   });
 
   it("the validation query also rejects non-whitelisted models (422 at the route)", () => {
@@ -238,16 +259,11 @@ describe("validation shapes", () => {
 //  FIX 1 — destructive lead DELETE is base-role-ADMIN ONLY (legacy parity)
 // ════════════════════════════════════════════════════════════════════════════
 describe("admin lead DELETE — base-role-ADMIN-only guard (FIX 1)", () => {
-  function makeUsecase() {
-    const deleteALead = vi.fn().mockResolvedValue({ id: 42, deleted: true });
-    const usecase = new AdminLeadsUsecase(adminLeadsRepository, { deleteALead });
-    return { usecase, deleteALead };
-  }
-
   it("ALLOWS a base-role ADMIN (the legacy `token.role === 'ADMIN'` narrowing)", async () => {
-    const { usecase, deleteALead } = makeUsecase();
+    adminLeadsRepository.deleteALead.mockResolvedValue({ id: 42, deleted: true });
+    const usecase = new AdminLeadsUsecase();
     const out = await usecase.deleteLead({ id: 42, authUser: { id: 1, role: USER_ROLES.ADMIN } });
-    expect(deleteALead).toHaveBeenCalledWith(42);
+    expect(adminLeadsRepository.deleteALead).toHaveBeenCalledWith(42);
     expect(out).toEqual({ id: 42, deleted: true });
   });
 
@@ -258,7 +274,7 @@ describe("admin lead DELETE — base-role-ADMIN-only guard (FIX 1)", () => {
       { id: 3, role: USER_ROLES.STAFF, subRoles: [{ subRole: USER_ROLES.ADMIN }] },
     ];
     for (const authUser of cases) {
-      const { usecase, deleteALead } = makeUsecase();
+      const usecase = new AdminLeadsUsecase();
       // the guard throws synchronously (before the cascading delete is reached)
       let err;
       try {
@@ -269,7 +285,7 @@ describe("admin lead DELETE — base-role-ADMIN-only guard (FIX 1)", () => {
       expect(err).toBeInstanceOf(AppError);
       expect(err.statusCode).toBe(403);
       expect(err.message).toBe(authMessagesCodes.FORBIDDEN);
-      expect(deleteALead).not.toHaveBeenCalled(); // never reaches the cascading delete
+      expect(adminLeadsRepository.deleteALead).not.toHaveBeenCalled(); // never reaches the cascading delete
     }
   });
 });
@@ -278,32 +294,30 @@ describe("admin lead DELETE — base-role-ADMIN-only guard (FIX 1)", () => {
 //  FIX 3 — generic single-field update cannot mass-assign ownership/status
 // ════════════════════════════════════════════════════════════════════════════
 describe("admin field-update mass-assignment guard (FIX 3)", () => {
-  function makeUsecase() {
-    const updateLeadField = vi.fn().mockResolvedValue({ id: 7 });
-    const updateClientField = vi.fn().mockResolvedValue({ id: 9 });
-    const usecase = new AdminLeadsUsecase(adminLeadsRepository, { updateLeadField, updateClientField });
-    return { usecase, updateLeadField, updateClientField };
-  }
+  beforeEach(() => {
+    adminLeadsRepository.updateLeadField.mockResolvedValue({ id: 7 });
+    adminLeadsRepository.updateClientField.mockResolvedValue({ id: 9 });
+  });
 
   it("forwards ONLY { field, inputType, [field]: value } — extra body keys are dropped", async () => {
-    const { usecase, updateLeadField } = makeUsecase();
+    const usecase = new AdminLeadsUsecase();
     await usecase.updateLeadField({
       id: 7,
       // attacker stuffs ownership/workflow/money keys into a "field update" of `description`
       body: { field: "description", inputType: "text", description: "hi", userId: 999, status: "FINALIZED", averagePrice: 1 },
     });
-    expect(updateLeadField).toHaveBeenCalledWith({
+    expect(adminLeadsRepository.updateLeadField).toHaveBeenCalledWith({
       data: { field: "description", inputType: "text", description: "hi" },
       leadId: 7,
     });
-    const forwarded = updateLeadField.mock.calls[0][0].data;
+    const forwarded = adminLeadsRepository.updateLeadField.mock.calls[0][0].data;
     expect(forwarded).not.toHaveProperty("userId");
     expect(forwarded).not.toHaveProperty("status");
     expect(forwarded).not.toHaveProperty("averagePrice");
   });
 
   it("REJECTS naming a protected field directly (userId / status) with 403 — never touches the updater", async () => {
-    const { usecase, updateLeadField } = makeUsecase();
+    const usecase = new AdminLeadsUsecase();
     for (const field of ["userId", "status", "averagePrice", "clientId", "code"]) {
       // the protected-field guard throws synchronously before the frozen updater is called
       let err;
@@ -316,16 +330,16 @@ describe("admin field-update mass-assignment guard (FIX 3)", () => {
       expect(err.statusCode).toBe(403);
       expect(err.message).toBe(authMessagesCodes.FORBIDDEN);
     }
-    expect(updateLeadField).not.toHaveBeenCalled();
+    expect(adminLeadsRepository.updateLeadField).not.toHaveBeenCalled();
   });
 
   it("client field update is likewise minimized to the single named field", async () => {
-    const { usecase, updateClientField } = makeUsecase();
+    const usecase = new AdminLeadsUsecase();
     await usecase.updateClientField({
       clientId: 9,
       body: { field: "name", inputType: "text", name: "New", role: "ADMIN", isCleared: true },
     });
-    expect(updateClientField).toHaveBeenCalledWith({
+    expect(adminLeadsRepository.updateClientField).toHaveBeenCalledWith({
       data: { field: "name", inputType: "text", name: "New" },
       clientId: 9,
     });
@@ -337,8 +351,8 @@ describe("admin field-update mass-assignment guard (FIX 3)", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("staff latest-calls self-scope (FIX 2)", () => {
   it("IGNORES a client ?staffId and forces the scope to req.auth.id", async () => {
-    const getCallReminders = vi.fn().mockResolvedValue([]);
-    const usecase = new StaffUsecase({ getCallReminders });
+    getCallReminders.mockResolvedValue([]);
+    const usecase = new StaffUsecase();
 
     await usecase.latestCalls({
       query: { staffId: 999, startDate: "2026-01-01", endDate: "2026-02-01" },
@@ -353,8 +367,8 @@ describe("staff latest-calls self-scope (FIX 2)", () => {
   });
 
   it("with NO client staffId still self-scopes (never the all-staff global list)", async () => {
-    const getCallReminders = vi.fn().mockResolvedValue([]);
-    const usecase = new StaffUsecase({ getCallReminders });
+    getCallReminders.mockResolvedValue([]);
+    const usecase = new StaffUsecase();
 
     await usecase.latestCalls({ query: {}, authUser: { id: 12, role: USER_ROLES.THREE_D_DESIGNER } });
     expect(getCallReminders.mock.calls[0][0].staffId).toBe(12);

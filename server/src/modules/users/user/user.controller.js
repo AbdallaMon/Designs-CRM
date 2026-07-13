@@ -8,147 +8,143 @@ import { userMessagesCodes, messagesNames } from "@dms/shared";
 import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { userUsecase } from "./user.usecase.js";
 
-const C = userMessagesCodes;
 const TK = messagesNames.usersMessages;
 
 import { paginate } from "../../../shared/utility/pagination.js";
 
 export class UserController {
-  /** @param {import("./user.usecase.js").UserUsecase} usecase */
-  constructor(usecase) {
-    this.usecase = usecase;
+  // ── object-scope checkers (profile IDOR fix) ─────────────────────────────────
+  checkIfUserCanAccessProfile(req) {
+    return userUsecase.checkIfUserCanAccessProfile({ userId: req.params.userId, authUser: req.auth });
   }
 
-  // ── object-scope checkers (profile IDOR fix) ─────────────────────────────────
-  checkIfUserCanAccessProfile = (req) =>
-    this.usecase.checkIfUserCanAccessProfile({ userId: req.params.userId, authUser: req.auth });
-
-  checkIfUserCanMutateProfile = (req) =>
-    this.usecase.checkIfUserCanMutateProfile({ userId: req.params.userId, authUser: req.auth });
+  checkIfUserCanMutateProfile(req) {
+    return userUsecase.checkIfUserCanMutateProfile({ userId: req.params.userId, authUser: req.auth });
+  }
 
   // ── directory (broad authed pick-lists) ──────────────────────────────────────
-  directory = async (req, res) => {
-    const data = await this.usecase.directory({ query: req.query, authUser: req.auth });
-    return ok(res, data, C.USERS_DIRECTORY_FETCHED, TK);
-  };
+  async directory(req, res) {
+    const data = await userUsecase.directory({ query: req.query, authUser: req.auth });
+    return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
+  }
 
-  relatedChatDirectory = async (req, res) => {
-    const data = await this.usecase.directory({ query: req.query, authUser: req.auth, relatedOnly: true });
-    return ok(res, data, C.USERS_DIRECTORY_FETCHED, TK);
-  };
+  async relatedChatDirectory(req, res) {
+    const data = await userUsecase.directory({ query: req.query, authUser: req.auth, relatedOnly: true });
+    return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
+  }
 
   // ── admin management lists ───────────────────────────────────────────────────
-  list = async (req, res) => {
+  async getUsers(req, res) {
     const { page, limit, skip } = paginate(req.query);
-    const data = await this.usecase.list({ query: req.query, authUser: req.auth, page, limit, skip });
-    return ok(res, data, C.USERS_FETCHED, TK);
-  };
+    const data = await userUsecase.listUsers({ query: req.query, authUser: req.auth, page, limit, skip });
+    return ok(res, data, userMessagesCodes.USERS_FETCHED, TK);
+  }
 
-  allUsers = async (req, res) => {
-    const data = await this.usecase.allUsers({ query: req.query, authUser: req.auth });
-    return ok(res, data, C.ALL_USERS_FETCHED, TK);
-  };
+  async allUsers(req, res) {
+    const data = await userUsecase.allUsers({ query: req.query, authUser: req.auth });
+    return ok(res, data, userMessagesCodes.ALL_USERS_FETCHED, TK);
+  }
 
   // chat member-picker — one endpoint; the usecase branches on req.auth (admin-tier →
   // admin-wide list; non-admin → related-by-project). Returns the legacy bare user array
   // under `data` (the chat FE reads response.data directly).
-  chatDirectory = async (req, res) => {
-    const data = await this.usecase.chatDirectory({ query: req.query, authUser: req.auth });
-    return ok(res, data, C.USERS_DIRECTORY_FETCHED, TK);
-  };
+  async chatDirectory(req, res) {
+    const data = await userUsecase.chatDirectory({ query: req.query, authUser: req.auth });
+    return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
+  }
 
   // ── profile (self OR admin via scope checker) ────────────────────────────────
-  getProfile = async (req, res) => {
-    const data = await this.usecase.getProfile({ userId: req.params.userId, authUser: req.auth });
-    return ok(res, data, C.USER_PROFILE_FETCHED, TK);
-  };
+  async getProfile(req, res) {
+    const data = await userUsecase.getProfile({ userId: req.params.userId, authUser: req.auth });
+    return ok(res, data, userMessagesCodes.USER_PROFILE_FETCHED, TK);
+  }
 
-  updateProfile = async (req, res) => {
-    const data = await this.usecase.updateProfile({ userId: req.params.userId, body: req.body, scoped: req.scoped });
-    return ok(res, data, C.USER_PROFILE_UPDATED, TK);
-  };
+  async updateProfile(req, res) {
+    const data = await userUsecase.updateProfile({ userId: req.params.userId, body: req.body, scoped: req.scoped });
+    return ok(res, data, userMessagesCodes.USER_PROFILE_UPDATED, TK);
+  }
 
   // ── admin user-management ────────────────────────────────────────────────────
-  create = async (req, res) => {
-    const data = await this.usecase.create({ body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
-    return created(res, data, C.USER_CREATED, TK);
-  };
+  async createUser(req, res) {
+    const data = await userUsecase.createUser({ body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
+    return created(res, data, userMessagesCodes.USER_CREATED, TK);
+  }
 
-  update = async (req, res) => {
-    const data = await this.usecase.update({ userId: req.params.userId, body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
-    return ok(res, data, C.USER_UPDATED, TK);
-  };
+  async updateUser(req, res) {
+    const data = await userUsecase.updateUser({ userId: req.params.userId, body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
+    return ok(res, data, userMessagesCodes.USER_UPDATED, TK);
+  }
 
-  changeStatus = async (req, res) => {
-    const data = await this.usecase.changeStatus({ userId: req.params.userId, body: req.body });
-    return ok(res, data, C.USER_STATUS_TOGGLED, TK);
-  };
+  async changeStatus(req, res) {
+    const data = await userUsecase.changeStatus({ userId: req.params.userId, body: req.body });
+    return ok(res, data, userMessagesCodes.USER_STATUS_TOGGLED, TK);
+  }
 
-  staffExtra = async (req, res) => {
-    const data = await this.usecase.toggleStaffExtra({ userId: req.params.userId, body: req.body });
-    return ok(res, data, C.USER_STAFF_EXTRA_UPDATED, TK);
-  };
+  async staffExtra(req, res) {
+    const data = await userUsecase.toggleStaffExtra({ userId: req.params.userId, body: req.body });
+    return ok(res, data, userMessagesCodes.USER_STAFF_EXTRA_UPDATED, TK);
+  }
 
-  manageRoles = async (req, res) => {
-    const data = await this.usecase.manageRoles({ userId: req.params.userId, body: req.body, auditCtx: auditCtxFromReq(req) });
-    return ok(res, data, C.USER_ROLES_UPDATED, TK);
-  };
+  async manageRoles(req, res) {
+    const data = await userUsecase.manageRoles({ userId: req.params.userId, body: req.body, auditCtx: auditCtxFromReq(req) });
+    return ok(res, data, userMessagesCodes.USER_ROLES_UPDATED, TK);
+  }
 
   // ── DB-relational profiles (admin assign/remove + list) ──────────────────────
-  listProfiles = async (req, res) => {
-    const data = await this.usecase.listAssignableProfiles();
-    return ok(res, data, C.USER_PROFILES_FETCHED, TK);
-  };
+  async listProfiles(req, res) {
+    const data = await userUsecase.listAssignableProfiles();
+    return ok(res, data, userMessagesCodes.USER_PROFILES_FETCHED, TK);
+  }
 
-  updateProfiles = async (req, res) => {
-    const data = await this.usecase.updateUserProfiles({
+  async updateProfiles(req, res) {
+    const data = await userUsecase.updateUserProfiles({
       authUser: req.auth,
       userId: req.params.userId,
       profileIds: req.body.profileIds,
       currentProfileId: req.body.currentProfileId,
     });
-    return ok(res, data, C.USER_PROFILES_UPDATED, TK);
-  };
+    return ok(res, data, userMessagesCodes.USER_PROFILES_UPDATED, TK);
+  }
 
-  getAutoAssignments = async (req, res) => {
-    const data = await this.usecase.getAutoAssignments({ userId: req.params.userId });
-    return ok(res, data, C.AUTO_ASSIGNMENTS_FETCHED, TK);
-  };
+  async getAutoAssignments(req, res) {
+    const data = await userUsecase.getAutoAssignments({ userId: req.params.userId });
+    return ok(res, data, userMessagesCodes.AUTO_ASSIGNMENTS_FETCHED, TK);
+  }
 
-  updateAutoAssignments = async (req, res) => {
-    const data = await this.usecase.updateAutoAssignments({ userId: req.params.userId, body: req.body });
-    return ok(res, data, C.AUTO_ASSIGNMENTS_UPDATED, TK);
-  };
+  async updateAutoAssignments(req, res) {
+    const data = await userUsecase.updateAutoAssignments({ userId: req.params.userId, body: req.body });
+    return ok(res, data, userMessagesCodes.AUTO_ASSIGNMENTS_UPDATED, TK);
+  }
 
-  getRestrictedCountries = async (req, res) => {
-    const data = await this.usecase.getRestrictedCountries({ userId: req.params.userId });
-    return ok(res, data, C.RESTRICTED_COUNTRIES_FETCHED, TK);
-  };
+  async getRestrictedCountries(req, res) {
+    const data = await userUsecase.getRestrictedCountries({ userId: req.params.userId });
+    return ok(res, data, userMessagesCodes.RESTRICTED_COUNTRIES_FETCHED, TK);
+  }
 
-  updateRestrictedCountries = async (req, res) => {
-    const data = await this.usecase.updateRestrictedCountries({ userId: req.params.userId, body: req.body });
-    return ok(res, data, C.RESTRICTED_COUNTRIES_UPDATED, TK);
-  };
+  async updateRestrictedCountries(req, res) {
+    const data = await userUsecase.updateRestrictedCountries({ userId: req.params.userId, body: req.body });
+    return ok(res, data, userMessagesCodes.RESTRICTED_COUNTRIES_UPDATED, TK);
+  }
 
-  setMaxLeads = async (req, res) => {
-    const data = await this.usecase.setMaxLeads({ userId: req.params.userId, body: req.body });
-    return ok(res, data, C.USER_MAX_LEADS_UPDATED, TK);
-  };
+  async setMaxLeads(req, res) {
+    const data = await userUsecase.setMaxLeads({ userId: req.params.userId, body: req.body });
+    return ok(res, data, userMessagesCodes.USER_MAX_LEADS_UPDATED, TK);
+  }
 
-  setMaxLeadsPerDay = async (req, res) => {
-    const data = await this.usecase.setMaxLeadsPerDay({ userId: req.params.userId, body: req.body });
-    return ok(res, data, C.USER_MAX_LEADS_PER_DAY_UPDATED, TK);
-  };
+  async setMaxLeadsPerDay(req, res) {
+    const data = await userUsecase.setMaxLeadsPerDay({ userId: req.params.userId, body: req.body });
+    return ok(res, data, userMessagesCodes.USER_MAX_LEADS_PER_DAY_UPDATED, TK);
+  }
 
-  getLogs = async (req, res) => {
-    const data = await this.usecase.getLogs({ userId: req.params.userId });
-    return ok(res, data, C.USER_LOGS_FETCHED, TK);
-  };
+  async getLogs(req, res) {
+    const data = await userUsecase.getLogs({ userId: req.params.userId });
+    return ok(res, data, userMessagesCodes.USER_LOGS_FETCHED, TK);
+  }
 
-  getLastSeen = async (req, res) => {
-    const data = await this.usecase.getLastSeen({ userId: req.params.userId, query: req.query });
-    return ok(res, data, C.USER_LAST_SEEN_FETCHED, TK);
-  };
+  async getLastSeen(req, res) {
+    const data = await userUsecase.getLastSeen({ userId: req.params.userId, query: req.query });
+    return ok(res, data, userMessagesCodes.USER_LAST_SEEN_FETCHED, TK);
+  }
 }
 
-export const userController = new UserController(userUsecase);
+export const userController = new UserController();

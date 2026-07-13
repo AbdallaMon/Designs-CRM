@@ -11,17 +11,13 @@ import { realtimeMethods } from "./chat.usecase.realtime.js";
  * The methods were split, verbatim and behavior-preserving, into per-concern
  * mixin objects (rooms / messages / members / files / calls / realtime) and are
  * composed back onto this single prototype below. Because every method lands on
- * the same prototype, all `this.repository` / `this.emitToAllMembers*` and
- * cross-method calls resolve exactly as they did in the original single file.
- * The public shape is unchanged: `new ChatUsecase(repository)` with the same
- * method names/signatures the controller, socket handlers, and tests call.
+ * the same prototype, all `this.emitToAllMembers*` and cross-method calls
+ * resolve exactly as they did in the original single file; repository I/O goes
+ * through the directly-imported `chatRepository` singleton (no injection).
+ * The public shape is unchanged: the same method names/signatures the
+ * controller, socket handlers, and tests call.
  */
-export class ChatUsecase {
-  /** @param {import("./chat.repo.js").ChatRepository} repository */
-  constructor(repository) {
-    this.repository = repository;
-  }
-}
+export class ChatUsecase {}
 
 Object.assign(
   ChatUsecase.prototype,
@@ -32,3 +28,8 @@ Object.assign(
   callMethods,
   realtimeMethods,
 );
+
+// Single shared instance — the socket layer, HTTP controller, and client-chat
+// surface all import this same singleton. Repository I/O now goes through the
+// directly-imported `chatRepository` singleton (no constructor injection).
+export const chatUsecase = new ChatUsecase();

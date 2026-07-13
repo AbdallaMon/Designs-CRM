@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -10,8 +10,29 @@ import {
   dashboardMessagesCodes,
 } from "@dms/shared";
 
-import { DashboardUsecase } from "../dashboard.usecase.js";
-import { DashboardRepository } from "../dashboard.repo.js";
+// DI was removed: the usecase now imports the heavy aggregations from the sibling
+// `dashboard.aggregations.js` module (formerly the injected `legacy` bag) and calls the
+// `dashboardRepository` singleton directly for recent-activities. Mock the aggregations
+// module (so we can assert the searchParams projection) and the repo singleton (keeping the
+// real DashboardRepository class the IDOR tests construct).
+vi.mock("../dashboard.aggregations.js", () => ({
+  getKeyMetrics: vi.fn(),
+  getDashboardLeadStatusData: vi.fn(),
+  getMonthlyPerformanceData: vi.fn(),
+  getEmiratesAnalytics: vi.fn(),
+  getLeadsMonthlyOverview: vi.fn(),
+  getPerformanceMetrics: vi.fn(),
+  getLatestNewLeads: vi.fn(),
+  getDesignerMetrics: vi.fn(),
+}));
+vi.mock("../dashboard.repo.js", async (importActual) => {
+  const actual = await importActual();
+  return { ...actual, dashboardRepository: { recentActivities: vi.fn() } };
+});
+
+import { dashboardUsecase, DashboardUsecase } from "../dashboard.usecase.js";
+import { dashboardRepository, DashboardRepository } from "../dashboard.repo.js";
+import * as aggregations from "../dashboard.aggregations.js";
 import { DashboardValidation } from "../dashboard.validation.js";
 
 const DC = dashboardMessagesCodes;
@@ -54,27 +75,25 @@ const SCOPED_ROLES = [
   USER_ROLES.CONTACT_INITIATOR,
 ];
 
-function makeLegacy() {
-  return {
-    getKeyMetrics: vi.fn().mockResolvedValue({ totalRevenue: 0 }),
-    getDashboardLeadStatusData: vi.fn().mockResolvedValue([]),
-    getMonthlyPerformanceData: vi.fn().mockResolvedValue([]),
-    getEmiratesAnalytics: vi.fn().mockResolvedValue({ analytics: [] }),
-    getLeadsMonthlyOverview: vi.fn().mockResolvedValue({ totals: {} }),
-    getPerformanceMetrics: vi.fn().mockResolvedValue({ weekly: {} }),
-    getLatestNewLeads: vi.fn().mockResolvedValue([{ id: 1 }]),
-    getDesignerMetrics: vi.fn().mockResolvedValue({ totalProjects: 0 }),
-  };
-}
+// Reset the mocked aggregations + repo singleton to their default resolved values before
+// each test (individual tests override as needed).
+beforeEach(() => {
+  vi.clearAllMocks();
+  aggregations.getKeyMetrics.mockResolvedValue({ totalRevenue: 0 });
+  aggregations.getDashboardLeadStatusData.mockResolvedValue([]);
+  aggregations.getMonthlyPerformanceData.mockResolvedValue([]);
+  aggregations.getEmiratesAnalytics.mockResolvedValue({ analytics: [] });
+  aggregations.getLeadsMonthlyOverview.mockResolvedValue({ totals: {} });
+  aggregations.getPerformanceMetrics.mockResolvedValue({ weekly: {} });
+  aggregations.getLatestNewLeads.mockResolvedValue([{ id: 1 }]);
+  aggregations.getDesignerMetrics.mockResolvedValue({ totalProjects: 0 });
+  dashboardRepository.recentActivities.mockResolvedValue([{ id: 9 }]);
+});
 
-function makeRepo() {
-  return { recentActivities: vi.fn().mockResolvedValue([{ id: 9 }]) };
-}
-
+// The usecase is now the singleton; `legacy` maps to the mocked aggregations module and
+// `repo` to the mocked repo singleton — the very references the assertions inspect via `.mock`.
 function makeUsecase() {
-  const legacy = makeLegacy();
-  const repo = makeRepo();
-  return { usecase: new DashboardUsecase(repo, legacy), legacy, repo };
+  return { usecase: dashboardUsecase, legacy: aggregations, repo: dashboardRepository };
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -226,11 +245,13 @@ describe("DashboardUsecase.recentActivities scope", () => {
 
   it("non-admin: a NON-numeric auth id is REJECTED (not given the global feed)", async () => {
     // The usecase coerces to NaN; the REAL repository must throw rather than collapse
-    // the where to {} (which would silently re-open the cross-user IDOR).
-    const repo = new DashboardRepository();
-    const usecase = new DashboardUsecase(repo, makeLegacy());
+    // the where to {} (which would silently re-open the cross-user IDOR). Route the mocked
+    // singleton through the real repository implementation for this case.
+    dashboardRepository.recentActivities.mockImplementation((args) =>
+      new DashboardRepository().recentActivities(args),
+    );
     await expect(
-      usecase.recentActivities({ query: {}, authUser: authFor(USER_ROLES.STAFF, "abc") }),
+      dashboardUsecase.recentActivities({ query: {}, authUser: authFor(USER_ROLES.STAFF, "abc") }),
     ).rejects.toMatchObject({ statusCode: 403, message: authMessagesCodes.ACCESS_DENIED });
   });
 

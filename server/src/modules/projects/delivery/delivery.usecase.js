@@ -51,57 +51,52 @@ async function linkADeliveryToMeeting({ deliveryId, meetingReminderId }) {
 
 const deleteDeliverySchedule = ({ id }) => deliveryRepository.deleteById({ id });
 
-const legacyDefaults = {
+export const legacyDefaults = {
   createNewDeliverySchedule,
   linkADeliveryToMeeting,
   deleteDeliverySchedule,
 };
 
-export class DeliveryUsecase {
-  constructor(repository, projects = projectUsecase, legacy = {}) {
-    this.repo = repository;
-    this.projects = projects;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class DeliveryUsecase {
   // ── object-scope checkers (parent-project scope) ─────────────────────────────────
   // GET /:projectId/schedules → scope on the project directly.
   checkIfUserCanAccessProject = ({ projectId, authUser }) =>
-    this.projects.checkIfUserCanAccessProject({ id: projectId, authUser });
+    projectUsecase.checkIfUserCanAccessProject({ id: projectId, authUser });
 
   // POST / (create) → the project id is in the BODY; scope on it.
   checkIfUserCanMutateProjectFromBody = ({ projectId, authUser }) =>
-    this.projects.checkIfUserCanMutateProject({ id: projectId, authUser });
+    projectUsecase.checkIfUserCanMutateProject({ id: projectId, authUser });
 
   // /:deliveryId/* → resolve the delivery's parent project, then scope.
   async checkIfUserCanMutateDelivery({ deliveryId, authUser }) {
-    const { projectId } = await this.projects.resolveDeliveryProject({ deliveryId });
-    await this.projects.checkIfUserCanMutateProject({ id: projectId, authUser });
+    const { projectId } = await projectUsecase.resolveDeliveryProject({ deliveryId });
+    await projectUsecase.checkIfUserCanMutateProject({ id: projectId, authUser });
     return { deliveryId: Number(deliveryId), projectId };
   }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  DELIVERY
   // ════════════════════════════════════════════════════════════════════════════
-  schedules({ projectId }) {
-    return this.repo.findByProject({ projectId });
+  listDeliverySchedules({ projectId }) {
+    return deliveryRepository.findByProject({ projectId });
   }
 
-  create({ body, authUser }) {
-    return this.legacy.createNewDeliverySchedule({ userId: authUser.id, ...body });
+  createDeliverySchedule({ body, authUser }) {
+    return legacyDefaults.createNewDeliverySchedule({ userId: authUser.id, ...body });
   }
 
   linkMeeting({ deliveryId, body }) {
-    return this.legacy.linkADeliveryToMeeting({
+    return legacyDefaults.linkADeliveryToMeeting({
       deliveryId: Number(deliveryId),
       meetingReminderId: body.meetingReminderId,
     });
   }
 
   // legacy bug: service signature is `{ id }`, route passed `{ deliveryId }` → pass id.
-  remove({ deliveryId }) {
-    return this.legacy.deleteDeliverySchedule({ id: Number(deliveryId) });
+  deleteDeliverySchedule({ deliveryId }) {
+    return legacyDefaults.deleteDeliverySchedule({ id: Number(deliveryId) });
   }
 }
 
-export const deliveryUsecase = new DeliveryUsecase(deliveryRepository);
+export const deliveryUsecase = new DeliveryUsecase();
+export { DeliveryUsecase };

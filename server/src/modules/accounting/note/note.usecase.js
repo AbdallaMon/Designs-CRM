@@ -8,23 +8,15 @@
 // point at the note repo instead of the deleted accountant service.
 import { noteRepository } from "./note.repo.js";
 
-const legacyDefaults = {
-  getNotes: (a) => noteRepository.getNotes(a),
-  addNote: (a) => noteRepository.addNote(a),
-};
-
-export class NoteUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
+class NoteUsecase {
+  listNotes({ query }) {
+    return noteRepository.getNotes(query);
   }
 
-  list({ query }) {
-    return this.legacy.getNotes(query);
-  }
-
-  create({ body, authUser }) {
-    return this.legacy.addNote({ ...body, userId: authUser.id });
+  createNote({ body, authUser }) {
+    return noteRepository.addNote({ ...body, userId: authUser.id });
   }
 }
 
 export const noteUsecase = new NoteUsecase();
+export { NoteUsecase };

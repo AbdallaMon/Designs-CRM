@@ -4,7 +4,7 @@
 // client flow.
 import prisma from "../../../infra/prisma/prisma.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { imageSessionsMessagesCodes as M } from "@dms/shared";
+import { imageSessionsMessagesCodes } from "@dms/shared";
 import {
   createTextAndConnect,
   getProAndConKey,
@@ -80,7 +80,7 @@ export async function createProOrCon({ type, id, item, itemType }) {
   const descriptions = Object.values(item.descriptions);
 
   if (!descriptions || descriptions.length === 0) {
-    throw new AppError(M.IMAGE_SESSION_FIELDS_REQUIRED, 400);
+    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_FIELDS_REQUIRED, 400);
   }
   let descriptionsToCreate = createTextAndConnect(descriptions, "content");
   const lastItem = await prisma[itemKey].findFirst({
@@ -116,7 +116,7 @@ export async function editProOrCon({ type, itemType, item, id }) {
   const { edits = {}, creates = {} } = item;
   const descriptions = Object.values(item.descriptions);
   if (!descriptions || descriptions.length === 0) {
-    throw new AppError(M.IMAGE_SESSION_FIELDS_REQUIRED, 400);
+    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_FIELDS_REQUIRED, 400);
   }
 
   await editAListOftext({ edits, type: "DESCRIPTION" });

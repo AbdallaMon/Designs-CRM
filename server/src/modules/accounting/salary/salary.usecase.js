@@ -13,12 +13,12 @@
 // "Fill all the fileds please" / "Monthly salary ... already exists for this user") are kept
 // byte-identical and translated to AppError codes via translateLegacyAccountingError so the
 // FE error map works; unrecognized errors re-throw as-is (still 500).
-//
-// The `legacy` constructor param remains a dependency-injection seam; its defaults now point
-// at the relocated repo/usecase code instead of the deleted accountant service.
 import dayjs from "dayjs";
 import { salaryRepository } from "./salary.repo.js";
 import { translateLegacyAccountingError } from "../accounting.errors.js";
+// Relocated from the former admin-services god-file. Static top import (the users/user module
+// does NOT import back into accounting, so there is no cycle — see pass-2 alignment).
+import { getUserLogs } from "../../users/user/user.usecase.js";
 
 async function createBaseSalary({ userId, taxAmount, baseSalary, baseWorkHours }) {
   // Force all number fields to be numbers, even if undefined or null
@@ -126,48 +126,35 @@ async function generateMonthlySalary({
   });
 }
 
-const legacyDefaults = {
-  getSalaryData: (a) => salaryRepository.getSalaryData(a),
-  createBaseSalary: (a) => createBaseSalary(a),
-  editBaseSalary: (a) => editBaseSalary(a),
-  generateMonthlySalary: (a) => generateMonthlySalary(a),
-  getUsersWithSalaries: (...a) => salaryRepository.getUsersWithSalaries(...a),
-  getUserLogs: (...a) =>
-    import("../../users/user/user.usecase.js").then((m) => m.getUserLogs(...a)),
-};
-
-export class SalaryUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class SalaryUsecase {
   // ── accountant-scoped user helper lists (for salaries) ──────────────────────────
   listUsers({ query, limit, skip }) {
-    return this.legacy.getUsersWithSalaries(query, limit, skip);
+    return salaryRepository.getUsersWithSalaries(query, limit, skip);
   }
 
   userLastSeen({ userId, month, year }) {
-    return this.legacy.getUserLogs(userId, month, year);
+    return getUserLogs(userId, month, year);
   }
 
   // ── salaries ────────────────────────────────────────────────────────────────────
   salaryData({ query }) {
-    return this.legacy.getSalaryData(query);
+    return salaryRepository.getSalaryData(query);
   }
 
   // Legacy route did: req.body.userId = userId; createBaseSalary(req.body).
   createBase({ userId, body }) {
-    return this.legacy.createBaseSalary({ ...body, userId });
+    return createBaseSalary({ ...body, userId });
   }
 
   // Legacy route did: req.body.id = id; editBaseSalary(req.body).
   editBase({ id, body }) {
-    return translateLegacyAccountingError(() => this.legacy.editBaseSalary({ ...body, id }));
+    return translateLegacyAccountingError(() => editBaseSalary({ ...body, id }));
   }
 
   payMonthly({ body }) {
-    return translateLegacyAccountingError(() => this.legacy.generateMonthlySalary(body));
+    return translateLegacyAccountingError(() => generateMonthlySalary(body));
   }
 }
 
 export const salaryUsecase = new SalaryUsecase();
+export { SalaryUsecase };

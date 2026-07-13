@@ -5,26 +5,23 @@ import { ok, created } from "../../../shared/http/response.js";
 import { clientPortalMessagesCodes, messagesNames } from "@dms/shared";
 import { notesUsecase } from "./notes.usecase.js";
 
-const C = clientPortalMessagesCodes;
 const TK = messagesNames.clientPortalMessages;
 
-export class NotesController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  list = async (req, res) => {
-    const data = await this.usecase.list({
+class NotesController {
+  async getNotes(req, res) {
+    const data = await notesUsecase.listNotes({
       idKey: req.query.idKey,
       id: req.query.id,
+      token: req.query.token,
     });
-    return ok(res, data, C.NOTES_FETCHED, TK);
-  };
+    return ok(res, data, clientPortalMessagesCodes.NOTES_FETCHED, TK);
+  }
 
-  create = async (req, res) => {
-    const data = await this.usecase.create(req.body);
-    return created(res, data, C.NOTE_CREATED, TK);
-  };
+  async createNote(req, res) {
+    const data = await notesUsecase.createNote(req.body);
+    return created(res, data, clientPortalMessagesCodes.NOTE_CREATED, TK);
+  }
 }
 
-export const notesController = new NotesController(notesUsecase);
+export const notesController = new NotesController();
+export { NotesController };

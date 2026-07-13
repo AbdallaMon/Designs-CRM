@@ -6,39 +6,35 @@ import { ok } from "../../shared/http/response.js";
 import { notificationsMessagesCodes, messagesNames } from "@dms/shared";
 import { notificationUsecase } from "./notification.usecase.js";
 
-const C = notificationsMessagesCodes;
 const TK = messagesNames.notificationsMessages;
 
-export class NotificationController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
+class NotificationController {
   // GET /v2/notifications — paginated all-notifications for the authenticated user.
-  list = async (req, res) => {
-    const data = await this.usecase.list({
+  async getNotifications(req, res) {
+    const data = await notificationUsecase.listNotifications({
       query: req.query,
       authUser: req.auth,
       unreadOnly: false,
     });
-    return ok(res, data, C.NOTIFICATIONS_FETCHED, TK);
-  };
+    return ok(res, data, notificationsMessagesCodes.NOTIFICATIONS_FETCHED, TK);
+  }
 
   // GET /v2/notifications/unread — paginated UNREAD notifications for the authenticated user.
-  listUnread = async (req, res) => {
-    const data = await this.usecase.list({
+  async listUnread(req, res) {
+    const data = await notificationUsecase.listNotifications({
       query: req.query,
       authUser: req.auth,
       unreadOnly: true,
     });
-    return ok(res, data, C.UNREAD_NOTIFICATIONS_FETCHED, TK);
-  };
+    return ok(res, data, notificationsMessagesCodes.UNREAD_NOTIFICATIONS_FETCHED, TK);
+  }
 
   // POST /v2/notifications/actions/mark-read — mark the authenticated user's notifications read.
-  markRead = async (req, res) => {
-    const data = await this.usecase.markRead({ authUser: req.auth });
-    return ok(res, data, C.NOTIFICATIONS_MARKED_READ, TK);
-  };
+  async markRead(req, res) {
+    const data = await notificationUsecase.markRead({ authUser: req.auth });
+    return ok(res, data, notificationsMessagesCodes.NOTIFICATIONS_MARKED_READ, TK);
+  }
 }
 
-export const notificationController = new NotificationController(notificationUsecase);
+export const notificationController = new NotificationController();
+export { NotificationController };

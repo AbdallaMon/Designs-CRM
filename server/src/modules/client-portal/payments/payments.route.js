@@ -11,21 +11,21 @@
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
-import { paymentsController as c } from "./payments.controller.js";
-import { PaymentsValidation as V } from "./payments.validation.js";
+import { paymentsController } from "./payments.controller.js";
+import { PaymentsValidation } from "./payments.validation.js";
 
 const router = Router();
 
-router.post("/pay", validate(V.pay), asyncHandler(c.pay));
+router.post("/pay", validate(PaymentsValidation.pay), asyncHandler(paymentsController.pay));
 router.get(
   "/payment-status",
-  validate(V.statusQuery, "query"),
-  asyncHandler(c.paymentStatus),
+  validate(PaymentsValidation.statusQuery, "query"),
+  asyncHandler(paymentsController.paymentStatus),
 );
 router.get(
   "/stripe/backfill",
-  validate(V.backfillQuery, "query"),
-  asyncHandler(c.backfill),
+  validate(PaymentsValidation.backfillQuery, "query"),
+  asyncHandler(paymentsController.backfill),
 );
 
 export { router as clientPaymentsRouter };

@@ -26,7 +26,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(UpdateValidation.updateIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(updateController.checkIfUserCanAccessUpdate),
-  asyncHandler(updateController.sharedSettings),
+  asyncHandler(updateController.getSharedSettings),
 );
 
 // ── shared-update archive → workflow action (was PUT /shared-updates/:sharedUpdateId/archive) ──
@@ -79,7 +79,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(UpdateValidation.clientLeadIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(updateController.checkIfUserCanAccessLead),
-  asyncHandler(updateController.list),
+  asyncHandler(updateController.getUpdates),
 );
 router.post(
   "/:clientLeadId",
@@ -87,7 +87,7 @@ router.post(
   validate(UpdateValidation.clientLeadIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(updateController.checkIfUserCanAccessLead),
   validate(UpdateValidation.createUpdate),
-  asyncHandler(updateController.create),
+  asyncHandler(updateController.createUpdate),
 );
 
 export { router as updateRouter };

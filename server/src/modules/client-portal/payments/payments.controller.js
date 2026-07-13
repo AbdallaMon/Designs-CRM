@@ -7,25 +7,20 @@ import { ok } from "../../../shared/http/response.js";
 import { clientPortalMessagesCodes, messagesNames } from "@dms/shared";
 import { paymentsUsecase } from "./payments.usecase.js";
 
-const C = clientPortalMessagesCodes;
 const TK = messagesNames.clientPortalMessages;
 
-export class PaymentsController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  pay = async (req, res) => {
-    const data = await this.usecase.pay({
+class PaymentsController {
+  async pay(req, res) {
+    const data = await paymentsUsecase.pay({
       clientId: req.body.clientId,
       clientLeadId: req.body.clientLeadId,
       lng: req.body.lng,
     });
-    return ok(res, data, C.PAYMENT_CHECKOUT_CREATED, TK);
-  };
+    return ok(res, data, clientPortalMessagesCodes.PAYMENT_CHECKOUT_CREATED, TK);
+  }
 
-  paymentStatus = async (req, res) => {
-    const result = await this.usecase.paymentStatus({
+  async paymentStatus(req, res) {
+    const result = await paymentsUsecase.paymentStatus({
       sessionId: req.query.sessionId,
       clientLeadId: req.query.clientLeadId,
       lng: req.query.lng,
@@ -35,7 +30,7 @@ export class PaymentsController {
       // Preserve the legacy 402 for an unpaid session.
       return res.status(402).json({
         success: false,
-        message: C.PAYMENT_NOT_COMPLETED,
+        message: clientPortalMessagesCodes.PAYMENT_NOT_COMPLETED,
         data: { paymentStatus: "ERROR" },
         translationKey: TK,
       });
@@ -44,15 +39,16 @@ export class PaymentsController {
     return ok(
       res,
       { paymentStatus: "PAID", session: result.session, kv: result.kv },
-      C.PAYMENT_VERIFIED,
+      clientPortalMessagesCodes.PAYMENT_VERIFIED,
       TK,
     );
-  };
+  }
 
-  backfill = async (req, res) => {
-    const data = await this.usecase.backfill({ pass: req.query.pass });
-    return ok(res, data, C.PAYMENT_BACKFILL_DONE, TK);
-  };
+  async backfill(req, res) {
+    const data = await paymentsUsecase.backfill({ pass: req.query.pass });
+    return ok(res, data, clientPortalMessagesCodes.PAYMENT_BACKFILL_DONE, TK);
+  }
 }
 
-export const paymentsController = new PaymentsController(paymentsUsecase);
+export const paymentsController = new PaymentsController();
+export { PaymentsController };

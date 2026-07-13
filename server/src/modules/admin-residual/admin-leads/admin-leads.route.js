@@ -27,7 +27,7 @@ import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { PERMISSIONS, generalMessagesCodes } from "@dms/shared";
 import { adminLeadsController } from "./admin-leads.controller.js";
-import { AdminLeadsValidation as V } from "./admin-leads.validation.js";
+import { AdminLeadsValidation } from "./admin-leads.validation.js";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 const router = Router();
@@ -67,9 +67,9 @@ router.post(
 router.post(
   "/leads/update/:id",
   AuthMiddleware.requirePermissions([P.LEAD_EDIT]),
-  validate(V.idParam, "params"),
+  validate(AdminLeadsValidation.idParam, "params"),
   AuthMiddleware.requireSpecialChecker(adminLeadsController.checkIfUserCanMutateLead),
-  validate(V.fieldUpdate),
+  validate(AdminLeadsValidation.fieldUpdate),
   asyncHandler(adminLeadsController.updateLead),
 );
 
@@ -77,8 +77,8 @@ router.post(
 router.put(
   "/client/update/:clientId",
   AuthMiddleware.requirePermissions([P.CLIENT_EDIT]),
-  validate(V.clientIdParam, "params"),
-  validate(V.fieldUpdate),
+  validate(AdminLeadsValidation.clientIdParam, "params"),
+  validate(AdminLeadsValidation.fieldUpdate),
   asyncHandler(adminLeadsController.updateClient),
 );
 
@@ -86,7 +86,7 @@ router.put(
 router.delete(
   "/client-leads/:id",
   AuthMiddleware.requirePermissions([P.LEAD_DELETE]),
-  validate(V.idParam, "params"),
+  validate(AdminLeadsValidation.idParam, "params"),
   AuthMiddleware.requireSpecialChecker(adminLeadsController.checkIfUserCanMutateLead),
   asyncHandler(adminLeadsController.deleteLead),
 );
@@ -95,14 +95,14 @@ router.delete(
 router.post(
   "/client-leads/:leadId/telegram/new",
   AuthMiddleware.requirePermissions([P.TELEGRAM_MANAGE]),
-  validate(V.leadIdParam, "params"),
+  validate(AdminLeadsValidation.leadIdParam, "params"),
   AuthMiddleware.requireSpecialChecker(adminLeadsController.checkIfUserCanMutateLead),
   asyncHandler(adminLeadsController.createTelegramLink),
 );
 router.post(
   "/client-leads/:leadId/telegram/assign-users",
   AuthMiddleware.requirePermissions([P.TELEGRAM_MANAGE]),
-  validate(V.leadIdParam, "params"),
+  validate(AdminLeadsValidation.leadIdParam, "params"),
   AuthMiddleware.requireSpecialChecker(adminLeadsController.checkIfUserCanMutateLead),
   asyncHandler(adminLeadsController.assignTelegramUsers),
 );
@@ -111,7 +111,7 @@ router.post(
 router.post(
   "/new-lead",
   AuthMiddleware.requirePermissions([P.LEAD_CREATE]),
-  validate(V.createNewLead),
+  validate(AdminLeadsValidation.createNewLead),
   asyncHandler(adminLeadsController.createNewLead),
 );
 

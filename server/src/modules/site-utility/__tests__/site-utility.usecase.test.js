@@ -1,14 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { SiteUtilityUsecase } from "../site-utility.usecase.js";
-import { AppError } from "../../../shared/errors/AppError.js";
-import { PERMISSIONS, siteUtilityMessagesCodes } from "@dms/shared";
-
-const P = PERMISSIONS.SITE_UTILITY;
-
-/** Minimal fake repository — only the methods the tested usecases touch. */
-function makeRepo(overrides = {}) {
-  return {
+// DI removed: the usecase calls the imported `siteUtilityRepository` singleton directly.
+// Mock the singleton so the usecase can be asserted without a DB.
+vi.mock("../site-utility.repo.js", () => ({
+  siteUtilityRepository: {
     getPdfConfig: vi.fn(),
     createPdfConfig: vi.fn(),
     updatePdfConfig: vi.fn(),
@@ -17,34 +12,42 @@ function makeRepo(overrides = {}) {
     createPaymentCondition: vi.fn(),
     updatePaymentCondition: vi.fn(),
     deletePaymentCondition: vi.fn(),
-    findFirstPaymentByConditionId: vi.fn().mockResolvedValue(null),
-    ...overrides,
-  };
-}
+    findFirstPaymentByConditionId: vi.fn(),
+  },
+}));
+
+import { siteUtilityUsecase } from "../site-utility.usecase.js";
+import { siteUtilityRepository } from "../site-utility.repo.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { PERMISSIONS, siteUtilityMessagesCodes } from "@dms/shared";
+
+const P = PERMISSIONS.SITE_UTILITY;
+
+// Reset to sensible defaults before each test; individual tests override.
+beforeEach(() => {
+  vi.clearAllMocks();
+  siteUtilityRepository.findFirstPaymentByConditionId.mockResolvedValue(null);
+});
 
 describe("SiteUtilityUsecase.getPdfConfig", () => {
   it("returns the existing singleton config", async () => {
     const config = { id: 1, pdfHeader: "h" };
-    const repo = makeRepo({ getPdfConfig: vi.fn().mockResolvedValue(config) });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPdfConfig.mockResolvedValue(config);
 
-    const result = await usecase.getPdfConfig();
+    const result = await siteUtilityUsecase.getPdfConfig();
 
     expect(result).toBe(config);
-    expect(repo.createPdfConfig).not.toHaveBeenCalled();
+    expect(siteUtilityRepository.createPdfConfig).not.toHaveBeenCalled();
   });
 
   it("lazily creates and RETURNS the singleton when missing (legacy returned undefined)", async () => {
     const created = { id: 1 };
-    const repo = makeRepo({
-      getPdfConfig: vi.fn().mockResolvedValue(null),
-      createPdfConfig: vi.fn().mockResolvedValue(created),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPdfConfig.mockResolvedValue(null);
+    siteUtilityRepository.createPdfConfig.mockResolvedValue(created);
 
-    const result = await usecase.getPdfConfig();
+    const result = await siteUtilityUsecase.getPdfConfig();
 
-    expect(repo.createPdfConfig).toHaveBeenCalledWith({ data: {} });
+    expect(siteUtilityRepository.createPdfConfig).toHaveBeenCalledWith({ data: {} });
     expect(result).toBe(created);
   });
 });
@@ -52,32 +55,26 @@ describe("SiteUtilityUsecase.getPdfConfig", () => {
 describe("SiteUtilityUsecase.updatePdfConfig (upsert)", () => {
   it("updates when the singleton already exists", async () => {
     const updated = { id: 1, pageTitle: "t" };
-    const repo = makeRepo({
-      getPdfConfig: vi.fn().mockResolvedValue({ id: 1 }),
-      updatePdfConfig: vi.fn().mockResolvedValue(updated),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPdfConfig.mockResolvedValue({ id: 1 });
+    siteUtilityRepository.updatePdfConfig.mockResolvedValue(updated);
 
-    const result = await usecase.updatePdfConfig({ input: { pageTitle: "t" } });
+    const result = await siteUtilityUsecase.updatePdfConfig({ input: { pageTitle: "t" } });
 
-    expect(repo.updatePdfConfig).toHaveBeenCalledWith({
+    expect(siteUtilityRepository.updatePdfConfig).toHaveBeenCalledWith({
       data: { pageTitle: "t" },
     });
-    expect(repo.createPdfConfig).not.toHaveBeenCalled();
+    expect(siteUtilityRepository.createPdfConfig).not.toHaveBeenCalled();
     expect(result).toBe(updated);
   });
 
   it("creates when the singleton is missing", async () => {
     const created = { id: 1, pageTitle: "t" };
-    const repo = makeRepo({
-      getPdfConfig: vi.fn().mockResolvedValue(null),
-      createPdfConfig: vi.fn().mockResolvedValue(created),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPdfConfig.mockResolvedValue(null);
+    siteUtilityRepository.createPdfConfig.mockResolvedValue(created);
 
-    const result = await usecase.updatePdfConfig({ input: { pageTitle: "t" } });
+    const result = await siteUtilityUsecase.updatePdfConfig({ input: { pageTitle: "t" } });
 
-    expect(repo.createPdfConfig).toHaveBeenCalledWith({
+    expect(siteUtilityRepository.createPdfConfig).toHaveBeenCalledWith({
       data: { pageTitle: "t" },
     });
     expect(result).toBe(created);
@@ -90,16 +87,13 @@ describe("SiteUtilityUsecase.listPaymentConditions", () => {
       { id: 1, condition: "A" },
       { id: 2, condition: "B" },
     ];
-    const repo = makeRepo({
-      listPaymentConditions: vi.fn().mockResolvedValue(rows),
-      // condition #1 is linked to a payment → not deletable
-      findFirstPaymentByConditionId: vi.fn(async ({ conditionId }) =>
-        conditionId === 1 ? { id: 99 } : null,
-      ),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.listPaymentConditions.mockResolvedValue(rows);
+    // condition #1 is linked to a payment → not deletable
+    siteUtilityRepository.findFirstPaymentByConditionId.mockImplementation(
+      async ({ conditionId }) => (conditionId === 1 ? { id: 99 } : null),
+    );
 
-    const result = await usecase.listPaymentConditions({
+    const result = await siteUtilityUsecase.listPaymentConditions({
       authUser: {
         permissions: [P.PAYMENT_CONDITION_EDIT, P.PAYMENT_CONDITION_DELETE],
       },
@@ -122,12 +116,9 @@ describe("SiteUtilityUsecase.listPaymentConditions", () => {
   });
 
   it("reflects missing permissions in capabilities", async () => {
-    const repo = makeRepo({
-      listPaymentConditions: vi.fn().mockResolvedValue([{ id: 1 }]),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.listPaymentConditions.mockResolvedValue([{ id: 1 }]);
 
-    const result = await usecase.listPaymentConditions({
+    const result = await siteUtilityUsecase.listPaymentConditions({
       authUser: { permissions: [] },
     });
 
@@ -141,28 +132,22 @@ describe("SiteUtilityUsecase.listPaymentConditions", () => {
 
 describe("SiteUtilityUsecase.createPaymentCondition", () => {
   it("rejects the reserved 'To Do' condition (legacy invariant)", async () => {
-    const repo = makeRepo();
-    const usecase = new SiteUtilityUsecase(repo);
-
     await expect(
-      usecase.createPaymentCondition({
+      siteUtilityUsecase.createPaymentCondition({
         input: { condition: "To Do", conditionType: "x", labelAr: "a", labelEn: "b" },
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
       message: siteUtilityMessagesCodes.PAYMENT_CONDITION_RESERVED_VALUE,
     });
-    expect(repo.createPaymentCondition).not.toHaveBeenCalled();
+    expect(siteUtilityRepository.createPaymentCondition).not.toHaveBeenCalled();
   });
 
   it("creates a valid condition", async () => {
     const row = { id: 5, condition: "Half" };
-    const repo = makeRepo({
-      createPaymentCondition: vi.fn().mockResolvedValue(row),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.createPaymentCondition.mockResolvedValue(row);
 
-    const result = await usecase.createPaymentCondition({
+    const result = await siteUtilityUsecase.createPaymentCondition({
       input: { condition: "Half", conditionType: "x", labelAr: "a", labelEn: "b" },
     });
 
@@ -172,13 +157,10 @@ describe("SiteUtilityUsecase.createPaymentCondition", () => {
 
 describe("SiteUtilityUsecase.deletePaymentCondition", () => {
   it("404s when the condition does not exist", async () => {
-    const repo = makeRepo({
-      getPaymentConditionById: vi.fn().mockResolvedValue(null),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPaymentConditionById.mockResolvedValue(null);
 
     await expect(
-      usecase.deletePaymentCondition({ id: 123 }),
+      siteUtilityUsecase.deletePaymentCondition({ id: 123 }),
     ).rejects.toMatchObject({
       statusCode: 404,
       message: siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND,
@@ -186,32 +168,26 @@ describe("SiteUtilityUsecase.deletePaymentCondition", () => {
   });
 
   it("409s when the condition is linked to existing payments (legacy guard)", async () => {
-    const repo = makeRepo({
-      getPaymentConditionById: vi.fn().mockResolvedValue({ id: 1 }),
-      findFirstPaymentByConditionId: vi.fn().mockResolvedValue({ id: 7 }),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPaymentConditionById.mockResolvedValue({ id: 1 });
+    siteUtilityRepository.findFirstPaymentByConditionId.mockResolvedValue({ id: 7 });
 
     await expect(
-      usecase.deletePaymentCondition({ id: 1 }),
+      siteUtilityUsecase.deletePaymentCondition({ id: 1 }),
     ).rejects.toMatchObject({
       statusCode: 409,
       message: siteUtilityMessagesCodes.PAYMENT_CONDITION_IN_USE,
     });
-    expect(repo.deletePaymentCondition).not.toHaveBeenCalled();
+    expect(siteUtilityRepository.deletePaymentCondition).not.toHaveBeenCalled();
   });
 
   it("deletes when not linked and the AppError is an AppError instance", async () => {
-    const repo = makeRepo({
-      getPaymentConditionById: vi.fn().mockResolvedValue({ id: 1 }),
-      findFirstPaymentByConditionId: vi.fn().mockResolvedValue(null),
-      deletePaymentCondition: vi.fn().mockResolvedValue({ id: 1 }),
-    });
-    const usecase = new SiteUtilityUsecase(repo);
+    siteUtilityRepository.getPaymentConditionById.mockResolvedValue({ id: 1 });
+    siteUtilityRepository.findFirstPaymentByConditionId.mockResolvedValue(null);
+    siteUtilityRepository.deletePaymentCondition.mockResolvedValue({ id: 1 });
 
-    const result = await usecase.deletePaymentCondition({ id: 1 });
+    const result = await siteUtilityUsecase.deletePaymentCondition({ id: 1 });
     expect(result).toEqual({ id: 1 });
-    expect(repo.deletePaymentCondition).toHaveBeenCalledWith({ id: 1 });
+    expect(siteUtilityRepository.deletePaymentCondition).toHaveBeenCalledWith({ id: 1 });
 
     // sanity: thrown errors elsewhere are AppError instances
     expect(new AppError("X", 400)).toBeInstanceOf(AppError);

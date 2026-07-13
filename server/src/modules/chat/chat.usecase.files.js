@@ -1,6 +1,7 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { addMonthGrouping } from "./chat.helpers.js";
 import { chatMessagesCodes } from "@dms/shared";
+import { chatRepository } from "./chat.repo.js";
 
 /**
  * Files concern of ChatUsecase — file gallery listing and stats. Prototype-
@@ -13,7 +14,7 @@ export const fileMethods = {
   async getFiles(roomId, userId, clientId, query) {
     const { page, limit, sort, type, search, from, to, uniqueMonths } = query;
 
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
@@ -28,7 +29,7 @@ export const fileMethods = {
       total,
       limit: parsedLimit,
       page: parsedPage,
-    } = await this.repository.getFiles({
+    } = await chatRepository.getFiles({
       roomId,
       page: page ? Number(page) : 0,
       limit: limit ? Number(limit) : 20,
@@ -53,13 +54,13 @@ export const fileMethods = {
   },
 
   async getFileStats(roomId, userId, clientId) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
     });
     if (!member)
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
-    return this.repository.getFileStats(roomId);
+    return chatRepository.getFileStats(roomId);
   },
 };

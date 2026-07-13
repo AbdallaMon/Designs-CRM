@@ -18,7 +18,7 @@ import {
 import { ClientLeadStatus } from "../../../infra/config/enums.js";
 import { telegramChannelQueue } from "../../../infra/queues/telegram-channel.queue.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes as C } from "@dms/shared";
+import { leadsMessagesCodes } from "@dms/shared";
 
 // ════════════════════════════════════════════════════════════════════════════════
 //  REPO-BACKED module functions (ported 1:1 from the legacy shared/legacy/lead-services.js
@@ -51,14 +51,14 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     clientLead.status !== "ON_HOLD" &&
     !isAdmin
   ) {
-    throw new AppError(C.LEAD_ALREADY_ASSIGNED, 400);
+    throw new AppError(leadsMessagesCodes.LEAD_ALREADY_ASSIGNED, 400);
   }
   const isAlloedToTakeThisLead = await checkIfUserAllowedToTakeALead(
     Number(userId),
     clientLead.country,
   );
   if (!isAlloedToTakeThisLead) {
-    throw new AppError(C.LEAD_COUNTRY_NOT_ALLOWED, 403);
+    throw new AppError(leadsMessagesCodes.LEAD_COUNTRY_NOT_ALLOWED, 403);
   }
   const activeLeadsCount = await leadRepository.countLeads({
     where: {
@@ -70,7 +70,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   });
   const maxUserLeadsCount = await leadRepository.getUserLeadLimits({ userId });
   if (activeLeadsCount >= (maxUserLeadsCount.maxLeadsCounts || 50)) {
-    throw new AppError(C.LEAD_MAX_ACTIVE_REACHED, 400);
+    throw new AppError(leadsMessagesCodes.LEAD_MAX_ACTIVE_REACHED, 400);
   }
   const startOfToday = dayjs().startOf("day").toDate();
   const endOfToday = dayjs().endOf("day").toDate();
@@ -87,7 +87,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     todaysLeadsCount >= (maxUserLeadsCount.maxLeadCountPerDay || 5) &&
     !isAdmin
   ) {
-    throw new AppError(C.LEAD_MAX_PER_DAY_REACHED, 400);
+    throw new AppError(leadsMessagesCodes.LEAD_MAX_PER_DAY_REACHED, 400);
   }
   if (clientLead.status === "ON_HOLD" || isAdmin) {
     const shadowLead = await leadRepository.createLead({
@@ -143,10 +143,10 @@ export async function updateClientLeadStatus({
       oldStatus === "REJECTED" ||
       oldStatus === "ARCHIVED"
     ) {
-      throw new AppError(C.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
+      throw new AppError(leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
     }
     if (oldStatus === "ON_HOLD") {
-      throw new AppError(C.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
+      throw new AppError(leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
     }
   }
 

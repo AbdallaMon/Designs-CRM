@@ -7,12 +7,28 @@
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
-import { notesController as c } from "./notes.controller.js";
-import { NotesValidation as V } from "./notes.validation.js";
+import { notesController } from "./notes.controller.js";
+import { NotesValidation } from "./notes.validation.js";
+import {
+  clientNotesReadLimiter,
+  clientNotesWriteLimiter,
+} from "./notes.rate-limiter.js";
 
 const router = Router();
 
-router.get("/", validate(V.listQuery, "query"), asyncHandler(c.list));
-router.post("/", validate(V.create), asyncHandler(c.create));
+// PUBLIC surface → per-IP rate limiting (abuse hardening) in addition to the per-session token
+// object-scope check enforced in the usecase.
+router.get(
+  "/",
+  clientNotesReadLimiter,
+  validate(NotesValidation.listQuery, "query"),
+  asyncHandler(notesController.getNotes),
+);
+router.post(
+  "/",
+  clientNotesWriteLimiter,
+  validate(NotesValidation.create),
+  asyncHandler(notesController.createNote),
+);
 
 export { router as clientNotesRouter };

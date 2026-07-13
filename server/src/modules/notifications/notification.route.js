@@ -31,7 +31,7 @@ router.get(
   "/",
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(NotificationValidation.listQuery, "query"),
-  asyncHandler(notificationController.list),
+  asyncHandler(notificationController.getNotifications),
 );
 router.get(
   "/unread",

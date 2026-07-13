@@ -1,4 +1,41 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// ── module mocks (hoisted above imports; no outer-var references in factories) ──────────
+// The session repo backs BOTH usecases: it exposes the `imageSessionRepository` object
+// (scope lookup) AND the standalone CRUD/status functions the usecases lazy-import.
+vi.mock("../session/image-session.repo.js", () => ({
+  imageSessionRepository: { getSessionClientLeadId: vi.fn() },
+  getClientImageSessions: vi.fn(),
+  createClientImageSession: vi.fn(),
+  editSessionFileds: vi.fn(),
+  regenerateSessionToken: vi.fn(),
+  deleteInProgressSession: vi.fn(),
+  getModelIds: vi.fn(),
+  getSessionByToken: vi.fn(),
+  changeSessionStatus: vi.fn(),
+}));
+vi.mock("../../leads/lead/lead.usecase.js", () => ({
+  leadUsecase: { checkIfUserCanAccessLead: vi.fn(), checkIfUserCanMutateLead: vi.fn() },
+}));
+vi.mock("../admin/page-info.repo.js", () => ({ getPageInfo: vi.fn() }));
+vi.mock("../admin/pros-cons.repo.js", () => ({ getConsAndPros: vi.fn() }));
+vi.mock("../client/client-image-session.repo.js", () => ({
+  clientImageSessionRepository: { findSelectedImageOwnerSessionId: vi.fn() },
+  getColorsByLng: vi.fn(),
+  getMaterialsByLng: vi.fn(),
+  getStyleByLng: vi.fn(),
+  getImagesByStyleAndSpaces: vi.fn(),
+  saveClientSelectedColor: vi.fn(),
+  saveClientSelectedMaterials: vi.fn(),
+  saveClientSelectedStyle: vi.fn(),
+  saveClientSelectedImages: vi.fn(),
+  deleteImage: vi.fn(),
+  submitSelectedPatterns: vi.fn(),
+  submitSelectedImages: vi.fn(),
+  getImageSesssionModel: vi.fn(),
+  getImages: vi.fn(),
+}));
+vi.mock("../services/session-approval.js", () => ({ uploadPdfAndApproveSession: vi.fn() }));
 
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -10,10 +47,31 @@ import {
   imageSessionsMessagesCodes,
 } from "@dms/shared";
 
-import { ImageSessionUsecase } from "../session/image-session.usecase.js";
+import { imageSessionUsecase } from "../session/image-session.usecase.js";
 import { ImageSessionValidation } from "../session/image-session.validation.js";
-import { ClientImageSessionUsecase } from "../client/client-image-session.usecase.js";
+import { clientImageSessionUsecase } from "../client/client-image-session.usecase.js";
 import { ClientImageSessionValidation } from "../client/client-image-session.validation.js";
+
+// mocked deps (same singletons the usecases consume)
+import {
+  imageSessionRepository,
+  getClientImageSessions,
+  createClientImageSession,
+  editSessionFileds,
+  regenerateSessionToken,
+  deleteInProgressSession,
+  getModelIds,
+  getSessionByToken,
+  changeSessionStatus,
+} from "../session/image-session.repo.js";
+import { leadUsecase } from "../../leads/lead/lead.usecase.js";
+import {
+  clientImageSessionRepository,
+  saveClientSelectedColor,
+  deleteImage,
+  getImageSesssionModel,
+} from "../client/client-image-session.repo.js";
+import { uploadPdfAndApproveSession } from "../services/session-approval.js";
 
 const M = imageSessionsMessagesCodes;
 const P = PERMISSIONS.IMAGE_SESSION;
@@ -35,30 +93,25 @@ const ALL_ROLES = [
   USER_ROLES.CONTACT_INITIATOR,
 ];
 
-// leads keystone fake: lead 100 → read+write; lead 200 → read-only; else → denied.
-function makeLeads() {
-  return {
-    checkIfUserCanAccessLead: vi.fn(async ({ id }) => {
-      if (Number(id) === 100 || Number(id) === 200) return { id: Number(id) };
-      throw new AppError("LEAD_ACCESS_DENIED", 403);
-    }),
-    checkIfUserCanMutateLead: vi.fn(async ({ id }) => {
-      if (Number(id) === 100) return { id: 100 };
-      throw new AppError("LEAD_MUTATE_DENIED", 403);
-    }),
-  };
-}
-
-// session repo: session resolves to a given clientLeadId; sessionId 999 → null (forged).
-function makeRepo(clientLeadId = 100) {
-  return {
-    getSessionClientLeadId: vi.fn(async ({ sessionId }) =>
-      Number(sessionId) === 999 ? null : { id: Number(sessionId), clientLeadId },
-    ),
-  };
-}
-
 const AUTH = { id: 5, role: "STAFF" };
+
+// Reset every mock and re-apply the keystone defaults before each test:
+//   leads → lead 100: read+write; lead 200: read-only; else denied.
+//   session repo scope lookup → clientLeadId 100 (sessionId 999 → null/forged).
+beforeEach(() => {
+  vi.clearAllMocks();
+  leadUsecase.checkIfUserCanAccessLead.mockImplementation(async ({ id }) => {
+    if (Number(id) === 100 || Number(id) === 200) return { id: Number(id) };
+    throw new AppError("LEAD_ACCESS_DENIED", 403);
+  });
+  leadUsecase.checkIfUserCanMutateLead.mockImplementation(async ({ id }) => {
+    if (Number(id) === 100) return { id: 100 };
+    throw new AppError("LEAD_MUTATE_DENIED", 403);
+  });
+  imageSessionRepository.getSessionClientLeadId.mockImplementation(async ({ sessionId }) =>
+    Number(sessionId) === 999 ? null : { id: Number(sessionId), clientLeadId: 100 },
+  );
+});
 
 // ════════════════════════════════════════════════════════════════════════════
 //  ADMIN-CODE ROLE PARITY — the `isAdmin` union passes; a plain STAFF/sales is 403'd
@@ -133,29 +186,25 @@ describe("image-sessions SHARED surface — role parity (legacy SHARED gate = al
 // ════════════════════════════════════════════════════════════════════════════
 describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
   it("listForLead: READ path uses access-scope, allows an in-scope lead", async () => {
-    const leads = makeLeads();
-    const legacy = { getClientImageSessions: vi.fn().mockResolvedValue([{ id: 1 }]) };
-    const uc = new ImageSessionUsecase(makeRepo(), leads, legacy);
-    const out = await uc.listForLead({ clientLeadId: 100, authUser: AUTH });
+    getClientImageSessions.mockResolvedValue([{ id: 1 }]);
+    const out = await imageSessionUsecase.listForLead({ clientLeadId: 100, authUser: AUTH });
     expect(out).toEqual([{ id: 1 }]);
-    expect(leads.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
-    expect(leads.checkIfUserCanMutateLead).not.toHaveBeenCalled();
+    expect(leadUsecase.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(leadUsecase.checkIfUserCanMutateLead).not.toHaveBeenCalled();
   });
 
   it("listForLead: DENIES an out-of-scope lead and never reads", async () => {
-    const legacy = { getClientImageSessions: vi.fn() };
-    const uc = new ImageSessionUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.listForLead({ clientLeadId: 777, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
-    expect(legacy.getClientImageSessions).not.toHaveBeenCalled();
+    await expect(imageSessionUsecase.listForLead({ clientLeadId: 777, authUser: AUTH })).rejects.toMatchObject({
+      statusCode: 403,
+    });
+    expect(getClientImageSessions).not.toHaveBeenCalled();
   });
 
   it("createForLead: WRITE uses mutate-scope; userId comes from req.auth, not the body", async () => {
-    const leads = makeLeads();
-    const legacy = { createClientImageSession: vi.fn().mockResolvedValue({ id: 7 }) };
-    const uc = new ImageSessionUsecase(makeRepo(), leads, legacy);
-    await uc.createForLead({ clientLeadId: 100, spaces: [1, 2], authUser: { id: 42, role: "STAFF" } });
-    expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: { id: 42, role: "STAFF" } });
-    expect(legacy.createClientImageSession).toHaveBeenCalledWith({
+    createClientImageSession.mockResolvedValue({ id: 7 });
+    await imageSessionUsecase.createForLead({ clientLeadId: 100, spaces: [1, 2], authUser: { id: 42, role: "STAFF" } });
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: { id: 42, role: "STAFF" } });
+    expect(createClientImageSession).toHaveBeenCalledWith({
       clientLeadId: 100,
       userId: 42,
       selectedSpaceIds: [1, 2],
@@ -163,60 +212,52 @@ describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
   });
 
   it("createForLead: DENIES a read-only-scope lead (mutate-scope, not read-scope)", async () => {
-    const legacy = { createClientImageSession: vi.fn() };
-    const uc = new ImageSessionUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.createForLead({ clientLeadId: 200, spaces: [1], authUser: AUTH })).rejects.toMatchObject({
+    await expect(imageSessionUsecase.createForLead({ clientLeadId: 200, spaces: [1], authUser: AUTH })).rejects.toMatchObject({
       statusCode: 403,
     });
-    expect(legacy.createClientImageSession).not.toHaveBeenCalled();
+    expect(createClientImageSession).not.toHaveBeenCalled();
   });
 
   it("regenerateToken: resolves session→lead (sessionId resolution) and MUTATE-scopes", async () => {
-    const leads = makeLeads();
-    const repo = makeRepo(100);
-    const legacy = { regenerateSessionToken: vi.fn().mockResolvedValue({ token: "t" }) };
-    const uc = new ImageSessionUsecase(repo, leads, legacy);
-    await uc.regenerateToken({ sessionId: 42, authUser: AUTH });
-    expect(repo.getSessionClientLeadId).toHaveBeenCalledWith({ sessionId: 42 });
-    expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
-    expect(legacy.regenerateSessionToken).toHaveBeenCalledWith(42);
+    regenerateSessionToken.mockResolvedValue({ token: "t" });
+    await imageSessionUsecase.regenerateToken({ sessionId: 42, authUser: AUTH });
+    expect(imageSessionRepository.getSessionClientLeadId).toHaveBeenCalledWith({ sessionId: 42 });
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(regenerateSessionToken).toHaveBeenCalledWith(42);
   });
 
   it("deleteSession: resolves session→lead; DENIES a read-only-scope lead before deleting", async () => {
-    const leads = makeLeads();
-    const repo = makeRepo(200); // session belongs to lead 200 (read-only scope)
-    const legacy = { deleteInProgressSession: vi.fn() };
-    const uc = new ImageSessionUsecase(repo, leads, legacy);
-    await expect(uc.deleteSession({ sessionId: 42, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
-    expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 200, authUser: AUTH });
-    expect(legacy.deleteInProgressSession).not.toHaveBeenCalled();
+    // session belongs to lead 200 (read-only scope)
+    imageSessionRepository.getSessionClientLeadId.mockResolvedValue({ id: 42, clientLeadId: 200 });
+    await expect(imageSessionUsecase.deleteSession({ sessionId: 42, authUser: AUTH })).rejects.toMatchObject({
+      statusCode: 403,
+    });
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 200, authUser: AUTH });
+    expect(deleteInProgressSession).not.toHaveBeenCalled();
   });
 
   it("editFields: 404s a forged sessionId before the legacy edit runs", async () => {
-    const legacy = { editSessionFileds: vi.fn() };
-    const uc = new ImageSessionUsecase(makeRepo(), makeLeads(), legacy);
     await expect(
-      uc.editFields({ clientLeadId: 100, sessionId: 999, data: { name: "x" }, authUser: AUTH }),
+      imageSessionUsecase.editFields({ clientLeadId: 100, sessionId: 999, data: { name: "x" }, authUser: AUTH }),
     ).rejects.toMatchObject({ statusCode: 404, message: M.IMAGE_SESSION_NOT_FOUND });
-    expect(legacy.editSessionFileds).not.toHaveBeenCalled();
+    expect(editSessionFileds).not.toHaveBeenCalled();
   });
 
   it("modelIds: rejects a model OFF the allow-list (mass-read hardening)", async () => {
-    const legacy = { getModelIds: vi.fn() };
-    const uc = new ImageSessionUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.modelIds({ model: "user", searchParams: {} })).rejects.toMatchObject({
+    await expect(imageSessionUsecase.modelIds({ model: "user", searchParams: {} })).rejects.toMatchObject({
       statusCode: 400,
       message: M.IMAGE_SESSION_MODEL_NOT_ALLOWED,
     });
-    expect(legacy.getModelIds).not.toHaveBeenCalled();
+    expect(getModelIds).not.toHaveBeenCalled();
   });
 
   it("modelIds: allows an allow-listed model and rejects a malformed `where` JSON", async () => {
-    const legacy = { getModelIds: vi.fn().mockResolvedValue([{ id: 1 }]) };
-    const uc = new ImageSessionUsecase(makeRepo(), makeLeads(), legacy);
-    await uc.modelIds({ model: "designImage", searchParams: {} });
-    expect(legacy.getModelIds).toHaveBeenCalledWith({ model: "designImage", searchParams: {} });
-    await expect(uc.modelIds({ model: "designImage", searchParams: { where: "{not json" } })).rejects.toMatchObject({
+    getModelIds.mockResolvedValue([{ id: 1 }]);
+    await imageSessionUsecase.modelIds({ model: "designImage", searchParams: {} });
+    expect(getModelIds).toHaveBeenCalledWith({ model: "designImage", searchParams: {} });
+    await expect(
+      imageSessionUsecase.modelIds({ model: "designImage", searchParams: { where: "{not json" } }),
+    ).rejects.toMatchObject({
       statusCode: 400,
     });
   });
@@ -227,16 +268,14 @@ describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("ClientImageSessionUsecase public flow — token is authoritative", () => {
   it("changeStatus keys the session by the TOKEN only (no client id override)", async () => {
-    const changeSessionStatus = vi.fn().mockResolvedValue({ id: 1 });
-    const uc = new ClientImageSessionUsecase({ changeSessionStatus });
-    await uc.changeStatus({ token: "tok-abc", sessionStatus: "SELECTED_STYLE" });
+    changeSessionStatus.mockResolvedValue({ id: 1 });
+    await clientImageSessionUsecase.changeStatus({ token: "tok-abc", sessionStatus: "SELECTED_STYLE" });
     expect(changeSessionStatus).toHaveBeenCalledWith({ token: "tok-abc", sessionStatus: "SELECTED_STYLE" });
     expect(changeSessionStatus.mock.calls[0][0]).not.toHaveProperty("id");
   });
 
   it("changeStatus throws TOKEN_INVALID when no token", async () => {
-    const uc = new ClientImageSessionUsecase({ changeSessionStatus: vi.fn() });
-    await expect(uc.changeStatus({ token: "", sessionStatus: "INITIAL" })).rejects.toMatchObject({
+    await expect(clientImageSessionUsecase.changeStatus({ token: "", sessionStatus: "INITIAL" })).rejects.toMatchObject({
       statusCode: 400,
       message: M.IMAGE_SESSION_TOKEN_INVALID,
     });
@@ -244,10 +283,9 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
 
   it("saveColor: OVERRIDES the body session id with the TOKEN-resolved id (the IDOR close)", async () => {
     // attacker passes session.id = 999 (someone else's) but a token that resolves to id 7.
-    const getSessionByToken = vi.fn().mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
-    const saveClientSelectedColor = vi.fn().mockResolvedValue({});
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, saveClientSelectedColor });
-    await uc.saveColor({
+    getSessionByToken.mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
+    saveClientSelectedColor.mockResolvedValue({});
+    await clientImageSessionUsecase.saveColor({
       session: { id: 999, token: "tok" },
       selectedColor: { id: 3 },
       customColors: [],
@@ -259,21 +297,18 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   });
 
   it("saveColor: throws NOT_FOUND when the token resolves to nothing (no write)", async () => {
-    const getSessionByToken = vi.fn().mockResolvedValue(null);
-    const saveClientSelectedColor = vi.fn();
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, saveClientSelectedColor });
+    getSessionByToken.mockResolvedValue(null);
     await expect(
-      uc.saveColor({ session: { id: 1, token: "bad" }, selectedColor: {}, status: "INITIAL" }),
+      clientImageSessionUsecase.saveColor({ session: { id: 1, token: "bad" }, selectedColor: {}, status: "INITIAL" }),
     ).rejects.toMatchObject({ statusCode: 404 });
     expect(saveClientSelectedColor).not.toHaveBeenCalled();
   });
 
   it("generatePdf operates ONLY on the token's session (overrides id) → 🔒 frozen orchestrator", async () => {
-    const getSessionByToken = vi.fn().mockResolvedValue({ id: 7, token: "tok-xyz", clientLeadId: 100 });
-    const changeSessionStatus = vi.fn().mockResolvedValue({});
-    const uploadPdfAndApproveSession = vi.fn().mockResolvedValue({});
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, changeSessionStatus, uploadPdfAndApproveSession });
-    await uc.generatePdf({
+    getSessionByToken.mockResolvedValue({ id: 7, token: "tok-xyz", clientLeadId: 100 });
+    changeSessionStatus.mockResolvedValue({});
+    uploadPdfAndApproveSession.mockResolvedValue({});
+    await clientImageSessionUsecase.generatePdf({
       sessionData: { id: 999, token: "tok-xyz" }, // forged id 999
       signatureUrl: "/uploads/sig.png",
       sessionStatus: "PDF_GENERATED",
@@ -292,56 +327,51 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   });
 
   it("generatePdf maps a frozen-builder failure to a language-neutral code (no prose)", async () => {
-    const uc = new ClientImageSessionUsecase({
-      getSessionByToken: vi.fn().mockResolvedValue({ id: 7, token: "t", clientLeadId: 100 }),
-      changeSessionStatus: vi.fn().mockResolvedValue({}),
-      uploadPdfAndApproveSession: vi.fn().mockRejectedValue(new Error("boom")),
-    });
+    getSessionByToken.mockResolvedValue({ id: 7, token: "t", clientLeadId: 100 });
+    changeSessionStatus.mockResolvedValue({});
+    uploadPdfAndApproveSession.mockRejectedValue(new Error("boom"));
     await expect(
-      uc.generatePdf({ sessionData: { token: "t" }, signatureUrl: "/uploads/s.png", sessionStatus: "PDF_GENERATED" }),
+      clientImageSessionUsecase.generatePdf({
+        sessionData: { token: "t" },
+        signatureUrl: "/uploads/s.png",
+        sessionStatus: "PDF_GENERATED",
+      }),
     ).rejects.toMatchObject({ statusCode: 500, message: M.IMAGE_SESSION_PDF_GENERATION_FAILED });
   });
 
   it("deleteImage: REJECTS a missing/invalid token (404 NOT_FOUND) — frozen delete NOT called", async () => {
-    const deleteImage = vi.fn();
     // invalid token → getSessionByToken resolves to nothing → #resolveByToken throws NOT_FOUND.
-    const getSessionByToken = vi.fn().mockResolvedValue(null);
-    const repo = { findSelectedImageOwnerSessionId: vi.fn() };
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, deleteImage }, repo);
+    getSessionByToken.mockResolvedValue(null);
     // missing token → TOKEN_INVALID (400) before any lookup.
-    await expect(uc.deleteImage({ token: "", imageId: 5 })).rejects.toMatchObject({
+    await expect(clientImageSessionUsecase.deleteImage({ token: "", imageId: 5 })).rejects.toMatchObject({
       statusCode: 400,
       message: M.IMAGE_SESSION_TOKEN_INVALID,
     });
     // present-but-unknown token → NOT_FOUND (404).
-    await expect(uc.deleteImage({ token: "bad", imageId: 5 })).rejects.toMatchObject({
+    await expect(clientImageSessionUsecase.deleteImage({ token: "bad", imageId: 5 })).rejects.toMatchObject({
       statusCode: 404,
       message: M.IMAGE_SESSION_NOT_FOUND,
     });
-    expect(repo.findSelectedImageOwnerSessionId).not.toHaveBeenCalled();
+    expect(clientImageSessionRepository.findSelectedImageOwnerSessionId).not.toHaveBeenCalled();
     expect(deleteImage).not.toHaveBeenCalled();
   });
 
   it("deleteImage: REJECTS a cross-session imageId (the IDOR) — 404, frozen delete NOT called", async () => {
     // token resolves to session 7, but image 5 belongs to session 99 (a DIFFERENT client).
-    const getSessionByToken = vi.fn().mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
-    const deleteImage = vi.fn();
-    const repo = { findSelectedImageOwnerSessionId: vi.fn().mockResolvedValue({ imageSessionId: 99 }) };
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, deleteImage }, repo);
-    await expect(uc.deleteImage({ token: "tok", imageId: 5 })).rejects.toMatchObject({
+    getSessionByToken.mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
+    clientImageSessionRepository.findSelectedImageOwnerSessionId.mockResolvedValue({ imageSessionId: 99 });
+    await expect(clientImageSessionUsecase.deleteImage({ token: "tok", imageId: 5 })).rejects.toMatchObject({
       statusCode: 404,
       message: M.IMAGE_SESSION_NOT_FOUND,
     });
-    expect(repo.findSelectedImageOwnerSessionId).toHaveBeenCalledWith({ imageId: 5 });
+    expect(clientImageSessionRepository.findSelectedImageOwnerSessionId).toHaveBeenCalledWith({ imageId: 5 });
     expect(deleteImage).not.toHaveBeenCalled(); // the frozen wipe never runs cross-session
   });
 
   it("deleteImage: also 404s a non-existent imageId (no leak), frozen delete NOT called", async () => {
-    const getSessionByToken = vi.fn().mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
-    const deleteImage = vi.fn();
-    const repo = { findSelectedImageOwnerSessionId: vi.fn().mockResolvedValue(null) };
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, deleteImage }, repo);
-    await expect(uc.deleteImage({ token: "tok", imageId: 12345 })).rejects.toMatchObject({
+    getSessionByToken.mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
+    clientImageSessionRepository.findSelectedImageOwnerSessionId.mockResolvedValue(null);
+    await expect(clientImageSessionUsecase.deleteImage({ token: "tok", imageId: 12345 })).rejects.toMatchObject({
       statusCode: 404,
       message: M.IMAGE_SESSION_NOT_FOUND,
     });
@@ -349,11 +379,10 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   });
 
   it("deleteImage: ALLOWS when the image belongs to the token's session → frozen deleteImage(imageId)", async () => {
-    const getSessionByToken = vi.fn().mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
-    const deleteImage = vi.fn().mockResolvedValue(true);
-    const repo = { findSelectedImageOwnerSessionId: vi.fn().mockResolvedValue({ imageSessionId: 7 }) };
-    const uc = new ClientImageSessionUsecase({ getSessionByToken, deleteImage }, repo);
-    const out = await uc.deleteImage({ token: "tok", imageId: 5 });
+    getSessionByToken.mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
+    deleteImage.mockResolvedValue(true);
+    clientImageSessionRepository.findSelectedImageOwnerSessionId.mockResolvedValue({ imageSessionId: 7 });
+    const out = await clientImageSessionUsecase.deleteImage({ token: "tok", imageId: 5 });
     expect(out).toBe(true);
     // frozen service invoked UNCHANGED, with just the imageId (no extra args, no token leak).
     expect(deleteImage).toHaveBeenCalledWith({ imageId: 5 });
@@ -369,9 +398,7 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   });
 
   it("modelData (extras /data): rejects a model OFF the allow-list", async () => {
-    const getImageSesssionModel = vi.fn();
-    const uc = new ClientImageSessionUsecase({ getImageSesssionModel });
-    await expect(uc.modelData({ model: "user" })).rejects.toMatchObject({
+    await expect(clientImageSessionUsecase.modelData({ model: "user" })).rejects.toMatchObject({
       statusCode: 400,
       message: M.IMAGE_SESSION_MODEL_NOT_ALLOWED,
     });

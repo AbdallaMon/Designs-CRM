@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import {
   Box,
   Card,
@@ -21,15 +21,104 @@ import { CONTRACT_LEVELSENUM } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { useAlertContext } from "@/app/providers/MuiAlert";
+
+// One card per contract level. Holds its OWN local text state (seeded from the
+// clause, synced on refetch) so typing always works — even when no DB row exists
+// yet for this level. Save creates (POST) when there is no id, updates (PUT)
+// otherwise. Mirrors the SpecialClausesDialog item pattern.
+const LevelClauseCardBase = ({ lvl, clause, onSave, disabled }) => {
+  const [textAr, setTextAr] = useState(clause.textAr || "");
+  const [textEn, setTextEn] = useState(clause.textEn || "");
+
+  // sync with backend refetch
+  useEffect(() => {
+    setTextAr(clause.textAr || "");
+    setTextEn(clause.textEn || "");
+  }, [clause.id, clause.textAr, clause.textEn]);
+
+  const handleSaveClick = () => {
+    onSave({
+      ...clause,
+      level: lvl.enum,
+      textAr,
+      textEn,
+    });
+  };
+
+  return (
+    <Card variant="outlined">
+      <CardContent>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={1}
+        >
+          <Box>
+            <Typography variant="subtitle1">{lvl.labelAr}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {lvl.labelEn} ({lvl.enum})
+            </Typography>
+          </Box>
+        </Box>
+
+        <Stack spacing={2}>
+          <Box border="1px solid #eee" borderRadius={1} p={2}>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={1}
+            >
+              <Typography variant="subtitle2">بند المرحلة</Typography>
+            </Box>
+
+            <Stack spacing={2}>
+              <TextField
+                label="النص (عربي)"
+                fullWidth
+                multiline
+                minRows={2}
+                value={textAr}
+                sx={{ direction: "rtl" }}
+                onChange={(e) => setTextAr(e.target.value)}
+              />
+              <TextField
+                label="Text (EN)"
+                fullWidth
+                multiline
+                minRows={2}
+                value={textEn}
+                onChange={(e) => setTextEn(e.target.value)}
+              />
+            </Stack>
+
+            <Box display="flex" justifyContent="flex-end" mt={2}>
+              <Button
+                startIcon={<MdEdit />}
+                variant="contained"
+                size="small"
+                onClick={handleSaveClick}
+                disabled={disabled}
+              >
+                حفظ
+              </Button>
+            </Box>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+const LevelClauseCard = memo(LevelClauseCardBase);
 
 export function LevelClausesDialog({ open, onClose, onUpdated }) {
   const { setLoading: setToastLoading } = useToastContext();
   const [loading, setLoading] = useState(false);
 
-  // 👇 now it's an array of items (one per level)
+  // array of items (one per level that exists in the DB)
   const [clausesByLevel, setClausesByLevel] = useState([]);
-  const { setAlertError } = useAlertContext();
 
   const fetchLevelClauses = async () => {
     if (!open) return;
@@ -46,48 +135,32 @@ export function LevelClausesDialog({ open, onClose, onUpdated }) {
     }
   }, [open]);
 
-  const handleChangeField = (level, field, value) => {
-    setClausesByLevel((prev) => {
-      if (!prev || !Array.isArray(prev)) return prev;
-      const exists = prev.find((c) => c.level === level);
-      if (!exists) return prev;
-
-      return prev.map((c) =>
-        c.level === level ? { ...c, [field]: value } : c
-      );
-    });
-  };
-
-  // لا يوجد Add ولا Delete هنا، فقط Save (PUT) للبند الواحد الخاص بكل مرحلة
-
-  const handleSaveClause = async (level, index) => {
-    const clause = clausesByLevel?.find((c) => c.level === level);
-
-    if (!clause || !clause.id) {
-      setAlertError("لا يمكن حفظ هذا البند لأنه غير معرف في قاعدة البيانات.");
-      return;
-    }
+  // Create (POST) when the level has no row yet, update (PUT) otherwise.
+  const handleSaveClause = async (clause) => {
+    const isNew = !clause.id;
 
     const payload = {
-      level,
+      level: clause.level,
       textAr: clause.textAr,
       textEn: clause.textEn,
-      order: clause.order ?? index,
+      order: clause.order ?? 0,
       isActive: clause.isActive ?? true,
     };
 
     const req = await handleRequestSubmit(
       payload,
       setToastLoading,
-      `shared/site-utilities/contract-utility/level-clauses/${clause.id}`,
+      isNew
+        ? `shared/site-utilities/contract-utility/level-clauses`
+        : `shared/site-utilities/contract-utility/level-clauses/${clause.id}`,
       false,
       "Saving",
       false,
-      "PUT"
+      isNew ? "POST" : "PUT"
     );
 
     if (req.status === 200) {
-      fetchLevelClauses();
+      await fetchLevelClauses();
       onUpdated?.();
     }
   };
@@ -104,85 +177,17 @@ export function LevelClausesDialog({ open, onClose, onUpdated }) {
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
-          {CONTRACT_LEVELSENUM.map((lvl, idx) => {
-            const levelKey = lvl.enum;
+          {CONTRACT_LEVELSENUM.map((lvl) => {
             const clause =
-              clausesByLevel?.find((lv) => lv.level === levelKey) || {};
+              clausesByLevel?.find((lv) => lv.level === lvl.enum) || {};
             return (
-              <Card key={levelKey} variant="outlined">
-                <CardContent>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={1}
-                  >
-                    <Box>
-                      <Typography variant="subtitle1">{lvl.labelAr}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {lvl.labelEn} ({levelKey})
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Stack spacing={2}>
-                    <Box border="1px solid #eee" borderRadius={1} p={2}>
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={1}
-                      >
-                        <Typography variant="subtitle2">بند المرحلة</Typography>
-                      </Box>
-
-                      <Stack spacing={2}>
-                        <TextField
-                          label="النص (عربي)"
-                          fullWidth
-                          multiline
-                          minRows={2}
-                          value={clause.textAr || ""}
-                          sx={{ direction: "rtl" }}
-                          onChange={(e) =>
-                            handleChangeField(
-                              levelKey,
-                              "textAr",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <TextField
-                          label="Text (EN)"
-                          fullWidth
-                          multiline
-                          minRows={2}
-                          value={clause.textEn || ""}
-                          onChange={(e) =>
-                            handleChangeField(
-                              levelKey,
-                              "textEn",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </Stack>
-
-                      <Box display="flex" justifyContent="flex-end" mt={2}>
-                        <Button
-                          startIcon={<MdEdit />}
-                          variant="contained"
-                          size="small"
-                          onClick={() => handleSaveClause(levelKey, idx)}
-                          disabled={loading}
-                        >
-                          حفظ
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
+              <LevelClauseCard
+                key={lvl.enum}
+                lvl={lvl}
+                clause={clause}
+                onSave={handleSaveClause}
+                disabled={loading}
+              />
             );
           })}
         </Stack>

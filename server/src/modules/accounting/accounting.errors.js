@@ -12,22 +12,22 @@
 // the messages that interpolate dynamic values (pending amount / month name). ANYTHING not
 // recognized is re-thrown untouched, so genuine/unexpected errors still surface as 500.
 import { AppError } from "../../shared/errors/AppError.js";
-import { accountingMessagesCodes as C } from "@dms/shared";
+import { accountingMessagesCodes } from "@dms/shared";
 
 // Exact-string → { code, status }. These legacy strings are copied verbatim from the
 // accountant service throw sites (including its two spelling typos: "fiels"/"fileds").
 const EXACT = {
-  "Please fill all data": { code: C.REQUIRED_FIELDS_MISSING, status: 422 },
-  "Please enter a date": { code: C.PAYMENT_DATE_REQUIRED, status: 422 },
-  "Payment not found": { code: C.PAYMENT_NOT_FOUND, status: 404 },
+  "Please fill all data": { code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, status: 422 },
+  "Please enter a date": { code: accountingMessagesCodes.PAYMENT_DATE_REQUIRED, status: 422 },
+  "Payment not found": { code: accountingMessagesCodes.PAYMENT_NOT_FOUND, status: 404 },
   "Invalid Payment: The payment has already been fully paid.": {
-    code: C.PAYMENT_ALREADY_FULLY_PAID,
+    code: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID,
     status: 409,
   },
-  "Fill all the fields please": { code: C.REQUIRED_FIELDS_MISSING, status: 422 },
-  "Rent not found": { code: C.RENT_NOT_FOUND, status: 404 },
-  "Please fill all fiels": { code: C.REQUIRED_FIELDS_MISSING, status: 422 }, // legacy typo
-  "Fill all the fileds please": { code: C.REQUIRED_FIELDS_MISSING, status: 422 }, // legacy typo
+  "Fill all the fields please": { code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, status: 422 },
+  "Rent not found": { code: accountingMessagesCodes.RENT_NOT_FOUND, status: 404 },
+  "Please fill all fiels": { code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, status: 422 }, // legacy typo
+  "Fill all the fileds please": { code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, status: 422 }, // legacy typo
 };
 
 // Prefix/contains matchers for the legacy messages that interpolate runtime values.
@@ -35,19 +35,19 @@ const DYNAMIC = [
   // `Invalid Payment: The pending amount is ${pendingAmount}. The amount provided ...`
   {
     test: (m) => m.startsWith("Invalid Payment: The pending amount is"),
-    code: C.PAYMENT_AMOUNT_EXCEEDS_PENDING,
+    code: accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING,
     status: 400,
   },
   // `Invalid Payment: The payment amount must be greater than zero. You provided ...`
   {
     test: (m) => m.startsWith("Invalid Payment: The payment amount must be greater than zero"),
-    code: C.PAYMENT_AMOUNT_INVALID,
+    code: accountingMessagesCodes.PAYMENT_AMOUNT_INVALID,
     status: 400,
   },
   // `Monthly salary for ${Month Year} already exists for this user`
   {
     test: (m) => m.startsWith("Monthly salary for") && m.endsWith("already exists for this user"),
-    code: C.MONTHLY_SALARY_ALREADY_EXISTS,
+    code: accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS,
     status: 409,
   },
 ];

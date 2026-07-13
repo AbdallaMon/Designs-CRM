@@ -1,6 +1,7 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { computeRoomCapabilities } from "./chat.dto.js";
 import { chatMessagesCodes } from "@dms/shared";
+import { chatRepository } from "./chat.repo.js";
 
 // Lazily resolve the socket server at call time. A static `import { getIo }`
 // here would recreate a load-order-fragile cycle:
@@ -25,7 +26,7 @@ export const roomMethods = {
   // request through (`requireSpecialChecker` only catches thrown errors). Copy
   // this shape for read scope; pair a stricter `checkIfUserCanMutateX` for writes.
   async checkIfUserCanAccessRoom({ roomId, authUserId, clientId = null }) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId: authUserId,
       clientId,
@@ -52,7 +53,7 @@ export const roomMethods = {
     } = query;
     const parsedPage = page ? Number(page) : 0;
     const pageSize = limit ? Number(limit) : 25;
-    const { rooms, total } = await this.repository.getRooms({
+    const { rooms, total } = await chatRepository.getRooms({
       userId,
       category,
       projectId,
@@ -71,7 +72,7 @@ export const roomMethods = {
         const otherMembers =
           room.members?.filter((m) => m.userId !== Number(userId)) || [];
         const unreadCount = selfMember
-          ? await this.repository.countUnreadMessages({
+          ? await chatRepository.countUnreadMessages({
               roomId: room.id,
               memberId: selfMember.id,
               userId: Number(userId),
@@ -110,7 +111,7 @@ export const roomMethods = {
   async getRoomById(roomId, authUser, clientId) {
     const userId = authUser.id;
     const permissions = authUser.permissions || [];
-    const selfMember = await this.repository.getMember({
+    const selfMember = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
@@ -118,7 +119,7 @@ export const roomMethods = {
     if (!selfMember)
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    const room = await this.repository.getRoomById(roomId, userId, clientId);
+    const room = await chatRepository.getRoomById(roomId, userId, clientId);
     if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
 
     const otherMembers =
@@ -150,7 +151,7 @@ export const roomMethods = {
       isChatEnabled,
     } = body;
 
-    const room = await this.repository.createRoom({
+    const room = await chatRepository.createRoom({
       name,
       type,
       projectId,
@@ -163,7 +164,7 @@ export const roomMethods = {
     });
 
     if (type === "STAFF_GROUP" && projectIds?.length) {
-      await this.repository.addRoomProjects(room.id, projectIds);
+      await chatRepository.addRoomProjects(room.id, projectIds);
     }
 
     const memberData = [
@@ -175,9 +176,9 @@ export const roomMethods = {
     for (const uid of filteredUserIds) {
       memberData.push({ roomId: room.id, userId: Number(uid), role: "MEMBER" });
     }
-    await this.repository.addRoomMembers(memberData);
+    await chatRepository.addRoomMembers(memberData);
 
-    const completeRoom = await this.repository.getFullRoom(room.id);
+    const completeRoom = await chatRepository.getFullRoom(room.id);
 
     await this.emitToAllMembersExcluding({
       roomId: room.id,
@@ -190,7 +191,7 @@ export const roomMethods = {
   },
 
   async createDirectChat(userId, participantId) {
-    const existing = await this.repository.checkRoomExists({
+    const existing = await chatRepository.checkRoomExists({
       userId,
       otherUserId: participantId,
     });
@@ -228,22 +229,22 @@ export const roomMethods = {
           }
         : {};
 
-    const clientLead = await this.repository.getClientLeadWithProjects(
+    const clientLead = await chatRepository.getClientLeadWithProjects(
       clientLeadId,
       projectWhere,
     );
     if (!clientLead) throw new AppError(chatMessagesCodes.CLIENT_LEAD_NOT_FOUND, 404);
 
     let autoName = `${groupType === "CLIENT_TO_STAFF" ? "Lead" : "Projects"} ${clientLead.client.name} #(${clientLead.code})`;
-    const count = await this.repository.countRoomsForLead(
+    const count = await chatRepository.countRoomsForLead(
       clientLeadId,
       groupType,
     );
     autoName += ` #${count + 1}`;
 
-    const token = await this.repository.generateChatToken();
+    const token = await chatRepository.generateChatToken();
 
-    const room = await this.repository.createRoom({
+    const room = await chatRepository.createRoom({
       name: name || autoName,
       type: groupType,
       clientLeadId,
@@ -255,7 +256,7 @@ export const roomMethods = {
       const pIds = clientLead.projects.map((p) => p.id);
       if (!pIds.length)
         throw new AppError(chatMessagesCodes.NO_PROJECTS_FOR_CRITERIA, 400);
-      await this.repository.addRoomProjects(room.id, pIds);
+      await chatRepository.addRoomProjects(room.id, pIds);
     }
 
     const assignments =
@@ -299,9 +300,9 @@ export const roomMethods = {
     for (const uid of uniqueUserIds) {
       memberData.push({ roomId: room.id, userId: Number(uid), role: "MEMBER" });
     }
-    await this.repository.addRoomMembers(memberData);
+    await chatRepository.addRoomMembers(memberData);
 
-    const completeRoom = await this.repository.getFullRoom(room.id);
+    const completeRoom = await chatRepository.getFullRoom(room.id);
 
     await this.emitToAllMembersExcluding({
       roomId: room.id,
@@ -314,10 +315,10 @@ export const roomMethods = {
   },
 
   async updateRoom(roomId, userId, updates) {
-    const member = await this.repository.getMember({ roomId, userId });
+    const member = await chatRepository.getMember({ roomId, userId });
     if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    const room = await this.repository.findRoomBasic(roomId);
+    const room = await chatRepository.findRoomBasic(roomId);
     if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
 
     const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
@@ -335,8 +336,8 @@ export const roomMethods = {
     const isMemberField = "isMuted" in sanitized || "isArchived" in sanitized;
 
     const result = isMemberField
-      ? await this.repository.updateMemberSelf(member.id, sanitized)
-      : await this.repository.updateRoom(roomId, sanitized);
+      ? await chatRepository.updateMemberSelf(member.id, sanitized)
+      : await chatRepository.updateRoom(roomId, sanitized);
 
     const io = await getIo();
     io.to(`room:${roomId}`).emit("room:updated", {
@@ -355,11 +356,11 @@ export const roomMethods = {
   },
 
   async deleteRoom(roomId, userId) {
-    const member = await this.repository.getMember({ roomId, userId });
+    const member = await chatRepository.getMember({ roomId, userId });
     if (!member || member.role !== "ADMIN")
       throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
-    const room = await this.repository.findRoomBasic(roomId);
+    const room = await chatRepository.findRoomBasic(roomId);
     if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
     if (room.type === "STAFF_TO_STAFF" || room.type === "PROJECT_GROUP") {
       throw new AppError(chatMessagesCodes.ROOM_NOT_DELETABLE, 400);
@@ -372,42 +373,42 @@ export const roomMethods = {
       content: { roomId: Number(roomId) },
     }).catch(console.error);
 
-    await this.repository.deleteRoom(roomId);
+    await chatRepository.deleteRoom(roomId);
     return { code: chatMessagesCodes.ROOM_DELETED };
   },
 
   async manageClient(roomId, userId, action) {
-    const member = await this.repository.getMember({ roomId, userId });
+    const member = await chatRepository.getMember({ roomId, userId });
     if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
     if (!isAdminOrMod)
       throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
-    const room = await this.repository.findRoomBasic(roomId);
+    const room = await chatRepository.findRoomBasic(roomId);
     if (!room?.clientLead)
       throw new AppError(chatMessagesCodes.NO_CLIENT_LEAD_ON_ROOM, 400);
 
     const clientId = room.clientLead.clientId;
 
     if (action === "addClient") {
-      await this.repository.addRoomMembers([
+      await chatRepository.addRoomMembers([
         { roomId: Number(roomId), clientId, role: "MEMBER" },
       ]);
-      const token = await this.repository.generateChatToken();
-      await this.repository.updateRoom(roomId, { chatAccessToken: token });
+      const token = await chatRepository.generateChatToken();
+      await chatRepository.updateRoom(roomId, { chatAccessToken: token });
       return { code: chatMessagesCodes.CLIENT_ADDED };
     }
 
     if (action === "removeClient") {
-      const clientMember = await this.repository.getMember({
+      const clientMember = await chatRepository.getMember({
         roomId,
         clientId: String(clientId),
       });
       if (clientMember) {
-        await this.repository.removeMember(clientMember.id);
+        await chatRepository.removeMember(clientMember.id);
       }
-      await this.repository.updateRoom(roomId, { chatAccessToken: null });
+      await chatRepository.updateRoom(roomId, { chatAccessToken: null });
       return { code: chatMessagesCodes.CLIENT_REMOVED };
     }
 
@@ -415,14 +416,14 @@ export const roomMethods = {
   },
 
   async regenerateToken(roomId, userId) {
-    const member = await this.repository.getMember({ roomId, userId });
+    const member = await chatRepository.getMember({ roomId, userId });
     const isAdminOrMod =
       member?.role === "ADMIN" || member?.role === "MODERATOR";
     if (!isAdminOrMod)
       throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
-    const token = await this.repository.generateChatToken();
-    const room = await this.repository.updateRoom(roomId, {
+    const token = await chatRepository.generateChatToken();
+    const room = await chatRepository.updateRoom(roomId, {
       chatAccessToken: token,
     });
     return room;
@@ -431,6 +432,6 @@ export const roomMethods = {
   // ── Room access check (for socket join) ───────────────────────────────────
 
   async getRoomMembership({ roomId, userId, clientId }) {
-    return this.repository.getMember({ roomId, userId, clientId });
+    return chatRepository.getMember({ roomId, userId, clientId });
   },
 };

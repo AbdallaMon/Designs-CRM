@@ -28,7 +28,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { adminImageSessionController } from "./admin-image-session.controller.js";
-import { AdminImageSessionValidation as V } from "./admin-image-session.validation.js";
+import { AdminImageSessionValidation } from "./admin-image-session.validation.js";
 
 const P = PERMISSIONS.IMAGE_SESSION;
 const router = Router();
@@ -39,20 +39,20 @@ router.use(AuthMiddleware.requireAuth);
 router.get(
   "/space",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.notArchivedQuery, "query"),
+  validate(AdminImageSessionValidation.notArchivedQuery, "query"),
   asyncHandler(adminImageSessionController.listSpaces),
 );
 router.post(
   "/space",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createSpace),
 );
 router.put(
   "/space/:spaceId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.spaceIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.spaceIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updateSpace),
 );
 
@@ -60,26 +60,26 @@ router.put(
 router.get(
   "/templates/ids",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.typeQuery, "query"),
+  validate(AdminImageSessionValidation.typeQuery, "query"),
   asyncHandler(adminImageSessionController.listTemplateIds),
 );
 router.get(
   "/templates",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.typeQuery, "query"),
+  validate(AdminImageSessionValidation.typeQuery, "query"),
   asyncHandler(adminImageSessionController.listTemplates),
 );
 router.post(
   "/templates",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createTemplate),
 );
 router.put(
   "/templates/:templateId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.templateIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.templateIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updateTemplate),
 );
 
@@ -87,20 +87,20 @@ router.put(
 router.get(
   "/material",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.notArchivedQuery, "query"),
+  validate(AdminImageSessionValidation.notArchivedQuery, "query"),
   asyncHandler(adminImageSessionController.listMaterials),
 );
 router.post(
   "/material",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createMaterial),
 );
 router.put(
   "/material/:materialId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.materialIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.materialIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updateMaterial),
 );
 
@@ -108,20 +108,20 @@ router.put(
 router.get(
   "/style",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.notArchivedQuery, "query"),
+  validate(AdminImageSessionValidation.notArchivedQuery, "query"),
   asyncHandler(adminImageSessionController.listStyles),
 );
 router.post(
   "/style",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createStyle),
 );
 router.put(
   "/style/:styleId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.styleIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.styleIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updateStyle),
 );
 
@@ -129,20 +129,20 @@ router.put(
 router.get(
   "/colors",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.notArchivedQuery, "query"),
+  validate(AdminImageSessionValidation.notArchivedQuery, "query"),
   asyncHandler(adminImageSessionController.listColors),
 );
 router.post(
   "/colors",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createColor),
 );
 router.put(
   "/colors/:colorId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.colorIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.colorIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updateColor),
 );
 
@@ -150,26 +150,26 @@ router.put(
 router.get(
   "/images",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.imagesQuery, "query"),
+  validate(AdminImageSessionValidation.imagesQuery, "query"),
   asyncHandler(adminImageSessionController.listImages),
 );
 router.post(
   "/images/bulk",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createBulkImage),
 );
 router.post(
   "/images",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createImage),
 );
 router.put(
   "/images/:imageId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.imageIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.imageIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updateImage),
 );
 
@@ -177,20 +177,20 @@ router.put(
 router.get(
   "/page-info",
   AuthMiddleware.requirePermissions([P.ADMIN_VIEW]),
-  validate(V.notArchivedQuery, "query"),
+  validate(AdminImageSessionValidation.notArchivedQuery, "query"),
   asyncHandler(adminImageSessionController.listPageInfo),
 );
 router.post(
   "/page-info",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.createPageInfo),
 );
 router.put(
   "/page-info/:pageInfoId",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.pageInfoIdParam, "params"),
-  validate(V.referenceBody),
+  validate(AdminImageSessionValidation.pageInfoIdParam, "params"),
+  validate(AdminImageSessionValidation.referenceBody),
   asyncHandler(adminImageSessionController.updatePageInfo),
 );
 
@@ -198,27 +198,27 @@ router.put(
 router.post(
   "/pros-and-cons/order",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.reorderProsCons),
+  validate(AdminImageSessionValidation.reorderProsCons),
   asyncHandler(adminImageSessionController.reorderProsAndCons),
 );
 router.post(
   "/pros-and-cons",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.createProCon),
+  validate(AdminImageSessionValidation.createProCon),
   asyncHandler(adminImageSessionController.createProOrCon),
 );
 router.put(
   "/pros-and-cons/:id",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.proConIdParam, "params"),
-  validate(V.updateProCon),
+  validate(AdminImageSessionValidation.proConIdParam, "params"),
+  validate(AdminImageSessionValidation.updateProCon),
   asyncHandler(adminImageSessionController.updateProOrCon),
 );
 router.delete(
   "/pros-and-cons/:id",
   AuthMiddleware.requirePermissions([P.ADMIN_MANAGE]),
-  validate(V.proConIdParam, "params"),
-  validate(V.deleteProCon),
+  validate(AdminImageSessionValidation.proConIdParam, "params"),
+  validate(AdminImageSessionValidation.deleteProCon),
   asyncHandler(adminImageSessionController.deleteProOrCon),
 );
 

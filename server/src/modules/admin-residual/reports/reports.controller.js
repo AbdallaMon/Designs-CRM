@@ -10,35 +10,32 @@
 // try/catch — the FE consumes this raw `{ leads, summary }` / `{ staffStats, ... }` shape).
 import { reportsUsecase } from "./reports.usecase.js";
 
-export class ReportsController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  leadReportData = async (req, res) => {
+class ReportsController {
+  async leadReportData(req, res) {
     try {
-      const data = await this.usecase.leadReportData({ body: req.body });
+      const data = await reportsUsecase.leadReportData({ body: req.body });
       return res.json(data);
     } catch (error) {
       console.error("Error generating report:", error);
       return res.status(500).json({ error: "Failed to generate report" });
     }
-  };
+  }
 
-  staffReportData = async (req, res) => {
+  async staffReportData(req, res) {
     try {
-      const data = await this.usecase.staffReportData({ body: req.body });
+      const data = await reportsUsecase.staffReportData({ body: req.body });
       return res.json(data);
     } catch (error) {
       console.error("Error generating staff report:", error);
       return res.status(500).json({ error: "Failed to generate staff report" });
     }
-  };
+  }
 
-  leadReportExcel = (req, res) => this.usecase.leadReportExcel({ body: req.body, res });
-  leadReportPdf = (req, res) => this.usecase.leadReportPdf({ body: req.body, res });
-  staffReportExcel = (req, res) => this.usecase.staffReportExcel({ body: req.body, res });
-  staffReportPdf = (req, res) => this.usecase.staffReportPdf({ body: req.body, res });
+  leadReportExcel(req, res) { return reportsUsecase.leadReportExcel({ body: req.body, res }); }
+  leadReportPdf(req, res) { return reportsUsecase.leadReportPdf({ body: req.body, res }); }
+  staffReportExcel(req, res) { return reportsUsecase.staffReportExcel({ body: req.body, res }); }
+  staffReportPdf(req, res) { return reportsUsecase.staffReportPdf({ body: req.body, res }); }
 }
 
-export const reportsController = new ReportsController(reportsUsecase);
+export const reportsController = new ReportsController();
+export { ReportsController };

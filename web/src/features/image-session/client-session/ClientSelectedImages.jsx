@@ -46,6 +46,7 @@ export function ClientSelectedImages({
             id={session?.id}
             idKey="imageSessionId"
             slug="client"
+            token={session?.token}
             text={lng === "ar" ? "اضف ملاحظة عامة" : "Add general note"}
           />
         </Box>

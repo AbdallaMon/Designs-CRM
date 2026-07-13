@@ -4,7 +4,7 @@
 // a role-only fallback for un-migrated sessions — NEVER the legacy isSuperSales/isPrimary
 // flags (CLAUDE.md §2.8).
 import { AppError } from "../../shared/errors/AppError.js";
-import { myDayMessagesCodes as C, messagesNames } from "@dms/shared";
+import { myDayMessagesCodes, messagesNames } from "@dms/shared";
 import { myDayRepository } from "./my-day.repo.js";
 import { leadRepository } from "../leads/lead/lead.repo.js";
 import { computeCockpit } from "../leads/lead/lead.cockpit.js";
@@ -47,16 +47,7 @@ function targetFamily(user) {
   return familyOf({ profileKey: key, role: user?.role });
 }
 
-export class MyDayUsecase {
-  /**
-   * @param {typeof import("./my-day.repo.js").myDayRepository} repository
-   * @param {import("../leads/lead/lead.repo.js").LeadRepository} leadRepo
-   */
-  constructor(repository, leadRepo) {
-    this.repo = repository;
-    this.leadRepo = leadRepo;
-  }
-
+class MyDayUsecase {
   // ── personal queue ─────────────────────────────────────────────────────────────────
 
   async getMyQueue({ authUser, now = new Date() }) {
@@ -81,8 +72,8 @@ export class MyDayUsecase {
   async #queueFor({ userId, profileKey, family, now }) {
     if (family === "SALES") {
       const [bundles, total] = await Promise.all([
-        this.leadRepo.findCockpitBundlesForUser({ userId, take: MY_DAY_QUEUE_CAP }),
-        this.leadRepo.countMyDayLeads({ userId }),
+        leadRepository.findCockpitBundlesForUser({ userId, take: MY_DAY_QUEUE_CAP }),
+        leadRepository.countMyDayLeads({ userId }),
       ]);
       const items = bundles
         .map((b) => {
@@ -101,7 +92,7 @@ export class MyDayUsecase {
     }
 
     if (family === "DESIGNER") {
-      const rows = await this.repo.findDesignerAssignments({ userId });
+      const rows = await myDayRepository.findDesignerAssignments({ userId });
       const seen = new Set();
       const items = [];
       for (const row of rows) {
@@ -140,7 +131,7 @@ export class MyDayUsecase {
     }
 
     // Admins/accountants/contact-initiators have no personal queue (spec §3).
-    throw new AppError(C.MY_DAY_PROFILE_UNSUPPORTED, 403, null, {
+    throw new AppError(myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED, 403, null, {
       translationKey: TK,
       reason: `no My Day queue family for profile "${profileKey}" / role fallback`,
     });
@@ -149,8 +140,8 @@ export class MyDayUsecase {
   // ── supervisor scope checker (requireSpecialChecker contract: THROW on denial) ──────
   // ADMIN/SUPER_ADMIN target anyone; SUPER_SALES targets sales-tier users only (spec §5.1).
   async checkIfUserCanViewMyDayOf({ id, authUser }) {
-    const target = await this.repo.findUserForScope({ userId: Number(id) });
-    if (!target) throw new AppError(C.MY_DAY_TARGET_NOT_FOUND, 404, null, { translationKey: TK });
+    const target = await myDayRepository.findUserForScope({ userId: Number(id) });
+    if (!target) throw new AppError(myDayMessagesCodes.MY_DAY_TARGET_NOT_FOUND, 404, null, { translationKey: TK });
 
     const callerProfile = authUser?.currentProfileKey;
     const callerIsAdmin =
@@ -161,7 +152,7 @@ export class MyDayUsecase {
     // Everyone else holding my_day.team.view is a SUPER_SALES-tier supervisor:
     // sales-domain targets only.
     if (targetFamily(target) === "SALES") return target;
-    throw new AppError(C.MY_DAY_TEAM_SCOPE_DENIED, 403, null, {
+    throw new AppError(myDayMessagesCodes.MY_DAY_TEAM_SCOPE_DENIED, 403, null, {
       translationKey: TK,
       reason: "super-sales supervisors may only view sales-tier queues",
     });
@@ -182,11 +173,11 @@ export class MyDayUsecase {
 
   async #salesDomain(now) {
     const [stale, unclaimed, overdueCalls, signing, load] = await Promise.all([
-      this.repo.staleLeadsByRep(now),
-      this.repo.unclaimedAgingCount(now),
-      this.repo.overdueCallsByRep(now),
-      this.repo.signingStalled(now),
-      this.repo.salesLoad(),
+      myDayRepository.staleLeadsByRep(now),
+      myDayRepository.unclaimedAgingCount(now),
+      myDayRepository.overdueCallsByRep(now),
+      myDayRepository.signingStalled(now),
+      myDayRepository.salesLoad(),
     ]);
 
     // Resolve names for reps that appear only in the groupBys.
@@ -194,7 +185,7 @@ export class MyDayUsecase {
     const extraIds = [...new Set([...stale, ...overdueCalls].map((g) => g.userId))].filter(
       (id) => id != null && !knownIds.has(id),
     );
-    const extraNames = await this.repo.findUserNames(extraIds);
+    const extraNames = await myDayRepository.findUserNames(extraIds);
     const nameById = new Map([
       ...load.map((p) => [p.userId, p.name]),
       ...extraNames.map((u) => [u.id, u.name]),
@@ -259,8 +250,8 @@ export class MyDayUsecase {
 
   async #designersDomain(now) {
     const [deliveries, load] = await Promise.all([
-      this.repo.deliveriesAtRisk(now),
-      this.repo.designerLoad(),
+      myDayRepository.deliveriesAtRisk(now),
+      myDayRepository.designerLoad(),
     ]);
 
     const exceptions = [];
@@ -315,4 +306,5 @@ function sortExceptions(list) {
   return [...list].sort((a, b) => (EXCEPTION_RANK[a.severity] ?? 2) - (EXCEPTION_RANK[b.severity] ?? 2));
 }
 
-export const myDayUsecase = new MyDayUsecase(myDayRepository, leadRepository);
+export const myDayUsecase = new MyDayUsecase();
+export { MyDayUsecase };

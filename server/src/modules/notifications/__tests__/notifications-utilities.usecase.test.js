@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -11,9 +11,39 @@ import {
   utilitiesMessagesCodes,
 } from "@dms/shared";
 
-import { NotificationUsecase } from "../notification.usecase.js";
+// DI was removed: NotificationUsecase now calls the imported `notificationRepository`
+// singleton directly. Mock the singleton (keeping the real NotificationRepository class the
+// buildWhere test constructs). UtilityUsecase (a different, unconverted module) still takes
+// its repo via the constructor — those tests are unchanged.
+vi.mock("../notification.repo.js", async (importActual) => {
+  const actual = await importActual();
+  return {
+    ...actual,
+    notificationRepository: {
+      list: vi.fn(),
+      markAllReadForUser: vi.fn(),
+    },
+  };
+});
+
+// DI was also removed from UtilityUsecase: it now calls the imported `utilityRepository`
+// singleton directly (and the module-level `searchData` delegates its Prisma I/O to the
+// same repo). Mock the singleton so the utility usecase can be asserted without a DB.
+vi.mock("../../utilities/utility.repo.js", () => ({
+  utilityRepository: {
+    findModelPickList: vi.fn(),
+    userLogExists: vi.fn(),
+    createUserLog: vi.fn(),
+    searchFindMany: vi.fn(),
+    findUserForSearchScope: vi.fn(),
+  },
+}));
+
+import { notificationUsecase, NotificationUsecase } from "../notification.usecase.js";
+import { notificationRepository } from "../notification.repo.js";
 import { NotificationValidation } from "../notification.validation.js";
-import { UtilityUsecase } from "../../utilities/utility.usecase.js";
+import { utilityUsecase, UtilityUsecase } from "../../utilities/utility.usecase.js";
+import { utilityRepository } from "../../utilities/utility.repo.js";
 import { UtilityValidation } from "../../utilities/utility.validation.js";
 
 const NC = notificationsMessagesCodes;
@@ -78,39 +108,33 @@ describe("notifications + utilities permission grants (every authed role)", () =
 //  NOTIFICATION SELF-SCOPE — the IDOR fix (subject is ALWAYS req.auth.id)
 // ════════════════════════════════════════════════════════════════════════════
 describe("NotificationUsecase self-scope (IDOR fix)", () => {
-  function makeRepo(overrides = {}) {
-    return {
-      list: vi.fn().mockResolvedValue({ notifications: [], total: 0 }),
-      markAllReadForUser: vi.fn().mockResolvedValue({ count: 3 }),
-      ...overrides,
-    };
-  }
+  // Seed the mocked repo singleton before each test (defaults; individual tests override).
+  beforeEach(() => {
+    vi.clearAllMocks();
+    notificationRepository.list.mockResolvedValue({ notifications: [], total: 0 });
+    notificationRepository.markAllReadForUser.mockResolvedValue({ count: 3 });
+  });
 
   it("list scopes by the AUTHENTICATED user id, IGNORING a client-supplied userId/staffId", async () => {
-    const repo = makeRepo();
-    const usecase = new NotificationUsecase(repo);
     // Attacker tries to read user 999's notifications via query params.
-    await usecase.list({
+    await notificationUsecase.listNotifications({
       query: { userId: "999", staffId: "999", page: "1", limit: "9" },
       authUser: { id: 7 },
       unreadOnly: false,
     });
-    const arg = repo.list.mock.calls[0][0];
+    const arg = notificationRepository.list.mock.calls[0][0];
     expect(arg.userId).toBe(7); // ← derived from auth, NOT from query
     expect(arg.userId).not.toBe(999);
   });
 
   it("list forwards unreadOnly and pagination, returns the {items,total,page,pageSize} contract", async () => {
-    const repo = makeRepo({
-      list: vi.fn().mockResolvedValue({ notifications: [{ id: 1 }], total: 1 }),
-    });
-    const usecase = new NotificationUsecase(repo);
-    const result = await usecase.list({
+    notificationRepository.list.mockResolvedValue({ notifications: [{ id: 1 }], total: 1 });
+    const result = await notificationUsecase.listNotifications({
       query: { page: "2", limit: "5" },
       authUser: { id: 7 },
       unreadOnly: true,
     });
-    const arg = repo.list.mock.calls[0][0];
+    const arg = notificationRepository.list.mock.calls[0][0];
     expect(arg.unreadOnly).toBe(true);
     expect(arg.skip).toBe(5); // (2-1)*5
     expect(arg.take).toBe(5);
@@ -118,25 +142,21 @@ describe("NotificationUsecase self-scope (IDOR fix)", () => {
   });
 
   it("list parses an optional date range from `filters`, but never a target user", async () => {
-    const repo = makeRepo();
-    const usecase = new NotificationUsecase(repo);
-    await usecase.list({
+    await notificationUsecase.listNotifications({
       query: {
         filters: JSON.stringify({ range: { startDate: "2026-01-01", endDate: "2026-02-01" }, staffId: 999 }),
       },
       authUser: { id: 7 },
       unreadOnly: false,
     });
-    const arg = repo.list.mock.calls[0][0];
+    const arg = notificationRepository.list.mock.calls[0][0];
     expect(arg.userId).toBe(7);
     expect(arg.range).toEqual({ startDate: "2026-01-01", endDate: "2026-02-01" });
   });
 
   it("markRead marks ONLY the authenticated user's notifications (never a :userId param)", async () => {
-    const repo = makeRepo();
-    const usecase = new NotificationUsecase(repo);
-    const result = await usecase.markRead({ authUser: { id: 7 } });
-    expect(repo.markAllReadForUser).toHaveBeenCalledWith({ userId: 7 });
+    const result = await notificationUsecase.markRead({ authUser: { id: 7 } });
+    expect(notificationRepository.markAllReadForUser).toHaveBeenCalledWith({ userId: 7 });
     expect(result).toEqual({ updated: 3 });
   });
 
@@ -180,59 +200,46 @@ describe("NotificationValidation", () => {
 //  UTILITY — generic-model allow-list (mass-read hardening)
 // ════════════════════════════════════════════════════════════════════════════
 describe("UtilityUsecase generic-model allow-list + fixed projection (hardening)", () => {
-  function makeUsecase({ repo = {}, legacy = {} } = {}) {
-    return new UtilityUsecase(repo, {
-      searchData: vi.fn().mockResolvedValue([]),
-      ...legacy,
-    });
-  }
+  beforeEach(() => vi.clearAllMocks());
 
   it("getModelData ALLOWS a whitelisted model (designImage) and reads via the repo with the FIXED projection", async () => {
-    const repo = { findModelPickList: vi.fn().mockResolvedValue([{ id: 1, imageUrl: "u" }]) };
-    const usecase = makeUsecase({ repo });
-    const data = await usecase.getModelData({ query: { model: "designImage" } });
+    utilityRepository.findModelPickList.mockResolvedValue([{ id: 1, imageUrl: "u" }]);
+    const data = await utilityUsecase.getModelData({ query: { model: "designImage" } });
     expect(data).toEqual([{ id: 1, imageUrl: "u" }]);
-    expect(repo.findModelPickList).toHaveBeenCalledWith({
+    expect(utilityRepository.findModelPickList).toHaveBeenCalledWith({
       model: "designImage",
       select: { id: true, imageUrl: true },
     });
   });
 
   it("getModelData REJECTS a non-whitelisted model (user) — never touches the repo", async () => {
-    const repo = { findModelPickList: vi.fn() };
-    const usecase = makeUsecase({ repo });
-    await expect(usecase.getModelData({ query: { model: "user" } })).rejects.toMatchObject({
+    await expect(utilityUsecase.getModelData({ query: { model: "user" } })).rejects.toMatchObject({
       statusCode: 400,
       message: UC.MODEL_NOT_ALLOWED,
     });
-    expect(repo.findModelPickList).not.toHaveBeenCalled();
+    expect(utilityRepository.findModelPickList).not.toHaveBeenCalled();
   });
 
   it("getModelData REJECTS a bogus/non-existent delegate (the old `image`) — guards FIX 3", async () => {
-    const repo = { findModelPickList: vi.fn() };
-    const usecase = makeUsecase({ repo });
-    await expect(usecase.getModelData({ query: { model: "image" } })).rejects.toMatchObject({
+    await expect(utilityUsecase.getModelData({ query: { model: "image" } })).rejects.toMatchObject({
       statusCode: 400,
       message: UC.MODEL_NOT_ALLOWED,
     });
-    expect(repo.findModelPickList).not.toHaveBeenCalled();
+    expect(utilityRepository.findModelPickList).not.toHaveBeenCalled();
   });
 
   it("getModelIds REJECTS a non-whitelisted model (clientLead) before touching the repo", async () => {
-    const repo = { findModelPickList: vi.fn() };
-    const usecase = makeUsecase({ repo });
-    await expect(usecase.getModelIds({ query: { model: "clientLead" } })).rejects.toMatchObject({
+    await expect(utilityUsecase.getModelIds({ query: { model: "clientLead" } })).rejects.toMatchObject({
       statusCode: 400,
       message: UC.MODEL_NOT_ALLOWED,
     });
-    expect(repo.findModelPickList).not.toHaveBeenCalled();
+    expect(utilityRepository.findModelPickList).not.toHaveBeenCalled();
   });
 
   it("getModelIds does NOT honor a client-supplied select/include/where — only the fixed projection reaches the repo", async () => {
-    const repo = { findModelPickList: vi.fn().mockResolvedValue([{ id: 5 }]) };
-    const usecase = makeUsecase({ repo });
+    utilityRepository.findModelPickList.mockResolvedValue([{ id: 5 }]);
     // Attacker tries to traverse relations / pull arbitrary columns.
-    await usecase.getModelIds({
+    await utilityUsecase.getModelIds({
       query: {
         model: "space",
         select: "id,secretColumn",
@@ -240,21 +247,30 @@ describe("UtilityUsecase generic-model allow-list + fixed projection (hardening)
         where: JSON.stringify({ isArchived: false }),
       },
     });
-    expect(repo.findModelPickList).toHaveBeenCalledWith({
+    expect(utilityRepository.findModelPickList).toHaveBeenCalledWith({
       model: "space",
       select: { id: true, title: { select: { id: true, text: true } } },
     });
-    const passed = repo.findModelPickList.mock.calls[0][0];
+    const passed = utilityRepository.findModelPickList.mock.calls[0][0];
     expect(passed.include).toBeUndefined();
     expect(passed.where).toBeUndefined();
   });
 
-  it("search forwards the authenticated user (req.auth) as currentUser to the legacy service", async () => {
-    const legacy = { searchData: vi.fn().mockResolvedValue([{ id: 1 }]) };
-    const usecase = makeUsecase({ legacy });
+  it("search forwards the authenticated user (req.auth) as currentUser to the cross-model search", async () => {
+    // DI removed: `search` now calls the module-level `searchData`, which delegates its
+    // Prisma read to `utilityRepository.searchFindMany`. The authUser drives the role-scoped
+    // `where`, so asserting the repo call (delegate + fixed user projection) proves the
+    // authenticated user reached the search path.
+    utilityRepository.searchFindMany.mockResolvedValue([{ id: 1 }]);
     const authUser = { id: 3, role: USER_ROLES.STAFF };
-    await usecase.search({ query: { model: "user", query: "a" }, authUser });
-    expect(legacy.searchData).toHaveBeenCalledWith({ model: "user", query: "a" }, authUser);
+    const out = await utilityUsecase.search({ query: { model: "user", query: "a" }, authUser });
+    expect(out).toEqual([{ id: 1 }]);
+    expect(utilityRepository.searchFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        delegateKey: "user",
+        select: { id: true, email: true, name: true, role: true },
+      }),
+    );
   });
 });
 
@@ -262,34 +278,29 @@ describe("UtilityUsecase generic-model allow-list + fixed projection (hardening)
 //  UTILITY USER-LOG SELF-SCOPE — the IDOR fix (subject is ALWAYS req.auth.id)
 // ════════════════════════════════════════════════════════════════════════════
 describe("UtilityUsecase user-log self-scope (IDOR fix)", () => {
-  function makeUsecase(repoOverrides = {}) {
-    const repo = {
-      userLogExists: vi.fn().mockResolvedValue(false),
-      createUserLog: vi.fn().mockResolvedValue({ id: 1 }),
-      ...repoOverrides,
-    };
-    return { usecase: new UtilityUsecase(repo, { searchData: vi.fn() }), repo };
-  }
+  beforeEach(() => {
+    vi.clearAllMocks();
+    utilityRepository.userLogExists.mockResolvedValue(false);
+    utilityRepository.createUserLog.mockResolvedValue({ id: 1 });
+  });
 
   it("submitUserLog writes the AUTHENTICATED user's log, IGNORING any body userId (cannot forge another's log)", async () => {
-    const { usecase, repo } = makeUsecase();
     // Even if a userId leaked past validation, the usecase never reads it.
-    await usecase.submitUserLog({
+    await utilityUsecase.submitUserLog({
       body: { userId: 999, date: "2026-01-01", description: "work" },
       authUser: { id: 7 },
     });
-    const arg = repo.createUserLog.mock.calls[0][0];
+    const arg = utilityRepository.createUserLog.mock.calls[0][0];
     expect(arg.userId).toBe(7);
     expect(arg.userId).not.toBe(999);
   });
 
   it("checkUserLog reads ONLY the authenticated user's log range, IGNORING any query userId", async () => {
-    const { usecase, repo } = makeUsecase();
-    await usecase.checkUserLog({
+    await utilityUsecase.checkUserLog({
       query: { userId: 999, startTime: "2026-01-01", endTime: "2026-02-01" },
       authUser: { id: 7 },
     });
-    const arg = repo.userLogExists.mock.calls[0][0];
+    const arg = utilityRepository.userLogExists.mock.calls[0][0];
     expect(arg.userId).toBe(7);
     expect(arg.userId).not.toBe(999);
   });

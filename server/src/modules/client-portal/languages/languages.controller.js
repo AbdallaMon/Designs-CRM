@@ -4,18 +4,16 @@ import { ok } from "../../../shared/http/response.js";
 import { clientPortalMessagesCodes, messagesNames } from "@dms/shared";
 import { languagesUsecase } from "./languages.usecase.js";
 
-const C = clientPortalMessagesCodes;
 const TK = messagesNames.clientPortalMessages;
 
-export class LanguagesController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class LanguagesController {
+  async getLanguages(req, res) {
+    const data = await languagesUsecase.listLanguages({
+      notArchived: req.query.notArchived,
+    });
+    return ok(res, data, clientPortalMessagesCodes.LANGUAGES_FETCHED, TK);
   }
-
-  list = async (req, res) => {
-    const data = await this.usecase.list({ notArchived: req.query.notArchived });
-    return ok(res, data, C.LANGUAGES_FETCHED, TK);
-  };
 }
 
-export const languagesController = new LanguagesController(languagesUsecase);
+export const languagesController = new LanguagesController();
+export { LanguagesController };

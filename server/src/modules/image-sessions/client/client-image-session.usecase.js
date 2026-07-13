@@ -19,81 +19,63 @@
 // behavior. The status-change keys by TOKEN only (the legacy `id` selector is dropped).
 //
 // 🔒 PDF GENERATION IS LOGIC-FROZEN + 🔒 UPLOAD-CHUNK FROZEN: `uploadPdfAndApproveSession`
-// (→ frozen `generateImageSessionPdf`) is invoked via a lazy adapter EXACTLY as legacy did,
+// (→ frozen `generateImageSessionPdf`) is invoked directly EXACTLY as legacy did,
 // preserving the INLINE SYNC pdf path. The legacy commented `pdfQueue.add(...)` enqueue stays
 // commented/unused — we do NOT enable it. We never touch the PDF logic, the fragile
 // `__dirname`-relative font loading, the fonts, the output bytes, or the chunk-upload flow.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
-import { clientImageSessionRepository } from "./client-image-session.repo.js";
+import { imageSessionsMessagesCodes, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
+// reads (reference data by language) — read-only, no scope
+import { getPageInfo } from "../admin/page-info.repo.js";
+import { getConsAndPros } from "../admin/pros-cons.repo.js";
+// status change keys by { token, sessionStatus } — the session-repo variant
+import { getSessionByToken, changeSessionStatus } from "../session/image-session.repo.js";
+import {
+  clientImageSessionRepository,
+  getColorsByLng,
+  getMaterialsByLng,
+  getStyleByLng,
+  getImagesByStyleAndSpaces,
+  saveClientSelectedColor,
+  saveClientSelectedMaterials,
+  saveClientSelectedStyle,
+  saveClientSelectedImages,
+  deleteImage as deleteImageFn,
+  submitSelectedPatterns,
+  submitSelectedImages,
+  getImageSesssionModel,
+} from "./client-image-session.repo.js";
+// 🔒 frozen PDF orchestrator — wrapped, never modified.
+import { uploadPdfAndApproveSession } from "../services/session-approval.js";
 
-const SESSION_REPO = "../session/image-session.repo.js";
-const CLIENT_REPO = "./client-image-session.repo.js";
-const PAGE_INFO_REPO = "../admin/page-info.repo.js";
-const PROS_CONS_REPO = "../admin/pros-cons.repo.js";
-const CLIENT_SVC = "../services/session-approval.js";
-
-const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
-
-const legacyDefaults = {
-  // reads (reference data by language) — read-only, no scope
-  getPageInfo: load(PAGE_INFO_REPO, "getPageInfo"),
-  getConsAndPros: load(PROS_CONS_REPO, "getConsAndPros"),
-  getSessionByToken: load(SESSION_REPO, "getSessionByToken"),
-  getColorsByLng: load(CLIENT_REPO, "getColorsByLng"),
-  getMaterialsByLng: load(CLIENT_REPO, "getMaterialsByLng"),
-  getStyleByLng: load(CLIENT_REPO, "getStyleByLng"),
-  getImagesByStyleAndSpaces: load(CLIENT_REPO, "getImagesByStyleAndSpaces"),
-  // token-keyed writes — status change keys by { token, sessionStatus } (session repo variant)
-  changeSessionStatus: load(SESSION_REPO, "changeSessionStatus"),
-  saveClientSelectedColor: load(CLIENT_REPO, "saveClientSelectedColor"),
-  saveClientSelectedMaterials: load(CLIENT_REPO, "saveClientSelectedMaterials"),
-  saveClientSelectedStyle: load(CLIENT_REPO, "saveClientSelectedStyle"),
-  saveClientSelectedImages: load(CLIENT_REPO, "saveClientSelectedImages"),
-  deleteImage: load(CLIENT_REPO, "deleteImage"),
-  // 🔒 frozen PDF orchestrator — wrapped, never modified.
-  uploadPdfAndApproveSession: load(CLIENT_SVC, "uploadPdfAndApproveSession"),
-  // EXTRAS router services (already token-keyed)
-  submitSelectedPatterns: load(CLIENT_REPO, "submitSelectedPatterns"),
-  submitSelectedImages: load(CLIENT_REPO, "submitSelectedImages"),
-  // EXTRAS generic-model read (hardened with the allow-list); relocated to the client repo
-  getImageSesssionModel: load(CLIENT_REPO, "getImageSesssionModel"),
-  getImages: load(CLIENT_REPO, "getImages"),
-};
-
-export class ClientImageSessionUsecase {
-  constructor(legacy = {}, repo = clientImageSessionRepository) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-    this.repo = repo;
-  }
-
+class ClientImageSessionUsecase {
   // Resolve the authoritative session from the token. Throws TOKEN_INVALID on a missing/
   // unknown token so no write ever runs against a session the caller didn't prove they hold.
   async #resolveByToken(token) {
-    if (!token) throw new AppError(M.IMAGE_SESSION_TOKEN_INVALID, 400);
-    const session = await this.legacy.getSessionByToken({ token });
-    if (!session || session.clientLeadId == null) throw new AppError(M.IMAGE_SESSION_NOT_FOUND, 404);
+    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    const session = await getSessionByToken({ token });
+    if (!session || session.clientLeadId == null) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, 404);
     return session;
   }
 
   // ── public reference-data reads (no scope) ────────────────────────────────────────────
   getPageInfo({ lng, type }) {
-    return this.legacy.getPageInfo({ notArchived: true, lng: lng || "ar", type });
+    return getPageInfo({ notArchived: true, lng: lng || "ar", type });
   }
   getProsAndCons({ id, type, lng, isClient }) {
-    return this.legacy.getConsAndPros({ id, type, lng, isClient });
+    return getConsAndPros({ id, type, lng, isClient });
   }
   getColors({ lng }) {
-    return this.legacy.getColorsByLng({ lng });
+    return getColorsByLng({ lng });
   }
   getMaterials({ lng }) {
-    return this.legacy.getMaterialsByLng({ lng });
+    return getMaterialsByLng({ lng });
   }
   getStyles({ lng }) {
-    return this.legacy.getStyleByLng({ lng });
+    return getStyleByLng({ lng });
   }
   getImages({ spaceIds, styleId }) {
-    return this.legacy.getImagesByStyleAndSpaces({ spaceIds, styleId });
+    return getImagesByStyleAndSpaces({ spaceIds, styleId });
   }
 
   // GET /session?token= — resolve the session from the token (the auth).
@@ -104,30 +86,30 @@ export class ClientImageSessionUsecase {
   // PUT /session/status — token-keyed status change ONLY (the IDOR close vs legacy, which
   // accepted a raw body `id`). The token selects the session; the legacy `id` path is dropped.
   async changeStatus({ token, sessionStatus }) {
-    if (!token) throw new AppError(M.IMAGE_SESSION_TOKEN_INVALID, 400);
-    return this.legacy.changeSessionStatus({ token, sessionStatus });
+    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    return changeSessionStatus({ token, sessionStatus });
   }
 
   // ── token-authoritative saves: resolve session by token, OVERRIDE identity, then save ───
   async saveColor({ session, selectedColor, customColors, status }) {
     const resolved = await this.#resolveByToken(session?.token);
     const safeSession = { ...session, id: resolved.id, token: resolved.token, clientLeadId: resolved.clientLeadId };
-    return this.legacy.saveClientSelectedColor({ session: safeSession, selectedColor, customColors, status });
+    return saveClientSelectedColor({ session: safeSession, selectedColor, customColors, status });
   }
   async saveMaterials({ session, selectedMaterials, status }) {
     const resolved = await this.#resolveByToken(session?.token);
     const safeSession = { ...session, id: resolved.id, token: resolved.token, clientLeadId: resolved.clientLeadId };
-    return this.legacy.saveClientSelectedMaterials({ session: safeSession, selectedMaterials, status });
+    return saveClientSelectedMaterials({ session: safeSession, selectedMaterials, status });
   }
   async saveStyle({ session, selectedStyle, status }) {
     const resolved = await this.#resolveByToken(session?.token);
     const safeSession = { ...session, id: resolved.id, token: resolved.token, clientLeadId: resolved.clientLeadId };
-    return this.legacy.saveClientSelectedStyle({ session: safeSession, selectedStyle, status });
+    return saveClientSelectedStyle({ session: safeSession, selectedStyle, status });
   }
   async saveImages({ session, selectedImages, status }) {
     const resolved = await this.#resolveByToken(session?.token);
     const safeSession = { ...session, id: resolved.id, token: resolved.token, clientLeadId: resolved.clientLeadId };
-    return this.legacy.saveClientSelectedImages({ session: safeSession, selectedImages, status });
+    return saveClientSelectedImages({ session: safeSession, selectedImages, status });
   }
 
   // DELETE /images/:imageId — delete a client-selected image. IDOR CLOSE: legacy keyed by
@@ -139,12 +121,12 @@ export class ClientImageSessionUsecase {
   // the image exists in another session.
   async deleteImage({ token, imageId }) {
     const resolved = await this.#resolveByToken(token);
-    const owner = await this.repo.findSelectedImageOwnerSessionId({ imageId: Number(imageId) });
+    const owner = await clientImageSessionRepository.findSelectedImageOwnerSessionId({ imageId: Number(imageId) });
     if (!owner || owner.imageSessionId !== resolved.id) {
-      throw new AppError(M.IMAGE_SESSION_NOT_FOUND, 404);
+      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, 404);
     }
     // 🔒 frozen deleteImage — invoked UNCHANGED, now gated by the token-scope check above.
-    return this.legacy.deleteImage({ imageId: Number(imageId) });
+    return deleteImageFn({ imageId: Number(imageId) });
   }
 
   // POST /generate-pdf — the e-sign finalize flow (🔒 inline SYNC pdf path preserved). Ported
@@ -162,13 +144,13 @@ export class ClientImageSessionUsecase {
       clientLeadId: resolved.clientLeadId,
     };
     try {
-      await this.legacy.changeSessionStatus({ token, sessionStatus, extra: { signatureUrl } });
+      await changeSessionStatus({ token, sessionStatus, extra: { signatureUrl } });
       // 🔒 frozen PDF orchestrator → frozen generateImageSessionPdf — wrapped only.
-      await this.legacy.uploadPdfAndApproveSession({ sessionData: safeSessionData, signatureUrl, lng });
+      await uploadPdfAndApproveSession({ sessionData: safeSessionData, signatureUrl, lng });
       return {};
     } catch (err) {
       console.error("PDF generation error:", err);
-      throw new AppError(M.IMAGE_SESSION_PDF_GENERATION_FAILED, 500);
+      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_PDF_GENERATION_FAILED, 500);
     }
   }
 
@@ -178,20 +160,21 @@ export class ClientImageSessionUsecase {
   // returned shape (full findMany) is preserved 1:1 for the legit reference models.
   async modelData({ model }) {
     if (!model || !UTILITY_MODEL_ALLOWLIST.includes(model)) {
-      throw new AppError(M.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
+      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
     }
-    return this.legacy.getImageSesssionModel({ model });
+    return getImageSesssionModel({ model });
   }
   // POST /save-patterns — already token-keyed in the legacy service (token authoritative).
   savePatterns({ token, patternIds }) {
-    if (!token) throw new AppError(M.IMAGE_SESSION_TOKEN_INVALID, 400);
-    return this.legacy.submitSelectedPatterns({ token, patternIds });
+    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    return submitSelectedPatterns({ token, patternIds });
   }
   // POST /save-images (EXTRAS) — already token-keyed in the legacy service (token authoritative).
   saveSelectionByToken({ token, imageIds }) {
-    if (!token) throw new AppError(M.IMAGE_SESSION_TOKEN_INVALID, 400);
-    return this.legacy.submitSelectedImages({ token, imageIds });
+    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    return submitSelectedImages({ token, imageIds });
   }
 }
 
 export const clientImageSessionUsecase = new ClientImageSessionUsecase();
+export { ClientImageSessionUsecase };

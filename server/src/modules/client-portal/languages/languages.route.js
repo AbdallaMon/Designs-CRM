@@ -5,11 +5,11 @@
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
-import { languagesController as c } from "./languages.controller.js";
-import { LanguagesValidation as V } from "./languages.validation.js";
+import { languagesController } from "./languages.controller.js";
+import { LanguagesValidation } from "./languages.validation.js";
 
 const router = Router();
 
-router.get("/", validate(V.listQuery, "query"), asyncHandler(c.list));
+router.get("/", validate(LanguagesValidation.listQuery, "query"), asyncHandler(languagesController.getLanguages));
 
 export { router as clientLanguagesRouter };

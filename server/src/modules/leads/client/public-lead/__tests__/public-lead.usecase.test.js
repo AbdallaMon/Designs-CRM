@@ -6,43 +6,69 @@ vi.mock("../../../../../infra/audit/record-action.js", () => ({
   auditCtxFromReq: vi.fn(() => ({})),
 }));
 
-import { recordAction } from "../../../../../infra/audit/record-action.js";
-import { PublicLeadUsecase } from "../public-lead.usecase.js";
-
-function makeRepo(overrides = {}) {
-  return {
-    findClientByEmail: vi.fn().mockResolvedValue({ id: 1, email: "a@b.com" }),
+// The public-lead repo singleton is now used directly (no DI) — mock it.
+vi.mock("../public-lead.repo.js", () => ({
+  publicLeadRepository: {
+    findClientByEmail: vi.fn(),
     createClient: vi.fn(),
-    findTodaysLeadByEmail: vi.fn().mockResolvedValue(null),
-    updateClientPhone: vi.fn().mockResolvedValue({ id: 1 }),
-    createLead: vi.fn().mockResolvedValue({
-      id: 42,
-      status: "NEW",
-      selectedCategory: "DESIGN",
-      type: "APARTMENT",
-      clientId: 1,
-    }),
-    ...overrides,
-  };
-}
+    findTodaysLeadByEmail: vi.fn(),
+    updateClientPhone: vi.fn(),
+    createLead: vi.fn(),
+    findLeadById: vi.fn(),
+    updateLead: vi.fn(),
+    findClientById: vi.fn(),
+  },
+  PublicLeadRepository: class {},
+}));
 
-const legacy = {
-  generateCodeForNewLead: vi.fn().mockResolvedValue("LEAD-CODE"),
-  uploadFile: vi.fn(),
-  newLeadNotification: vi.fn().mockResolvedValue(undefined),
+// The lead code generator + file attach now come from the lead repo via a STATIC import
+// (the former lazy `publicLeadDeps` adapters were removed) — mock that module.
+vi.mock("../../../lead/lead.repo.js", () => ({
+  leadRepository: {
+    generateCodeForNewLead: vi.fn(),
+    uploadFile: vi.fn(),
+  },
+}));
+
+// The funnel notifications + cooperation email are statically imported too — mock them.
+vi.mock("../../../../../infra/notifications/index.js", () => ({
+  newLeadNotification: vi.fn(),
   newClientLeadNotification: vi.fn(),
   newLeadCompletedNotification: vi.fn(),
+}));
+vi.mock("../../../../../infra/mail/send-mail.js", () => ({
   sendEmail: vi.fn(),
-};
+}));
+
+import { recordAction } from "../../../../../infra/audit/record-action.js";
+import { publicLeadUsecase } from "../public-lead.usecase.js";
+import { publicLeadRepository } from "../public-lead.repo.js";
+import { leadRepository } from "../../../lead/lead.repo.js";
+
+// Restore the repo to a happy-path default (client exists, no lead today, lead persists).
+function primeRepo(overrides = {}) {
+  publicLeadRepository.findClientByEmail.mockResolvedValue({ id: 1, email: "a@b.com" });
+  publicLeadRepository.findTodaysLeadByEmail.mockResolvedValue(null);
+  publicLeadRepository.updateClientPhone.mockResolvedValue({ id: 1 });
+  publicLeadRepository.createLead.mockResolvedValue({
+    id: 42,
+    status: "NEW",
+    selectedCategory: "DESIGN",
+    type: "APARTMENT",
+    clientId: 1,
+  });
+  leadRepository.generateCodeForNewLead.mockResolvedValue("LEAD-CODE");
+  Object.assign(publicLeadRepository, overrides);
+}
 
 describe("PublicLeadUsecase.createLead — LEAD_CREATED audit event", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    primeRepo();
+  });
 
   it("records a LEAD_CREATED event once after the lead is persisted", async () => {
-    const repo = makeRepo();
-    const uc = new PublicLeadUsecase(repo, legacy);
-
-    const lead = await uc.createLead(
+    const lead = await publicLeadUsecase.createLead(
       { email: "a@b.com", name: "N", phone: "+9715", category: "DESIGN", item: "APARTMENT" },
       { actorUserId: null, actorRole: null, ip: "1.2.3.4" },
     );

@@ -15,7 +15,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { adminProjectsController } from "./admin-projects.controller.js";
-import { AdminProjectsValidation as V } from "./admin-projects.validation.js";
+import { AdminProjectsValidation } from "./admin-projects.validation.js";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 const router = Router();
@@ -24,15 +24,15 @@ const router = Router();
 router.post(
   "/create-group",
   AuthMiddleware.requirePermissions([P.PROJECT_GROUP_CREATE]),
-  validate(V.createGroupBody),
+  validate(AdminProjectsValidation.createGroupBody),
   AuthMiddleware.requireSpecialChecker(adminProjectsController.checkIfUserCanMutateLeadFromBody),
-  asyncHandler(adminProjectsController.createGroup),
+  asyncHandler(adminProjectsController.createProjectGroup),
 );
 router.get(
   "/",
   AuthMiddleware.requirePermissions([P.PROJECT_VIEW]),
-  validate(V.listQuery, "query"),
-  asyncHandler(adminProjectsController.list),
+  validate(AdminProjectsValidation.listQuery, "query"),
+  asyncHandler(adminProjectsController.getAdminProjects),
 );
 
 export { router as adminProjectsRouter };

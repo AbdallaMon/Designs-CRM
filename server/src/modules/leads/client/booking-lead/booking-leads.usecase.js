@@ -5,17 +5,13 @@ import {
 } from "./booking-leads.notification.js";
 import { bookingLeadsEmails } from "./booking-leads.emails.js";
 import { AppError } from "../../../../shared/errors/AppError.js";
+import { bookingLeadsRepository } from "./booking-leads.repo.js";
+import { sendEmail } from "../../../../infra/mail/send-mail.js";
 
 // master 03ca4d3: after a successful booking submit, send the client a "thanks" email.
-// Routed through the src/infra/mail/send-mail.js so the client-facing from-name/address
+// Routed through src/infra/mail/send-mail.js so the client-facing from-name/address
 // (isClient=true → engineer's identity) is preserved exactly; the frozen service swallows
 // its own send errors, so a mail failure never breaks the submit.
-const legacyMailer = {
-  sendEmail: (to, subject, html, isClient) =>
-    import("../../../../infra/mail/send-mail.js").then((m) =>
-      m.sendEmail(to, subject, html, isClient),
-    ),
-};
 
 const DRAFT_EMAIL_DOMAIN = "draft.local";
 
@@ -75,13 +71,9 @@ function mapBookingLeadResponse(lead) {
   };
 }
 
-export class BookingLeadsUsecase {
-  constructor(repository) {
-    this.repository = repository;
-  }
-
+class BookingLeadsUsecase {
   async createBookingLead({ name, phone }) {
-    const lead = await this.repository.createDraft({
+    const lead = await bookingLeadsRepository.createDraft({
       clientDraft: {
         name,
         phone,
@@ -119,7 +111,7 @@ export class BookingLeadsUsecase {
         }
       : {};
 
-    const updatedLead = await this.repository.updateStep({
+    const updatedLead = await bookingLeadsRepository.updateStep({
       leadId,
       clientId: existingLead.client.id,
       leadData,
@@ -155,7 +147,7 @@ export class BookingLeadsUsecase {
     leadData.bookingRequestStatus = "SUBMITTED";
     leadData.bookingSubmittedAt = new Date();
 
-    const updatedLead = await this.repository.submit({
+    const updatedLead = await bookingLeadsRepository.submit({
       leadId,
       clientId: existingLead.client.id,
       leadData,
@@ -169,7 +161,7 @@ export class BookingLeadsUsecase {
         email: clientEmail,
         clientName: updatedLead.client?.name,
       });
-      await legacyMailer.sendEmail(
+      await sendEmail(
         clientEmail,
         thanksEmail.subject,
         thanksEmail.html,
@@ -183,7 +175,7 @@ export class BookingLeadsUsecase {
   }
 
   async #getExistingOrThrow(leadId) {
-    const lead = await this.repository.findById(leadId);
+    const lead = await bookingLeadsRepository.findById(leadId);
 
     if (!lead) {
       throw new AppError("Booking lead not found", 404);
@@ -192,3 +184,6 @@ export class BookingLeadsUsecase {
     return lead;
   }
 }
+
+export const bookingLeadsUsecase = new BookingLeadsUsecase();
+export { BookingLeadsUsecase };

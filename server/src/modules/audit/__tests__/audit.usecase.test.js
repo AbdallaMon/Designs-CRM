@@ -1,22 +1,28 @@
-import { describe, it, expect, vi } from "vitest";
-import { AuditUsecase } from "../audit.usecase.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("../audit.repo.js", () => ({
+  auditRepo: {
+    findManyPaged: vi.fn(),
+    findUsersByIds: vi.fn(),
+  },
+}));
+
+import { auditUsecase } from "../audit.usecase.js";
+import { auditRepo } from "../audit.repo.js";
 import { AuditValidation } from "../audit.validation.js";
 
-function makeRepo(overrides = {}) {
-  return {
-    findManyPaged: vi.fn().mockResolvedValue({ items: [], total: 0 }),
-    findUsersByIds: vi.fn().mockResolvedValue([]),
-    ...overrides,
-  };
-}
+// Reset to the default (empty page) before each test; individual tests override.
+beforeEach(() => {
+  vi.clearAllMocks();
+  auditRepo.findManyPaged.mockResolvedValue({ items: [], total: 0 });
+  auditRepo.findUsersByIds.mockResolvedValue([]);
+});
 
 describe("AuditUsecase.list — filter → where building", () => {
   it("builds a Prisma where from all provided filters", async () => {
-    const repo = makeRepo();
-    const usecase = new AuditUsecase(repo);
     const from = new Date("2026-01-01");
     const to = new Date("2026-02-01");
-    await usecase.list({
+    await auditUsecase.listAuditLogs({
       query: {
         page: 1,
         limit: 20,
@@ -30,7 +36,7 @@ describe("AuditUsecase.list — filter → where building", () => {
         to,
       },
     });
-    const arg = repo.findManyPaged.mock.calls[0][0];
+    const arg = auditRepo.findManyPaged.mock.calls[0][0];
     expect(arg.where).toEqual({
       actorUserId: 7,
       module: "lead",
@@ -43,21 +49,17 @@ describe("AuditUsecase.list — filter → where building", () => {
   });
 
   it("omits absent filters (empty where) and computes skip from page/pageSize", async () => {
-    const repo = makeRepo();
-    const usecase = new AuditUsecase(repo);
-    await usecase.list({ query: { page: 3, limit: 10 } });
-    const arg = repo.findManyPaged.mock.calls[0][0];
+    await auditUsecase.listAuditLogs({ query: { page: 3, limit: 10 } });
+    const arg = auditRepo.findManyPaged.mock.calls[0][0];
     expect(arg.where).toEqual({});
     expect(arg.skip).toBe(20); // (3-1)*10
     expect(arg.take).toBe(10);
   });
 
   it("supports a one-sided date range (from only)", async () => {
-    const repo = makeRepo();
-    const usecase = new AuditUsecase(repo);
     const from = new Date("2026-05-01");
-    await usecase.list({ query: { page: 1, limit: 20, from } });
-    expect(repo.findManyPaged.mock.calls[0][0].where).toEqual({ createdAt: { gte: from } });
+    await auditUsecase.listAuditLogs({ query: { page: 1, limit: 20, from } });
+    expect(auditRepo.findManyPaged.mock.calls[0][0].where).toEqual({ createdAt: { gte: from } });
   });
 });
 
@@ -67,15 +69,12 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
       { id: 2, createdAt: new Date("2026-01-02"), actorUserId: 7, actorRole: "ADMIN", module: "lead", action: "LEAD_CREATED", entityType: "ClientLead", entityId: 42, clientLeadId: 42, summary: "Lead #42 created", detail: { changed: ["x"] } },
       { id: 1, createdAt: new Date("2026-01-01"), actorUserId: 7, actorRole: "ADMIN", module: "user", action: "USER_UPDATED", entityType: "User", entityId: 9, clientLeadId: null, summary: null, detail: null },
     ];
-    const repo = makeRepo({
-      findManyPaged: vi.fn().mockResolvedValue({ items, total: 2 }),
-      findUsersByIds: vi.fn().mockResolvedValue([{ id: 7, name: "Boss", role: "SUPER_ADMIN" }]),
-    });
-    const usecase = new AuditUsecase(repo);
-    const result = await usecase.list({ query: { page: 1, limit: 20 } });
+    auditRepo.findManyPaged.mockResolvedValue({ items, total: 2 });
+    auditRepo.findUsersByIds.mockResolvedValue([{ id: 7, name: "Boss", role: "SUPER_ADMIN" }]);
+    const result = await auditUsecase.listAuditLogs({ query: { page: 1, limit: 20 } });
 
     // distinct ids only (7 appears twice → looked up once)
-    expect(repo.findUsersByIds).toHaveBeenCalledWith([7]);
+    expect(auditRepo.findUsersByIds).toHaveBeenCalledWith([7]);
     expect(result).toEqual({
       total: 2,
       page: 1,
@@ -113,9 +112,8 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
     const items = [
       { id: 1, createdAt: new Date(), actorUserId: 99, actorRole: "STAFF", module: "lead", action: "LEAD_CALL_LOGGED", entityType: null, entityId: null, clientLeadId: 5, summary: null, detail: null },
     ];
-    const repo = makeRepo({ findManyPaged: vi.fn().mockResolvedValue({ items, total: 1 }) });
-    const usecase = new AuditUsecase(repo);
-    const result = await usecase.list({ query: { page: 1, limit: 20 } });
+    auditRepo.findManyPaged.mockResolvedValue({ items, total: 1 });
+    const result = await auditUsecase.listAuditLogs({ query: { page: 1, limit: 20 } });
     expect(result.items[0].actor).toEqual({ id: 99, name: null, role: "STAFF" });
   });
 });

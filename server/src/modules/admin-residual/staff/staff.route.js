@@ -15,7 +15,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { staffController } from "./staff.controller.js";
-import { StaffValidation as V } from "./staff.validation.js";
+import { StaffValidation } from "./staff.validation.js";
 
 const P = PERMISSIONS.STAFF;
 const router = Router();
@@ -25,7 +25,7 @@ router.use(AuthMiddleware.requireAuth);
 router.get(
   "/dashboard/latest-calls",
   AuthMiddleware.requirePermissions([P.LATEST_CALLS_VIEW]),
-  validate(V.latestCallsQuery, "query"),
+  validate(StaffValidation.latestCallsQuery, "query"),
   asyncHandler(staffController.latestCalls),
 );
 

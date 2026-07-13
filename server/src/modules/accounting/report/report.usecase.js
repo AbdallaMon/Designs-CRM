@@ -10,18 +10,8 @@
 import { reportRepository } from "./report.repo.js";
 import { shapeIncomeOutcomeSummary } from "./report.dto.js";
 
-const legacyDefaults = {
-  getOutcomes: (a) => reportRepository.getOutcomes(a),
-  getIncomeOutcomeSummary: async () =>
-    shapeIncomeOutcomeSummary(await reportRepository.getIncomeOutcomeSummary()),
-};
-
-export class ReportUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
-  outcomes({ query, skip, limit }) {
+class ReportUsecase {
+  listOutcomes({ query, skip, limit }) {
     const { filters } = query;
     const parsedFilters = (() => {
       try {
@@ -30,16 +20,17 @@ export class ReportUsecase {
         return {};
       }
     })();
-    return this.legacy.getOutcomes({
+    return reportRepository.getOutcomes({
       limit: Number(limit),
       skip: Number(skip),
       filters: parsedFilters,
     });
   }
 
-  summary() {
-    return this.legacy.getIncomeOutcomeSummary();
+  async getSummary() {
+    return shapeIncomeOutcomeSummary(await reportRepository.getIncomeOutcomeSummary());
   }
 }
 
 export const reportUsecase = new ReportUsecase();
+export { ReportUsecase };

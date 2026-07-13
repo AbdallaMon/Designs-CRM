@@ -23,7 +23,7 @@ import bcrypt from "bcrypt";
 import dayjs from "dayjs";
 import { AppError } from "../../../shared/errors/AppError.js";
 import {
-  userMessagesCodes as C,
+  userMessagesCodes,
   PROFILE_KEYS,
   PROFILE_META,
   AUDIT_MODULES,
@@ -91,16 +91,6 @@ export async function getUserLogs(userId, month, year) {
   return formatUserLogs({ user, logs, todayLog, requestedMonth, requestedYear });
 }
 
-// ── DI seam — defaults now point at the relocated implementations above / the repo ────
-const legacyDefaults = {
-  createStaffUser: (a) => createStaffUser(a),
-  editStaffUser: (a, b) => editStaffUser(a, b),
-  updateUserRoles: (a, b) => userRepository.updateUserRoles(a, b),
-  updateUserAutoAssignment: (a, b) => userRepository.updateUserAutoAssignment(a, b),
-  getUserLogs: (a, b, c) => getUserLogs(a, b, c),
-  getNotificationForTodayByStaffId: (a) => userRepository.getNotificationForTodayByStaffId(a),
-};
-
 // Non-admin self-profile editable fields. The legacy update was an unguarded
 // passthrough; we restrict a non-admin self-edit to fields that cannot escalate
 // privilege. role / isActive / isSuperSales / isPrimary / maxLeads* / password are
@@ -155,7 +145,7 @@ function isEmailTakenError(error) {
 function applyProfileToBody(body) {
   const key = body?.profile;
   if (key == null) return { body, profile: null, sync: null };
-  if (!PROFILE_KEYS.includes(key)) throw new AppError(C.USER_ROLE_NOT_ALLOWED, 400);
+  if (!PROFILE_KEYS.includes(key)) throw new AppError(userMessagesCodes.USER_ROLE_NOT_ALLOWED, 400);
   const meta = PROFILE_META[key];
   const sync = { isPrimary: Boolean(meta.isPrimary), isSuperSales: Boolean(meta.isSuperSales) };
   const merged = { ...body, role: meta.baseRole, ...sync };
@@ -163,15 +153,6 @@ function applyProfileToBody(body) {
 }
 
 export class UserUsecase {
-  /**
-   * @param {import("./user.repo.js").UserRepository} repository
-   * @param {Partial<typeof legacyDefaults>} [legacy]
-   */
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
   //  SCOPE CHECKERS — the profile IDOR fix
   // ════════════════════════════════════════════════════════════════════════════
@@ -182,10 +163,10 @@ export class UserUsecase {
     const targetId = Number(userId);
     const isSelf = targetId === Number(authUser.id);
     if (!isSelf && !isAdminTier(authUser)) {
-      throw new AppError(C.USER_PROFILE_ACCESS_DENIED, 403);
+      throw new AppError(userMessagesCodes.USER_PROFILE_ACCESS_DENIED, 403);
     }
-    const target = await this.repo.findUserIdById({ userId: targetId });
-    if (!target) throw new AppError(C.USER_PROFILE_NOT_FOUND, 404);
+    const target = await userRepository.findUserIdById({ userId: targetId });
+    if (!target) throw new AppError(userMessagesCodes.USER_PROFILE_NOT_FOUND, 404);
     return { id: target.id, isSelf, adminTier: isAdminTier(authUser) };
   }
 
@@ -194,10 +175,10 @@ export class UserUsecase {
     const targetId = Number(userId);
     const isSelf = targetId === Number(authUser.id);
     if (!isSelf && !isAdminTier(authUser)) {
-      throw new AppError(C.USER_PROFILE_MUTATE_DENIED, 403);
+      throw new AppError(userMessagesCodes.USER_PROFILE_MUTATE_DENIED, 403);
     }
-    const target = await this.repo.findUserIdById({ userId: targetId });
-    if (!target) throw new AppError(C.USER_PROFILE_NOT_FOUND, 404);
+    const target = await userRepository.findUserIdById({ userId: targetId });
+    if (!target) throw new AppError(userMessagesCodes.USER_PROFILE_NOT_FOUND, 404);
     return { id: target.id, isSelf, adminTier: isAdminTier(authUser) };
   }
 
@@ -209,7 +190,7 @@ export class UserUsecase {
   // false`) is the 3rd-arg shape getAllUsers(.., true) — exclude users already chatting
   // with me. Both are role-narrowed for non-admins inside the repo (verbatim legacy).
   async directory({ query, authUser, relatedOnly = false }) {
-    const items = await this.repo.findDirectory({
+    const items = await userRepository.findDirectory({
       searchParams: { ...query },
       currentUser: authUser,
       checkIfNotHasRelatedChat: !relatedOnly,
@@ -221,8 +202,8 @@ export class UserUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  ADMIN MANAGEMENT LIST (legacy GET /admin/users + /admin/all-users)
   // ════════════════════════════════════════════════════════════════════════════
-  async list({ query, authUser, page, limit, skip }) {
-    const { users, total } = await this.repo.findManagementList({
+  async listUsers({ query, authUser, page, limit, skip }) {
+    const { users, total } = await userRepository.findManagementList({
       searchParams: { ...query },
       currentUser: authUser,
       skip,
@@ -243,7 +224,7 @@ export class UserUsecase {
   // Other callers (e.g. the designer-assign modal) omit it and keep the legacy OR match.
   async allUsers({ query, authUser }) {
     const { exactRole, ...searchParams } = query ?? {};
-    const items = await this.repo.findDirectory({
+    const items = await userRepository.findDirectory({
       searchParams,
       currentUser: authUser,
       exactRole: exactRole === true || exactRole === "true" || exactRole === "1",
@@ -264,7 +245,7 @@ export class UserUsecase {
   // project), so it is accepted-but-unused exactly as before.
   async chatDirectory({ query, authUser }) {
     const relatedOnly = !isAdminTier(authUser);
-    return this.repo.findDirectory({
+    return userRepository.findDirectory({
       searchParams: { ...query },
       currentUser: authUser,
       checkIfHasRelatedChat: relatedOnly,
@@ -275,8 +256,8 @@ export class UserUsecase {
   //  PROFILE (read / edit) — scope already enforced by the checker
   // ════════════════════════════════════════════════════════════════════════════
   async getProfile({ userId, authUser }) {
-    const profile = await this.repo.findUserProfileById({ userId });
-    if (!profile) throw new AppError(C.USER_PROFILE_NOT_FOUND, 404);
+    const profile = await userRepository.findUserProfileById({ userId });
+    if (!profile) throw new AppError(userMessagesCodes.USER_PROFILE_NOT_FOUND, 404);
     const safe = toSafeProfile(profile);
     return { ...safe, capabilities: computeProfileCapabilities(safe, authUser) };
   }
@@ -298,16 +279,16 @@ export class UserUsecase {
       // PROFILE_SELF_EDITABLE). Hash it; never persist plaintext.
       data.password = bcrypt.hashSync(data.password, BCRYPT_COST);
     }
-    const updated = await this.repo.updateUserProfile({ userId, data });
+    const updated = await userRepository.updateUserProfile({ userId, data });
     return toSafeProfile(updated);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  ADMIN CREATE / EDIT / STATUS / STAFF-EXTRA
   // ════════════════════════════════════════════════════════════════════════════
-  async create({ body, authUser, auditCtx }) {
+  async createUser({ body, authUser, auditCtx }) {
     if (!body || Object.keys(body).length === 0) {
-      throw new AppError(C.USER_NO_DATA_SENT, 404);
+      throw new AppError(userMessagesCodes.USER_NO_DATA_SENT, 404);
     }
     // Identity only — NO role/profile is assigned from this form. A new user defaults
     // to STAFF (createStaffUser) and receives its role(s) via the profiles endpoint
@@ -320,10 +301,10 @@ export class UserUsecase {
       body.role &&
       body.role !== "STAFF"
     ) {
-      throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
+      throw new AppError(userMessagesCodes.USER_ROLE_NOT_ALLOWED, 403);
     }
     try {
-      const createdUser = await this.legacy.createStaffUser(body);
+      const createdUser = await createStaffUser(body);
       // Semantic audit: a new user account was created (secrets auto-redacted).
       await recordAction(auditCtx, {
         module: AUDIT_MODULES.USER,
@@ -335,13 +316,13 @@ export class UserUsecase {
       });
       return createdUser;
     } catch (error) {
-      if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
+      if (isEmailTakenError(error)) throw new AppError(userMessagesCodes.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
     }
   }
 
-  async update({ userId, body, authUser, auditCtx }) {
-    if (!body || !userId) throw new AppError(C.USER_NOT_FOUND, 404);
+  async updateUser({ userId, body, authUser, auditCtx }) {
+    if (!body || !userId) throw new AppError(userMessagesCodes.USER_NOT_FOUND, 404);
     // Identity only — role/profile changes go through the profiles endpoint. Legacy
     // guard: a non-admin isSuperSales editor may not set a non-STAFF role.
     if (
@@ -351,18 +332,18 @@ export class UserUsecase {
       body.role &&
       body.role !== "STAFF"
     ) {
-      throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
+      throw new AppError(userMessagesCodes.USER_ROLE_NOT_ALLOWED, 403);
     }
     // Snapshot the pre-edit row for the before/after diff (best-effort; never breaks the
     // update). The diff+redaction helper captures only the edited fields (secrets redacted).
     let before = null;
     try {
-      before = await this.repo.findUserProfileById({ userId });
+      before = await userRepository.findUserProfileById({ userId });
     } catch {
       before = null;
     }
     try {
-      const updatedUser = await this.legacy.editStaffUser(body, userId);
+      const updatedUser = await editStaffUser(body, userId);
       await recordAction(auditCtx, {
         module: AUDIT_MODULES.USER,
         action: AUDIT_ACTIONS.USER_UPDATED,
@@ -375,18 +356,18 @@ export class UserUsecase {
       });
       return updatedUser;
     } catch (error) {
-      if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
+      if (isEmailTakenError(error)) throw new AppError(userMessagesCodes.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
     }
   }
 
   async changeStatus({ userId, body }) {
-    if (!userId || !body?.user) throw new AppError(C.USER_NOT_FOUND, 404);
-    return this.repo.toggleStatus({ userId, isActive: body.user.isActive });
+    if (!userId || !body?.user) throw new AppError(userMessagesCodes.USER_NOT_FOUND, 404);
+    return userRepository.toggleStatus({ userId, isActive: body.user.isActive });
   }
 
   async toggleStaffExtra({ userId, body }) {
-    if (!userId) throw new AppError(C.USER_NOT_FOUND, 404);
+    if (!userId) throw new AppError(userMessagesCodes.USER_NOT_FOUND, 404);
     // Whitelist the only legitimate staff-extra flags (privilege-escalation fix).
     // The Zod schema already strips/rejects anything else, but we re-pick here so the
     // repo never receives an unfiltered body (never password/role/isActive).
@@ -394,14 +375,14 @@ export class UserUsecase {
     for (const key of STAFF_EXTRA_EDITABLE) {
       if (body[key] !== undefined) data[key] = body[key];
     }
-    return this.repo.toggleStaffExtra({ userId, data });
+    return userRepository.toggleStaffExtra({ userId, data });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  ROLES / AUTO-ASSIGNMENTS / RESTRICTED COUNTRIES / MAX LEADS
   // ════════════════════════════════════════════════════════════════════════════
   async manageRoles({ userId, body, auditCtx }) {
-    const result = await this.legacy.updateUserRoles(userId, body);
+    const result = await userRepository.updateUserRoles(userId, body);
     // Semantic audit: a user's role(s) were changed.
     await recordAction(auditCtx, {
       module: AUDIT_MODULES.USER,
@@ -418,7 +399,7 @@ export class UserUsecase {
   //  DB-RELATIONAL PROFILES (admin assign / remove + active)
   // ════════════════════════════════════════════════════════════════════════════
   async listAssignableProfiles() {
-    return { items: await this.repo.listAssignableProfiles() };
+    return { items: await userRepository.listAssignableProfiles() };
   }
 
   /**
@@ -431,17 +412,17 @@ export class UserUsecase {
   async updateUserProfiles({ authUser, userId, profileIds, currentProfileId }) {
     const targetId = Number(userId);
     if (!Array.isArray(profileIds) || profileIds.length === 0) {
-      throw new AppError(C.USER_NO_DATA_SENT, 400);
+      throw new AppError(userMessagesCodes.USER_NO_DATA_SENT, 400);
     }
     const desired = [...new Set(profileIds.map(Number))];
-    const profiles = await this.repo.findProfilesByIds({ ids: desired });
-    if (profiles.length !== desired.length) throw new AppError(C.USER_ROLE_NOT_ALLOWED, 400);
+    const profiles = await userRepository.findProfilesByIds({ ids: desired });
+    if (profiles.length !== desired.length) throw new AppError(userMessagesCodes.USER_ROLE_NOT_ALLOWED, 400);
 
     // Sales tier is mutually exclusive: at most one of Sales / Primary sales / Super sales
     // (hierarchical variants of the same STAFF-sales role). Other families combine freely.
     const SALES_TIER = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
     if (profiles.filter((p) => SALES_TIER.includes(p.key)).length > 1) {
-      throw new AppError(C.USER_SALES_TIER_EXCLUSIVE, 400);
+      throw new AppError(userMessagesCodes.USER_SALES_TIER_EXCLUSIVE, 400);
     }
 
     // current = requested if it's in the new set, else the first assigned.
@@ -450,7 +431,7 @@ export class UserUsecase {
         ? Number(currentProfileId)
         : desired[0];
 
-    const existing = await this.repo.getUserProfileIds({ userId: targetId });
+    const existing = await userRepository.getUserProfileIds({ userId: targetId });
     const existingSet = new Set(existing);
     const desiredSet = new Set(desired);
     const addIds = desired.filter((id) => !existingSet.has(id));
@@ -467,7 +448,7 @@ export class UserUsecase {
       profileKey: currentProfile.key,
     };
 
-    await this.repo.setUserProfiles({
+    await userRepository.setUserProfiles({
       userId: targetId,
       addIds,
       removeIds,
@@ -497,27 +478,27 @@ export class UserUsecase {
   }
 
   async getAutoAssignments({ userId }) {
-    return this.repo.findAutoAssignments({ userId: Number(userId) });
+    return userRepository.findAutoAssignments({ userId: Number(userId) });
   }
 
   async updateAutoAssignments({ userId, body }) {
-    return this.legacy.updateUserAutoAssignment(userId, body);
+    return userRepository.updateUserAutoAssignment(userId, body);
   }
 
   async getRestrictedCountries({ userId }) {
-    return this.repo.findRestrictedCountries({ userId });
+    return userRepository.findRestrictedCountries({ userId });
   }
 
   async updateRestrictedCountries({ userId, body }) {
-    return this.repo.updateRestrictedCountries({ userId, countries: body.countries });
+    return userRepository.updateRestrictedCountries({ userId, countries: body.countries });
   }
 
   async setMaxLeads({ userId, body }) {
-    return this.repo.updateMaxLeads({ userId, maxLeadsCounts: body.maxLeadsCounts });
+    return userRepository.updateMaxLeads({ userId, maxLeadsCounts: body.maxLeadsCounts });
   }
 
   async setMaxLeadsPerDay({ userId, body }) {
-    return this.repo.updateMaxLeadsPerDay({ userId, maxLeadCountPerDay: body.maxLeadCountPerDay });
+    return userRepository.updateMaxLeadsPerDay({ userId, maxLeadCountPerDay: body.maxLeadCountPerDay });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -526,13 +507,13 @@ export class UserUsecase {
   // GET /:userId/logs — today's notifications for the staff member (legacy
   // getNotificationForTodayByStaffId).
   async getLogs({ userId }) {
-    return this.legacy.getNotificationForTodayByStaffId(userId);
+    return userRepository.getNotificationForTodayByStaffId(userId);
   }
 
   // GET /:userId/last-seen — monthly activity aggregation (legacy getUserLogs).
   async getLastSeen({ userId, query }) {
-    return this.legacy.getUserLogs(userId, query.month, query.year);
+    return getUserLogs(userId, query.month, query.year);
   }
 }
 
-export const userUsecase = new UserUsecase(userRepository);
+export const userUsecase = new UserUsecase();

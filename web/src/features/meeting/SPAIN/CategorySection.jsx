@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Button,
-  IconButton,
   Typography,
   Box,
   TextField,
@@ -21,15 +20,35 @@ import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { QuestionItem } from "@/features/meeting/SPAIN/QuestionItem.jsx";
 
-// Calm collapsible category: a letter tile + name + count pill + chevron, then its questions.
-export const CategorySection = ({ category, clientLeadId }) => {
+// Friendly display names for the SPIN category enums (never show the raw DB name).
+const CATEGORY_DISPLAY_NAMES = {
+  SITUATION: "Situation",
+  PROBLEM: "Problem",
+  IMPLICATION: "Implication",
+  NEED_PAYOFF: "Need-payoff",
+};
+
+const answeredCount = (questions) =>
+  questions.filter((q) => q.answer?.response?.trim()).length;
+
+// Controlled collapsible category: a letter tile + friendly name + answered/total pill
+// + chevron, then its questions. Expansion is owned by the parent dialog so only ONE
+// category is open at a time (mid-meeting focus). Submitting an answer updates ONLY that
+// question in local state — no category refetch, so other in-progress drafts survive.
+export const CategorySection = ({
+  category,
+  clientLeadId,
+  expanded,
+  onToggle,
+  onCountsChange,
+}) => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(true);
   const [customQuestionTitle, setCustomQuestionTitle] = useState("");
   const [showAddCustom, setShowAddCustom] = useState(false);
 
-  // Fetch questions for this category
+  const displayName = CATEGORY_DISPLAY_NAMES[category.name] || category.name;
+
   const fetchQuestions = useCallback(async () => {
     const response = await getData({
       url: `shared/questions/session-questions/${clientLeadId}?questionTypeId=${category.id}&`,
@@ -37,40 +56,44 @@ export const CategorySection = ({ category, clientLeadId }) => {
     });
     if (response.status === 200) {
       setQuestions(response.data);
-      return response.data;
     }
   }, [clientLeadId, category.id]);
-
-  async function onSubmitAnswer() {
-    return await fetchQuestions();
-  }
-
-  async function onAddCustomQuestion() {
-    return await fetchQuestions();
-  }
 
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
 
+  // Report answered/total up to the dialog for the header progress + the category pill.
+  useEffect(() => {
+    onCountsChange?.(category.id, {
+      answered: answeredCount(questions),
+      total: questions.length,
+    });
+  }, [questions, category.id, onCountsChange]);
+
+  // Save one answer. Uses a silent loader (never the category loader — that would unmount
+  // the sibling questions and wipe their drafts) and patches only this question in place.
   const handleSubmitAnswer = async (sessionQuestionId, content) => {
     const request = await handleRequestSubmit(
       { response: content },
-      setLoading,
+      () => {},
       `shared/questions/${sessionQuestionId}/answer`,
       false,
-      "Submitting"
+      "Saving answer"
     );
 
     if (request.status === 200) {
-      onSubmitAnswer(sessionQuestionId, content);
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === sessionQuestionId ? { ...q, answer: request.data } : q
+        )
+      );
     }
+    return request;
   };
 
   const handleAddCustomQuestion = async () => {
-    if (!customQuestionTitle.trim()) {
-      return;
-    }
+    if (!customQuestionTitle.trim()) return;
 
     const request = await handleRequestSubmit(
       {
@@ -78,7 +101,7 @@ export const CategorySection = ({ category, clientLeadId }) => {
         questionTypeId: category.id,
         isCustom: true,
       },
-      setLoading,
+      () => {},
       `shared/questions/lead/${clientLeadId}/custom-question`,
       false,
       "Adding"
@@ -87,10 +110,15 @@ export const CategorySection = ({ category, clientLeadId }) => {
     setCustomQuestionTitle("");
     setShowAddCustom(false);
 
-    if (request.status === 200) {
-      onAddCustomQuestion(category.id);
+    // Append the created question in place — no refetch, so drafts survive.
+    if (request.status === 200 && request.data) {
+      setQuestions((prev) => [...prev, { ...request.data, answer: null }]);
     }
   };
+
+  const answered = answeredCount(questions);
+  const total = questions.length;
+  const complete = total > 0 && answered === total;
 
   return (
     <Box
@@ -106,11 +134,15 @@ export const CategorySection = ({ category, clientLeadId }) => {
         direction="row"
         spacing={1.5}
         alignItems="center"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={onToggle}
+        role="button"
+        aria-expanded={expanded}
         sx={{
           p: 2,
           cursor: "pointer",
-          "&:hover": { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+          "&:hover": {
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+          },
         }}
       >
         <Box
@@ -124,45 +156,68 @@ export const CategorySection = ({ category, clientLeadId }) => {
             justifyContent: "center",
             fontWeight: 700,
             fontSize: "1.05rem",
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-            color: "primary.main",
+            bgcolor: (theme) =>
+              alpha(theme.palette[complete ? "success" : "primary"].main, 0.12),
+            color: complete ? "success.main" : "primary.main",
           }}
         >
-          {category.name?.[0]}
+          {displayName[0]}
         </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle1" fontWeight={700} noWrap>
-            {category.name} {category.label}
+          <Typography
+            variant="overline"
+            sx={{
+              color: complete ? "success.main" : "primary.main",
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              lineHeight: 1.2,
+              display: "block",
+            }}
+          >
+            {displayName}
           </Typography>
+          {category.label && (
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              dir="auto"
+              noWrap
+              sx={{ lineHeight: 1.35 }}
+            >
+              {category.label}
+            </Typography>
+          )}
         </Box>
 
         <Box
           sx={{
             px: 1,
-            py: 0.1,
+            py: 0.25,
             borderRadius: 1.5,
             fontSize: "0.72rem",
             fontWeight: 700,
-            color: "primary.main",
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+            color: complete ? "success.main" : "primary.main",
+            bgcolor: (theme) =>
+              alpha(theme.palette[complete ? "success" : "primary"].main, 0.12),
           }}
         >
-          {questions.length}
+          {answered}/{total}
         </Box>
 
-        <IconButton
-          size="small"
+        <Box
           sx={{
+            display: "flex",
             transition: "transform 0.2s ease",
             transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+            color: "text.secondary",
           }}
         >
           <MdExpandMore />
-        </IconButton>
+        </Box>
       </Stack>
 
-      <Collapse in={expanded}>
+      <Collapse in={expanded} unmountOnExit>
         <Divider />
         <Box sx={{ p: 2 }}>
           {loading ? (
@@ -210,7 +265,8 @@ export const CategorySection = ({ category, clientLeadId }) => {
                     value={customQuestionTitle}
                     onChange={(e) => setCustomQuestionTitle(e.target.value)}
                     size="small"
-                    onKeyPress={(e) => {
+                    dir="auto"
+                    onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         handleAddCustomQuestion();
                       }

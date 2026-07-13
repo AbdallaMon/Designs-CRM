@@ -23,7 +23,7 @@ import {
   updateMettingNotification,
 } from "../../../infra/notifications/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes as C } from "@dms/shared";
+import { leadsMessagesCodes } from "@dms/shared";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -36,7 +36,7 @@ dayjs.extend(timezone);
 // ════════════════════════════════════════════════════════════════════════════════
 export async function createNote({ clientLeadId, userId, content }) {
   if (!content.trim()) {
-    throw new AppError(C.NOTE_CONTENT_EMPTY, 400);
+    throw new AppError(leadsMessagesCodes.NOTE_CONTENT_EMPTY, 400);
   }
 
   const newNote = await leadRepository.createNoteRecord({
@@ -69,7 +69,7 @@ export async function createCallReminder({
 
   let formattedTime = dayjs(time).tz(userTimezone).utc(); // Convert to UTC
   if (formattedTime.isBefore(dayjs().utc())) {
-    throw new AppError(C.REMINDER_TIME_IN_PAST, 400);
+    throw new AppError(leadsMessagesCodes.REMINDER_TIME_IN_PAST, 400);
   }
   formattedTime = formattedTime.toDate().toISOString();
   const newReminder = await leadRepository.createCallReminderRecord({
@@ -98,13 +98,13 @@ export async function createMeetingReminder({
     currentUser.role === "THREE_D_DESIGNER" ||
     currentUser.role === "TWO_D_DESIGNER"
   ) {
-    throw new AppError(C.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
+    throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
   }
   const userTimezone = dayjs.tz.guess(); // Detect user's timezone
 
   let formattedTime = dayjs(time).tz(userTimezone).utc();
   if (formattedTime.isBefore(dayjs().utc())) {
-    throw new AppError(C.REMINDER_TIME_IN_PAST, 400);
+    throw new AppError(leadsMessagesCodes.REMINDER_TIME_IN_PAST, 400);
   }
   formattedTime = formattedTime.toDate().toISOString();
   const submittedTime = dayjs(formattedTime); // already UTC ISO
@@ -120,7 +120,7 @@ export async function createMeetingReminder({
       maxTime,
     });
     if (!matchingSlot) {
-      throw new AppError(C.NO_AVAILABLE_SLOT, 400);
+      throw new AppError(leadsMessagesCodes.NO_AVAILABLE_SLOT, 400);
     }
     data.time = matchingSlot.startTime;
     data.availableSlotId = matchingSlot.id;
@@ -163,7 +163,7 @@ export async function createMeetingReminderWithToken({
     currentUser.role === "THREE_D_DESIGNER" ||
     currentUser.role === "TWO_D_DESIGNER"
   ) {
-    throw new AppError(C.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
+    throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
   }
   const token = uuidv4();
 
@@ -189,7 +189,7 @@ export async function createMeetingReminderWithToken({
     });
 
     if (!availableSlot) {
-      throw new AppError(C.NO_AVAILABLE_SLOT, 400);
+      throw new AppError(leadsMessagesCodes.NO_AVAILABLE_SLOT, 400);
     }
   }
   if (type) {
@@ -208,7 +208,7 @@ export async function createMeetingReminderWithToken({
 
 export async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
   if (priceOffer.minPrice > priceOffer.maxPrice) {
-    throw new AppError(C.PRICE_OFFER_RANGE_INVALID, 400);
+    throw new AppError(leadsMessagesCodes.PRICE_OFFER_RANGE_INVALID, 400);
   }
   const newPrice = await leadRepository.createPriceOfferRecord({
     clientLeadId,
@@ -228,7 +228,7 @@ export async function createFile({
   userId,
 }) {
   if (!url || !name) {
-    throw new AppError(C.FILE_FIELDS_REQUIRED, 400);
+    throw new AppError(leadsMessagesCodes.FILE_FIELDS_REQUIRED, 400);
   }
   const data = {
     name,
@@ -266,7 +266,7 @@ export async function updateCallReminderStatus({
       reminderId,
     });
     if (callReminder.user.id !== currentUser.id) {
-      throw new AppError(C.LEAD_MUTATE_DENIED, 403);
+      throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
     }
   }
   const updatedReminder = await leadRepository.updateCallReminderStatusRecord({
@@ -293,7 +293,7 @@ export async function updateMeetingReminderStatus({
     currentUser.role === "THREE_D_DESIGNER" ||
     currentUser.role === "TWO_D_DESIGNER"
   ) {
-    throw new AppError(C.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
+    throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
   }
 
   if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
@@ -301,7 +301,7 @@ export async function updateMeetingReminderStatus({
       reminderId,
     });
     if (meetingReminder.user.id !== currentUser.id) {
-      throw new AppError(C.LEAD_MUTATE_DENIED, 403);
+      throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
     }
   }
   const updatedReminder = await leadRepository.updateMeetingReminderStatusRecord({

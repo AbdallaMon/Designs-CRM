@@ -5,19 +5,15 @@ import { ok } from "../../shared/http/response.js";
 import { auditMessagesCodes, messagesNames } from "@dms/shared";
 import { auditUsecase } from "./audit.usecase.js";
 
-const C = auditMessagesCodes;
 const TK = messagesNames.auditMessages;
 
-export class AuditController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
+class AuditController {
   // GET /v2/audit-logs — paginated, filterable action-audit trail.
-  list = async (req, res) => {
-    const data = await this.usecase.list({ query: req.query, authUser: req.auth });
-    return ok(res, data, C.AUDIT_LOGS_FETCHED, TK);
-  };
+  async getAuditLogs(req, res) {
+    const data = await auditUsecase.listAuditLogs({ query: req.query, authUser: req.auth });
+    return ok(res, data, auditMessagesCodes.AUDIT_LOGS_FETCHED, TK);
+  }
 }
 
-export const auditController = new AuditController(auditUsecase);
+export const auditController = new AuditController();
+export { AuditController };

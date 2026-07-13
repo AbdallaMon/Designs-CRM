@@ -19,45 +19,35 @@
 // v2 rejects any model not in UTILITY_MODEL_ALLOWLIST and guards the JSON.parse (a malformed
 // `where` becomes a clean 422-class error rather than a 500), preserving the legit lookups.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
+import { imageSessionsMessagesCodes, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
-import { imageSessionRepository } from "./image-session.repo.js";
+// The session repo backs BOTH the scope-lookup object AND the session-lifecycle CRUD +
+// the relocated generic `getModelIds` read — imported directly (no lazy adapters).
+import {
+  imageSessionRepository,
+  getClientImageSessions,
+  createClientImageSession,
+  editSessionFileds,
+  regenerateSessionToken,
+  deleteInProgressSession,
+  getModelIds,
+} from "./image-session.repo.js";
 
-const SVC = "./image-session.repo.js";
-
-// Lazy adapters to the session repo (CRUD + the relocated generic `getModelIds` read).
-const legacyDefaults = {
-  getClientImageSessions: (clientLeadId) =>
-    import(SVC).then((m) => m.getClientImageSessions(clientLeadId)),
-  createClientImageSession: (a) => import(SVC).then((m) => m.createClientImageSession(a)),
-  editSessionFileds: (a) => import(SVC).then((m) => m.editSessionFileds(a)),
-  regenerateSessionToken: (sessionId) => import(SVC).then((m) => m.regenerateSessionToken(sessionId)),
-  deleteInProgressSession: (sessionId, user) =>
-    import(SVC).then((m) => m.deleteInProgressSession(sessionId, user)),
-  getModelIds: (a) => import(SVC).then((m) => m.getModelIds(a)),
-};
-
-export class ImageSessionUsecase {
-  constructor(repository = imageSessionRepository, leads = leadUsecase, legacy = {}) {
-    this.repo = repository;
-    this.leads = leads;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class ImageSessionUsecase {
   // ── scope helpers ─────────────────────────────────────────────────────────────────
   assertLeadAccess({ clientLeadId, authUser }) {
-    return this.leads.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
   }
   assertLeadMutate({ clientLeadId, authUser }) {
-    return this.leads.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
   }
 
   // Resolve a `:sessionId` → its parent clientLeadId, then run the lead checker. A
   // missing/forged session → IMAGE_SESSION_NOT_FOUND (404). `mode` selects access (read)
   // vs mutate (write).
   async #scopeBySession({ sessionId, authUser, mode }) {
-    const row = await this.repo.getSessionClientLeadId({ sessionId });
-    if (!row || row.clientLeadId == null) throw new AppError(M.IMAGE_SESSION_NOT_FOUND, 404);
+    const row = await imageSessionRepository.getSessionClientLeadId({ sessionId });
+    if (!row || row.clientLeadId == null) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, 404);
     if (mode === "mutate") await this.assertLeadMutate({ clientLeadId: row.clientLeadId, authUser });
     else await this.assertLeadAccess({ clientLeadId: row.clientLeadId, authUser });
     return row;
@@ -66,14 +56,14 @@ export class ImageSessionUsecase {
   // GET /:clientLeadId/sessions — lead-scoped list (READ scope on the lead directly).
   async listForLead({ clientLeadId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
-    return this.legacy.getClientImageSessions(Number(clientLeadId));
+    return getClientImageSessions(Number(clientLeadId));
   }
 
   // POST /:clientLeadId/sessions — create a session for a lead (WRITE scope on the lead).
   // The acting userId comes from authUser (req.auth), never the body.
   async createForLead({ clientLeadId, spaces, authUser }) {
     await this.assertLeadMutate({ clientLeadId, authUser });
-    return this.legacy.createClientImageSession({
+    return createClientImageSession({
       clientLeadId: Number(clientLeadId),
       userId: Number(authUser.id),
       selectedSpaceIds: spaces,
@@ -85,7 +75,7 @@ export class ImageSessionUsecase {
   // it exists and belongs to an in-scope lead before the edit runs.
   async editFields({ clientLeadId, sessionId, data, authUser }) {
     await this.#scopeBySession({ sessionId, authUser, mode: "mutate" });
-    await this.legacy.editSessionFileds({ sessionId: Number(sessionId), data });
+    await editSessionFileds({ sessionId: Number(sessionId), data });
     return {};
   }
 
@@ -93,7 +83,7 @@ export class ImageSessionUsecase {
   // (WRITE scope via session→lead).
   async regenerateToken({ sessionId, authUser }) {
     await this.#scopeBySession({ sessionId, authUser, mode: "mutate" });
-    return this.legacy.regenerateSessionToken(Number(sessionId));
+    return regenerateSessionToken(Number(sessionId));
   }
 
   // DELETE /:clientLeadId/sessions/:sessionId — delete an in-progress session (WRITE scope
@@ -101,14 +91,14 @@ export class ImageSessionUsecase {
   // submit" guard using the passed user — preserved by passing authUser through unchanged.
   async deleteSession({ sessionId, authUser }) {
     await this.#scopeBySession({ sessionId, authUser, mode: "mutate" });
-    return this.legacy.deleteInProgressSession(Number(sessionId), authUser);
+    return deleteInProgressSession(Number(sessionId), authUser);
   }
 
   // GET /ids — global pick-list model-id helper. NOT lead-scoped (global config). Hardened:
   // the model must be in the allow-list, and the client `where` JSON is parse-guarded.
   async modelIds({ model, searchParams }) {
     if (!model || !UTILITY_MODEL_ALLOWLIST.includes(model)) {
-      throw new AppError(M.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
+      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
     }
     // Guard the client-supplied `where` JSON: the legacy service does a bare
     // JSON.parse(searchParams.where) → a malformed string would crash with a 500. Reject it
@@ -118,11 +108,12 @@ export class ImageSessionUsecase {
       try {
         JSON.parse(where);
       } catch {
-        throw new AppError(M.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
+        throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
       }
     }
-    return this.legacy.getModelIds({ model, searchParams });
+    return getModelIds({ model, searchParams });
   }
 }
 
 export const imageSessionUsecase = new ImageSessionUsecase();
+export { ImageSessionUsecase };

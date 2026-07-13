@@ -54,14 +54,14 @@ router.get(
   "/client-lead/:leadId",
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(ContractValidation.leadIdParam, "params"),
-  asyncHandler(contractController.listForLead),
+  asyncHandler(contractController.listLeadContracts),
 );
 
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.CREATE]),
   validate(ContractValidation.create),
-  asyncHandler(contractController.create),
+  asyncHandler(contractController.createContract),
 );
 
 // ── grouped payments list (literal — declared before /:contractId) ──────────────────────
@@ -69,7 +69,7 @@ router.get(
   "/payments/all",
   AuthMiddleware.requirePermissions([P.PAYMENT_LIST]),
   validate(ContractValidation.paymentsListQuery, "query"),
-  asyncHandler(contractController.paymentsGrouped),
+  asyncHandler(contractController.getGroupedPayments),
 );
 
 // ── bare-payment workflow actions (no :contractId — legacy `/payments/:paymentId/*`) ────
@@ -94,14 +94,14 @@ router.get(
   "/:contractId",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(ContractValidation.contractIdParam, "params"),
-  asyncHandler(contractController.getById),
+  asyncHandler(contractController.getContractById),
 );
 
 router.post(
   "/:contractId/actions/cancel",
   AuthMiddleware.requirePermissions([P.CANCEL]),
   validate(ContractValidation.contractIdParam, "params"),
-  asyncHandler(contractController.cancel),
+  asyncHandler(contractController.cancelContract),
 );
 
 router.put(
@@ -109,7 +109,7 @@ router.put(
   AuthMiddleware.requirePermissions([P.EDIT]),
   validate(ContractValidation.contractIdParam, "params"),
   validate(ContractValidation.updateBasics),
-  asyncHandler(contractController.updateBasics),
+  asyncHandler(contractController.updateContractBasics),
 );
 
 router.post(

@@ -14,9 +14,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes as C, AUDIT_MODULES, AUDIT_ACTIONS, messagesNames } from "@dms/shared";
+import { leadsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS, messagesNames } from "@dms/shared";
 import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadRepository } from "./lead.repo.js";
+import { adminLeadsRepository } from "../../admin-residual/admin-leads/admin-leads.repo.js";
 import { computeLeadCapabilities } from "./lead.dto.js";
 // Payment functions migrated to the leads/payment sub-entity (Stripe + email side effects).
 import {
@@ -55,54 +56,18 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 
-// ── DI seam (unchanged shape). `legacyDefaults` now points at the REPO-BACKED module
-// functions above (assign/status/convert + the STAFF sub-resources) + the leads/payment
-// sub-entity, with only `updateLeadField` still lazily reaching admin-residual's own
-// legacy folder (a separate later task), instead of the removed shared/legacy barrel.
-// Tests can still override the whole bag via the constructor.
-const legacyDefaults = {
-  // migrated to repo-backed module functions in THIS file
-  assignLeadToAUser,
-  bulkAssignLeadTsoAUser,
-  markClientLeadAsConverted,
-  updateClientLeadStatus,
-  checkIfUserAllowedToTakeALead,
-  getClientLeadsByDateRange,
-  getClientLeadsColumnStatus,
-  // migrated to the leads/payment sub-entity (Stripe + email side effects)
-  makePayments: paymentMakePayments,
-  makeExtraServicePayments: paymentMakeExtraServicePayments,
-  remindUserToPay: paymentRemindUserToPay,
-  remindUserToCompleteRegister: paymentRemindUserToCompleteRegister,
-  // price-offer DATA now lives in the lead repo
-  editPriceOfferStatus: (...a) => leadRepository.editPriceOfferStatus(...a),
-  // admin-residual's lead field-update repo (relocated from the former god-file)
-  updateLeadField: (a) => import("../../admin-residual/admin-leads/admin-leads.repo.js").then((m) => m.adminLeadsRepository.updateLeadField(a)),
-  // staff sub-resources — now the repo-backed module functions above
-  createCallReminder,
-  createMeetingReminder,
-  createMeetingReminderWithToken,
-  createPriceOffer,
-  createFile,
-  createNote,
-  updateCallReminderStatus,
-  updateMeetingReminderStatus,
-};
+// Side-effecting / repo-backed collaborators are now referenced DIRECTLY (no DI bag):
+// the assign/status/convert + STAFF sub-resource module functions and the leads/payment
+// sub-entity functions are imported above; `editPriceOfferStatus` delegates straight to
+// the lead repo; `updateLeadField` reaches admin-residual's own repo (statically imported
+// above). Behavior is unchanged — these are the exact same bindings the former
+// `legacyDefaults` bag wired.
 
 // Roles that historically had FULL read scope on the LIST (legacy excluded these from
 // the country narrowing in getClientLeads).
 const LIST_FULL_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPER_SALES", "CONTACT_INITIATOR"];
 
-export class LeadUsecase {
-  /**
-   * @param {import("./lead.repo.js").LeadRepository} repository
-   * @param {Partial<typeof legacyDefaults>} [legacy]
-   */
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class LeadUsecase {
   // Admin-tier lead operator = ADMIN/SUPER_ADMIN base role OR an admin-tier profile
   // (SUPER_SALES). Profile-authoritative — the legacy isSuperSales flag is NOT read.
   isAdminUser(authUser) {
@@ -139,29 +104,29 @@ export class LeadUsecase {
   // 403 LEAD_ACCESS_DENIED when the lead is outside scope (or does not exist — we do
   // not leak existence to an unauthorized caller).
   async checkIfUserCanAccessLead({ id, authUser }) {
-    const where = this.repo.buildAuthUserLeadWhere({
+    const where = leadRepository.buildAuthUserLeadWhere({
       authUser,
       where: { id: Number(id) },
       mode: "view",
       includeContactInitiator: true,
     });
-    const lead = await this.repo.findScopedLead({ where });
+    const lead = await leadRepository.findScopedLead({ where });
     if (!lead) {
-      throw new AppError(C.LEAD_ACCESS_DENIED, 403);
+      throw new AppError(leadsMessagesCodes.LEAD_ACCESS_DENIED, 403);
     }
     return lead;
   }
 
   // Write scope: stricter — owned-only for scoped users (no claimable-pool write).
   async checkIfUserCanMutateLead({ id, authUser }) {
-    const where = this.repo.buildAuthUserLeadWhere({
+    const where = leadRepository.buildAuthUserLeadWhere({
       authUser,
       where: { id: Number(id) },
       mode: "mutate",
     });
-    const lead = await this.repo.findScopedLead({ where });
+    const lead = await leadRepository.findScopedLead({ where });
     if (!lead) {
-      throw new AppError(C.LEAD_MUTATE_DENIED, 403);
+      throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
     }
     return lead;
   }
@@ -171,10 +136,10 @@ export class LeadUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   // Legacy getClientLeads: status/filter where + (for non-privileged roles) a
   // country restriction. Does NOT scope by assignment — the list is the shared pool.
-  async list({ query, authUser, page, limit, skip }) {
+  async listLeads({ query, authUser, page, limit, skip }) {
     const searchParams = { ...query, checkConsult: true };
     const where = await this.#buildListWhere(searchParams, authUser.id);
-    const { items, total } = await this.repo.listLeads({ where, skip, take: limit });
+    const { items, total } = await leadRepository.listLeads({ where, skip, take: limit });
     return { items, total, page, pageSize: limit };
   }
 
@@ -210,7 +175,7 @@ export class LeadUsecase {
     if (searchParams.noConsulted && searchParams.noConsulted === "true") where = { initialConsult: false };
     if (filters.id && filters.id !== "all") where.id = Number(filters.id);
 
-    const user = await this.repo.getUserCountryRole({ userId });
+    const user = await leadRepository.getUserCountryRole({ userId });
     if (!LIST_FULL_ROLES.includes(user.role)) {
       where = {
         ...where,
@@ -233,7 +198,7 @@ export class LeadUsecase {
   //   nonConsulted → noConsulted (initialConsult:false) pool
   //   stale        → assignedOverdue (ON_HOLD not-assigned-to-me) pool — staffId = caller
   //   calls/meetings → the IN_PROGRESS reminder countWhere (#staffFilter scoping)
-  async summary({ query, authUser }) {
+  async getLeadsSummary({ query, authUser }) {
     const F = "{}"; // no extra filters for the headline counts
     const [newWhere, nonConsultedWhere, staleWhere] = await Promise.all([
       this.#buildListWhere({ isNew: true, checkConsult: true, filters: F }, authUser.id),
@@ -253,11 +218,11 @@ export class LeadUsecase {
     };
 
     const [newCount, nonConsulted, stale, calls, meetings] = await Promise.all([
-      this.repo.countLeads({ where: newWhere }),
-      this.repo.countLeads({ where: nonConsultedWhere }),
-      this.repo.countLeads({ where: staleWhere }),
-      this.repo.countCalls({ where: reminderCountWhere }),
-      this.repo.countMeetings({ where: reminderCountWhere }),
+      leadRepository.countLeads({ where: newWhere }),
+      leadRepository.countLeads({ where: nonConsultedWhere }),
+      leadRepository.countLeads({ where: staleWhere }),
+      leadRepository.countCalls({ where: reminderCountWhere }),
+      leadRepository.countMeetings({ where: reminderCountWhere }),
     ]);
 
     return { new: newCount, nonConsulted, stale, calls, meetings };
@@ -266,7 +231,7 @@ export class LeadUsecase {
   // Deals / columns delegate to the legacy aggregators (identical filter+select
   // logic, heavy and self-contained) so behavior is preserved 1:1. We apply the same
   // self-scoping the legacy ROUTE applied before calling them.
-  async deals({ query, authUser }) {
+  async getDeals({ query, authUser }) {
     const searchParams = { ...query };
     if (
       authUser.role !== "ADMIN" &&
@@ -281,11 +246,11 @@ export class LeadUsecase {
       authUser.role === "ADMIN" ||
       authUser.role === "SUPER_ADMIN" ||
       authUser.role !== "SUPER_SALES"; // verbatim legacy expression (see /deals)
-    const items = await this.legacy.getClientLeadsByDateRange({ searchParams, isAdmin, user: authUser });
+    const items = await getClientLeadsByDateRange({ searchParams, isAdmin, user: authUser });
     return items;
   }
 
-  async columns({ query, authUser }) {
+  async getColumns({ query, authUser }) {
     const searchParams = { ...query };
     if (
       authUser.role !== "ADMIN" &&
@@ -298,20 +263,20 @@ export class LeadUsecase {
     }
     const isAdmin =
       authUser.role === "ADMIN" || authUser.role === "SUPER_ADMIN" || this.#isSuperSalesScope(authUser);
-    return this.legacy.getClientLeadsColumnStatus({ searchParams, isAdmin, user: authUser });
+    return getClientLeadsColumnStatus({ searchParams, isAdmin, user: authUser });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  DETAIL — scope already enforced by the checker; here we reproduce the legacy
   //  admin-vs-staff branch + the staff-detail extra carve-outs, then add capabilities.
   // ════════════════════════════════════════════════════════════════════════════
-  async getById({ id, query, authUser }) {
+  async getLead({ id, query, authUser }) {
     const lead = await this.#getDetail({ id, query, authUser });
     return { ...lead, capabilities: computeLeadCapabilities(lead, authUser) };
   }
 
   // Shared detail resolver (the legacy admin-vs-staff branch + the staff carve-outs).
-  // Used by getById AND the per-tab readers below, so every tab observes the SAME
+  // Used by getLead AND the per-tab readers below, so every tab observes the SAME
   // scoped subset / record shapes the full detail returns (no fileWhere divergence).
   async #getDetail({ id, query, authUser }) {
     const role = authUser.role;
@@ -364,7 +329,7 @@ export class LeadUsecase {
   async #getAdminDetail(clientLeadId, searchParams) {
     const where = { id: Number(clientLeadId) };
     if (searchParams.checkConsult) where.initialConsult = true;
-    const clientLead = await this.repo.findAdminLeadDetail({ where });
+    const clientLead = await leadRepository.findAdminLeadDetail({ where });
     if (clientLead?.contracts?.length > 0) this.#decorateContractStage(clientLead);
     return clientLead;
   }
@@ -374,40 +339,40 @@ export class LeadUsecase {
     let leadWhere = {};
 
     if (searchParams.userId && role !== "ADMIN" && role !== "SUPER_ADMIN") {
-      const assigned = await this.repo.findFirstByUserId({ userId: Number(searchParams.userId) });
+      const assigned = await leadRepository.findFirstByUserId({ userId: Number(searchParams.userId) });
       if (!assigned) where.userId = Number(searchParams.userId);
     }
     if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-      const shuffle = await this.repo.findOnHoldOwner({ id: Number(clientLeadId) });
+      const shuffle = await leadRepository.findOnHoldOwner({ id: Number(clientLeadId) });
       if (shuffle && shuffle.userId !== Number(userId)) {
         where = {};
       } else if (!this.#isPrimaryScope(user)) {
         leadWhere.status = { notIn: ["NEW", "ARCHIVED", "ON_HOLD", "FINALIZED", "REJECTED", "CONVERTED"] };
       }
     }
-    const isNew = await this.repo.findUnassignedNew({ id: Number(clientLeadId) });
+    const isNew = await leadRepository.findUnassignedNew({ id: Number(clientLeadId) });
     if (isNew) delete where.userId;
 
     const initialConsultWhere = searchParams.checkConsult ? { initialConsult: true } : {};
     const fullWhere = { id: Number(clientLeadId), ...initialConsultWhere, ...where, ...leadWhere };
-    const clientLead = await this.repo.findLeadDetail({ where: fullWhere, fileWhere: where });
+    const clientLead = await leadRepository.findLeadDetail({ where: fullWhere, fileWhere: where });
     if (!clientLead) {
       // The gate allowed the read (owned OR NEW-claimable pool), but the staff status
       // carve-out filtered the row out. Turn the misleading 404 into a meaningful,
       // closeable domain error the FE can act on.
       if (isNew) {
-        throw new AppError(C.LEAD_CLAIM_REQUIRED, 409, null, {
+        throw new AppError(leadsMessagesCodes.LEAD_CLAIM_REQUIRED, 409, null, {
           translationKey: messagesNames.leadsMessages,
           reason: "This lead is new — claim it as a deal to open it.",
-          redirectText: C.LEAD_CLAIM_REQUIRED,
+          redirectText: leadsMessagesCodes.LEAD_CLAIM_REQUIRED,
           dontRedirect: true,
         });
       }
-      const owner = await this.repo.findLeadOwner({ id: Number(clientLeadId) });
+      const owner = await leadRepository.findLeadOwner({ id: Number(clientLeadId) });
       if (owner && owner.userId != null && Number(owner.userId) !== Number(userId)) {
-        throw new AppError(C.LEAD_ACCESS_DENIED, 403);
+        throw new AppError(leadsMessagesCodes.LEAD_ACCESS_DENIED, 403);
       }
-      throw new AppError(C.LEAD_NOT_FOUND, 404);
+      throw new AppError(leadsMessagesCodes.LEAD_NOT_FOUND, 404);
     }
 
     clientLead.callReminders = [
@@ -427,7 +392,7 @@ export class LeadUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  ASSIGN / CONVERT / STATUS
   // ════════════════════════════════════════════════════════════════════════════
-  async assign({ body, authUser }) {
+  async assignLead({ body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
     // The PUT / endpoint is overloaded: "claim to self" vs admin "assign to other".
     // Self-claim (the FE "استلام" button) sends ONLY { id } — no userId. An admin
@@ -437,29 +402,29 @@ export class LeadUsecase {
     // an admin-tier caller actually supplies a target user; otherwise claim to self.
     const wantsAssignToOther = isAdmin && body.userId != null;
     const targetUserId = wantsAssignToOther ? Number(body.userId) : Number(authUser.id);
-    const result = await this.legacy.assignLeadToAUser(Number(body.id), targetUserId, isAdmin);
+    const result = await assignLeadToAUser(Number(body.id), targetUserId, isAdmin);
     return { data: result, assignedToOther: wantsAssignToOther };
   }
 
   async bulkConvert({ body, authUser }) {
-    if (!this.isAdminUser(authUser)) throw new AppError(C.BULK_CONVERT_FORBIDDEN, 403);
-    const result = await this.legacy.bulkAssignLeadTsoAUser(body.ids, body.userId, true);
+    if (!this.isAdminUser(authUser)) throw new AppError(leadsMessagesCodes.BULK_CONVERT_FORBIDDEN, 403);
+    const result = await bulkAssignLeadTsoAUser(body.ids, body.userId, true);
     return result;
   }
 
-  async convert({ body }) {
+  async convertLead({ body }) {
     // "تحويل إلى صفقة" moves the lead to ON_HOLD (the legacy "owner gave up the lead,
     // free it for another user" path). markClientLeadAsConverted → convertALeadNotification
     // dereferences the CURRENT owner (lead.userId) to notify them; on an UNASSIGNED lead
     // that is null → `null.id` 500. Convert is only meaningful for an assigned lead, so
     // reject the unassigned case with a clean domain error instead of crashing.
-    const lead = await this.repo.findLeadOwner({ id: Number(body.id) });
-    if (!lead) throw new AppError(C.LEAD_NOT_FOUND, 404);
-    if (lead.userId == null) throw new AppError(C.LEAD_CONVERT_REQUIRES_OWNER, 409);
-    return this.legacy.markClientLeadAsConverted(Number(body.id), body.reasonToConvert, "ON_HOLD");
+    const lead = await leadRepository.findLeadOwner({ id: Number(body.id) });
+    if (!lead) throw new AppError(leadsMessagesCodes.LEAD_NOT_FOUND, 404);
+    if (lead.userId == null) throw new AppError(leadsMessagesCodes.LEAD_CONVERT_REQUIRES_OWNER, 409);
+    return markClientLeadAsConverted(Number(body.id), body.reasonToConvert, "ON_HOLD");
   }
 
-  async changeStatus({ id, body, authUser, currentStatus, auditCtx }) {
+  async changeLeadStatus({ id, body, authUser, currentStatus, auditCtx }) {
     const isAdmin = this.isAdminUser(authUser);
     // SECURITY: the legacy non-admin transition lock keys off `oldStatus`. A client
     // could forge `oldStatus` to bypass the FINALIZED/REJECTED/ARCHIVED/ON_HOLD lock
@@ -468,8 +433,8 @@ export class LeadUsecase {
     // the client value is never trusted.
     const { oldStatus: _ignoredClientOldStatus, ...rest } = body;
     const serverOldStatus =
-      currentStatus ?? (await this.repo.findLeadStatus({ id: Number(id) }))?.status;
-    await this.legacy.updateClientLeadStatus({
+      currentStatus ?? (await leadRepository.findLeadStatus({ id: Number(id) }))?.status;
+    await updateClientLeadStatus({
       clientLeadId: Number(id),
       ...rest,
       oldStatus: serverOldStatus,
@@ -490,12 +455,12 @@ export class LeadUsecase {
     return { updatePrice: Boolean(body.updatePrice) };
   }
 
-  async updateField({ id, body }) {
-    return this.legacy.updateLeadField({ data: { ...body }, leadId: id });
+  async updateLeadField({ id, body }) {
+    return adminLeadsRepository.updateLeadField({ data: { ...body }, leadId: id });
   }
 
   async checkCountry({ userId, country }) {
-    const allowed = await this.legacy.checkIfUserAllowedToTakeALead(userId, country);
+    const allowed = await checkIfUserAllowedToTakeALead(userId, country);
     return { allowed: Boolean(allowed) };
   }
 
@@ -515,12 +480,12 @@ export class LeadUsecase {
         ...this.#staffFilter(query),
       },
     };
-    const { items, total } = await this.repo.findNextCalls({ where, countWhere, skip, take: limit });
+    const { items, total } = await leadRepository.findNextCalls({ where, countWhere, skip, take: limit });
     return { items, total, page, pageSize: limit };
   }
 
   async createCall({ id, body, authUser, auditCtx }) {
-    const result = await this.legacy.createCallReminder({ clientLeadId: Number(id), userId: authUser.id, ...body });
+    const result = await createCallReminder({ clientLeadId: Number(id), userId: authUser.id, ...body });
     // Semantic audit: a call reminder was logged against the lead.
     await recordAction(auditCtx, {
       module: AUDIT_MODULES.LEAD,
@@ -535,7 +500,7 @@ export class LeadUsecase {
   }
 
   async updateCall({ reminderId, body, authUser }) {
-    return this.legacy.updateCallReminderStatus({ reminderId: Number(reminderId), currentUser: authUser, ...body });
+    return updateCallReminderStatus({ reminderId: Number(reminderId), currentUser: authUser, ...body });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -555,35 +520,35 @@ export class LeadUsecase {
         ...this.#staffFilter(query),
       },
     };
-    const { items, total } = await this.repo.findNextMeetings({ where, countWhere, skip, take: limit });
+    const { items, total } = await leadRepository.findNextMeetings({ where, countWhere, skip, take: limit });
     return { items, total, page, pageSize: limit };
   }
 
   getMeetingById({ meetingId }) {
-    return this.repo.findMeetingById({ meetingId });
+    return leadRepository.findMeetingById({ meetingId });
   }
 
   getMeetingRemindersByLead({ clientLeadId }) {
-    return this.repo.findMeetingRemindersByLead({ clientLeadId });
+    return leadRepository.findMeetingRemindersByLead({ clientLeadId });
   }
 
   async createMeeting({ id, body, authUser }) {
-    return this.legacy.createMeetingReminder({ clientLeadId: Number(id), currentUser: authUser, userId: authUser.id, ...body });
+    return createMeetingReminder({ clientLeadId: Number(id), currentUser: authUser, userId: authUser.id, ...body });
   }
 
   async createMeetingWithToken({ id, body, authUser }) {
-    return this.legacy.createMeetingReminderWithToken({ clientLeadId: Number(id), currentUser: authUser, userId: authUser.id, ...body });
+    return createMeetingReminderWithToken({ clientLeadId: Number(id), currentUser: authUser, userId: authUser.id, ...body });
   }
 
   async updateMeeting({ reminderId, body, authUser }) {
-    return this.legacy.updateMeetingReminderStatus({ reminderId: Number(reminderId), currentUser: authUser, ...body });
+    return updateMeetingReminderStatus({ reminderId: Number(reminderId), currentUser: authUser, ...body });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  PRICE OFFERS / PAYMENTS / FILES / NOTES / REMINDERS
   // ════════════════════════════════════════════════════════════════════════════
   async createPriceOffer({ id, body, authUser, auditCtx }) {
-    const result = await this.legacy.createPriceOffer({ clientLeadId: Number(id), userId: authUser.id, ...body });
+    const result = await createPriceOffer({ clientLeadId: Number(id), userId: authUser.id, ...body });
     // Semantic audit: a price offer was created for the lead.
     await recordAction(auditCtx, {
       module: AUDIT_MODULES.LEAD,
@@ -602,36 +567,36 @@ export class LeadUsecase {
   }
 
   async changePriceOfferStatus({ body }) {
-    return this.legacy.editPriceOfferStatus(body.priceOfferId, body.isAccepted);
+    return leadRepository.editPriceOfferStatus(body.priceOfferId, body.isAccepted);
   }
 
   async makePayments({ id, body }) {
     if (body.paymentType === "extra-service") {
-      return this.legacy.makeExtraServicePayments({ data: body.payments, leadId: Number(id), ...body });
+      return paymentMakeExtraServicePayments({ data: body.payments, leadId: Number(id), ...body });
     }
-    return this.legacy.makePayments(body.payments, Number(id));
+    return paymentMakePayments(body.payments, Number(id));
   }
 
   async createFile({ id, body }) {
-    return this.legacy.createFile({ clientLeadId: Number(id), ...body });
+    return createFile({ clientLeadId: Number(id), ...body });
   }
 
   async createNote({ id, body, authUser }) {
-    return this.legacy.createNote({ clientLeadId: Number(id), userId: authUser.id, ...body });
+    return createNote({ clientLeadId: Number(id), userId: authUser.id, ...body });
   }
 
   async sendPaymentReminder({ clientLeadId }) {
-    return this.legacy.remindUserToPay({ clientLeadId: Number(clientLeadId) });
+    return paymentRemindUserToPay({ clientLeadId: Number(clientLeadId) });
   }
 
   async sendCompleteRegisterReminder({ clientLeadId }) {
-    return this.legacy.remindUserToCompleteRegister({ clientLeadId: Number(clientLeadId) });
+    return paymentRemindUserToCompleteRegister({ clientLeadId: Number(clientLeadId) });
   }
 
   // ── ownership lookups for sub-resource mutate checks ────────────────────────────
   async resolveCallReminderLead({ reminderId }) {
-    const row = await this.repo.findCallReminderOwner({ reminderId });
-    if (!row) throw new AppError(C.CALL_REMINDER_NOT_FOUND, 404);
+    const row = await leadRepository.findCallReminderOwner({ reminderId });
+    if (!row) throw new AppError(leadsMessagesCodes.CALL_REMINDER_NOT_FOUND, 404);
     return row;
   }
 
@@ -640,14 +605,14 @@ export class LeadUsecase {
   // Accept either so the same resolver serves both.
   async resolveMeetingReminderLead({ reminderId, meetingId }) {
     const id = reminderId ?? meetingId;
-    const row = await this.repo.findMeetingReminderOwner({ reminderId: id });
-    if (!row) throw new AppError(C.MEETING_REMINDER_NOT_FOUND, 404);
+    const row = await leadRepository.findMeetingReminderOwner({ reminderId: id });
+    if (!row) throw new AppError(leadsMessagesCodes.MEETING_REMINDER_NOT_FOUND, 404);
     return row;
   }
 
   async resolvePriceOfferLead({ priceOfferId }) {
-    const row = await this.repo.findPriceOfferLeadId({ priceOfferId });
-    if (!row) throw new AppError(C.PRICE_OFFER_NOT_FOUND, 404);
+    const row = await leadRepository.findPriceOfferLeadId({ priceOfferId });
+    if (!row) throw new AppError(leadsMessagesCodes.PRICE_OFFER_NOT_FOUND, 404);
     return row;
   }
 
@@ -656,4 +621,5 @@ export class LeadUsecase {
   }
 }
 
-export const leadUsecase = new LeadUsecase(leadRepository);
+export const leadUsecase = new LeadUsecase();
+export { LeadUsecase };

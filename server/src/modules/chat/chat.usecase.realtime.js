@@ -1,3 +1,5 @@
+import { chatRepository } from "./chat.repo.js";
+
 // Lazily resolve the socket server at call time. A static `import { getIo }`
 // here would recreate a load-order-fragile cycle:
 // infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
@@ -24,7 +26,7 @@ export const realtimeMethods = {
     content,
   }) {
     const io = await getIo();
-    const members = await this.repository.getActiveMembersExcluding({
+    const members = await chatRepository.getActiveMembersExcluding({
       roomId,
       userId,
       clientId,
@@ -37,7 +39,7 @@ export const realtimeMethods = {
 
   async emitToAllMembers({ roomId, event, content }) {
     const io = await getIo();
-    const members = await this.repository.getActiveMembers(roomId);
+    const members = await chatRepository.getActiveMembers(roomId);
     for (const m of members) {
       if (m.userId) io.to(`user:${m.userId}`).emit(event, content);
       else if (m.clientId) io.to(`client:${m.clientId}`).emit(event, content);
@@ -47,11 +49,11 @@ export const realtimeMethods = {
   // ── Presence ───────────────────────────────────────────────────────────────
 
   updateUserLastSeen(userId) {
-    this.repository.updateUserLastSeen(userId);
+    chatRepository.updateUserLastSeen(userId);
   },
 
   async updateClientLastSeen(clientId) {
-    await this.repository.updateClientLastSeen(clientId);
+    await chatRepository.updateClientLastSeen(clientId);
   },
 
   // ── Typing indicator ───────────────────────────────────────────────────────

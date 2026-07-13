@@ -6,71 +6,67 @@ import { ok } from "../../../shared/http/response.js";
 import { chatMessagesCodes, messagesNames } from "@dms/shared";
 import { clientChatUsecase } from "./client-chat.usecase.js";
 
-const C = chatMessagesCodes;
 const TK = messagesNames.chatMessages;
 
-export class ClientChatController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class ClientChatController {
+  async validateToken(req, res) {
+    const data = await clientChatUsecase.validateToken({ token: req.query.token });
+    return ok(res, data, chatMessagesCodes.ROOM_TOKEN_VALIDATED, TK);
   }
 
-  validateToken = async (req, res) => {
-    const data = await this.usecase.validateToken({ token: req.query.token });
-    return ok(res, data, C.ROOM_TOKEN_VALIDATED, TK);
-  };
-
-  getRoom = async (req, res) => {
-    const data = await this.usecase.getRoom({
+  async getRoom(req, res) {
+    const data = await clientChatUsecase.getRoom({
       token: req.query.token,
       roomId: req.params.roomId,
     });
-    return ok(res, data, C.ROOM_FETCHED, TK);
-  };
+    return ok(res, data, chatMessagesCodes.ROOM_FETCHED, TK);
+  }
 
-  getMessages = async (req, res) => {
-    const data = await this.usecase.getMessages({
+  async getMessages(req, res) {
+    const data = await clientChatUsecase.getMessages({
       token: req.query.token,
       roomId: req.params.roomId,
       page: req.query.page,
       limit: req.query.limit,
     });
-    return ok(res, data, C.MESSAGES_FETCHED, TK);
-  };
+    return ok(res, data, chatMessagesCodes.MESSAGES_FETCHED, TK);
+  }
 
-  getMessagePage = async (req, res) => {
-    const data = await this.usecase.getMessagePage({
+  async getMessagePage(req, res) {
+    const data = await clientChatUsecase.getMessagePage({
       token: req.query.token,
       roomId: req.params.roomId,
       messageId: req.params.messageId,
       limit: req.query.limit,
     });
-    return ok(res, data, C.MESSAGE_PAGE_FETCHED, TK);
-  };
+    return ok(res, data, chatMessagesCodes.MESSAGE_PAGE_FETCHED, TK);
+  }
 
-  getPinnedMessages = async (req, res) => {
-    const data = await this.usecase.getPinnedMessages({
+  async getPinnedMessages(req, res) {
+    const data = await clientChatUsecase.getPinnedMessages({
       token: req.query.token,
       roomId: req.params.roomId,
     });
-    return ok(res, data, C.PINNED_MESSAGES_FETCHED, TK);
-  };
+    return ok(res, data, chatMessagesCodes.PINNED_MESSAGES_FETCHED, TK);
+  }
 
-  getMembers = async (req, res) => {
-    const data = await this.usecase.getMembers({
+  async getMembers(req, res) {
+    const data = await clientChatUsecase.getMembers({
       token: req.query.token,
       roomId: req.params.roomId,
     });
-    return ok(res, data, C.MEMBERS_FETCHED, TK);
-  };
+    return ok(res, data, chatMessagesCodes.MEMBERS_FETCHED, TK);
+  }
 
-  getFiles = async (req, res) => {
-    const data = await this.usecase.getFiles({
+  async getFiles(req, res) {
+    const data = await clientChatUsecase.getFiles({
       token: req.query.token,
       roomId: req.params.roomId,
       query: req.query,
     });
-    return ok(res, data, C.FILES_FETCHED, TK);
-  };
+    return ok(res, data, chatMessagesCodes.FILES_FETCHED, TK);
+  }
 }
 
-export const clientChatController = new ClientChatController(clientChatUsecase);
+export const clientChatController = new ClientChatController();
+export { ClientChatController };

@@ -20,7 +20,7 @@ router.get(
   "/",
   AuthMiddleware.requirePermissions([P.LOG_VIEW]),
   validate(AuditValidation.listQuery, "query"),
-  asyncHandler(auditController.list),
+  asyncHandler(auditController.getAuditLogs),
 );
 
 export { router as auditRouter };

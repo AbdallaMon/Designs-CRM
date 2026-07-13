@@ -10,27 +10,20 @@
 // (style/colorPattern/material/space/designImage — all have an `isArchived` column),
 // so the ADMIN code is the gate; there is no per-lead owner to scope.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { ADMIN_ARCHIVE_MODEL_ALLOWLIST, adminResidualMessagesCodes as C } from "@dms/shared";
+import { ADMIN_ARCHIVE_MODEL_ALLOWLIST, adminResidualMessagesCodes } from "@dms/shared";
 import { modelArchiveRepository } from "./model-archive.repo.js";
 
-const legacyDefaults = {
-  toggleArchiveAModel: (a) => modelArchiveRepository.toggleArchiveAModel(a),
-};
-
-export class ModelArchiveUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class ModelArchiveUsecase {
   // Resolve + validate the client-supplied model name, then archive/unarchive the row.
-  archive({ model, id, isArchived }) {
+  archiveModel({ model, id, isArchived }) {
     const key = String(model ?? "").toLowerCase();
     const delegate = ADMIN_ARCHIVE_MODEL_ALLOWLIST[key];
     if (!delegate) {
-      throw new AppError(C.MODEL_NOT_ALLOWED, 422);
+      throw new AppError(adminResidualMessagesCodes.MODEL_NOT_ALLOWED, 422);
     }
-    return this.legacy.toggleArchiveAModel({ model: delegate, id: Number(id), isArchived });
+    return modelArchiveRepository.toggleArchiveAModel({ model: delegate, id: Number(id), isArchived });
   }
 }
 
 export const modelArchiveUsecase = new ModelArchiveUsecase();
+export { ModelArchiveUsecase };

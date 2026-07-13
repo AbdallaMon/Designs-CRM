@@ -17,30 +17,18 @@
 // token's room + the token's client member.
 //
 // ── Reuse, not duplication ─────────────────────────────────────────────────────
-// All Prisma I/O and grouping logic is reused from the authed chat module via lazy
-// adapters: the shared `chatRepository` instance (from chat.socket.js) and the
-// `addDayGrouping`/`addMonthGrouping` helpers. No query logic is re-implemented here.
+// All Prisma I/O and grouping logic is reused from the authed chat module: the
+// shared `chatRepository` instance (same one the socket + HTTP layers use, from
+// chat.socket.js) and the `addDayGrouping`/`addMonthGrouping` helpers. No query
+// logic is re-implemented here.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { chatMessagesCodes } from "@dms/shared";
-
-const legacyDefaults = {
-  // The single shared ChatRepository instance (same one the socket + HTTP layers
-  // use), lazily imported to avoid pulling the socket/Prisma graph at module load.
-  repository: () =>
-    import("../chat.socket.js").then((m) => m.chatRepository),
-  addDayGrouping: (...a) =>
-    import("../chat.helpers.js").then((m) => m.addDayGrouping(...a)),
-  addMonthGrouping: (...a) =>
-    import("../chat.helpers.js").then((m) => m.addMonthGrouping(...a)),
-};
+import { chatRepository } from "../chat.socket.js";
+import { addDayGrouping, addMonthGrouping } from "../chat.helpers.js";
 
 export class ClientChatUsecase {
-  constructor(deps = {}) {
-    this.deps = { ...legacyDefaults, ...deps };
-  }
-
   async repo() {
-    return this.deps.repository();
+    return chatRepository;
   }
 
   // ── Token → room resolution (the IDOR-safe core) ──────────────────────────────
@@ -137,7 +125,7 @@ export class ClientChatUsecase {
     ]);
 
     const ascending = messages.reverse();
-    const messagesWithGrouping = await this.deps.addDayGrouping(ascending, {
+    const messagesWithGrouping = await addDayGrouping(ascending, {
       userId: null,
       clientId: clientId != null ? Number(clientId) : null,
       memberId: member.id,
@@ -239,10 +227,7 @@ export class ClientChatUsecase {
       to: to || null,
     });
 
-    const files = await this.deps.addMonthGrouping(
-      attachments,
-      parsedUniqueMonths,
-    );
+    const files = await addMonthGrouping(attachments, parsedUniqueMonths);
 
     return {
       data: { files, uniqueMonths: parsedUniqueMonths },

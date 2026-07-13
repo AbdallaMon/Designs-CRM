@@ -1,21 +1,12 @@
 // client-portal/languages usecase — the PUBLIC languages lookup (legacy
 // `routes/client/languages.js`). Pure read; the frozen `getLanguages` service
 // (`services/main/client/clientServices.js`) also ensures the seed rows exist, so it is
-// wrapped via a lazy adapter rather than duplicated.
-const legacyDefaults = {
-  getLanguages: (args) =>
-    import("../../image-sessions/services/languages.js").then((m) =>
-      m.getLanguages(args),
-    ),
-};
+// reused directly rather than duplicated.
+import { getLanguages } from "../../image-sessions/services/languages.js";
 
 export class LanguagesUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
-  list({ notArchived }) {
-    return this.legacy.getLanguages({ notArchived });
+  listLanguages({ notArchived }) {
+    return getLanguages({ notArchived });
   }
 }
 

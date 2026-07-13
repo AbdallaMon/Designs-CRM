@@ -1,8 +1,16 @@
 // Usecase test for getLeadCockpit — mocks the repo bundle (no DB), asserts the usecase
 // runs the pure engine, attaches capabilities from computeLeadCapabilities, and returns
 // the { health, actions, capabilities } DTO. `now` is injected for determinism.
-import { describe, it, expect, vi } from "vitest";
-import { LeadCockpitUsecase } from "../lead.cockpit.usecase.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// The cockpit usecase now uses the `leadRepository` singleton directly (no DI) — mock it.
+vi.mock("../lead.repo.js", () => ({
+  leadRepository: { findCockpitBundle: vi.fn() },
+  LeadRepository: class {},
+}));
+
+import { leadCockpitUsecase } from "../lead.cockpit.usecase.js";
+import { leadRepository } from "../lead.repo.js";
 import { PERMISSIONS } from "@dms/shared";
 
 const P = PERMISSIONS.LEAD;
@@ -33,12 +41,15 @@ function bundle(overrides = {}) {
   };
 }
 
+// Configure the mocked repo to return the given bundle; hand back the singleton usecase.
 function makeUsecase(bundleRow) {
-  const repo = { findCockpitBundle: vi.fn().mockResolvedValue(bundleRow) };
-  return { uc: new LeadCockpitUsecase(repo), repo };
+  leadRepository.findCockpitBundle.mockResolvedValue(bundleRow);
+  return { uc: leadCockpitUsecase, repo: leadRepository };
 }
 
 describe("LeadCockpitUsecase.getLeadCockpit", () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it("fetches the bundle by id and returns { health, actions, capabilities }", async () => {
     const { uc, repo } = makeUsecase(bundle());
     const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: OWNER, now: NOW });

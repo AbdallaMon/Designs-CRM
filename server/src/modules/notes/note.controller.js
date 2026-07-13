@@ -7,22 +7,22 @@ import { ok, created } from "../../shared/http/response.js";
 import { projectsMessagesCodes, messagesNames } from "@dms/shared";
 import { getNotes, addNote } from "./note.usecase.js";
 
-const C = projectsMessagesCodes;
 const TK = messagesNames.projectsMessages;
 
-export class NoteController {
+class NoteController {
   // GET /notes?idKey=<owner>&id=<n>
-  list = async (req, res) => {
+  async getNotes(req, res) {
     const data = await getNotes({ idKey: req.query.idKey, id: req.query.id });
-    return ok(res, data, C.NOTES_FETCHED, TK);
-  };
+    return ok(res, data, projectsMessagesCodes.NOTES_FETCHED, TK);
+  }
 
   // POST /notes — author forced to the acting user; a client-supplied userId is NEVER honored.
-  create = async (req, res) => {
+  async createNote(req, res) {
     const isAdmin = req.auth?.role === "ADMIN" || req.auth?.role === "SUPER_ADMIN";
     const data = await addNote({ ...req.body, userId: req.auth.id, isAdmin });
-    return created(res, data, C.NOTE_ADDED, TK);
-  };
+    return created(res, data, projectsMessagesCodes.NOTE_ADDED, TK);
+  }
 }
 
 export const noteController = new NoteController();
+export { NoteController };

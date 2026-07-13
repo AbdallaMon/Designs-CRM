@@ -9,53 +9,49 @@ import { ok, created } from "../../../shared/http/response.js";
 import { imageSessionsMessagesCodes, messagesNames } from "@dms/shared";
 import { imageSessionUsecase } from "./image-session.usecase.js";
 
-const M = imageSessionsMessagesCodes;
 const TK = messagesNames.imageSessionsMessages;
 
-export class ImageSessionController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class ImageSessionController {
+  async listForLead(req, res) {
+    const data = await imageSessionUsecase.listForLead({ clientLeadId: req.params.clientLeadId, authUser: req.auth });
+    return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSIONS_FETCHED, TK);
   }
 
-  listForLead = async (req, res) => {
-    const data = await this.usecase.listForLead({ clientLeadId: req.params.clientLeadId, authUser: req.auth });
-    return ok(res, data, M.IMAGE_SESSIONS_FETCHED, TK);
-  };
-
-  createForLead = async (req, res) => {
-    const data = await this.usecase.createForLead({
+  async createForLead(req, res) {
+    const data = await imageSessionUsecase.createForLead({
       clientLeadId: req.params.clientLeadId,
       spaces: req.body.spaces,
       authUser: req.auth,
     });
-    return created(res, data, M.IMAGE_SESSION_CREATED, TK);
-  };
+    return created(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_CREATED, TK);
+  }
 
-  editFields = async (req, res) => {
-    const data = await this.usecase.editFields({
+  async editFields(req, res) {
+    const data = await imageSessionUsecase.editFields({
       clientLeadId: req.params.clientLeadId,
       sessionId: req.params.sessionId,
       data: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, M.IMAGE_SESSION_UPDATED, TK);
-  };
+    return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_UPDATED, TK);
+  }
 
-  regenerateToken = async (req, res) => {
-    const data = await this.usecase.regenerateToken({ sessionId: req.params.sessionId, authUser: req.auth });
-    return ok(res, data, M.IMAGE_SESSION_TOKEN_REGENERATED, TK);
-  };
+  async regenerateToken(req, res) {
+    const data = await imageSessionUsecase.regenerateToken({ sessionId: req.params.sessionId, authUser: req.auth });
+    return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_REGENERATED, TK);
+  }
 
-  deleteSession = async (req, res) => {
-    const data = await this.usecase.deleteSession({ sessionId: req.params.sessionId, authUser: req.auth });
-    return ok(res, data, M.IMAGE_SESSION_DELETED, TK);
-  };
+  async deleteSession(req, res) {
+    const data = await imageSessionUsecase.deleteSession({ sessionId: req.params.sessionId, authUser: req.auth });
+    return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_DELETED, TK);
+  }
 
-  modelIds = async (req, res) => {
+  async modelIds(req, res) {
     const { model, ...searchParams } = req.query;
-    const data = await this.usecase.modelIds({ model, searchParams });
-    return ok(res, data, M.IMAGE_SESSION_MODEL_IDS_FETCHED, TK);
-  };
+    const data = await imageSessionUsecase.modelIds({ model, searchParams });
+    return ok(res, data, imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_IDS_FETCHED, TK);
+  }
 }
 
-export const imageSessionController = new ImageSessionController(imageSessionUsecase);
+export const imageSessionController = new ImageSessionController();
+export { ImageSessionController };

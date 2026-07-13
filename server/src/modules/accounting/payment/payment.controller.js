@@ -7,55 +7,52 @@ import { accountingMessagesCodes, messagesNames } from "@dms/shared";
 import { paymentUsecase } from "./payment.usecase.js";
 import { withPaymentListCapabilities, computePaymentCapabilities } from "./payment.dto.js";
 
-const C = accountingMessagesCodes;
 const TK = messagesNames.accountingMessages;
 
 import { paginate } from "../../../shared/utility/pagination.js";
 
-export class PaymentController {
-  /** @param {import("./payment.usecase.js").PaymentUsecase} usecase */
-  constructor(usecase) {
-    this.usecase = usecase;
+class PaymentController {
+  // object guard (existence) for the money workflow actions
+  checkPaymentExists(req) {
+    return paymentUsecase.checkPaymentExists({ paymentId: req.params.paymentId });
   }
 
-  // object guard (existence) for the money workflow actions
-  checkPaymentExists = (req) => this.usecase.checkPaymentExists({ paymentId: req.params.paymentId });
-
-  list = async (req, res) => {
+  async getPayments(req, res) {
     const { page, limit, skip } = paginate(req.query);
-    const result = await this.usecase.list({ query: req.query, skip, limit, page });
+    const result = await paymentUsecase.listPayments({ query: req.query, skip, limit, page });
     const items = withPaymentListCapabilities(result.data ?? [], req.auth);
     return ok(
       res,
       { items, total: result.total ?? 0, page, pageSize: limit },
-      C.PAYMENTS_FETCHED,
+      accountingMessagesCodes.PAYMENTS_FETCHED,
       TK,
     );
-  };
+  }
 
-  listInvoices = async (req, res) => {
-    const data = await this.usecase.listInvoices({ paymentId: req.params.paymentId });
-    return ok(res, { items: data }, C.PAYMENT_INVOICES_FETCHED, TK);
-  };
+  async listInvoices(req, res) {
+    const data = await paymentUsecase.listInvoices({ paymentId: req.params.paymentId });
+    return ok(res, { items: data }, accountingMessagesCodes.PAYMENT_INVOICES_FETCHED, TK);
+  }
 
-  pay = async (req, res) => {
-    const data = await this.usecase.pay({
+  async pay(req, res) {
+    const data = await paymentUsecase.pay({
       paymentId: req.params.paymentId,
       body: req.body,
       authUser: req.auth,
     });
-    return ok(res, { ...data, capabilities: computePaymentCapabilities(data, req.auth) }, C.PAYMENT_PROCESSED, TK);
-  };
+    return ok(res, { ...data, capabilities: computePaymentCapabilities(data, req.auth) }, accountingMessagesCodes.PAYMENT_PROCESSED, TK);
+  }
 
-  markOverdue = async (req, res) => {
-    const data = await this.usecase.markOverdue({ paymentId: req.params.paymentId });
-    return ok(res, { ...data, capabilities: computePaymentCapabilities(data, req.auth) }, C.PAYMENT_MARKED_OVERDUE, TK);
-  };
+  async markOverdue(req, res) {
+    const data = await paymentUsecase.markOverdue({ paymentId: req.params.paymentId });
+    return ok(res, { ...data, capabilities: computePaymentCapabilities(data, req.auth) }, accountingMessagesCodes.PAYMENT_MARKED_OVERDUE, TK);
+  }
 
-  changeStatus = async (req, res) => {
-    const data = await this.usecase.changeStatus({ paymentId: req.params.paymentId, body: req.body });
-    return ok(res, { ...data, capabilities: computePaymentCapabilities(data, req.auth) }, C.PAYMENT_LEVEL_CHANGED, TK);
-  };
+  async changeStatus(req, res) {
+    const data = await paymentUsecase.changeStatus({ paymentId: req.params.paymentId, body: req.body });
+    return ok(res, { ...data, capabilities: computePaymentCapabilities(data, req.auth) }, accountingMessagesCodes.PAYMENT_LEVEL_CHANGED, TK);
+  }
 }
 
-export const paymentController = new PaymentController(paymentUsecase);
+export const paymentController = new PaymentController();
+export { PaymentController };

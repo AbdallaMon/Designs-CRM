@@ -104,28 +104,19 @@ export async function createCommissionByAdmin({
   });
 }
 
-const legacyDefaults = {
-  getCommissionByUserId: (userId) => getCommissionByUserId(userId),
-  createCommissionByAdmin: (a) => createCommissionByAdmin(a),
-  updateCommission: (a) => updateCommission(a),
-};
-
-export class CommissionsUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
+class CommissionsUsecase {
+  listCommissions({ userId }) {
+    return getCommissionByUserId(userId);
   }
 
-  list({ userId }) {
-    return this.legacy.getCommissionByUserId(userId);
+  createCommission({ userId, leadId, amount, commissionReason }) {
+    return createCommissionByAdmin({ userId, leadId, amount, commissionReason });
   }
 
-  create({ userId, leadId, amount, commissionReason }) {
-    return this.legacy.createCommissionByAdmin({ userId, leadId, amount, commissionReason });
-  }
-
-  update({ commissionId, amount }) {
-    return this.legacy.updateCommission({ commissionId, amount });
+  updateCommission({ commissionId, amount }) {
+    return updateCommission({ commissionId, amount });
   }
 }
 
 export const commissionsUsecase = new CommissionsUsecase();
+export { CommissionsUsecase };

@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import {
   Button,
   Typography,
@@ -17,10 +21,45 @@ import { MdSave } from "react-icons/md";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
-// Calm VERSA step: a letter tile + label + description, one Save button, 3 fields.
-// Step colour is kept only as a thin accent rail so V/E/R/S/A stay distinguishable.
-export const VersaStep = ({ step, stepKey, onSave }) => {
+export const STEP_CONFIG = {
+  v: {
+    label: "Validate",
+    colorKey: "info",
+    description:
+      "Acknowledge the client's concern and show you understand their objection.",
+  },
+  e: {
+    label: "Empathize",
+    colorKey: "warning",
+    description:
+      "Connect emotionally by recognizing the client’s feelings and point of view.",
+  },
+  r: {
+    label: "Reframe",
+    colorKey: "primary",
+    description:
+      "Shift the client’s perspective by presenting the objection in a new light.",
+  },
+  s: {
+    label: "Show value",
+    colorKey: "success",
+    description:
+      "Demonstrate the unique benefits and solutions your offer provides.",
+  },
+  a: {
+    label: "Ask",
+    colorKey: "secondary",
+    description:
+      "Prompt the client to take the next step or confirm understanding.",
+  },
+};
+
+// One VERSA step, rendered on its own (the editor shows a single active step at a time).
+// Exposes `flush()` so the editor can auto-save an unsaved step when the rep navigates
+// to another beat — no data loss, no blocking prompt mid-meeting.
+export const VersaStep = forwardRef(({ step, stepKey, onSaved }, ref) => {
   const theme = useTheme();
+  const color = theme.palette[STEP_CONFIG[stepKey].colorKey].main;
   const [formData, setFormData] = useState({
     question: step?.question || "",
     answer: step?.answer || "",
@@ -29,42 +68,9 @@ export const VersaStep = ({ step, stepKey, onSave }) => {
   const [hasChanges, setHasChanges] = useState(false);
   const { loading, setLoading } = useToastContext();
 
-  const stepConfig = {
-    v: {
-      label: "Validate",
-      color: theme.palette.info.main,
-      description:
-        "Acknowledge the client's concern and show you understand their objection.",
-    },
-    e: {
-      label: "Empathize",
-      color: theme.palette.warning.main,
-      description:
-        "Connect emotionally by recognizing the client’s feelings and point of view.",
-    },
-    r: {
-      label: "Reframe",
-      color: theme.palette.primary.main,
-      description:
-        "Shift the client’s perspective by presenting the objection in a new light.",
-    },
-    s: {
-      label: "Show value",
-      color: theme.palette.success.main,
-      description:
-        "Demonstrate the unique benefits and solutions your offer provides.",
-    },
-    a: {
-      label: "Ask",
-      color: theme.palette.secondary.main,
-      description:
-        "Prompt the client to take the next step or confirm understanding.",
-    },
-  };
+  const currentStep = STEP_CONFIG[stepKey];
 
-  const currentStep = stepConfig[stepKey];
-
-  const handleSave = async () => {
+  const save = async () => {
     const request = await handleRequestSubmit(
       formData,
       setLoading,
@@ -75,12 +81,20 @@ export const VersaStep = ({ step, stepKey, onSave }) => {
       "PUT"
     );
     if (request.status === 200) {
-      if (onSave) {
-        await onSave();
-      }
       setHasChanges(false);
+      onSaved?.(stepKey, formData);
+      return true;
     }
+    return false;
   };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flush: async () => (hasChanges ? save() : true),
+    }),
+    [hasChanges, formData, step?.id]
+  );
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -92,61 +106,36 @@ export const VersaStep = ({ step, stepKey, onSave }) => {
       sx={{
         borderRadius: 2.5,
         border: `1px solid ${theme.palette.divider}`,
-        borderLeft: `3px solid ${currentStep.color}`,
+        borderInlineStart: `3px solid ${color}`,
         bgcolor: "background.paper",
         p: 2.25,
       }}
     >
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        spacing={1.5}
-        sx={{ mb: 1.5 }}
-      >
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              bgcolor: alpha(currentStep.color, 0.14),
-              color: currentStep.color,
-            }}
-          >
-            {stepKey.toUpperCase()}
-          </Box>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ color: currentStep.color }}>
-              {currentStep.label}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {currentStep.description}
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Button
-          variant={hasChanges ? "contained" : "outlined"}
-          size="small"
-          startIcon={
-            loading ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <MdSave />
-            )
-          }
-          onClick={handleSave}
-          disabled={loading || !hasChanges}
-          sx={{ textTransform: "none", fontWeight: 600, flexShrink: 0 }}
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+        <Box
+          sx={{
+            width: 40,
+            height: 40,
+            borderRadius: 2,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            bgcolor: alpha(color, 0.14),
+            color,
+          }}
         >
-          {loading ? "Saving..." : hasChanges ? "Save" : "Saved"}
-        </Button>
+          {stepKey.toUpperCase()}
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle1" fontWeight={700} sx={{ color }}>
+            {currentStep.label}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {currentStep.description}
+          </Typography>
+        </Box>
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
@@ -155,34 +144,60 @@ export const VersaStep = ({ step, stepKey, onSave }) => {
         <TextField
           fullWidth
           size="small"
-          label="Question (Optional)"
-          placeholder="Enter the question you would ask the client..."
-          multiline
-          rows={2}
-          value={formData.question}
-          onChange={(e) => handleChange("question", e.target.value)}
-        />
-        <TextField
-          fullWidth
-          size="small"
-          label="Your Response (Optional)"
-          placeholder="Enter your response or approach..."
+          label="Your response"
+          placeholder="The line you'd say to the client..."
           multiline
           rows={3}
+          dir="auto"
           value={formData.answer}
           onChange={(e) => handleChange("answer", e.target.value)}
         />
         <TextField
           fullWidth
           size="small"
-          label="Expected Client Response (Optional)"
-          placeholder="What response do you expect from the client..."
+          label="Question to ask (optional)"
+          placeholder="A question that opens the conversation..."
           multiline
           rows={2}
+          dir="auto"
+          value={formData.question}
+          onChange={(e) => handleChange("question", e.target.value)}
+        />
+        <TextField
+          fullWidth
+          size="small"
+          label="Expected client response (optional)"
+          placeholder="What you expect the client to say..."
+          multiline
+          rows={2}
+          dir="auto"
           value={formData.clientResponse}
           onChange={(e) => handleChange("clientResponse", e.target.value)}
         />
       </Stack>
+
+      {hasChanges && (
+        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={
+              loading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <MdSave />
+              )
+            }
+            onClick={save}
+            disabled={loading}
+            sx={{ textTransform: "none", fontWeight: 600 }}
+          >
+            {loading ? "Saving..." : "Save"}
+          </Button>
+        </Stack>
+      )}
     </Box>
   );
-};
+});
+
+VersaStep.displayName = "VersaStep";

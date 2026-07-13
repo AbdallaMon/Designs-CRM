@@ -23,14 +23,14 @@ import { ClientCalendarValidation } from "./client-calendar.validation.js";
 const router = Router();
 
 // ── public reads ─────────────────────────────────────────────────────────────────────
-router.get("/meeting-data", asyncHandler(clientCalendarController.meetingData));
-router.get("/available-days", asyncHandler(clientCalendarController.availableDays));
+router.get("/meeting-data", asyncHandler(clientCalendarController.getMeetingData));
+router.get("/available-days", asyncHandler(clientCalendarController.getAvailableDays));
 // `/slots/details` MUST be declared before `/slots` so the literal sub-path wins.
-router.get("/slots/details", asyncHandler(clientCalendarController.slotDetails));
-router.get("/slots", asyncHandler(clientCalendarController.slots));
-router.get("/timezones", asyncHandler(clientCalendarController.timezones));
+router.get("/slots/details", asyncHandler(clientCalendarController.getSlotDetails));
+router.get("/slots", asyncHandler(clientCalendarController.getSlots));
+router.get("/timezones", asyncHandler(clientCalendarController.getTimezones));
 
 // ── public booking write ───────────────────────────────────────────────────────────────
-router.post("/book", validate(ClientCalendarValidation.book), asyncHandler(clientCalendarController.book));
+router.post("/book", validate(ClientCalendarValidation.book), asyncHandler(clientCalendarController.bookMeeting));
 
 export { router as clientCalendarRouter };

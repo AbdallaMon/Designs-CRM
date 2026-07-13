@@ -8,14 +8,7 @@
 import { auditRepo } from "./audit.repo.js";
 import { AuditDto } from "./audit.dto.js";
 
-export class AuditUsecase {
-  /**
-   * @param {typeof import("./audit.repo.js").auditRepo} repository
-   */
-  constructor(repository) {
-    this.repo = repository;
-  }
-
+class AuditUsecase {
   // Build the Prisma where from the (already validated + coerced) query filters. Only
   // the known filter keys are consumed; anything else in the query is ignored.
   #buildWhere(query) {
@@ -34,7 +27,7 @@ export class AuditUsecase {
     return where;
   }
 
-  async list({ query }) {
+  async listAuditLogs({ query }) {
     // INPUT param is `limit`; the OUTPUT envelope still exposes it as `pageSize`.
     // Defensive clamp — page is a positive int (min 1) even if the validator is bypassed.
     const page = Math.max(1, Number(query.page) || 1);
@@ -42,15 +35,16 @@ export class AuditUsecase {
     const skip = (page - 1) * pageSize;
 
     const where = this.#buildWhere(query);
-    const { items, total } = await this.repo.findManyPaged({ where, skip, take: pageSize });
+    const { items, total } = await auditRepo.findManyPaged({ where, skip, take: pageSize });
 
     // Batched actor resolution — one query for all distinct actor ids on the page.
     const actorIds = [...new Set(items.map((r) => r.actorUserId).filter((id) => id != null))];
-    const users = await this.repo.findUsersByIds(actorIds);
+    const users = await auditRepo.findUsersByIds(actorIds);
     const usersById = new Map(users.map((u) => [u.id, u]));
 
     return AuditDto.toPaginatedList({ items, total, page, pageSize, usersById });
   }
 }
 
-export const auditUsecase = new AuditUsecase(auditRepo);
+export const auditUsecase = new AuditUsecase();
+export { AuditUsecase };

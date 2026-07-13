@@ -15,24 +15,10 @@ import {
   calculateSummary,
   calculateStaffStats,
 } from "./reports.dto.js";
+import { generateExcelReport, generateStaffExcelReport } from "./report-excel.js";
+import { generatePDFReport, generateStaffPDFReport } from "./report-pdf.js";
 
-const legacyDefaults = {
-  generateExcelReport: (req, res) =>
-    import("./report-excel.js").then((m) => m.generateExcelReport(req, res)),
-  generatePDFReport: (req, res) =>
-    import("./report-pdf.js").then((m) => m.generatePDFReport(req, res)),
-  generateStaffExcelReport: (req, res) =>
-    import("./report-excel.js").then((m) => m.generateStaffExcelReport(req, res)),
-  generateStaffPDFReport: (req, res) =>
-    import("./report-pdf.js").then((m) => m.generateStaffPDFReport(req, res)),
-};
-
-export class ReportsUsecase {
-  constructor(repository = reportsRepository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class ReportsUsecase {
   // ── NON-frozen DATA endpoints (read + shape; controller owns res) ────────────────
   // Ported VERBATIM from the legacy generateLeadReport (minus the res.json / try-catch,
   // which the controller now owns).
@@ -77,7 +63,7 @@ export class ReportsUsecase {
       ].filter((condition) => Object.keys(condition).length > 0),
     };
 
-    const leads = await this.repo.findLeadsForReport({ where });
+    const leads = await reportsRepository.findLeadsForReport({ where });
 
     const processedLeads = processLeads(leads);
     const summary = calculateSummary(leads);
@@ -107,7 +93,7 @@ export class ReportsUsecase {
     };
 
     // First, get all staff users
-    const staffUsers = await this.repo.findStaffWithLeadsForReport({ where });
+    const staffUsers = await reportsRepository.findStaffWithLeadsForReport({ where });
 
     const staffStats = calculateStaffStats(staffUsers, filters);
 
@@ -166,17 +152,18 @@ export class ReportsUsecase {
 
   // ── 🔒 FROZEN excel/pdf (the frozen fn writes its own response) ──────────────────
   leadReportExcel({ body, res }) {
-    return this.legacy.generateExcelReport({ body }, res);
+    return generateExcelReport({ body }, res);
   }
   leadReportPdf({ body, res }) {
-    return this.legacy.generatePDFReport({ body }, res);
+    return generatePDFReport({ body }, res);
   }
   staffReportExcel({ body, res }) {
-    return this.legacy.generateStaffExcelReport({ body }, res);
+    return generateStaffExcelReport({ body }, res);
   }
   staffReportPdf({ body, res }) {
-    return this.legacy.generateStaffPDFReport({ body }, res);
+    return generateStaffPDFReport({ body }, res);
   }
 }
 
 export const reportsUsecase = new ReportsUsecase();
+export { ReportsUsecase };

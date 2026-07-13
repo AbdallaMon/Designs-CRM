@@ -7,36 +7,32 @@ import { ok } from "../../../shared/http/response.js";
 import { contractsMessagesCodes, messagesNames } from "@dms/shared";
 import { clientContractUsecase } from "./client-contract.usecase.js";
 
-const C = contractsMessagesCodes;
 const TK = messagesNames.contractsMessages;
 
-export class ClientContractController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class ClientContractController {
+  async getSession(req, res) {
+    const data = await clientContractUsecase.getSession({ token: req.query.token });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_SESSION_FETCHED, TK);
   }
 
-  getSession = async (req, res) => {
-    const data = await this.usecase.getSession({ token: req.query.token });
-    return ok(res, data, C.CONTRACT_SESSION_FETCHED, TK);
-  };
-
-  changeStatus = async (req, res) => {
-    const data = await this.usecase.changeStatus({
+  async changeStatus(req, res) {
+    const data = await clientContractUsecase.changeStatus({
       token: req.body.token,
       sessionStatus: req.body.sessionStatus,
     });
-    return ok(res, data, C.CONTRACT_SESSION_STATUS_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_SESSION_STATUS_UPDATED, TK);
+  }
 
-  generatePdf = async (req, res) => {
+  async generatePdf(req, res) {
     // The token is the session selector — taken ONLY from sessionData.arToken (legacy shape).
-    const data = await this.usecase.generatePdf({
+    const data = await clientContractUsecase.generatePdf({
       token: req.body.sessionData.arToken,
       signatureUrl: req.body.signatureUrl,
       lng: req.body.lng,
     });
-    return ok(res, data, C.CONTRACT_PDF_GENERATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PDF_GENERATED, TK);
+  }
 }
 
-export const clientContractController = new ClientContractController(clientContractUsecase);
+export const clientContractController = new ClientContractController();
+export { ClientContractController };

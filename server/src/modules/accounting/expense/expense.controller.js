@@ -3,31 +3,27 @@ import { ok, created } from "../../../shared/http/response.js";
 import { accountingMessagesCodes, messagesNames } from "@dms/shared";
 import { expenseUsecase } from "./expense.usecase.js";
 
-const C = accountingMessagesCodes;
 const TK = messagesNames.accountingMessages;
 
 import { paginate } from "../../../shared/utility/pagination.js";
 
-export class ExpenseController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  list = async (req, res) => {
+class ExpenseController {
+  async getExpenses(req, res) {
     const { page, limit, skip } = paginate(req.query);
-    const result = await this.usecase.list({ skip, limit, page });
+    const result = await expenseUsecase.listExpenses({ skip, limit, page });
     return ok(
       res,
       { items: result.data ?? [], total: result.total ?? 0, page, pageSize: limit },
-      C.OPERATIONAL_EXPENSES_FETCHED,
+      accountingMessagesCodes.OPERATIONAL_EXPENSES_FETCHED,
       TK,
     );
-  };
+  }
 
-  create = async (req, res) => {
-    const result = await this.usecase.create({ body: req.body });
-    return created(res, result.data ?? result, C.OPERATIONAL_EXPENSE_CREATED, TK);
-  };
+  async createExpense(req, res) {
+    const result = await expenseUsecase.createExpense({ body: req.body });
+    return created(res, result.data ?? result, accountingMessagesCodes.OPERATIONAL_EXPENSE_CREATED, TK);
+  }
 }
 
-export const expenseController = new ExpenseController(expenseUsecase);
+export const expenseController = new ExpenseController();
+export { ExpenseController };

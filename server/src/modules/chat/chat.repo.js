@@ -845,3 +845,7 @@ export class ChatRepository {
     }
   }
 }
+
+// Single shared instance — imported directly by the usecase mixins, the socket
+// layer, and the client-chat surface (all process-wide singletons now).
+export const chatRepository = new ChatRepository();

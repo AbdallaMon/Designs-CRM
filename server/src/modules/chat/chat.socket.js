@@ -1,14 +1,13 @@
-import { ChatRepository } from "./chat.repo.js";
-import { ChatUsecase } from "./chat.usecase.js";
+import { chatRepository } from "./chat.repo.js";
+import { chatUsecase } from "./chat.usecase.js";
 import { registerPresenceHandlers } from "./handlers/presence.handler.js";
 import { registerRoomHandlers } from "./handlers/room.handler.js";
 import { registerTypingHandlers } from "./handlers/typing.handler.js";
 import { registerMessageHandlers } from "./handlers/message.handler.js";
 import { registerCallHandlers } from "./handlers/call.handler.js";
 
-// Single instances shared across all socket connections for this process
-const chatRepository = new ChatRepository();
-const chatUsecase = new ChatUsecase(chatRepository);
+// Single instances shared across all socket connections for this process — now
+// the module-level singletons (no per-file instantiation).
 
 // Shared typing-debounce map (survives across connections)
 const typingTimeouts = new Map();

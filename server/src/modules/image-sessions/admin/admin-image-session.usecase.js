@@ -6,165 +6,144 @@
 // per-lead object to scope; the ADMIN permission code IS the gate (admins see all),
 // preserved 1:1 from legacy. The acting user is not consumed by any of these service fns.
 //
-// All the heavy reference-data CRUD logic stays in the FROZEN-ish legacy
-// `imageSessionSevices.js` service and is invoked via lazy adapters — NEVER duplicated.
-// Errors are thrown as AppError(code, statusCode); the envelope serializes them. The single
-// special-cased error is the page-info unique-type P2002 (legacy returned a friendly prose
-// message) → re-thrown as a language-neutral code.
+// All the heavy reference-data CRUD logic stays in the per-entity admin reference-data
+// repos and is invoked directly — NEVER duplicated. Errors are thrown as
+// AppError(code, statusCode); the envelope serializes them. The single special-cased error
+// is the page-info unique-type P2002 (legacy returned a friendly prose message) → re-thrown
+// as a language-neutral code.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { imageSessionsMessagesCodes as M } from "@dms/shared";
+import { imageSessionsMessagesCodes } from "@dms/shared";
+import { getSpaces, createSpace as createSpaceFn, updateSpace as updateSpaceFn } from "./space.repo.js";
+import {
+  getTemplates,
+  getTemplatesIds,
+  createTemplate as createTemplateFn,
+  updateTemplate as updateTemplateFn,
+} from "./template.repo.js";
+import { getMaterials, createMaterial as createMaterialFn, editMaterial } from "./material.repo.js";
+import { getStyles, createStyle as createStyleFn, editStyle } from "./style.repo.js";
+import { getColors, createColorPallete, editColorPallete } from "./color.repo.js";
+import {
+  getDesignImages,
+  createDesignImage,
+  createBulkDesignImage,
+  editDesignImage,
+} from "./design-image.repo.js";
+import { getPageInfos, createPageInfo as createPageInfoFn, editPageInfo } from "./page-info.repo.js";
+import {
+  createProOrCon as createProOrConFn,
+  reorderProsAndCons as reorderProsAndConsFn,
+  editProOrCon,
+  deleteProOrCon as deleteProOrConFn,
+} from "./pros-cons.repo.js";
 
-const SPACE = "./space.repo.js";
-const TEMPLATE = "./template.repo.js";
-const MATERIAL = "./material.repo.js";
-const STYLE = "./style.repo.js";
-const COLOR = "./color.repo.js";
-const DESIGN_IMAGE = "./design-image.repo.js";
-const PAGE_INFO = "./page-info.repo.js";
-const PROS_CONS = "./pros-cons.repo.js";
-const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
-
-// Lazy adapters to the per-entity admin reference-data repos (behavior-preserving).
-const legacyDefaults = {
-  getSpaces: load(SPACE, "getSpaces"),
-  createSpace: load(SPACE, "createSpace"),
-  updateSpace: load(SPACE, "updateSpace"),
-  getTemplates: load(TEMPLATE, "getTemplates"),
-  getTemplatesIds: load(TEMPLATE, "getTemplatesIds"),
-  createTemplate: load(TEMPLATE, "createTemplate"),
-  updateTemplate: load(TEMPLATE, "updateTemplate"),
-  getMaterials: load(MATERIAL, "getMaterials"),
-  createMaterial: load(MATERIAL, "createMaterial"),
-  editMaterial: load(MATERIAL, "editMaterial"),
-  getStyles: load(STYLE, "getStyles"),
-  createStyle: load(STYLE, "createStyle"),
-  editStyle: load(STYLE, "editStyle"),
-  getColors: load(COLOR, "getColors"),
-  createColorPallete: load(COLOR, "createColorPallete"),
-  editColorPallete: load(COLOR, "editColorPallete"),
-  getDesignImages: load(DESIGN_IMAGE, "getDesignImages"),
-  createDesignImage: load(DESIGN_IMAGE, "createDesignImage"),
-  createBulkDesignImage: load(DESIGN_IMAGE, "createBulkDesignImage"),
-  editDesignImage: load(DESIGN_IMAGE, "editDesignImage"),
-  getPageInfos: load(PAGE_INFO, "getPageInfos"),
-  createPageInfo: load(PAGE_INFO, "createPageInfo"),
-  editPageInfo: load(PAGE_INFO, "editPageInfo"),
-  createProOrCon: load(PROS_CONS, "createProOrCon"),
-  reorderProsAndCons: load(PROS_CONS, "reorderProsAndCons"),
-  editProOrCon: load(PROS_CONS, "editProOrCon"),
-  deleteProOrCon: load(PROS_CONS, "deleteProOrCon"),
-};
-
-export class AdminImageSessionUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class AdminImageSessionUsecase {
   // ── spaces ──────────────────────────────────────────────────────────────────────
   listSpaces({ notArchived }) {
-    return this.legacy.getSpaces({ notArchived });
+    return getSpaces({ notArchived });
   }
   createSpace({ data }) {
-    return this.legacy.createSpace({ data });
+    return createSpaceFn({ data });
   }
   updateSpace({ spaceId, data }) {
-    return this.legacy.updateSpace({ spaceId, data });
+    return updateSpaceFn({ spaceId, data });
   }
 
   // ── templates ─────────────────────────────────────────────────────────────────────
   listTemplates({ type }) {
-    return this.legacy.getTemplates({ type });
+    return getTemplates({ type });
   }
   listTemplateIds({ type }) {
-    return this.legacy.getTemplatesIds({ type });
+    return getTemplatesIds({ type });
   }
   createTemplate({ template }) {
-    return this.legacy.createTemplate({ template });
+    return createTemplateFn({ template });
   }
   updateTemplate({ templateId, template }) {
-    return this.legacy.updateTemplate({ templateId, template });
+    return updateTemplateFn({ templateId, template });
   }
 
   // ── materials ──────────────────────────────────────────────────────────────────────
   listMaterials({ notArchived }) {
-    return this.legacy.getMaterials({ notArchived });
+    return getMaterials({ notArchived });
   }
   createMaterial({ data }) {
-    return this.legacy.createMaterial({ data });
+    return createMaterialFn({ data });
   }
   updateMaterial({ materialId, data }) {
-    return this.legacy.editMaterial({ materialId, data });
+    return editMaterial({ materialId, data });
   }
 
   // ── styles ──────────────────────────────────────────────────────────────────────────
   listStyles({ notArchived }) {
-    return this.legacy.getStyles({ notArchived });
+    return getStyles({ notArchived });
   }
   createStyle({ data }) {
-    return this.legacy.createStyle({ data });
+    return createStyleFn({ data });
   }
   updateStyle({ styleId, data }) {
-    return this.legacy.editStyle({ styleId, data });
+    return editStyle({ styleId, data });
   }
 
   // ── colors ────────────────────────────────────────────────────────────────────────
   listColors({ notArchived }) {
-    return this.legacy.getColors({ notArchived });
+    return getColors({ notArchived });
   }
   createColor({ data }) {
-    return this.legacy.createColorPallete({ data });
+    return createColorPallete({ data });
   }
   updateColor({ colorId, data }) {
-    return this.legacy.editColorPallete({ colorId, data });
+    return editColorPallete({ colorId, data });
   }
 
   // ── design images (the list returns its own paginated shape — preserved 1:1) ─────────
   listImages({ notArchived, skip, limit }) {
-    return this.legacy.getDesignImages({ notArchived, skip, limit });
+    return getDesignImages({ notArchived, skip, limit });
   }
   createImage({ data }) {
-    return this.legacy.createDesignImage({ data });
+    return createDesignImage({ data });
   }
   createBulkImage({ data }) {
-    return this.legacy.createBulkDesignImage({ data });
+    return createBulkDesignImage({ data });
   }
   updateImage({ imageId, data }) {
-    return this.legacy.editDesignImage({ imageId, data });
+    return editDesignImage({ imageId, data });
   }
 
   // ── page-info ─────────────────────────────────────────────────────────────────────
   listPageInfo({ notArchived }) {
-    return this.legacy.getPageInfos({ notArchived });
+    return getPageInfos({ notArchived });
   }
   // Legacy mapped the Prisma P2002 unique_type violation to a friendly prose message; we
   // map it to a language-neutral code (no prose) while preserving the 4xx semantics.
   async createPageInfo({ data }) {
     try {
-      return await this.legacy.createPageInfo({ data });
+      return await createPageInfoFn({ data });
     } catch (e) {
       if (e?.code === "P2002" && e?.meta?.target?.includes?.("unique_type")) {
-        throw new AppError(M.IMAGE_SESSION_PAGE_INFO_TYPE_EXISTS, 409);
+        throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_PAGE_INFO_TYPE_EXISTS, 409);
       }
       throw e;
     }
   }
   updatePageInfo({ pageInfoId, data }) {
-    return this.legacy.editPageInfo({ pageInfoId, data });
+    return editPageInfo({ pageInfoId, data });
   }
 
   // ── pros & cons ──────────────────────────────────────────────────────────────────────
   createProOrCon({ type, id, item, itemType }) {
-    return this.legacy.createProOrCon({ type, id, item, itemType });
+    return createProOrConFn({ type, id, item, itemType });
   }
   reorderProsAndCons({ itemType, data }) {
-    return this.legacy.reorderProsAndCons({ itemType, data });
+    return reorderProsAndConsFn({ itemType, data });
   }
   updateProOrCon({ id, item, itemType }) {
-    return this.legacy.editProOrCon({ id, item, itemType });
+    return editProOrCon({ id, item, itemType });
   }
   deleteProOrCon({ id, itemType }) {
-    return this.legacy.deleteProOrCon({ id, itemType });
+    return deleteProOrConFn({ id, itemType });
   }
 }
 
 export const adminImageSessionUsecase = new AdminImageSessionUsecase();
+export { AdminImageSessionUsecase };

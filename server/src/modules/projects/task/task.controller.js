@@ -5,60 +5,57 @@ import { projectsMessagesCodes, messagesNames } from "@dms/shared";
 import { taskUsecase } from "./task.usecase.js";
 import { withTaskListCapabilities, computeTaskCapabilities } from "./task.dto.js";
 
-const C = projectsMessagesCodes;
 const TK = messagesNames.projectsMessages;
 
-export class TaskController {
-  /** @param {import("./task.usecase.js").TaskUsecase} usecase */
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
+class TaskController {
   // ── object-scope checkers (parent-project scope) ─────────────────────────────────
   // GET /:id → `:id`; PUT /:taskId → `:taskId`.
-  checkIfUserCanAccessTask = (req) =>
-    this.usecase.checkIfUserCanAccessTask({ taskId: req.params.id, authUser: req.auth });
+  checkIfUserCanAccessTask(req) {
+    return taskUsecase.checkIfUserCanAccessTask({ taskId: req.params.id, authUser: req.auth });
+  }
 
-  checkIfUserCanMutateTask = (req) =>
-    this.usecase.checkIfUserCanMutateTask({ taskId: req.params.taskId, authUser: req.auth });
+  checkIfUserCanMutateTask(req) {
+    return taskUsecase.checkIfUserCanMutateTask({ taskId: req.params.taskId, authUser: req.auth });
+  }
 
   // ── tasks ────────────────────────────────────────────────────────────────────────
-  list = async (req, res) => {
-    const items = await this.usecase.list({ query: req.query, authUser: req.auth });
-    return ok(res, { items: withTaskListCapabilities(items, req.auth) }, C.TASKS_FETCHED, TK);
-  };
+  async getTasks(req, res) {
+    const items = await taskUsecase.listTasks({ query: req.query, authUser: req.auth });
+    return ok(res, { items: withTaskListCapabilities(items, req.auth) }, projectsMessagesCodes.TASKS_FETCHED, TK);
+  }
 
-  getById = async (req, res) => {
-    const data = await this.usecase.getById({ id: req.params.id, query: req.query, authUser: req.auth });
+  async getTask(req, res) {
+    const data = await taskUsecase.getTask({ id: req.params.id, query: req.query, authUser: req.auth });
     const withCaps = data ? { ...data, capabilities: computeTaskCapabilities(data, req.auth) } : data;
-    return ok(res, withCaps, C.TASK_FETCHED, TK);
-  };
+    return ok(res, withCaps, projectsMessagesCodes.TASK_FETCHED, TK);
+  }
 
-  create = async (req, res) => {
-    const { task, isModification } = await this.usecase.create({ body: req.body, authUser: req.auth });
-    return created(res, task, isModification ? C.MODIFICATION_CREATED : C.TASK_CREATED, TK);
-  };
+  async createTask(req, res) {
+    const { task, isModification } = await taskUsecase.createTask({ body: req.body, authUser: req.auth });
+    return created(res, task, isModification ? projectsMessagesCodes.MODIFICATION_CREATED : projectsMessagesCodes.TASK_CREATED, TK);
+  }
 
-  update = async (req, res) => {
-    const { task, isModification } = await this.usecase.update({ taskId: req.params.taskId, body: req.body, authUser: req.auth });
-    return ok(res, task, isModification ? C.MODIFICATION_UPDATED : C.TASK_UPDATED, TK);
-  };
+  async updateTask(req, res) {
+    const { task, isModification } = await taskUsecase.updateTask({ taskId: req.params.taskId, body: req.body, authUser: req.auth });
+    return ok(res, task, isModification ? projectsMessagesCodes.MODIFICATION_UPDATED : projectsMessagesCodes.TASK_UPDATED, TK);
+  }
 
-  remove = async (req, res) => {
-    const data = await this.usecase.remove({ id: req.params.id, body: req.body, authUser: req.auth });
-    return ok(res, data, C.TASK_DELETED, TK);
-  };
+  async deleteTask(req, res) {
+    const data = await taskUsecase.deleteTask({ id: req.params.id, body: req.body, authUser: req.auth });
+    return ok(res, data, projectsMessagesCodes.TASK_DELETED, TK);
+  }
 
   // ── notes ──────────────────────────────────────────────────────────────────────
-  notes = async (req, res) => {
-    const data = await this.usecase.notes({ query: req.query });
-    return ok(res, data, C.NOTES_FETCHED, TK);
-  };
+  async getNotes(req, res) {
+    const data = await taskUsecase.getNotes({ query: req.query });
+    return ok(res, data, projectsMessagesCodes.NOTES_FETCHED, TK);
+  }
 
-  addNote = async (req, res) => {
-    const data = await this.usecase.addNote({ body: req.body, authUser: req.auth });
-    return created(res, data, C.NOTE_ADDED, TK);
-  };
+  async addNote(req, res) {
+    const data = await taskUsecase.addNote({ body: req.body, authUser: req.auth });
+    return created(res, data, projectsMessagesCodes.NOTE_ADDED, TK);
+  }
 }
 
-export const taskController = new TaskController(taskUsecase);
+export const taskController = new TaskController();
+export { TaskController };

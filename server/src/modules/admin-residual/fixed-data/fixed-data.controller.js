@@ -4,28 +4,24 @@ import { ok, created } from "../../../shared/http/response.js";
 import { adminResidualMessagesCodes, messagesNames } from "@dms/shared";
 import { fixedDataUsecase } from "./fixed-data.usecase.js";
 
-const M = adminResidualMessagesCodes;
 const TK = messagesNames.adminResidualMessages;
 
-export class FixedDataController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class FixedDataController {
+  async createFixedData(req, res) {
+    const data = await fixedDataUsecase.createFixedData({ data: req.body });
+    return created(res, data, adminResidualMessagesCodes.FIXED_DATA_CREATED, TK);
   }
 
-  create = async (req, res) => {
-    const data = await this.usecase.create({ data: req.body });
-    return created(res, data, M.FIXED_DATA_CREATED, TK);
-  };
+  async updateFixedData(req, res) {
+    const data = await fixedDataUsecase.updateFixedData({ id: req.params.id, data: req.body });
+    return ok(res, data, adminResidualMessagesCodes.FIXED_DATA_UPDATED, TK);
+  }
 
-  update = async (req, res) => {
-    const data = await this.usecase.update({ id: req.params.id, data: req.body });
-    return ok(res, data, M.FIXED_DATA_UPDATED, TK);
-  };
-
-  remove = async (req, res) => {
-    const data = await this.usecase.remove({ id: req.params.id });
-    return ok(res, data, M.FIXED_DATA_DELETED, TK);
-  };
+  async deleteFixedData(req, res) {
+    const data = await fixedDataUsecase.deleteFixedData({ id: req.params.id });
+    return ok(res, data, adminResidualMessagesCodes.FIXED_DATA_DELETED, TK);
+  }
 }
 
-export const fixedDataController = new FixedDataController(fixedDataUsecase);
+export const fixedDataController = new FixedDataController();
+export { FixedDataController };

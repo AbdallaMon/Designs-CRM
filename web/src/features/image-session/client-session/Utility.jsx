@@ -12,11 +12,9 @@ import {
   Fab,
   Zoom,
   Paper,
-  LinearProgress,
 } from "@mui/material";
 import { MdArrowBack, MdArrowForward } from "react-icons/md";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
-import { getClientProgress } from "@/features/image-session/client-session/helpers.js";
 
 // Height reserved at the bottom of every scrollable step so the sticky action
 // bar never covers the last row of content. Steps set this as bottom padding.
@@ -97,43 +95,6 @@ export function StepNav({
   );
 }
 
-// Slim, always-present progress indicator so the client knows how far through
-// the ~9-step flow they are. Consistent chrome across every step.
-export function SessionProgress({ status }) {
-  const theme = useTheme();
-  const { lng } = useLanguageSwitcherContext();
-  const { percent, step, total, label } = getClientProgress(status);
-  const phase = label ? label[lng] || label.en : "";
-  return (
-    <Box sx={{ px: 2, mb: 1.5 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 0.5,
-        }}
-      >
-        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
-          {phase}
-        </Typography>
-        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-          {lng === "ar" ? `${step} من ${total}` : `${step} / ${total}`}
-        </Typography>
-      </Box>
-      <LinearProgress
-        variant="determinate"
-        value={percent}
-        sx={{
-          height: 6,
-          borderRadius: 3,
-          bgcolor: theme.palette.action.hover,
-          "& .MuiLinearProgress-bar": { borderRadius: 3 },
-        }}
-      />
-    </Box>
-  );
-}
 
 export function ClientImageAppBar() {
   const theme = useTheme();

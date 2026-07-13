@@ -21,7 +21,7 @@ const contractUtilityRouter = Router();
 contractUtilityRouter.get(
   "/details",
   AuthMiddleware.requirePermissions([P.CONTRACT_UTILITY_VIEW]),
-  asyncHandler(contractUtilityController.getDetails),
+  asyncHandler(contractUtilityController.getContractUtilityDetails),
 );
 
 // ── Obligations (ContractUtility singleton) ──────────────────────────────────────

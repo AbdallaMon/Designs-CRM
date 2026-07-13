@@ -3,106 +3,99 @@ import { siteUtilityMessagesCodes, messagesNames } from "@dms/shared";
 import { contractUtilityUsecase } from "./contract-utility.usecase.js";
 
 const TK = messagesNames.siteUtilityMessages;
-const M = siteUtilityMessagesCodes;
 
 // Thin controller: read validated input, call the usecase, respond via helpers.
 // No business rules here (primitive coercion only).
-export class ContractUtilityController {
-  /** @param {import("./contract-utility.usecase.js").ContractUtilityUsecase} usecase */
-  constructor(usecase) {
-    this.usecase = usecase;
+class ContractUtilityController {
+  // ── Aggregate read ───────────────────────────────────────────────────────────
+  async getContractUtilityDetails(req, res) {
+    const data = await contractUtilityUsecase.getContractUtilityDetails({ authUser: req.auth });
+    return ok(res, data, siteUtilityMessagesCodes.CONTRACT_UTILITY_FETCHED, TK);
   }
 
-  // ── Aggregate read ───────────────────────────────────────────────────────────
-  getDetails = async (req, res) => {
-    const data = await this.usecase.getDetails({ authUser: req.auth });
-    return ok(res, data, M.CONTRACT_UTILITY_FETCHED, TK);
-  };
-
   // ── Obligations ──────────────────────────────────────────────────────────────
-  getObligations = async (req, res) => {
-    const data = await this.usecase.getObligations();
-    return ok(res, data, M.OBLIGATIONS_FETCHED, TK);
-  };
+  async getObligations(req, res) {
+    const data = await contractUtilityUsecase.getObligations();
+    return ok(res, data, siteUtilityMessagesCodes.OBLIGATIONS_FETCHED, TK);
+  }
 
-  saveObligations = async (req, res) => {
-    const data = await this.usecase.saveObligations({ input: req.body });
-    return ok(res, data, M.OBLIGATIONS_SAVED, TK);
-  };
+  async saveObligations(req, res) {
+    const data = await contractUtilityUsecase.saveObligations({ input: req.body });
+    return ok(res, data, siteUtilityMessagesCodes.OBLIGATIONS_SAVED, TK);
+  }
 
   // ── Stage clauses ────────────────────────────────────────────────────────────
-  listStageClauses = async (req, res) => {
-    const data = await this.usecase.listStageClauses();
-    return ok(res, data, M.STAGE_CLAUSES_FETCHED, TK);
-  };
+  async listStageClauses(req, res) {
+    const data = await contractUtilityUsecase.listStageClauses();
+    return ok(res, data, siteUtilityMessagesCodes.STAGE_CLAUSES_FETCHED, TK);
+  }
 
-  createStageClause = async (req, res) => {
-    const data = await this.usecase.createStageClause({ input: req.body });
-    return created(res, data, M.STAGE_CLAUSE_CREATED, TK);
-  };
+  async createStageClause(req, res) {
+    const data = await contractUtilityUsecase.createStageClause({ input: req.body });
+    return created(res, data, siteUtilityMessagesCodes.STAGE_CLAUSE_CREATED, TK);
+  }
 
-  updateStageClause = async (req, res) => {
-    const data = await this.usecase.updateStageClause({
+  async updateStageClause(req, res) {
+    const data = await contractUtilityUsecase.updateStageClause({
       id: Number(req.params.clauseId),
       input: req.body,
     });
-    return ok(res, data, M.STAGE_CLAUSE_UPDATED, TK);
-  };
+    return ok(res, data, siteUtilityMessagesCodes.STAGE_CLAUSE_UPDATED, TK);
+  }
 
-  deleteStageClause = async (req, res) => {
-    await this.usecase.deleteStageClause({ id: Number(req.params.clauseId) });
-    return deleted(res, M.STAGE_CLAUSE_DELETED, TK);
-  };
+  async deleteStageClause(req, res) {
+    await contractUtilityUsecase.deleteStageClause({ id: Number(req.params.clauseId) });
+    return deleted(res, siteUtilityMessagesCodes.STAGE_CLAUSE_DELETED, TK);
+  }
 
   // ── Special clauses ──────────────────────────────────────────────────────────
-  listSpecialClauses = async (req, res) => {
-    const data = await this.usecase.listSpecialClauses();
-    return ok(res, data, M.SPECIAL_CLAUSES_FETCHED, TK);
-  };
+  async listSpecialClauses(req, res) {
+    const data = await contractUtilityUsecase.listSpecialClauses();
+    return ok(res, data, siteUtilityMessagesCodes.SPECIAL_CLAUSES_FETCHED, TK);
+  }
 
-  createSpecialClause = async (req, res) => {
-    const data = await this.usecase.createSpecialClause({ input: req.body });
-    return created(res, data, M.SPECIAL_CLAUSE_CREATED, TK);
-  };
+  async createSpecialClause(req, res) {
+    const data = await contractUtilityUsecase.createSpecialClause({ input: req.body });
+    return created(res, data, siteUtilityMessagesCodes.SPECIAL_CLAUSE_CREATED, TK);
+  }
 
-  updateSpecialClause = async (req, res) => {
-    const data = await this.usecase.updateSpecialClause({
+  async updateSpecialClause(req, res) {
+    const data = await contractUtilityUsecase.updateSpecialClause({
       id: Number(req.params.clauseId),
       input: req.body,
     });
-    return ok(res, data, M.SPECIAL_CLAUSE_UPDATED, TK);
-  };
+    return ok(res, data, siteUtilityMessagesCodes.SPECIAL_CLAUSE_UPDATED, TK);
+  }
 
-  deleteSpecialClause = async (req, res) => {
-    await this.usecase.deleteSpecialClause({ id: Number(req.params.clauseId) });
-    return deleted(res, M.SPECIAL_CLAUSE_DELETED, TK);
-  };
+  async deleteSpecialClause(req, res) {
+    await contractUtilityUsecase.deleteSpecialClause({ id: Number(req.params.clauseId) });
+    return deleted(res, siteUtilityMessagesCodes.SPECIAL_CLAUSE_DELETED, TK);
+  }
 
   // ── Level clauses ────────────────────────────────────────────────────────────
-  listLevelClauses = async (req, res) => {
-    const data = await this.usecase.listLevelClauses();
-    return ok(res, data, M.LEVEL_CLAUSES_FETCHED, TK);
-  };
+  async listLevelClauses(req, res) {
+    const data = await contractUtilityUsecase.listLevelClauses();
+    return ok(res, data, siteUtilityMessagesCodes.LEVEL_CLAUSES_FETCHED, TK);
+  }
 
-  createLevelClause = async (req, res) => {
-    const data = await this.usecase.createLevelClause({ input: req.body });
-    return created(res, data, M.LEVEL_CLAUSE_CREATED, TK);
-  };
+  async createLevelClause(req, res) {
+    const data = await contractUtilityUsecase.createLevelClause({ input: req.body });
+    return created(res, data, siteUtilityMessagesCodes.LEVEL_CLAUSE_CREATED, TK);
+  }
 
-  updateLevelClause = async (req, res) => {
-    const data = await this.usecase.updateLevelClause({
+  async updateLevelClause(req, res) {
+    const data = await contractUtilityUsecase.updateLevelClause({
       id: Number(req.params.clauseId),
       input: req.body,
     });
-    return ok(res, data, M.LEVEL_CLAUSE_UPDATED, TK);
-  };
+    return ok(res, data, siteUtilityMessagesCodes.LEVEL_CLAUSE_UPDATED, TK);
+  }
 
-  deleteLevelClause = async (req, res) => {
-    await this.usecase.deleteLevelClause({ id: Number(req.params.clauseId) });
-    return deleted(res, M.LEVEL_CLAUSE_DELETED, TK);
-  };
+  async deleteLevelClause(req, res) {
+    await contractUtilityUsecase.deleteLevelClause({ id: Number(req.params.clauseId) });
+    return deleted(res, siteUtilityMessagesCodes.LEVEL_CLAUSE_DELETED, TK);
+  }
 }
 
-export const contractUtilityController = new ContractUtilityController(
-  contractUtilityUsecase,
-);
+export const contractUtilityController = new ContractUtilityController();
+export { ContractUtilityController };

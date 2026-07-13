@@ -15,7 +15,7 @@ genericDeleteRouter.delete(
   "/:id",
   AuthMiddleware.requireAuth,
   validate(genericDeleteSchemas.remove),
-  asyncHandler(genericDeleteController.remove),
+  asyncHandler(genericDeleteController.deleteModel),
 );
 
 export { genericDeleteRouter };

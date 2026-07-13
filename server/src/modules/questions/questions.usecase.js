@@ -15,16 +15,11 @@
 //   - VERSA step update is LEAD-SCOPED indirectly: the stepId resolves to its VersaModel
 //     → clientLead which is then scope-checked.
 import { AppError } from "../../shared/errors/AppError.js";
-import { questionsMessagesCodes as C } from "@dms/shared";
+import { questionsMessagesCodes } from "@dms/shared";
 import { leadUsecase } from "../leads/lead/lead.usecase.js";
 import { questionsRepository } from "./questions.repo.js";
 
 export class QuestionsUsecase {
-  constructor(repository, leads = leadUsecase) {
-    this.repo = repository;
-    this.leads = leads;
-  }
-
   // Resolve a lead and assert the caller may READ it (VIEW scope). Reuses the
   // leads-module checker (throws LEAD_ACCESS_DENIED on denial / non-existence). We
   // surface a questions-domain code on a missing parent so the envelope is consistent.
@@ -32,11 +27,11 @@ export class QuestionsUsecase {
   // genuine read entrypoints (and by getQuestionTypes, see its note).
   async assertLeadAccess({ clientLeadId, authUser }) {
     if (clientLeadId == null) {
-      throw new AppError(C.QUESTION_NOT_FOUND, 404);
+      throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
     }
     // Delegates to the keystone IDOR checker; throws AppError(LEAD_ACCESS_DENIED, 403)
     // when the lead is outside the caller's scope or does not exist.
-    return this.leads.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
   }
 
   // Resolve a lead and assert the caller may WRITE it (MUTATE scope — owned-only,
@@ -45,9 +40,9 @@ export class QuestionsUsecase {
   // first claiming it. Throws AppError(LEAD_MUTATE_DENIED, 403) on denial / non-existence.
   async assertLeadMutate({ clientLeadId, authUser }) {
     if (clientLeadId == null) {
-      throw new AppError(C.QUESTION_NOT_FOUND, 404);
+      throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
     }
-    return this.leads.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
   }
 
   // ── GET /question-types/:clientLeadId ────────────────────────────────────────────
@@ -63,24 +58,24 @@ export class QuestionsUsecase {
   // questions, VERSA — use assertLeadMutate.)
   async getQuestionTypes({ clientLeadId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
-    await this.repo.ensureDefaultCategoriesAndQuestions();
-    await this.repo.ensureSessionQuestions({ clientLeadId, userId: authUser.id });
-    return this.repo.getQuestionsTypes();
+    await questionsRepository.ensureDefaultCategoriesAndQuestions();
+    await questionsRepository.ensureSessionQuestions({ clientLeadId, userId: authUser.id });
+    return questionsRepository.getQuestionsTypes();
   }
 
   // ── GET /session-questions/:clientLeadId ─────────────────────────────────────────
   async getSessionQuestions({ clientLeadId, questionTypeId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
-    return this.repo.getSessionQuestionsByClientLeadId({ clientLeadId, questionTypeId });
+    return questionsRepository.getSessionQuestionsByClientLeadId({ clientLeadId, questionTypeId });
   }
 
   // ── POST /:sessionQuestionId/answer ──────────────────────────────────────────────
   async submitAnswer({ sessionQuestionId, response, authUser }) {
-    const clientLeadId = await this.repo.findLeadIdBySessionQuestion({ sessionQuestionId });
-    if (clientLeadId == null) throw new AppError(C.QUESTION_NOT_FOUND, 404);
+    const clientLeadId = await questionsRepository.findLeadIdBySessionQuestion({ sessionQuestionId });
+    if (clientLeadId == null) throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
     // WRITE path → MUTATE scope (owned-only); a claimable NEW lead is not writable.
     await this.assertLeadMutate({ clientLeadId, authUser });
-    return this.repo.upsertAnswer({ sessionQuestionId, response, userId: authUser.id });
+    return questionsRepository.upsertAnswer({ sessionQuestionId, response, userId: authUser.id });
   }
 
   // ── POST /answer/bulk ────────────────────────────────────────────────────────────
@@ -90,10 +85,10 @@ export class QuestionsUsecase {
   async submitBulkAnswers({ answers, authUser }) {
     const results = [];
     for (const { sessionQuestionId, response } of answers) {
-      const clientLeadId = await this.repo.findLeadIdBySessionQuestion({ sessionQuestionId });
-      if (clientLeadId == null) throw new AppError(C.QUESTION_NOT_FOUND, 404);
+      const clientLeadId = await questionsRepository.findLeadIdBySessionQuestion({ sessionQuestionId });
+      if (clientLeadId == null) throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
       await this.assertLeadMutate({ clientLeadId, authUser });
-      await this.repo.upsertAnswer({ sessionQuestionId, response, userId: authUser.id });
+      await questionsRepository.upsertAnswer({ sessionQuestionId, response, userId: authUser.id });
       results.push({ sessionQuestionId, response });
     }
     return results;
@@ -103,7 +98,7 @@ export class QuestionsUsecase {
   async createCustomQuestion({ clientLeadId, questionTypeId, title, authUser }) {
     // WRITE path → MUTATE scope (owned-only).
     await this.assertLeadMutate({ clientLeadId, authUser });
-    return this.repo.createCustomQuestion({
+    return questionsRepository.createCustomQuestion({
       clientLeadId,
       questionTypeId,
       title,
@@ -114,13 +109,13 @@ export class QuestionsUsecase {
   // ── GET /versa/:clientLeadId ─────────────────────────────────────────────────────
   async getVersaCategories({ clientLeadId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
-    return this.repo.getCategoriesWithVersaStatus({ clientLeadId });
+    return questionsRepository.getCategoriesWithVersaStatus({ clientLeadId });
   }
 
   // ── GET /versa/:clientLeadId/category/:categoryId ────────────────────────────────
   async getVersaByCategory({ clientLeadId, categoryId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
-    return this.repo.getVersaByCategory({ clientLeadId, categoryId });
+    return questionsRepository.getVersaByCategory({ clientLeadId, categoryId });
   }
 
   // ── POST /versa/:clientLeadId/category/:categoryId ───────────────────────────────
@@ -129,21 +124,21 @@ export class QuestionsUsecase {
   async createVersa({ clientLeadId, categoryId, authUser }) {
     // WRITE path → MUTATE scope (owned-only).
     await this.assertLeadMutate({ clientLeadId, authUser });
-    return this.repo.createVersaModel({ clientLeadId, categoryId, userId: authUser.id });
+    return questionsRepository.createVersaModel({ clientLeadId, categoryId, userId: authUser.id });
   }
 
   // ── PUT /versa/steps/:stepId ─────────────────────────────────────────────────────
   // The step resolves to its VersaModel → parent lead; scope-check before updating.
   async updateVersaStep({ stepId, fields, authUser }) {
-    const exists = await this.repo.versaStepExists({ stepId });
-    if (!exists) throw new AppError(C.VERSA_STEP_NOT_FOUND, 404);
-    const clientLeadId = await this.repo.findLeadIdByVersaStep({ stepId });
+    const exists = await questionsRepository.versaStepExists({ stepId });
+    if (!exists) throw new AppError(questionsMessagesCodes.VERSA_STEP_NOT_FOUND, 404);
+    const clientLeadId = await questionsRepository.findLeadIdByVersaStep({ stepId });
     // A step always belongs to a VersaModel (created together); if orphaned, deny.
-    if (clientLeadId == null) throw new AppError(C.QUESTION_ACCESS_DENIED, 403);
+    if (clientLeadId == null) throw new AppError(questionsMessagesCodes.QUESTION_ACCESS_DENIED, 403);
     // WRITE path → MUTATE scope (owned-only) on the resolved parent lead.
     await this.assertLeadMutate({ clientLeadId, authUser });
-    return this.repo.updateVersaStep({ stepId, ...fields });
+    return questionsRepository.updateVersaStep({ stepId, ...fields });
   }
 }
 
-export const questionsUsecase = new QuestionsUsecase(questionsRepository);
+export const questionsUsecase = new QuestionsUsecase();

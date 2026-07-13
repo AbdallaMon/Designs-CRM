@@ -41,6 +41,9 @@ export function NotesComponent({
   onClose,
   text = "Notes & Attachments",
   fullWidth = false,
+  // The public client notes surface is token-scoped: the per-session image-session token
+  // authorizes read/write on that session's notes. Passed only for slug === "client".
+  token,
 }) {
   const [openModal, setOpenModal] = useState(isOpen);
   const [notes, setNotes] = useState([]);
@@ -61,8 +64,10 @@ export function NotesComponent({
   // Fetch notes when modal opens
   async function fetchNotes() {
     setLoading(true);
+    const tokenParam =
+      slug === "client" && token ? `&token=${encodeURIComponent(token)}` : "";
     const data = await getData({
-      url: `${slug}/notes?idKey=${idKey}&id=${id}&`,
+      url: `${slug}/notes?idKey=${idKey}&id=${id}${tokenParam}&`,
       setLoading,
     });
     // On a failed request getData returns undefined (or an envelope with no `data`);
@@ -93,6 +98,9 @@ export function NotesComponent({
     }
 
     const data = { idKey, id, content };
+    if (slug === "client" && token) {
+      data.token = token;
+    }
 
     if (file) {
       const fileUpload = await uploadInChunks(

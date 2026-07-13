@@ -25,14 +25,7 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export class CommandCenterUsecase {
-  /**
-   * @param {typeof import("./command-center.repo.js").commandCenterRepository} repository
-   */
-  constructor(repository) {
-    this.repo = repository;
-  }
-
+class CommandCenterUsecase {
   // Resolve the effective date range: explicit from/to when supplied, else month-to-`now`.
   // `now` is injected for testability.
   #resolveRange(query = {}, now) {
@@ -63,16 +56,16 @@ export class CommandCenterUsecase {
       lateItemsRaw,
       lateCount,
     ] = await Promise.all([
-      this.repo.pipelineByStatus(range),
-      this.repo.activeDealsCount(range),
-      this.repo.finalizedValue(range),
-      this.repo.revenue(range),
-      this.repo.commissions(range),
-      this.repo.designerLoad(),
-      this.repo.salesLoad(),
-      this.repo.autoAssignRotation(),
-      this.repo.lateDeliveries(now, 10),
-      this.repo.lateDeliveriesCount(now),
+      commandCenterRepository.pipelineByStatus(range),
+      commandCenterRepository.activeDealsCount(range),
+      commandCenterRepository.finalizedValue(range),
+      commandCenterRepository.revenue(range),
+      commandCenterRepository.commissions(range),
+      commandCenterRepository.designerLoad(),
+      commandCenterRepository.salesLoad(),
+      commandCenterRepository.autoAssignRotation(),
+      commandCenterRepository.lateDeliveries(now, 10),
+      commandCenterRepository.lateDeliveriesCount(now),
     ]);
 
     // ── pipeline (per-status count + value) ──────────────────────────────────────────────
@@ -146,4 +139,5 @@ export class CommandCenterUsecase {
   }
 }
 
-export const commandCenterUsecase = new CommandCenterUsecase(commandCenterRepository);
+export const commandCenterUsecase = new CommandCenterUsecase();
+export { CommandCenterUsecase };

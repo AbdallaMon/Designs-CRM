@@ -7,27 +7,34 @@ vi.mock("../../../infra/socket/index.js", () => ({
   getIo: () => ({ to: () => ({ emit: () => {} }) }),
 }));
 
+// The usecase mixins now call the directly-imported `chatRepository` singleton
+// (no constructor injection). Mock the repo module and configure per test.
+vi.mock("../chat.repo.js", () => ({
+  chatRepository: {
+    getMember: vi.fn(),
+    getRoomById: vi.fn(),
+    getRooms: vi.fn(),
+    countUnreadMessages: vi.fn(),
+  },
+}));
+
 import { ChatUsecase } from "../chat.usecase.js";
+import { chatRepository } from "../chat.repo.js";
 import { computeRoomCapabilities } from "../chat.dto.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { PERMISSIONS, chatMessagesCodes } from "@dms/shared";
 
-/** Minimal fake repository — only the methods the tested usecases touch. */
-function makeRepo(overrides = {}) {
-  return {
-    getMember: vi.fn(),
-    getRoomById: vi.fn(),
-    getRooms: vi.fn(),
-    countUnreadMessages: vi.fn().mockResolvedValue(0),
-    ...overrides,
-  };
-}
+const usecase = new ChatUsecase();
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  chatRepository.countUnreadMessages.mockResolvedValue(0);
+});
 
 describe("ChatUsecase.checkIfUserCanAccessRoom (scope / IDOR gate)", () => {
   it("returns the membership row for a member", async () => {
     const member = { id: 10, roomId: 1, userId: 7, role: "MEMBER" };
-    const repo = makeRepo({ getMember: vi.fn().mockResolvedValue(member) });
-    const usecase = new ChatUsecase(repo);
+    chatRepository.getMember.mockResolvedValue(member);
 
     const result = await usecase.checkIfUserCanAccessRoom({
       roomId: 1,
@@ -35,7 +42,7 @@ describe("ChatUsecase.checkIfUserCanAccessRoom (scope / IDOR gate)", () => {
     });
 
     expect(result).toBe(member);
-    expect(repo.getMember).toHaveBeenCalledWith({
+    expect(chatRepository.getMember).toHaveBeenCalledWith({
       roomId: 1,
       userId: 7,
       clientId: null,
@@ -43,8 +50,7 @@ describe("ChatUsecase.checkIfUserCanAccessRoom (scope / IDOR gate)", () => {
   });
 
   it("THROWS AppError(403, ROOM_ACCESS_DENIED) for a non-member", async () => {
-    const repo = makeRepo({ getMember: vi.fn().mockResolvedValue(null) });
-    const usecase = new ChatUsecase(repo);
+    chatRepository.getMember.mockResolvedValue(null);
 
     await expect(
       usecase.checkIfUserCanAccessRoom({ roomId: 1, authUserId: 999 }),
@@ -132,11 +138,8 @@ describe("ChatUsecase.getRooms (normalized list envelope + capabilities)", () =>
       members: [{ id: 10, userId: 7, role: "ADMIN" }],
       messages: [{ id: 100, content: "hi" }],
     };
-    const repo = makeRepo({
-      getRooms: vi.fn().mockResolvedValue({ rooms: [room], total: 1 }),
-      countUnreadMessages: vi.fn().mockResolvedValue(3),
-    });
-    const usecase = new ChatUsecase(repo);
+    chatRepository.getRooms.mockResolvedValue({ rooms: [room], total: 1 });
+    chatRepository.countUnreadMessages.mockResolvedValue(3);
 
     const result = await usecase.getRooms(
       { id: 7, permissions: [PERMISSIONS.CHAT.ROOM_EDIT, PERMISSIONS.CHAT.MEMBER_MANAGE] },
@@ -155,8 +158,7 @@ describe("ChatUsecase.getRooms (normalized list envelope + capabilities)", () =>
 
 describe("ChatUsecase.getRoomById (scope + capabilities on detail)", () => {
   it("throws ROOM_ACCESS_DENIED when caller is not a member", async () => {
-    const repo = makeRepo({ getMember: vi.fn().mockResolvedValue(null) });
-    const usecase = new ChatUsecase(repo);
+    chatRepository.getMember.mockResolvedValue(null);
     await expect(
       usecase.getRoomById(1, { id: 5, permissions: [] }, null),
     ).rejects.toMatchObject({ statusCode: 403, message: chatMessagesCodes.ROOM_ACCESS_DENIED });
@@ -172,11 +174,8 @@ describe("ChatUsecase.getRoomById (scope + capabilities on detail)", () => {
       allowFiles: true,
       members: [selfMember],
     };
-    const repo = makeRepo({
-      getMember: vi.fn().mockResolvedValue(selfMember),
-      getRoomById: vi.fn().mockResolvedValue(room),
-    });
-    const usecase = new ChatUsecase(repo);
+    chatRepository.getMember.mockResolvedValue(selfMember);
+    chatRepository.getRoomById.mockResolvedValue(room);
 
     const result = await usecase.getRoomById(
       1,

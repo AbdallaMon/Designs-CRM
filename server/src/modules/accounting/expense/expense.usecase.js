@@ -32,23 +32,15 @@ async function createOperationalExpense({
   };
 }
 
-const legacyDefaults = {
-  getOperationalExpenses: (a) => expenseRepository.getOperationalExpenses(a),
-  createOperationalExpense: (a) => createOperationalExpense(a),
-};
-
-export class ExpenseUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
+class ExpenseUsecase {
+  listExpenses({ skip, limit }) {
+    return expenseRepository.getOperationalExpenses({ limit: Number(limit), skip: Number(skip) });
   }
 
-  list({ skip, limit }) {
-    return this.legacy.getOperationalExpenses({ limit: Number(limit), skip: Number(skip) });
-  }
-
-  create({ body }) {
-    return this.legacy.createOperationalExpense(body);
+  createExpense({ body }) {
+    return createOperationalExpense(body);
   }
 }
 
 export const expenseUsecase = new ExpenseUsecase();
+export { ExpenseUsecase };

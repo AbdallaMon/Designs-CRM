@@ -23,8 +23,13 @@ import { leadsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
 import { recordAction } from "../../../../infra/audit/record-action.js";
 import { buildCooperationRequestEmail } from "./public-lead.email.js";
 import { publicLeadRepository } from "./public-lead.repo.js";
-
-const C = leadsMessagesCodes;
+import { leadRepository } from "../../lead/lead.repo.js";
+import {
+  newLeadNotification,
+  newClientLeadNotification,
+  newLeadCompletedNotification,
+} from "../../../../infra/notifications/index.js";
+import { sendEmail } from "../../../../infra/mail/send-mail.js";
 
 // Verbatim from legacy.
 const priceRangeValues = {
@@ -46,33 +51,9 @@ const consultationLeadPrices = {
   CITY_VISIT: "1800",
 };
 
-// Lazy adapters — frozen legacy services, imported on demand, never duplicated.
-const legacyDefaults = {
-  generateCodeForNewLead: (clientId) =>
-    import("../../lead/lead.repo.js").then((m) =>
-      m.leadRepository.generateCodeForNewLead(clientId),
-    ),
-  uploadFile: (body, leadId) =>
-    import("../../lead/lead.repo.js").then((m) =>
-      m.leadRepository.uploadFile(body, leadId),
-    ),
-  newLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../infra/notifications/index.js").then((m) =>
-      m.newLeadNotification(leadId, client, isAdmin),
-    ),
-  newClientLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../infra/notifications/index.js").then((m) =>
-      m.newClientLeadNotification(leadId, client, isAdmin),
-    ),
-  newLeadCompletedNotification: (leadId, client, isAdmin) =>
-    import("../../../../infra/notifications/index.js").then((m) =>
-      m.newLeadCompletedNotification(leadId, client, isAdmin),
-    ),
-  sendEmail: (to, subject, html) =>
-    import("../../../../infra/mail/send-mail.js").then((m) =>
-      m.sendEmail(to, subject, html),
-    ),
-};
+// Side-effecting legacy collaborators — the lead code generator + file attach (lead repo),
+// the funnel notifications, and the cooperation email — are now imported statically at the
+// top and called directly (no lazy-import deps bag). Behavior is unchanged.
 
 // Build the optional lead fields from the (already validated/stripped) body — verbatim
 // mapping from legacy, only the known keys are read.
@@ -103,12 +84,7 @@ function applyOptionalLeadFields(data, body) {
   return data;
 }
 
-export class PublicLeadUsecase {
-  constructor(repository, legacy = {}) {
-    this.repository = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class PublicLeadUsecase {
   // POST /new-lead
   async createLead(body, auditCtx) {
     const client = await this.#resolveClientOrThrow(body);
@@ -127,7 +103,7 @@ export class PublicLeadUsecase {
       }`,
     };
 
-    data.code = await this.legacy.generateCodeForNewLead(client.id);
+    data.code = await leadRepository.generateCodeForNewLead(client.id);
     applyOptionalLeadFields(data, body);
 
     if (body.category === "CONSULTATION") {
@@ -138,9 +114,9 @@ export class PublicLeadUsecase {
 
     data.initialConsult = false;
 
-    const clientLead = await this.repository.createLead(data);
-    if (body.url) await this.legacy.uploadFile(body, clientLead.id);
-    await this.legacy.newLeadNotification(clientLead.id, client, true);
+    const clientLead = await publicLeadRepository.createLead(data);
+    if (body.url) await leadRepository.uploadFile(body, clientLead.id);
+    await newLeadNotification(clientLead.id, client, true);
 
     // Semantic audit: a new lead entered the funnel (actor is null for the public form).
     await recordAction(auditCtx, {
@@ -174,28 +150,28 @@ export class PublicLeadUsecase {
       status: "NEW",
       description: `Didn't complete register yet`,
     };
-    data.code = await this.legacy.generateCodeForNewLead(client.id);
+    data.code = await leadRepository.generateCodeForNewLead(client.id);
     data.initialConsult = false;
     if (body.stateOfTheProject) data.stateOfTheProject = body.stateOfTheProject;
 
-    const clientLead = await this.repository.createLead(data);
-    await this.legacy.newClientLeadNotification(clientLead.id, client, true);
+    const clientLead = await publicLeadRepository.createLead(data);
+    await newClientLeadNotification(clientLead.id, client, true);
 
     return clientLead;
   }
 
   // POST /new-lead/complete-register/:leadId
   async completeRegister(leadId, body) {
-    const lead = await this.repository.findLeadById(leadId);
+    const lead = await publicLeadRepository.findLeadById(leadId);
     if (!lead) {
-      throw new AppError(C.LEAD_NOT_FOUND, 404);
+      throw new AppError(leadsMessagesCodes.LEAD_NOT_FOUND, 404);
     }
 
     // Legacy guard: a lead that already moved past the draft AND has a price cannot be
     // re-submitted.
     if (lead.description !== "Didn't complete register yet") {
       if (lead.price && lead.averagePrice) {
-        throw new AppError(C.CLIENT_LEAD_ALREADY_COMPLETED, 400);
+        throw new AppError(leadsMessagesCodes.CLIENT_LEAD_ALREADY_COMPLETED, 400);
       }
     }
 
@@ -224,11 +200,11 @@ export class PublicLeadUsecase {
         },
       };
 
-    const clientLead = await this.repository.updateLead(leadId, data);
-    if (body.url) await this.legacy.uploadFile(body, clientLead.id);
+    const clientLead = await publicLeadRepository.updateLead(leadId, data);
+    if (body.url) await leadRepository.uploadFile(body, clientLead.id);
 
-    const client = await this.repository.findClientById(lead.clientId);
-    await this.legacy.newLeadCompletedNotification(clientLead.id, client, true);
+    const client = await publicLeadRepository.findClientById(lead.clientId);
+    await newLeadCompletedNotification(clientLead.id, client, true);
 
     return clientLead;
   }
@@ -240,17 +216,17 @@ export class PublicLeadUsecase {
         ? "info@abdallaabdelsabour.com"
         : "info@ahmadmobayed.com";
     const html = buildCooperationRequestEmail(body);
-    await this.legacy.sendEmail(to, "New Cooperation Request", html);
+    await sendEmail(to, "New Cooperation Request", html);
   }
 
   // Find-or-create the Client, and block a second submission on the same day (legacy).
   // `registerDefaults` (master fdefbbf): the register step may arrive without name/phone —
   // create with draft placeholders, and only push a (space-stripped) phone update if given.
   async #resolveClientOrThrow(body, { registerDefaults = false } = {}) {
-    let client = await this.repository.findClientByEmail(body.email);
+    let client = await publicLeadRepository.findClientByEmail(body.email);
 
     if (!client) {
-      client = await this.repository.createClient(
+      client = await publicLeadRepository.createClient(
         registerDefaults
           ? {
               name: body.name || "draft",
@@ -267,12 +243,12 @@ export class PublicLeadUsecase {
       return client;
     }
 
-    const existingLead = await this.repository.findTodaysLeadByEmail(body.email);
+    const existingLead = await publicLeadRepository.findTodaysLeadByEmail(body.email);
     if (existingLead) {
-      throw new AppError(C.CLIENT_LEAD_ALREADY_TODAY, 422);
+      throw new AppError(leadsMessagesCodes.CLIENT_LEAD_ALREADY_TODAY, 422);
     }
 
-    await this.repository.updateClientPhone(
+    await publicLeadRepository.updateClientPhone(
       client.id,
       registerDefaults ? body.phone?.replace(/\s+/g, "") : body.phone,
     );
@@ -280,4 +256,5 @@ export class PublicLeadUsecase {
   }
 }
 
-export const publicLeadUsecase = new PublicLeadUsecase(publicLeadRepository);
+export const publicLeadUsecase = new PublicLeadUsecase();
+export { PublicLeadUsecase };

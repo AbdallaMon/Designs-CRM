@@ -11,12 +11,12 @@ import { NoteValidation } from "./note.validation.js";
 const P = PERMISSIONS.ACCOUNTING;
 const router = Router();
 
-router.get("/", AuthMiddleware.requirePermissions([P.NOTE_LIST]), asyncHandler(noteController.list));
+router.get("/", AuthMiddleware.requirePermissions([P.NOTE_LIST]), asyncHandler(noteController.getNotes));
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.NOTE_CREATE]),
   validate(NoteValidation.create),
-  asyncHandler(noteController.create),
+  asyncHandler(noteController.createNote),
 );
 
 export { router as noteRouter };

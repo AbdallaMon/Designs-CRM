@@ -1,15 +1,10 @@
 import { Router } from "express";
-import { ChatController } from "./chat.controller.js";
+import { chatController } from "./chat.controller.js";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
 import { chatSchemas } from "./chat.validation.js";
 import { PERMISSIONS } from "@dms/shared";
-// Reuse the same instances created by the socket layer to avoid duplicate repository objects
-import { chatUsecase } from "./chat.socket.js";
-
-// ── Wire up the dependency chain ─────────────────────────────────────────────
-const chatController = new ChatController(chatUsecase);
 
 const chatRouter = Router();
 

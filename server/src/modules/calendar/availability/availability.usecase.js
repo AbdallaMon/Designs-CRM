@@ -10,8 +10,8 @@
 // preserved verbatim. Role-derived month-view filtering (admins see all; others see own;
 // isSuperSales sees own) is reproduced from the legacy route handlers.
 //
-// The `this.legacy` seam is retained so the tests can inject stubs; in production it defaults
-// to the relocated `*Impl` functions below (which the client-booking surface also reuses).
+// The request-shaped methods call the relocated `*Impl` functions below (which the
+// client-booking surface also reuses) directly — no constructor injection.
 import { addMinutes, isBefore } from "date-fns";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -382,26 +382,27 @@ export async function getRemindersForDayImpl({ date, userId, adminId }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  Usecase — the `this.legacy` seam wires the request-shaped methods to the
-//  relocated *Impl functions (production) or to injected stubs (tests). The
-//  create adapters translate fromTime/toTime/dates → fromHour/toHour/days.
+//  Usecase — the request-shaped methods call the relocated *Impl functions
+//  directly. The create adapters translate fromTime/toTime/dates →
+//  fromHour/toHour/days.
 // ════════════════════════════════════════════════════════════════════════════
-const legacyDefaults = {
-  getAvailableDays: (a) => getAvailableDaysImpl(a),
-  getAvailableSlotsForDay: (a) => getAvailableSlotsForDayImpl(a),
-  createOrUpdateAvailableDay: ({ fromTime, toTime, ...rest }) =>
-    createAvailableDayImpl({ ...rest, fromHour: fromTime, toHour: toTime }),
-  createOrUpdateMultipleDays: ({ dates, fromTime, toTime, ...rest }) =>
-    createAvailableDatesForMoreThanOneDayImpl({
-      ...rest,
-      days: dates,
-      fromHour: fromTime,
-      toHour: toTime,
-    }),
-  getCalendarDataForMonth: (a) => getCalendarDataForMonth(a),
-  getRemindersForDay: (a) => getRemindersForDayImpl(a),
-  addCustomDate: (a) => addCutsomDateImpl(a),
-};
+// The former `legacyDefaults` bag, now referenced directly as module-level bindings. Each
+// entry keeps its EXACT implementation: identity adapters to the relocated *Impl functions
+// above (and the month-view function), plus the create adapters that translate
+// fromTime/toTime/dates → fromHour/toHour/days. `getCalendarDataForMonth` is imported.
+const getAvailableDays = (a) => getAvailableDaysImpl(a);
+const getAvailableSlotsForDay = (a) => getAvailableSlotsForDayImpl(a);
+const createOrUpdateAvailableDay = ({ fromTime, toTime, ...rest }) =>
+  createAvailableDayImpl({ ...rest, fromHour: fromTime, toHour: toTime });
+const createOrUpdateMultipleDays = ({ dates, fromTime, toTime, ...rest }) =>
+  createAvailableDatesForMoreThanOneDayImpl({
+    ...rest,
+    days: dates,
+    fromHour: fromTime,
+    toHour: toTime,
+  });
+const getRemindersForDay = (a) => getRemindersForDayImpl(a);
+const addCustomDate = (a) => addCutsomDateImpl(a);
 
 // Reproduce the legacy role gate used inside the month-view route handlers verbatim:
 // userId filter is applied for non-admin / non-superSales users; admins/superSales pass
@@ -410,18 +411,13 @@ function isAdminRole(role) {
   return role === "ADMIN" || role === "SUPER_ADMIN";
 }
 
-export class AvailabilityUsecase {
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class AvailabilityUsecase {
   // GET available-days — legacy resolved adminId (default → caller id), passed userId +
   // type ("ADMIN" default) + timezone ("Asia/Dubai" default).
   getAvailableDays({ query, authUser }) {
     let { month, adminId, timezone, type } = query;
     if (!adminId || adminId === "undefined") adminId = authUser.id;
-    return this.legacy.getAvailableDays({
+    return getAvailableDays({
       month,
       adminId,
       userId: authUser.id,
@@ -434,7 +430,7 @@ export class AvailabilityUsecase {
   getSlots({ query, authUser }) {
     let { date, adminId, dayId, timezone, type } = query;
     if (!adminId || adminId === "undefined") adminId = authUser.id;
-    return this.legacy.getAvailableSlotsForDay({
+    return getAvailableSlotsForDay({
       date,
       adminId,
       dayId,
@@ -449,7 +445,7 @@ export class AvailabilityUsecase {
   // the session (never the client body).
   createOrUpdateAvailableDay({ body, timezone, authUser }) {
     const { date, fromHour, toHour, duration, breakMinutes } = body;
-    return this.legacy.createOrUpdateAvailableDay({
+    return createOrUpdateAvailableDay({
       userId: authUser.id,
       date,
       fromTime: fromHour,
@@ -463,7 +459,7 @@ export class AvailabilityUsecase {
   // POST available-days/multiple — legacy mapped body {days, ...} → service `dates`.
   createOrUpdateMultipleDays({ body, timezone, authUser }) {
     const { days, fromHour, toHour, duration, breakMinutes } = body;
-    return this.legacy.createOrUpdateMultipleDays({
+    return createOrUpdateMultipleDays({
       userId: authUser.id,
       dates: days,
       fromTime: fromHour,
@@ -479,7 +475,7 @@ export class AvailabilityUsecase {
   // service combines the day's date + HH:mm in the caller's timezone → UTC before inserting.
   addCustomSlot({ dayId, body, timezone }) {
     const { startTime, endTime } = body;
-    return this.legacy.addCustomDate({
+    return addCustomDate({
       dayId,
       fromHour: startTime,
       toHour: endTime,
@@ -490,12 +486,12 @@ export class AvailabilityUsecase {
   // DELETE days/:id — inline Prisma moved to the repo (slots-then-day, no booked guard;
   // matches the legacy route exactly).
   deleteDay({ dayId }) {
-    return this.repo.deleteDayWithSlots({ dayId });
+    return availabilityRepository.deleteDayWithSlots({ dayId });
   }
 
   // DELETE slots/:id — inline Prisma moved to the repo.
   deleteSlot({ slotId }) {
-    return this.repo.deleteSlot({ slotId });
+    return availabilityRepository.deleteSlot({ slotId });
   }
 
   // GET dates/month — meeting/call month-view. Legacy applied: userId filter for non-
@@ -504,7 +500,7 @@ export class AvailabilityUsecase {
   getCalendarMonth({ query, authUser }) {
     const isAdmin = isAdminRole(authUser.role);
     const isSuperSales = authUser.currentProfileKey === "SUPER_SALES";
-    return this.legacy.getCalendarDataForMonth({
+    return getCalendarDataForMonth({
       year: query.year,
       month: query.month,
       userId: !isAdmin && !isSuperSales && authUser.id,
@@ -518,7 +514,7 @@ export class AvailabilityUsecase {
   // caller id when query.isAdmin === "true".
   getRemindersForDay({ query, authUser }) {
     const isAdmin = isAdminRole(authUser.role);
-    return this.legacy.getRemindersForDay({
+    return getRemindersForDay({
       date: query.date,
       userId: !isAdmin && authUser.id,
       adminId: query.isAdmin === "true" && authUser.id,
@@ -526,4 +522,5 @@ export class AvailabilityUsecase {
   }
 }
 
-export const availabilityUsecase = new AvailabilityUsecase(availabilityRepository);
+export const availabilityUsecase = new AvailabilityUsecase();
+export { AvailabilityUsecase };

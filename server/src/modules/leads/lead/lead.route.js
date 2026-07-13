@@ -22,12 +22,12 @@ const router = Router();
 router.use(AuthMiddleware.requireAuth);
 
 // ── list surfaces (pool-scoped reads; no object-scope checker — these are lists) ──
-router.get("/", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.list));
-router.get("/deals", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.deals));
-router.get("/columns", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.columns));
+router.get("/", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.getLeads));
+router.get("/deals", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.getDeals));
+router.get("/columns", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.getColumns));
 router.get("/calls", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.listCalls));
 router.get("/meetings", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.listMeetings));
-router.get("/summary", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.summary));
+router.get("/summary", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.getLeadsSummary));
 
 // ── assign / convert (collection-level mutations) ────────────────────────────────
 router.put(
@@ -40,7 +40,7 @@ router.put(
   "/convert",
   AuthMiddleware.requirePermissions([P.CONVERT]),
   validate(LeadValidation.convert),
-  asyncHandler(leadController.convert),
+  asyncHandler(leadController.convertLead),
 );
 // PUT / — assign to self (ASSIGN_SELF) OR to another user (ASSIGN_OTHER, admin-tier).
 // The usecase enforces the self-vs-other split exactly as legacy did.
@@ -48,7 +48,7 @@ router.put(
   "/",
   AuthMiddleware.requirePermissions([], [P.ASSIGN_SELF, P.ASSIGN_OTHER]),
   validate(LeadValidation.assign),
-  asyncHandler(leadController.assign),
+  asyncHandler(leadController.assignLead),
 );
 
 // ── meeting-reminder sub-resources (literal-prefixed; before /:id) ────────────────
@@ -104,7 +104,7 @@ router.put(
   validate(LeadValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLead),
   validate(LeadValidation.fieldUpdate),
-  asyncHandler(leadController.updateField),
+  asyncHandler(leadController.updateLeadField),
 );
 router.put(
   "/lead/update/:id",
@@ -112,7 +112,7 @@ router.put(
   validate(LeadValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLead),
   validate(LeadValidation.fieldUpdate),
-  asyncHandler(leadController.updateField),
+  asyncHandler(leadController.updateLeadField),
 );
 
 // ── lead detail (object-scoped READ) ─────────────────────────────────────────────
@@ -121,7 +121,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(LeadValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
-  asyncHandler(leadController.getById),
+  asyncHandler(leadController.getLead),
 );
 
 // ── status change → workflow action (was PUT /:id/status) ────────────────────────
@@ -131,7 +131,7 @@ router.post(
   validate(LeadValidation.idParams, "params"),
   AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLead),
   validate(LeadValidation.changeStatus),
-  asyncHandler(leadController.changeStatus),
+  asyncHandler(leadController.changeLeadStatus),
 );
 
 // ── meeting reminders for a lead ─────────────────────────────────────────────────

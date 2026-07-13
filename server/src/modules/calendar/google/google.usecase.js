@@ -9,39 +9,28 @@
 // kept ungated and is handled in the controller (it performs an HTTP redirect, not an
 // envelope response) — the usecase exposes the callback handler so the controller stays thin.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { calendarMessagesCodes as C } from "@dms/shared";
+import { calendarMessagesCodes } from "@dms/shared";
 import { googleCalendarRepository } from "./google.repo.js";
-
-// The Google OAuth/Calendar side-effect flow now lives in the INFRA client
+// The Google OAuth/Calendar side-effect flow lives in the INFRA client
 // (infra/google/google-calendar.client.js). isGoogleCalendarConnected — and the resync loop it
 // invokes — stay in that infra client (see its header note); the usecase only invokes them.
-const GOOGLE_CLIENT = "../../../infra/google/google-calendar.client.js";
-const legacyDefaults = {
-  getAuthUrl: (userId) =>
-    import(GOOGLE_CLIENT).then((m) => m.getAuthUrl(userId)),
-  handleOAuthCallback: (code, state) =>
-    import(GOOGLE_CLIENT).then((m) => m.handleOAuthCallback(code, state)),
-  disconnectGoogleCalendar: (userId) =>
-    import(GOOGLE_CLIENT).then((m) => m.disconnectGoogleCalendar(userId)),
-  isGoogleCalendarConnected: (userId) =>
-    import(GOOGLE_CLIENT).then((m) => m.isGoogleCalendarConnected(userId)),
-};
+import {
+  getAuthUrl,
+  handleOAuthCallback,
+  disconnectGoogleCalendar,
+  isGoogleCalendarConnected,
+} from "../../../infra/google/google-calendar.client.js";
 
-export class GoogleCalendarUsecase {
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class GoogleCalendarUsecase {
   // GET/POST /google/connect — if already connected, legacy returned 400; otherwise it
   // returns the OAuth authorize URL. The response key differs between the legacy GET
   // (`authUrl`) and POST (`redirectUrl`) handlers — preserved by the controller.
   async connect({ authUser }) {
-    const connected = await this.legacy.isGoogleCalendarConnected(authUser.id);
+    const connected = await isGoogleCalendarConnected(authUser.id);
     if (connected) {
-      throw new AppError(C.GOOGLE_ALREADY_CONNECTED, 400);
+      throw new AppError(calendarMessagesCodes.GOOGLE_ALREADY_CONNECTED, 400);
     }
-    const authUrl = await this.legacy.getAuthUrl(authUser.id);
+    const authUrl = await getAuthUrl(authUser.id);
     return { isConnected: false, authUrl };
   }
 
@@ -50,12 +39,12 @@ export class GoogleCalendarUsecase {
   // legacy did. We pass code/state straight to the frozen service (which exchanges the code
   // for tokens). NEVER log code/state/tokens here.
   handleCallback({ code, state }) {
-    return this.legacy.handleOAuthCallback(code, state);
+    return handleOAuthCallback(code, state);
   }
 
   // POST /google/disconnect — revoke + clear the caller's Google connection.
   async disconnect({ authUser }) {
-    await this.legacy.disconnectGoogleCalendar(authUser.id);
+    await disconnectGoogleCalendar(authUser.id);
     return true;
   }
 
@@ -65,8 +54,8 @@ export class GoogleCalendarUsecase {
   // client is only usable once tokens exist. SECURITY: the refresh token is read here ONLY to
   // compute the boolean; it is dropped immediately and NEVER returned or logged. Only
   // { connected, calendarId, tokenExpired } leaves this method.
-  async status({ authUser }) {
-    const userData = await this.repo.findConnectionStatus({ userId: authUser.id });
+  async getGoogleStatus({ authUser }) {
+    const userData = await googleCalendarRepository.findConnectionStatus({ userId: authUser.id });
     return {
       connected: Boolean(userData?.googleRefreshToken),
       calendarId: userData?.googleCalendarId ?? null,
@@ -77,4 +66,5 @@ export class GoogleCalendarUsecase {
   }
 }
 
-export const googleCalendarUsecase = new GoogleCalendarUsecase(googleCalendarRepository);
+export const googleCalendarUsecase = new GoogleCalendarUsecase();
+export { GoogleCalendarUsecase };

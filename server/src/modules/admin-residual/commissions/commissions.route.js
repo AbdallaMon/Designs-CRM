@@ -12,7 +12,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { commissionsController } from "./commissions.controller.js";
-import { CommissionsValidation as V } from "./commissions.validation.js";
+import { CommissionsValidation } from "./commissions.validation.js";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 const router = Router();
@@ -20,21 +20,21 @@ const router = Router();
 router.get(
   "/",
   AuthMiddleware.requirePermissions([P.COMMISSION_VIEW]),
-  validate(V.listQuery, "query"),
-  asyncHandler(commissionsController.list),
+  validate(CommissionsValidation.listQuery, "query"),
+  asyncHandler(commissionsController.getCommissions),
 );
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.COMMISSION_MANAGE]),
-  validate(V.createBody),
-  asyncHandler(commissionsController.create),
+  validate(CommissionsValidation.createBody),
+  asyncHandler(commissionsController.createCommission),
 );
 router.put(
   "/:id",
   AuthMiddleware.requirePermissions([P.COMMISSION_MANAGE]),
-  validate(V.idParam, "params"),
-  validate(V.updateBody),
-  asyncHandler(commissionsController.update),
+  validate(CommissionsValidation.idParam, "params"),
+  validate(CommissionsValidation.updateBody),
+  asyncHandler(commissionsController.updateCommission),
 );
 
 export { router as commissionsRouter };

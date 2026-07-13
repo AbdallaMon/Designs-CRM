@@ -6,26 +6,21 @@ const TK = messagesNames.siteUtilityMessages;
 
 // Thin controller: read validated input, call the usecase, respond via helpers.
 // No business rules here (primitive coercion only).
-export class SiteUtilityController {
-  /** @param {import("./site-utility.usecase.js").SiteUtilityUsecase} usecase */
-  constructor(usecase) {
-    this.usecase = usecase;
+class SiteUtilityController {
+  // ── PDF config ─────────────────────────────────────────────────────────────
+  async getPdfConfig(req, res) {
+    const config = await siteUtilityUsecase.getPdfConfig();
+    return ok(res, config, siteUtilityMessagesCodes.PDF_CONFIG_FETCHED, TK);
   }
 
-  // ── PDF config ─────────────────────────────────────────────────────────────
-  getPdfConfig = async (req, res) => {
-    const config = await this.usecase.getPdfConfig();
-    return ok(res, config, siteUtilityMessagesCodes.PDF_CONFIG_FETCHED, TK);
-  };
-
-  updatePdfConfig = async (req, res) => {
-    const config = await this.usecase.updatePdfConfig({ input: req.body });
+  async updatePdfConfig(req, res) {
+    const config = await siteUtilityUsecase.updatePdfConfig({ input: req.body });
     return ok(res, config, siteUtilityMessagesCodes.PDF_CONFIG_UPDATED, TK);
-  };
+  }
 
   // ── Contract payment conditions ──────────────────────────────────────────────
-  listPaymentConditions = async (req, res) => {
-    const result = await this.usecase.listPaymentConditions({
+  async listPaymentConditions(req, res) {
+    const result = await siteUtilityUsecase.listPaymentConditions({
       authUser: req.auth,
     });
     return ok(
@@ -34,32 +29,31 @@ export class SiteUtilityController {
       siteUtilityMessagesCodes.PAYMENT_CONDITIONS_FETCHED,
       TK,
     );
-  };
+  }
 
-  createPaymentCondition = async (req, res) => {
-    const row = await this.usecase.createPaymentCondition({ input: req.body });
+  async createPaymentCondition(req, res) {
+    const row = await siteUtilityUsecase.createPaymentCondition({ input: req.body });
     return created(
       res,
       row,
       siteUtilityMessagesCodes.PAYMENT_CONDITION_CREATED,
       TK,
     );
-  };
+  }
 
-  updatePaymentCondition = async (req, res) => {
-    const row = await this.usecase.updatePaymentCondition({
+  async updatePaymentCondition(req, res) {
+    const row = await siteUtilityUsecase.updatePaymentCondition({
       id: req.params.id,
       input: req.body,
     });
     return ok(res, row, siteUtilityMessagesCodes.PAYMENT_CONDITION_UPDATED, TK);
-  };
+  }
 
-  deletePaymentCondition = async (req, res) => {
-    await this.usecase.deletePaymentCondition({ id: req.params.id });
+  async deletePaymentCondition(req, res) {
+    await siteUtilityUsecase.deletePaymentCondition({ id: req.params.id });
     return deleted(res, siteUtilityMessagesCodes.PAYMENT_CONDITION_DELETED, TK);
-  };
+  }
 }
 
-export const siteUtilityController = new SiteUtilityController(
-  siteUtilityUsecase,
-);
+export const siteUtilityController = new SiteUtilityController();
+export { SiteUtilityController };

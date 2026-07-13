@@ -16,12 +16,12 @@ import { RentValidation } from "./rent.validation.js";
 const P = PERMISSIONS.ACCOUNTING;
 const router = Router();
 
-router.get("/", AuthMiddleware.requirePermissions([P.RENT_LIST]), asyncHandler(rentController.list));
+router.get("/", AuthMiddleware.requirePermissions([P.RENT_LIST]), asyncHandler(rentController.getRents));
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.RENT_CREATE]),
   validate(RentValidation.create),
-  asyncHandler(rentController.create),
+  asyncHandler(rentController.createRent),
 );
 router.put(
   "/:rentId",

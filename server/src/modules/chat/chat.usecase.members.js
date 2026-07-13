@@ -1,5 +1,6 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { chatMessagesCodes } from "@dms/shared";
+import { chatRepository } from "./chat.repo.js";
 
 // Lazily resolve the socket server at call time. A static `import { getIo }`
 // here would recreate a load-order-fragile cycle:
@@ -19,14 +20,14 @@ export const memberMethods = {
   // ── Members ────────────────────────────────────────────────────────────────
 
   async getMembers(roomId, userId, clientId) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
     });
     if (!member)
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
-    const members = await this.repository.getMembers(roomId);
+    const members = await chatRepository.getMembers(roomId);
     // Members are not server-paginated (the room member set is small); we still
     // return the normalized list envelope so the FE treats every list endpoint
     // uniformly.
@@ -39,7 +40,7 @@ export const memberMethods = {
   },
 
   async addMembers(roomId, userId, userIds) {
-    const requester = await this.repository.getMember({ roomId, userId });
+    const requester = await chatRepository.getMember({ roomId, userId });
     if (
       !requester ||
       (requester.role !== "ADMIN" && requester.role !== "MODERATOR")
@@ -52,9 +53,9 @@ export const memberMethods = {
       userId: Number(uid),
       role: "MEMBER",
     }));
-    await this.repository.addRoomMembers(memberData);
+    await chatRepository.addRoomMembers(memberData);
 
-    const newMembers = await this.repository.findMembersByUserIds(
+    const newMembers = await chatRepository.findMembersByUserIds(
       roomId,
       userIds,
     );
@@ -71,13 +72,13 @@ export const memberMethods = {
       newMembers,
     });
 
-    const room = await this.repository.getFullRoom(roomId);
+    const room = await chatRepository.getFullRoom(roomId);
     return room;
   },
 
   async removeMember(roomId, userId, memberId) {
-    const requester = await this.repository.getMember({ roomId, userId });
-    const memberToRemove = await this.repository.getMemberById(memberId);
+    const requester = await chatRepository.getMember({ roomId, userId });
+    const memberToRemove = await chatRepository.getMemberById(memberId);
 
     if (!memberToRemove) throw new AppError(chatMessagesCodes.MEMBER_NOT_FOUND, 404);
 
@@ -89,7 +90,7 @@ export const memberMethods = {
       throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
-    await this.repository.removeMember(memberId);
+    await chatRepository.removeMember(memberId);
 
     const io = await getIo();
     io.to(`room:${roomId}`).emit("member:removed", {
@@ -112,10 +113,10 @@ export const memberMethods = {
     // the caller's OWN membership row and remove it. The room scope checker has
     // already run, so this membership normally exists; guard defensively with the
     // same "not a member" scope code used across this module.
-    const member = await this.repository.getMember({ roomId, userId });
+    const member = await chatRepository.getMember({ roomId, userId });
     if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    await this.repository.removeMember(member.id);
+    await chatRepository.removeMember(member.id);
 
     const io = await getIo();
     io.to(`room:${roomId}`).emit("member:removed", {
@@ -134,7 +135,7 @@ export const memberMethods = {
   },
 
   async updateMemberRole(roomId, userId, memberId, role) {
-    const requester = await this.repository.getAdminOrModeratorMember({
+    const requester = await chatRepository.getAdminOrModeratorMember({
       roomId,
       userId,
     });
@@ -144,7 +145,7 @@ export const memberMethods = {
     const validRoles = ["ADMIN", "MODERATOR", "MEMBER"];
     if (!validRoles.includes(role)) throw new AppError(chatMessagesCodes.INVALID_MEMBER_ROLE, 400);
 
-    const updated = await this.repository.updateMemberRole(memberId, role);
+    const updated = await chatRepository.updateMemberRole(memberId, role);
 
     const io = await getIo();
     io.to(`room:${roomId}`).emit("member:role_updated", {

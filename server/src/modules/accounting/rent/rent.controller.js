@@ -5,34 +5,32 @@ import { accountingMessagesCodes, messagesNames } from "@dms/shared";
 import { rentUsecase } from "./rent.usecase.js";
 import { withRentListCapabilities } from "./rent.dto.js";
 
-const C = accountingMessagesCodes;
 const TK = messagesNames.accountingMessages;
 
 import { paginate } from "../../../shared/utility/pagination.js";
 
-export class RentController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class RentController {
+  checkRentExists(req) {
+    return rentUsecase.checkRentExists({ rentId: req.params.rentId });
   }
 
-  checkRentExists = (req) => this.usecase.checkRentExists({ rentId: req.params.rentId });
-
-  list = async (req, res) => {
+  async getRents(req, res) {
     const { page, limit, skip } = paginate(req.query);
-    const result = await this.usecase.list({ skip, limit, page });
+    const result = await rentUsecase.listRents({ skip, limit, page });
     const items = withRentListCapabilities(result.data ?? [], req.auth);
-    return ok(res, { items, total: result.total ?? 0, page, pageSize: limit }, C.RENTS_FETCHED, TK);
-  };
+    return ok(res, { items, total: result.total ?? 0, page, pageSize: limit }, accountingMessagesCodes.RENTS_FETCHED, TK);
+  }
 
-  create = async (req, res) => {
-    const result = await this.usecase.create({ body: req.body });
-    return created(res, result.data ?? result, C.RENT_CREATED, TK);
-  };
+  async createRent(req, res) {
+    const result = await rentUsecase.createRent({ body: req.body });
+    return created(res, result.data ?? result, accountingMessagesCodes.RENT_CREATED, TK);
+  }
 
-  renew = async (req, res) => {
-    const result = await this.usecase.renew({ rentId: req.params.rentId, body: req.body });
-    return ok(res, result.data ?? result, C.RENT_RENEWED, TK);
-  };
+  async renew(req, res) {
+    const result = await rentUsecase.renew({ rentId: req.params.rentId, body: req.body });
+    return ok(res, result.data ?? result, accountingMessagesCodes.RENT_RENEWED, TK);
+  }
 }
 
-export const rentController = new RentController(rentUsecase);
+export const rentController = new RentController();
+export { RentController };

@@ -13,7 +13,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { fixedDataController } from "./fixed-data.controller.js";
-import { FixedDataValidation as V } from "./fixed-data.validation.js";
+import { FixedDataValidation } from "./fixed-data.validation.js";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 const router = Router();
@@ -21,21 +21,21 @@ const router = Router();
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.FIXED_DATA_MANAGE]),
-  validate(V.createBody),
-  asyncHandler(fixedDataController.create),
+  validate(FixedDataValidation.createBody),
+  asyncHandler(fixedDataController.createFixedData),
 );
 router.put(
   "/:id",
   AuthMiddleware.requirePermissions([P.FIXED_DATA_MANAGE]),
-  validate(V.idParam, "params"),
-  validate(V.updateBody),
-  asyncHandler(fixedDataController.update),
+  validate(FixedDataValidation.idParam, "params"),
+  validate(FixedDataValidation.updateBody),
+  asyncHandler(fixedDataController.updateFixedData),
 );
 router.delete(
   "/:id",
   AuthMiddleware.requirePermissions([P.FIXED_DATA_MANAGE]),
-  validate(V.idParam, "params"),
-  asyncHandler(fixedDataController.remove),
+  validate(FixedDataValidation.idParam, "params"),
+  asyncHandler(fixedDataController.deleteFixedData),
 );
 
 export { router as fixedDataRouter };

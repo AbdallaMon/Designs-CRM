@@ -5,33 +5,29 @@ import { ok, created } from "../../../shared/http/response.js";
 import { adminResidualMessagesCodes, messagesNames } from "@dms/shared";
 import { commissionsUsecase } from "./commissions.usecase.js";
 
-const M = adminResidualMessagesCodes;
 const TK = messagesNames.adminResidualMessages;
 
-export class CommissionsController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class CommissionsController {
+  async getCommissions(req, res) {
+    const data = await commissionsUsecase.listCommissions({ userId: req.query.userId });
+    return ok(res, data, adminResidualMessagesCodes.COMMISSIONS_FETCHED, TK);
   }
 
-  list = async (req, res) => {
-    const data = await this.usecase.list({ userId: req.query.userId });
-    return ok(res, data, M.COMMISSIONS_FETCHED, TK);
-  };
-
-  create = async (req, res) => {
-    const data = await this.usecase.create({
+  async createCommission(req, res) {
+    const data = await commissionsUsecase.createCommission({
       userId: req.body.userId,
       leadId: req.body.leadId,
       amount: req.body.amount,
       commissionReason: req.body.commissionReason,
     });
-    return created(res, data, M.COMMISSION_CREATED, TK);
-  };
+    return created(res, data, adminResidualMessagesCodes.COMMISSION_CREATED, TK);
+  }
 
-  update = async (req, res) => {
-    const data = await this.usecase.update({ commissionId: req.params.id, amount: req.body.amount });
-    return ok(res, data, M.COMMISSION_UPDATED, TK);
-  };
+  async updateCommission(req, res) {
+    const data = await commissionsUsecase.updateCommission({ commissionId: req.params.id, amount: req.body.amount });
+    return ok(res, data, adminResidualMessagesCodes.COMMISSION_UPDATED, TK);
+  }
 }
 
-export const commissionsController = new CommissionsController(commissionsUsecase);
+export const commissionsController = new CommissionsController();
+export { CommissionsController };

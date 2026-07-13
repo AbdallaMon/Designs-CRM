@@ -6,34 +6,17 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { coursesMessagesCodes } from "@dms/shared";
 import { staffCourseRepository } from "./staff-course.repo.js";
+// Notification on a fully-consumed failed attempt — the (not-yet-migrated) legacy notifier,
+// called directly so observable behavior is preserved (Notifications are a Phase-11 migration).
+import { attemptFailedByUser } from "../../../infra/notifications/index.js";
 
-// Notification on a fully-consumed failed attempt. Injected so this module stays
-// import-light and unit-testable; the default lazily loads the (not-yet-migrated)
-// legacy notifier so observable behavior is preserved. Notifications are a Phase-11
-// migration — we call the existing implementation rather than duplicate it.
-async function defaultNotifyAttemptFailed({ testId, userId }) {
-  const { attemptFailedByUser } = await import(
-    "../../../infra/notifications/index.js"
-  );
-  return attemptFailedByUser({ testId, userId });
-}
-
-export class StaffCourseUsecase {
-  /**
-   * @param {import("./staff-course.repo.js").StaffCourseRepository} repository
-   * @param {{ notifyAttemptFailed?: Function }} [deps]
-   */
-  constructor(repository, { notifyAttemptFailed } = {}) {
-    this.repository = repository;
-    this.notifyAttemptFailed = notifyAttemptFailed || defaultNotifyAttemptFailed;
-  }
-
+class StaffCourseUsecase {
   // ── Object-scope checker — attempts are OWNER-scoped ─────────────────────────────
   // Legacy loaded attempts with `where: { userId }`, so a user could only read their
   // own attempt. We enforce that explicitly: THROW 403 when the attempt is not the
   // caller's. Returns the (id, userId) row on success.
   async checkIfUserCanAccessAttempt({ attemptId, authUserId }) {
-    const attempt = await this.repository.getAttemptOwner({ attemptId });
+    const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
     if (!attempt) {
       throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
     }
@@ -49,7 +32,7 @@ export class StaffCourseUsecase {
   // for the write surface so the layering reads correctly. Returns the loaded row
   // (id, userId, testId, endTime) on success.
   async checkIfUserCanMutateAttempt({ attemptId, authUserId }) {
-    const attempt = await this.repository.getAttemptOwner({ attemptId });
+    const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
     if (!attempt) {
       throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
     }
@@ -61,11 +44,11 @@ export class StaffCourseUsecase {
 
   // ── courses ───────────────────────────────────────────────────────────────────
   async listCourses({ role, skip, take }) {
-    return this.repository.listPublishedCoursesForRole({ role, skip, take });
+    return staffCourseRepository.listPublishedCoursesForRole({ role, skip, take });
   }
 
   async getCourse({ courseId, role, userId }) {
-    const course = await this.repository.getPublishedCourseForRole({
+    const course = await staffCourseRepository.getPublishedCourseForRole({
       courseId,
       role,
       userId,
@@ -73,8 +56,8 @@ export class StaffCourseUsecase {
     if (!course) return null;
 
     const [previewableLessonsCount, publishedTestsCount] = await Promise.all([
-      this.repository.countPreviewableLessons({ courseId }),
-      this.repository.countPublishedCourseTests({ courseId }),
+      staffCourseRepository.countPreviewableLessons({ courseId }),
+      staffCourseRepository.countPublishedCourseTests({ courseId }),
     ]);
 
     return {
@@ -85,9 +68,9 @@ export class StaffCourseUsecase {
 
   async getUserCourseProgress({ courseId, userId }) {
     const [completedLessons, completedTests, testAttempts] = await Promise.all([
-      this.repository.listCompletedLessonIds({ userId, courseId }),
-      this.repository.listCompletedTestIds({ userId, courseId }),
-      this.repository.listTestAttemptsForCourse({ userId, courseId }),
+      staffCourseRepository.listCompletedLessonIds({ userId, courseId }),
+      staffCourseRepository.listCompletedTestIds({ userId, courseId }),
+      staffCourseRepository.listTestAttemptsForCourse({ userId, courseId }),
     ]);
 
     return {
@@ -99,7 +82,7 @@ export class StaffCourseUsecase {
 
   // ── lessons ──────────────────────────────────────────────────────────────────
   async getLesson({ role, lessonId, userId }) {
-    const lesson = await this.repository.getPreviewableLessonForRole({
+    const lesson = await staffCourseRepository.getPreviewableLessonForRole({
       lessonId,
       role,
     });
@@ -113,7 +96,7 @@ export class StaffCourseUsecase {
   // Mirrors legacy `canAccessAlesson`: requires an explicit LessonAccess row AND all
   // previous homework lessons completed AND their published tests passed.
   async assertCanAccessLesson({ lesson, userId }) {
-    const access = await this.repository.getLessonAccess({
+    const access = await staffCourseRepository.getLessonAccess({
       lessonId: lesson.id,
       userId,
     });
@@ -131,13 +114,13 @@ export class StaffCourseUsecase {
   // canAccessACourseTest). `order === undefined` means "all homework lessons in the
   // course" (course-level test gate); otherwise "previous lessons only".
   async assertPreviousLessonsCleared({ courseId, order, userId }) {
-    const previousLessons = await this.repository.listPreviousHomeworkLessons({
+    const previousLessons = await staffCourseRepository.listPreviousHomeworkLessons({
       courseId,
       order,
     });
     const previousLessonIds = previousLessons.map((l) => l.id);
 
-    const completed = await this.repository.listCompletedLessonIdsIn({
+    const completed = await staffCourseRepository.listCompletedLessonIdsIn({
       userId,
       courseId,
       lessonIds: previousLessonIds,
@@ -147,14 +130,14 @@ export class StaffCourseUsecase {
       completedIds.includes(id),
     );
 
-    const lessonsWithTests = await this.repository.listLessonsWithPublishedTests({
+    const lessonsWithTests = await staffCourseRepository.listLessonsWithPublishedTests({
       lessonIds: previousLessonIds,
     });
 
     let allPreviousTestsPassed = true;
     for (const lessonWithTest of lessonsWithTests) {
       for (const test of lessonWithTest.tests) {
-        const attempt = await this.repository.findPassedAttempt({
+        const attempt = await staffCourseRepository.findPassedAttempt({
           userId,
           testId: test.id,
         });
@@ -176,13 +159,13 @@ export class StaffCourseUsecase {
 
   // ── homework ───────────────────────────────────────────────────────────────────
   async getHomeworks({ userId, lessonId }) {
-    return this.repository.listHomeworks({ userId, lessonId });
+    return staffCourseRepository.listHomeworks({ userId, lessonId });
   }
 
   // Legacy `createAHomeWork`: create a homework row, then if BOTH a VIDEO and a
   // SUMMARY exist for the lesson, mark the lesson complete.
   async createHomework({ data, lessonId, userId, courseId }) {
-    await this.repository.createHomework({
+    await staffCourseRepository.createHomework({
       data: {
         lessonId,
         userId,
@@ -192,7 +175,7 @@ export class StaffCourseUsecase {
       },
     });
 
-    const homeworks = await this.repository.listHomeworkTypes({
+    const homeworks = await staffCourseRepository.listHomeworkTypes({
       userId,
       lessonId,
     });
@@ -205,17 +188,17 @@ export class StaffCourseUsecase {
   }
 
   async markLessonAsCompleted({ lessonId, courseId, userId }) {
-    let courseProgress = await this.repository.findCourseProgress({
+    let courseProgress = await staffCourseRepository.findCourseProgress({
       courseId,
       userId,
     });
     if (!courseProgress) {
-      courseProgress = await this.repository.createCourseProgress({
+      courseProgress = await staffCourseRepository.createCourseProgress({
         courseId,
         userId,
       });
     }
-    return this.repository.createCompletedLesson({
+    return staffCourseRepository.createCompletedLesson({
       lessonId,
       courseProgressId: courseProgress.id,
     });
@@ -224,7 +207,7 @@ export class StaffCourseUsecase {
   // ── tests (staff) ────────────────────────────────────────────────────────────────
   // Legacy `getUserTest`: admins pass a falsy userId and skip the access gates.
   async getUserTest({ testId, userId }) {
-    const test = await this.repository.getPublishedTestWithRelations({ testId });
+    const test = await staffCourseRepository.getPublishedTestWithRelations({ testId });
     if (userId) {
       if (test?.lesson) {
         await this.assertPreviousLessonsCleared({
@@ -245,16 +228,16 @@ export class StaffCourseUsecase {
   }
 
   async getUserTestQuestions({ testId }) {
-    return this.repository.listTestQuestions({ testId });
+    return staffCourseRepository.listTestQuestions({ testId });
   }
 
   // ── attempts (staff) ──────────────────────────────────────────────────────────
   async getUserAttempts({ testId, userId }) {
-    return this.repository.listUserAttempts({ testId, userId });
+    return staffCourseRepository.listUserAttempts({ testId, userId });
   }
 
   async getUserAttempt({ attemptId, userId }) {
-    return this.repository.getUserAttempt({ attemptId, userId });
+    return staffCourseRepository.getUserAttempt({ attemptId, userId });
   }
 
   // Legacy `createAttampt`: enforce the per-user attempt limit, then create.
@@ -263,11 +246,11 @@ export class StaffCourseUsecase {
   // the second blocks until the first commits its new row, then re-reads it and is
   // correctly rejected. Same observable result/shape as before for serial callers.
   async createAttempt({ testId, userId }) {
-    const test = await this.repository.getTestById({ testId });
+    const test = await staffCourseRepository.getTestById({ testId });
     if (!test) throw new AppError(coursesMessagesCodes.TEST_NOT_FOUND, 404);
 
-    return this.repository.runTransaction(async (tx) => {
-      const last = await this.repository.getLastUserAttemptForUpdate({
+    return staffCourseRepository.runTransaction(async (tx) => {
+      const last = await staffCourseRepository.getLastUserAttemptForUpdate({
         testId,
         userId,
         client: tx,
@@ -278,7 +261,7 @@ export class StaffCourseUsecase {
         throw new AppError(coursesMessagesCodes.ATTEMPT_LIMIT_REACHED, 400);
       }
 
-      const created = await this.repository.createAttempt({
+      const created = await staffCourseRepository.createAttempt({
         client: tx,
         data: {
           testId,
@@ -300,7 +283,7 @@ export class StaffCourseUsecase {
   //   • H2 — the question must belong to the attempt's test AND the route's
   //          :testId must match the attempt's test (foreign-test question → 400).
   async submitAnswer({ answer, attemptId, questionId, testId, authUserId }) {
-    const attempt = await this.repository.getAttemptOwner({ attemptId });
+    const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
     if (!attempt) {
       throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
     }
@@ -314,12 +297,12 @@ export class StaffCourseUsecase {
       throw new AppError(coursesMessagesCodes.QUESTION_TEST_MISMATCH, 400);
     }
 
-    const question = await this.repository.getQuestionTestId({ questionId });
+    const question = await staffCourseRepository.getQuestionTestId({ questionId });
     if (!question || question.testId !== attempt.testId) {
       throw new AppError(coursesMessagesCodes.QUESTION_TEST_MISMATCH, 400);
     }
 
-    const existing = await this.repository.findExistingAnswer({
+    const existing = await staffCourseRepository.findExistingAnswer({
       attemptId,
       questionId,
     });
@@ -335,17 +318,17 @@ export class StaffCourseUsecase {
 
     if (existing) {
       if (existing.selectedAnswers.length > 0) {
-        await this.repository.deleteSelectedAnswers({
+        await staffCourseRepository.deleteSelectedAnswers({
           userAnswerId: existing.id,
         });
       }
-      return this.repository.updateUserAnswer({
+      return staffCourseRepository.updateUserAnswer({
         id: existing.id,
         data: { textAnswer: answer.textAnswer || null, selectedAnswers },
       });
     }
 
-    return this.repository.createUserAnswer({
+    return staffCourseRepository.createUserAnswer({
       data: {
         attemptId,
         questionId,
@@ -362,7 +345,7 @@ export class StaffCourseUsecase {
   // finalized attempt after manually approving a TEXT answer). Staff callers never
   // pass it, so a staff PUT on a finalized attempt (endTime set) is rejected (H1).
   async endAttempt({ attemptId, reScore = false }) {
-    const attempt = await this.repository.getAttemptForScoring({ attemptId });
+    const attempt = await staffCourseRepository.getAttemptForScoring({ attemptId });
     if (!attempt) throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
 
     if (!reScore && attempt.endTime) {
@@ -417,7 +400,7 @@ export class StaffCourseUsecase {
 
     const score = (earnedPoints / totalQuestions) * 100;
     const passed = score >= 80;
-    await this.repository.updateAttemptScore({
+    await staffCourseRepository.updateAttemptScore({
       attemptId,
       score,
       passed,
@@ -425,7 +408,7 @@ export class StaffCourseUsecase {
     });
 
     if (!passed && attempt.attemptCount >= attempt.attemptLimit) {
-      await this.notifyAttemptFailed({
+      await attemptFailedByUser({
         testId: attempt.testId,
         userId: attempt.userId,
       });
@@ -436,7 +419,7 @@ export class StaffCourseUsecase {
   // ── user dashboard ─────────────────────────────────────────────────────────────
   // Legacy `getUserDashboardStats` — aggregation ported verbatim.
   async getUserDashboardStats({ userId }) {
-    const enrolledCourses = await this.repository.listEnrolledCourses({ userId });
+    const enrolledCourses = await staffCourseRepository.listEnrolledCourses({ userId });
 
     const totalEnrolledCourses = enrolledCourses.length;
     const publishedEnrolledCourses = enrolledCourses.filter(
@@ -446,7 +429,7 @@ export class StaffCourseUsecase {
     let completedCourses = 0;
     const courseCompletionDetails = [];
     for (const progress of enrolledCourses) {
-      const totalLessons = await this.repository.countCourseLessons({
+      const totalLessons = await staffCourseRepository.countCourseLessons({
         courseId: progress.courseId,
       });
       const completedLessonsCount = progress.completedLessons.length;
@@ -464,7 +447,7 @@ export class StaffCourseUsecase {
       });
     }
 
-    const lessonAccess = await this.repository.listLessonAccessForUser({ userId });
+    const lessonAccess = await staffCourseRepository.listLessonAccessForUser({ userId });
     const totalAccessibleLessons = lessonAccess.length;
     const totalVideosAccessible = lessonAccess.reduce(
       (sum, access) => sum + access.lesson.videos.length,
@@ -479,7 +462,7 @@ export class StaffCourseUsecase {
       0,
     );
 
-    const testAttempts = await this.repository.listUserTestAttemptsForDashboard({
+    const testAttempts = await staffCourseRepository.listUserTestAttemptsForDashboard({
       userId,
     });
     const totalAttempts = testAttempts.length;
@@ -503,18 +486,18 @@ export class StaffCourseUsecase {
       testType: attempt.test.type,
     }));
 
-    const certificates = await this.repository.countApprovedCertificates({
+    const certificates = await staffCourseRepository.countApprovedCertificates({
       userId,
     });
-    const submittedHomeworks = await this.repository.countSubmittedHomeworks({
+    const submittedHomeworks = await staffCourseRepository.countSubmittedHomeworks({
       userId,
     });
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [attempts, recentHomeworks, recentLessons] = await Promise.all([
-      this.repository.listRecentAttemptDates({ userId, since: thirtyDaysAgo }),
-      this.repository.listRecentHomeworkDates({ userId, since: thirtyDaysAgo }),
-      this.repository.listRecentCompletedLessonDates({
+      staffCourseRepository.listRecentAttemptDates({ userId, since: thirtyDaysAgo }),
+      staffCourseRepository.listRecentHomeworkDates({ userId, since: thirtyDaysAgo }),
+      staffCourseRepository.listRecentCompletedLessonDates({
         userId,
         since: thirtyDaysAgo,
       }),
@@ -576,4 +559,5 @@ export class StaffCourseUsecase {
   }
 }
 
-export const staffCourseUsecase = new StaffCourseUsecase(staffCourseRepository);
+export const staffCourseUsecase = new StaffCourseUsecase();
+export { StaffCourseUsecase };

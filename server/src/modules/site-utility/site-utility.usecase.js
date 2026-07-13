@@ -11,12 +11,7 @@ const P = PERMISSIONS.SITE_UTILITY;
 
 // Business logic / orchestration. Prisma never appears here — only repo calls.
 // Errors are thrown as AppError(code, statusCode); success values are returned.
-export class SiteUtilityUsecase {
-  /** @param {import("./site-utility.repo.js").SiteUtilityRepository} repository */
-  constructor(repository) {
-    this.repository = repository;
-  }
-
+class SiteUtilityUsecase {
   // ── PDF config (SiteUtility singleton) ─────────────────────────────────────
 
   // GET /pdf-utility — returns the singleton config, lazily creating it on first
@@ -24,9 +19,9 @@ export class SiteUtilityUsecase {
   // after creating the row), we return the freshly-created row so the caller
   // always gets a config object — observably compatible and strictly better.
   async getPdfConfig() {
-    let config = await this.repository.getPdfConfig();
+    let config = await siteUtilityRepository.getPdfConfig();
     if (!config) {
-      config = await this.repository.createPdfConfig({ data: {} });
+      config = await siteUtilityRepository.createPdfConfig({ data: {} });
     }
     return config;
   }
@@ -47,10 +42,10 @@ export class SiteUtilityUsecase {
         throw new AppError(siteUtilityMessagesCodes[validationCode], 422);
       }
     }
-    const existing = await this.repository.getPdfConfig();
+    const existing = await siteUtilityRepository.getPdfConfig();
     const config = existing
-      ? await this.repository.updatePdfConfig({ data: input })
-      : await this.repository.createPdfConfig({ data: input });
+      ? await siteUtilityRepository.updatePdfConfig({ data: input })
+      : await siteUtilityRepository.createPdfConfig({ data: input });
     return config;
   }
 
@@ -62,7 +57,7 @@ export class SiteUtilityUsecase {
   // in a single page while conforming to the list contract. Each item carries
   // per-record `capabilities.*` (canEdit/canDelete/inUse) for the admin UI.
   async listPaymentConditions({ authUser }) {
-    const rows = await this.repository.listPaymentConditions();
+    const rows = await siteUtilityRepository.listPaymentConditions();
 
     const permissions = authUser?.permissions || [];
     const canEdit = permissions.includes(P.PAYMENT_CONDITION_EDIT);
@@ -72,7 +67,7 @@ export class SiteUtilityUsecase {
     // per-row so `capabilities.canDelete` reflects the real delete invariant.
     const items = await Promise.all(
       rows.map(async (row) => {
-        const linked = await this.repository.findFirstPaymentByConditionId({
+        const linked = await siteUtilityRepository.findFirstPaymentByConditionId({
           conditionId: row.id,
         });
         return toPaymentConditionDto(
@@ -103,7 +98,7 @@ export class SiteUtilityUsecase {
         400,
       );
     }
-    const created = await this.repository.createPaymentCondition({
+    const created = await siteUtilityRepository.createPaymentCondition({
       data: input,
     });
     return toPaymentConditionDto(created);
@@ -111,14 +106,14 @@ export class SiteUtilityUsecase {
 
   // PUT /contract-payment-conditions/:id — update an existing condition.
   async updatePaymentCondition({ id, input }) {
-    const existing = await this.repository.getPaymentConditionById({ id });
+    const existing = await siteUtilityRepository.getPaymentConditionById({ id });
     if (!existing) {
       throw new AppError(
         siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND,
         404,
       );
     }
-    const updated = await this.repository.updatePaymentCondition({
+    const updated = await siteUtilityRepository.updatePaymentCondition({
       id,
       data: input,
     });
@@ -128,14 +123,14 @@ export class SiteUtilityUsecase {
   // DELETE /contract-payment-conditions/:id — delete, preserving the legacy guard:
   // a condition still linked to existing contract payments cannot be deleted.
   async deletePaymentCondition({ id }) {
-    const existing = await this.repository.getPaymentConditionById({ id });
+    const existing = await siteUtilityRepository.getPaymentConditionById({ id });
     if (!existing) {
       throw new AppError(
         siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND,
         404,
       );
     }
-    const linked = await this.repository.findFirstPaymentByConditionId({
+    const linked = await siteUtilityRepository.findFirstPaymentByConditionId({
       conditionId: id,
     });
     if (linked) {
@@ -144,9 +139,10 @@ export class SiteUtilityUsecase {
         409,
       );
     }
-    await this.repository.deletePaymentCondition({ id });
+    await siteUtilityRepository.deletePaymentCondition({ id });
     return { id };
   }
 }
 
-export const siteUtilityUsecase = new SiteUtilityUsecase(siteUtilityRepository);
+export const siteUtilityUsecase = new SiteUtilityUsecase();
+export { SiteUtilityUsecase };

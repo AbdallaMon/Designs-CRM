@@ -10,32 +10,12 @@
 // the new level against the PaymentLevel enum at the route (Zod). The legacy money checks
 // inside `_processPayment` (amount > 0, amount <= pending, not-already-fully-paid) are
 // PRESERVED untouched — no rounding/arithmetic is re-implemented.
-//
-// The `legacy` constructor param remains a dependency-injection seam (used by unit tests
-// to inject fakes for processPayment / markPaymentAsOverdue / getPayments / changePaymentLevel);
-// its defaults now point at the relocated repo/usecase code instead of the deleted service.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { accountingMessagesCodes as C } from "@dms/shared";
+import { accountingMessagesCodes } from "@dms/shared";
 import { paymentRepository } from "./payment.repo.js";
 import { translateLegacyAccountingError } from "../accounting.errors.js";
 
-export class PaymentUsecase {
-  /**
-   * @param {import("./payment.repo.js").PaymentRepository} repository
-   * @param {object} [legacy] dependency-injection seam (defaults to the relocated code)
-   */
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    const defaults = {
-      getPayments: (a) => this.repo.getPayments(a),
-      getListOfPaymentInvoices: (id) => this.repo.getListOfPaymentInvoices(id),
-      processPayment: (...a) => this._processPayment(...a),
-      markPaymentAsOverdue: (id) => this._markPaymentAsOverdue(id),
-      changePaymentLevel: (...a) => this.repo.changePaymentLevel(...a),
-    };
-    this.legacy = { ...defaults, ...legacy };
-  }
-
+class PaymentUsecase {
   // ── relocated money orchestration (guards preserved byte-identical) ──────────────
   // Formerly legacy processPayment. Guards throw the exact legacy strings (consumed by
   // accounting.errors.js); the three writes are delegated to the repo.
@@ -46,7 +26,7 @@ export class PaymentUsecase {
     if (issuedDate === "1970-01-01T00:00:00.000Z") {
       throw new Error("Please enter a date");
     }
-    const payment = await this.repo.findPayment({ id: paymentId });
+    const payment = await paymentRepository.findPayment({ id: paymentId });
 
     if (!payment) {
       throw new Error("Payment not found");
@@ -76,7 +56,7 @@ export class PaymentUsecase {
     const newAmountPaid = Number(payment.amountPaid || 0) + Number(amount);
     const isFullyPaid = newAmountPaid >= payment.amount;
 
-    const newPayment = await this.repo.updatePaymentAmounts({
+    const newPayment = await paymentRepository.updatePaymentAmounts({
       id: payment.id,
       amountPaid: newAmountPaid,
       status:
@@ -89,12 +69,12 @@ export class PaymentUsecase {
       // paymentLevel: getNextPaymentLevel(payment.paymentLevel),
     });
 
-    const invoice = await this.repo.createInvoice({
+    const invoice = await paymentRepository.createInvoice({
       paymentId: payment.id,
       amount: amount,
       issuedDate: issuedDate,
     });
-    const note = await this.repo.createInvoiceNote({
+    const note = await paymentRepository.createInvoiceNote({
       attachment: file,
       invoiceId: invoice.id,
       userId: Number(userId),
@@ -110,7 +90,7 @@ export class PaymentUsecase {
 
   // Formerly legacy markPaymentAsOverdue. Guards throw the exact legacy strings.
   async _markPaymentAsOverdue(paymentId) {
-    const payment = await this.repo.findPayment({ id: Number(paymentId) });
+    const payment = await paymentRepository.findPayment({ id: Number(paymentId) });
 
     if (!payment) {
       throw new Error("Payment not found");
@@ -122,7 +102,7 @@ export class PaymentUsecase {
       );
     }
 
-    const newPayment = await this.repo.updatePaymentOverdue({ id: payment.id });
+    const newPayment = await paymentRepository.updatePaymentOverdue({ id: payment.id });
 
     return newPayment;
   }
@@ -132,8 +112,8 @@ export class PaymentUsecase {
   // therefore enforces EXISTENCE (404 on a forged/missing id) so a money mutation never
   // runs against a non-existent payment, and stashes the true server state on req.scoped.
   async checkPaymentExists({ paymentId }) {
-    const payment = await this.repo.findPaymentState({ paymentId });
-    if (!payment) throw new AppError(C.PAYMENT_NOT_FOUND, 404);
+    const payment = await paymentRepository.findPaymentState({ paymentId });
+    if (!payment) throw new AppError(accountingMessagesCodes.PAYMENT_NOT_FOUND, 404);
     return payment;
   }
 
@@ -141,7 +121,7 @@ export class PaymentUsecase {
   // Legacy route parsed `filters` (a JSON string) and pulled status/level out of it,
   // then called getPayments. Same behavior, but a malformed/absent `filters` now safely
   // defaults to {} instead of throwing a generic 500.
-  async list({ query, skip, limit }) {
+  async listPayments({ query, skip, limit }) {
     let { clientId, paymentId, status, type, filters, level } = query;
     const parsedFilters = (() => {
       try {
@@ -153,7 +133,7 @@ export class PaymentUsecase {
     if (parsedFilters.status) status = parsedFilters.status;
     if (parsedFilters.level) level = parsedFilters.level;
 
-    const result = await this.legacy.getPayments({
+    const result = await paymentRepository.getPayments({
       status,
       paymentId,
       clientId,
@@ -168,7 +148,7 @@ export class PaymentUsecase {
   }
 
   async listInvoices({ paymentId }) {
-    return this.legacy.getListOfPaymentInvoices(Number(paymentId));
+    return paymentRepository.getListOfPaymentInvoices(Number(paymentId));
   }
 
   // ── workflow actions (money state changes) ──────────────────────────────────────
@@ -181,7 +161,7 @@ export class PaymentUsecase {
     // amount-invalid / date-required / required-fields) to AppError codes; unknown errors
     // re-throw as-is. Arithmetic/rounding inside _processPayment is untouched.
     return translateLegacyAccountingError(() =>
-      this.legacy.processPayment(
+      this._processPayment(
         Number(paymentId),
         Number(amount),
         new Date(issuedDate),
@@ -194,15 +174,16 @@ export class PaymentUsecase {
   // POST /payments/:paymentId/actions/mark-overdue — Known throws: "Payment not found" /
   // "already fully paid" → AppError codes.
   async markOverdue({ paymentId }) {
-    return translateLegacyAccountingError(() => this.legacy.markPaymentAsOverdue(paymentId));
+    return translateLegacyAccountingError(() => this._markPaymentAsOverdue(paymentId));
   }
 
   // POST /payments/:paymentId/actions/change-status — the new level is enum-validated at
   // the route (Zod). The legacy service's third arg (old level) is ignored, so we no longer
   // accept or pass a client-trusted state value.
   async changeStatus({ paymentId, body }) {
-    return this.legacy.changePaymentLevel(paymentId, body.newPaymentLevel);
+    return paymentRepository.changePaymentLevel(paymentId, body.newPaymentLevel);
   }
 }
 
-export const paymentUsecase = new PaymentUsecase(paymentRepository);
+export const paymentUsecase = new PaymentUsecase();
+export { PaymentUsecase };

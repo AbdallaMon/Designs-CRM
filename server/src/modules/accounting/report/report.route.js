@@ -10,9 +10,9 @@ import { reportController } from "./report.controller.js";
 const P = PERMISSIONS.ACCOUNTING;
 
 const outcomeRouter = Router();
-outcomeRouter.get("/", AuthMiddleware.requirePermissions([P.OUTCOME_LIST]), asyncHandler(reportController.outcomes));
+outcomeRouter.get("/", AuthMiddleware.requirePermissions([P.OUTCOME_LIST]), asyncHandler(reportController.getOutcomes));
 
 const summaryRouter = Router();
-summaryRouter.get("/", AuthMiddleware.requirePermissions([P.SUMMARY_VIEW]), asyncHandler(reportController.summary));
+summaryRouter.get("/", AuthMiddleware.requirePermissions([P.SUMMARY_VIEW]), asyncHandler(reportController.getSummary));
 
 export { outcomeRouter, summaryRouter };

@@ -8,7 +8,6 @@
 // to access THAT lead's projects (checkIfUserCanAccessLeadProjects on the shared project
 // usecase). Sub-resources resolve their parent lead first, then run the same gate — the
 // IDOR fix the legacy `/:updateId/*` routes lacked.
-import { projectsMessagesCodes as C } from "@dms/shared";
 import { updateRepository } from "./update.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
@@ -120,7 +119,7 @@ async function markAnUpdateAsDone({ updateId, clientLeadId, isArchived }) {
   return await updateRepository.findClientLeadUpdateById({ updateId });
 }
 
-const legacyDefaults = {
+export const legacyDefaults = {
   getUpdates,
   createAnUpdate,
   authorizeDepartmentToUpdate,
@@ -130,30 +129,24 @@ const legacyDefaults = {
   markAnUpdateAsDone,
 };
 
-export class UpdateUsecase {
-  constructor(repository, projects = projectUsecase, legacy = {}) {
-    this.repo = repository;
-    this.projects = projects;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class UpdateUsecase {
   isAdminUser(authUser) {
     return authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
   }
 
   // ── object-scope: gate on the parent clientLead's project assignment ─────────────
   checkIfUserCanAccessLead = ({ clientLeadId, authUser }) =>
-    this.projects.checkIfUserCanAccessLeadProjects({ clientLeadId, authUser });
+    projectUsecase.checkIfUserCanAccessLeadProjects({ clientLeadId, authUser });
 
   async checkIfUserCanAccessUpdateById({ updateId, authUser }) {
-    const { clientLeadId } = await this.projects.resolveUpdateClientLead({ updateId });
-    await this.projects.checkIfUserCanAccessLeadProjects({ clientLeadId, authUser });
+    const { clientLeadId } = await projectUsecase.resolveUpdateClientLead({ updateId });
+    await projectUsecase.checkIfUserCanAccessLeadProjects({ clientLeadId, authUser });
     return { updateId: Number(updateId), clientLeadId };
   }
 
   async checkIfUserCanAccessSharedUpdate({ sharedUpdateId, authUser }) {
-    const { clientLeadId } = await this.projects.resolveSharedUpdateClientLead({ sharedUpdateId });
-    await this.projects.checkIfUserCanAccessLeadProjects({ clientLeadId, authUser });
+    const { clientLeadId } = await projectUsecase.resolveSharedUpdateClientLead({ sharedUpdateId });
+    await projectUsecase.checkIfUserCanAccessLeadProjects({ clientLeadId, authUser });
     return { sharedUpdateId: Number(sharedUpdateId), clientLeadId };
   }
 
@@ -161,21 +154,21 @@ export class UpdateUsecase {
   //  UPDATES
   // ════════════════════════════════════════════════════════════════════════════
   // GET /:clientLeadId — list updates for a lead (legacy getUpdates).
-  list({ clientLeadId, query, authUser }) {
+  listUpdates({ clientLeadId, query, authUser }) {
     const searchParams = { ...query, clientLeadId: Number(clientLeadId) };
     const isAdmin = this.isAdminUser(authUser);
-    return this.legacy.getUpdates(searchParams, isAdmin);
+    return legacyDefaults.getUpdates(searchParams, isAdmin);
   }
 
   // GET /shared-settings/:updateId.
-  sharedSettings({ updateId }) {
-    return this.repo.findSharedSettings({ updateId });
+  getSharedSettings({ updateId }) {
+    return updateRepository.findSharedSettings({ updateId });
   }
 
   // POST /:clientLeadId — create an update.
-  create({ clientLeadId, body, query, authUser }) {
+  createUpdate({ clientLeadId, body, query, authUser }) {
     const searchParams = { ...query };
-    return this.legacy.createAnUpdate({
+    return legacyDefaults.createAnUpdate({
       data: { ...body, clientLeadId: Number(clientLeadId) },
       searchParams,
       userId: authUser.id,
@@ -184,23 +177,23 @@ export class UpdateUsecase {
 
   // ── workflow actions ───────────────────────────────────────────────────────────
   authorize({ updateId, body }) {
-    return this.legacy.authorizeDepartmentToUpdate({ type: body.type, updateId: Number(updateId) });
+    return legacyDefaults.authorizeDepartmentToUpdate({ type: body.type, updateId: Number(updateId) });
   }
 
   authorizeShared({ updateId, body }) {
-    return this.legacy.unAuthorizeDepartmentToUpdate({ updateId: Number(updateId), type: body.type });
+    return legacyDefaults.unAuthorizeDepartmentToUpdate({ updateId: Number(updateId), type: body.type });
   }
 
   archive({ updateId, body }) {
-    return this.legacy.toggleArchieveAnUpdate({ updateId: Number(updateId), isArchived: body.isArchived });
+    return legacyDefaults.toggleArchieveAnUpdate({ updateId: Number(updateId), isArchived: body.isArchived });
   }
 
   archiveShared({ sharedUpdateId, body }) {
-    return this.legacy.toggleArchieveASharedUpdate({ sharedUpdateId: Number(sharedUpdateId), isArchived: body.isArchived });
+    return legacyDefaults.toggleArchieveASharedUpdate({ sharedUpdateId: Number(sharedUpdateId), isArchived: body.isArchived });
   }
 
   markDone({ updateId, body }) {
-    return this.legacy.markAnUpdateAsDone({
+    return legacyDefaults.markAnUpdateAsDone({
       updateId: Number(updateId),
       clientLeadId: body.clientLeadId,
       isArchived: body.isArchived,
@@ -208,4 +201,5 @@ export class UpdateUsecase {
   }
 }
 
-export const updateUsecase = new UpdateUsecase(updateRepository);
+export const updateUsecase = new UpdateUsecase();
+export { UpdateUsecase };

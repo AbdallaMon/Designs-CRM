@@ -13,24 +13,18 @@
 // and IGNORE any client-supplied `staffId`. The frozen `getCallReminders` reads
 // `searchParams.staffId` (it does `userId: Number(searchParams.staffId)`), so we hand it the
 // auth-derived id under that same key. Everything else in the query is preserved.
-const legacyDefaults = {
-  getCallReminders: (searchParams) =>
-    import("../../leads/lead/lead.usecase.js").then((m) => m.getCallReminders(searchParams)),
-};
+import { getCallReminders } from "../../leads/lead/lead.usecase.js";
 
-export class StaffUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class StaffUsecase {
   latestCalls({ query, authUser }) {
     // Force self-scope: strip any client `staffId`, then key the frozen filter off the
     // caller's own id. A non-numeric/absent auth id surfaces as NaN at the frozen
     // `Number(searchParams.staffId)` rather than collapsing to the global (all-staff) list.
     const { staffId: _ignoredClientStaffId, ...rest } = query ?? {};
     const searchParams = { ...rest, staffId: authUser.id };
-    return this.legacy.getCallReminders(searchParams);
+    return getCallReminders(searchParams);
   }
 }
 
 export const staffUsecase = new StaffUsecase();
+export { StaffUsecase };

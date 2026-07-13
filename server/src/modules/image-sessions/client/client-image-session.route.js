@@ -39,49 +39,49 @@
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
-import { clientImageSessionController as c } from "./client-image-session.controller.js";
-import { ClientImageSessionValidation as V } from "./client-image-session.validation.js";
+import { clientImageSessionController } from "./client-image-session.controller.js";
+import { ClientImageSessionValidation } from "./client-image-session.validation.js";
 
 const router = Router();
 
 // ── reference-data reads ────────────────────────────────────────────────────────────────
-router.get("/page-info", validate(V.pageInfoQuery, "query"), asyncHandler(c.getPageInfo));
-router.get("/pros-and-cons", validate(V.prosConsQuery, "query"), asyncHandler(c.getProsAndCons));
+router.get("/page-info", validate(ClientImageSessionValidation.pageInfoQuery, "query"), asyncHandler(clientImageSessionController.getPageInfo));
+router.get("/pros-and-cons", validate(ClientImageSessionValidation.prosConsQuery, "query"), asyncHandler(clientImageSessionController.getProsAndCons));
 
 // ── session (literal /session/status before /session) ──────────────────────────────────
-router.put("/session/status", validate(V.changeStatus), asyncHandler(c.changeStatus));
-router.get("/session", validate(V.sessionQuery, "query"), asyncHandler(c.getSession));
+router.put("/session/status", validate(ClientImageSessionValidation.changeStatus), asyncHandler(clientImageSessionController.changeStatus));
+router.get("/session", validate(ClientImageSessionValidation.sessionQuery, "query"), asyncHandler(clientImageSessionController.getSession));
 
 // ── colors ──────────────────────────────────────────────────────────────────────────────
-router.get("/colors", validate(V.lngQuery, "query"), asyncHandler(c.getColors));
-router.post("/colors", validate(V.saveColor), asyncHandler(c.saveColor));
+router.get("/colors", validate(ClientImageSessionValidation.lngQuery, "query"), asyncHandler(clientImageSessionController.getColors));
+router.post("/colors", validate(ClientImageSessionValidation.saveColor), asyncHandler(clientImageSessionController.saveColor));
 
 // ── materials ──────────────────────────────────────────────────────────────────────────
-router.get("/materials", validate(V.lngQuery, "query"), asyncHandler(c.getMaterials));
-router.post("/materials", validate(V.saveMaterials), asyncHandler(c.saveMaterials));
+router.get("/materials", validate(ClientImageSessionValidation.lngQuery, "query"), asyncHandler(clientImageSessionController.getMaterials));
+router.post("/materials", validate(ClientImageSessionValidation.saveMaterials), asyncHandler(clientImageSessionController.saveMaterials));
 
 // ── styles ──────────────────────────────────────────────────────────────────────────────
-router.get("/styles", validate(V.lngQuery, "query"), asyncHandler(c.getStyles));
-router.post("/styles", validate(V.saveStyle), asyncHandler(c.saveStyle));
+router.get("/styles", validate(ClientImageSessionValidation.lngQuery, "query"), asyncHandler(clientImageSessionController.getStyles));
+router.post("/styles", validate(ClientImageSessionValidation.saveStyle), asyncHandler(clientImageSessionController.saveStyle));
 
 // ── images ──────────────────────────────────────────────────────────────────────────────
-router.get("/images", validate(V.imagesQuery, "query"), asyncHandler(c.getImages));
-router.post("/images", validate(V.saveImages), asyncHandler(c.saveImages));
+router.get("/images", validate(ClientImageSessionValidation.imagesQuery, "query"), asyncHandler(clientImageSessionController.getImages));
+router.post("/images", validate(ClientImageSessionValidation.saveImages), asyncHandler(clientImageSessionController.saveImages));
 // DELETE is token-scoped (IDOR close): the session token in the body authenticates the
 // caller; the usecase confirms the :imageId belongs to that token's session before deleting.
 router.delete(
   "/images/:imageId",
-  validate(V.imageIdParam, "params"),
-  validate(V.deleteImage),
-  asyncHandler(c.deleteImage),
+  validate(ClientImageSessionValidation.imageIdParam, "params"),
+  validate(ClientImageSessionValidation.deleteImage),
+  asyncHandler(clientImageSessionController.deleteImage),
 );
 
 // ── 🔒 generate-pdf (inline SYNC frozen-PDF path) ───────────────────────────────────────
-router.post("/generate-pdf", validate(V.generatePdf), asyncHandler(c.generatePdf));
+router.post("/generate-pdf", validate(ClientImageSessionValidation.generatePdf), asyncHandler(clientImageSessionController.generatePdf));
 
 // ── EXTRAS router endpoints (same base, no collision with the main router) ───────────────
-router.get("/data", validate(V.modelDataQuery, "query"), asyncHandler(c.modelData));
-router.post("/save-patterns", validate(V.savePatterns), asyncHandler(c.savePatterns));
-router.post("/save-images", validate(V.saveSelection), asyncHandler(c.saveSelectionByToken));
+router.get("/data", validate(ClientImageSessionValidation.modelDataQuery, "query"), asyncHandler(clientImageSessionController.modelData));
+router.post("/save-patterns", validate(ClientImageSessionValidation.savePatterns), asyncHandler(clientImageSessionController.savePatterns));
+router.post("/save-images", validate(ClientImageSessionValidation.saveSelection), asyncHandler(clientImageSessionController.saveSelectionByToken));
 
 export { router as clientImageSessionRouter };

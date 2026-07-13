@@ -2,7 +2,7 @@
 // palettes, moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { imageSessionsMessagesCodes as M } from "@dms/shared";
+import { imageSessionsMessagesCodes } from "@dms/shared";
 import {
   createTextAndConnect,
   deserializeTemplatesDeep,
@@ -57,16 +57,16 @@ export async function createColorPallete({ data }) {
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.colors || data.colors.length === 0) {
-    throw new AppError(M.IMAGE_SESSION_COLORS_REQUIRED, 400);
+    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_COLORS_REQUIRED, 400);
   }
   if (!data.templateId) {
-    throw new AppError(M.IMAGE_SESSION_TEMPLATE_REQUIRED, 400);
+    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TEMPLATE_REQUIRED, 400);
   }
   if (!data.titles || titles.length === 0) {
-    throw new AppError(M.IMAGE_SESSION_TITLE_REQUIRED, 400);
+    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TITLE_REQUIRED, 400);
   }
   if (!data.background) {
-    throw new AppError(M.IMAGE_SESSION_BACKGROUND_REQUIRED, 400);
+    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_BACKGROUND_REQUIRED, 400);
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

@@ -223,6 +223,7 @@ function ImageComponentBase({
                 id={image.id}
                 idKey="selectedImageId"
                 slug="client"
+                token={token}
                 text={lng === "ar" ? "اضف ملاحظة للتصميم" : "Add note for this"}
               />
             </CardActionArea>

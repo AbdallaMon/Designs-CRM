@@ -17,7 +17,7 @@
 // ./project.flows.js (structure-only split). createGroupProjects / assignProjectToUser
 // are re-exported here unchanged so their existing deep importers keep working.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { projectsMessagesCodes as C } from "@dms/shared";
+import { projectsMessagesCodes } from "@dms/shared";
 import { workStageActionsForLead } from "../../leads/lead/lead.workstage-cockpit.js";
 import { projectRepository } from "./project.repo.js";
 import { groupProjects } from "./project.dto.js";
@@ -28,16 +28,7 @@ export {
   assignProjectToUser,
 } from "./project.flows.js";
 
-export class ProjectUsecase {
-  /**
-   * @param {import("./project.repo.js").ProjectRepository} repository
-   * @param {Partial<typeof legacyDefaults>} [legacy]
-   */
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class ProjectUsecase {
   isAdminUser(authUser) {
     // Authoritative: the resolved current profile's admin-tier flag (from
     // requireAuth) — object scope follows the ACTIVE profile. Falls back to the
@@ -58,26 +49,26 @@ export class ProjectUsecase {
   // when the project is outside scope (or does not exist — we do not leak existence to
   // an unauthorized caller).
   async checkIfUserCanAccessProject({ id, authUser }) {
-    const where = this.repo.buildAuthUserProjectWhere({
+    const where = projectRepository.buildAuthUserProjectWhere({
       authUser,
       where: { id: Number(id) },
       mode: "view",
     });
-    const project = await this.repo.findScopedProject({ where });
-    if (!project) throw new AppError(C.PROJECT_ACCESS_DENIED, 403);
+    const project = await projectRepository.findScopedProject({ where });
+    if (!project) throw new AppError(projectsMessagesCodes.PROJECT_ACCESS_DENIED, 403);
     return project;
   }
 
   // Write scope: stricter — ACCOUNTANT loses full scope here (it was a read-only
   // carve-out in legacy); owned-via-assignment for non-admin.
   async checkIfUserCanMutateProject({ id, authUser }) {
-    const where = this.repo.buildAuthUserProjectWhere({
+    const where = projectRepository.buildAuthUserProjectWhere({
       authUser,
       where: { id: Number(id) },
       mode: "mutate",
     });
-    const project = await this.repo.findScopedProject({ where });
-    if (!project) throw new AppError(C.PROJECT_MUTATE_DENIED, 403);
+    const project = await projectRepository.findScopedProject({ where });
+    if (!project) throw new AppError(projectsMessagesCodes.PROJECT_MUTATE_DENIED, 403);
     return project;
   }
 
@@ -88,21 +79,21 @@ export class ProjectUsecase {
   // repo.hasFullScope) may query ANY userId; everyone else may only query their OWN id.
   async checkIfUserCanAccessUserProfile({ userId, authUser }) {
     const targetId = Number(userId);
-    if (this.repo.hasFullScope(authUser, "view")) return { userId: targetId };
+    if (projectRepository.hasFullScope(authUser, "view")) return { userId: targetId };
     if (Number(authUser.id) === targetId) return { userId: targetId };
-    throw new AppError(C.PROJECT_ACCESS_DENIED, 403);
+    throw new AppError(projectsMessagesCodes.PROJECT_ACCESS_DENIED, 403);
   }
 
   // clientLead-keyed READ scope (for project-list-by-lead, groups, updates, archived).
   // Full-read roles pass; a non-privileged user must have at least one project on this
   // lead assigned to them (mirrors the legacy `assignments.some.userId` narrowing).
   async checkIfUserCanAccessLeadProjects({ clientLeadId, authUser }) {
-    if (this.repo.hasFullScope(authUser, "view")) return { clientLeadId: Number(clientLeadId) };
-    const allowed = await this.repo.clientLeadHasAssignedProject({
+    if (projectRepository.hasFullScope(authUser, "view")) return { clientLeadId: Number(clientLeadId) };
+    const allowed = await projectRepository.clientLeadHasAssignedProject({
       clientLeadId,
       userId: authUser.id,
     });
-    if (!allowed) throw new AppError(C.PROJECT_ACCESS_DENIED, 403);
+    if (!allowed) throw new AppError(projectsMessagesCodes.PROJECT_ACCESS_DENIED, 403);
     return { clientLeadId: Number(clientLeadId) };
   }
 
@@ -116,7 +107,7 @@ export class ProjectUsecase {
     const searchParams = { ...query, userRole: authUser.role };
     if (isAdmin) searchParams.isAdmin = true;
     else searchParams.userId = authUser.id;
-    return this.legacy.getLeadByPorjects({ searchParams, isAdmin });
+    return legacyDefaults.getLeadByPorjects({ searchParams, isAdmin });
   }
 
   async designerColumns({ query, authUser }) {
@@ -124,7 +115,7 @@ export class ProjectUsecase {
     const searchParams = { ...query, userRole: authUser.role };
     if (isAdmin) searchParams.isAdmin = true;
     else searchParams.userId = authUser.id;
-    return this.legacy.getLeadByPorjectsColumn({ searchParams, isAdmin });
+    return legacyDefaults.getLeadByPorjectsColumn({ searchParams, isAdmin });
   }
 
   // GET /designers/:id — lead-by-project detail. Object scope already enforced by the
@@ -136,7 +127,7 @@ export class ProjectUsecase {
       searchParams.userId = authUser.id;
     }
     if (role === "ADMIN" || role === "SUPER_ADMIN") searchParams.isAdmin = true;
-    const lead = await this.legacy.getLeadDetailsByProject(Number(id), searchParams);
+    const lead = await legacyDefaults.getLeadDetailsByProject(Number(id), searchParams);
     // Attach the caller's own "what do I do next" work-stage actions (designers/executor).
     // Assignment-scoped, computed from the already-scoped lead.projects — no extra query,
     // no lead-IDOR widening.
@@ -155,10 +146,10 @@ export class ProjectUsecase {
     if (authUser.role !== "ADMIN" && authUser.role !== "SUPER_ADMIN") {
       searchParams.userId = authUser.id;
     }
-    return this.legacy.getProjectsByClientLeadId({ searchParams });
+    return legacyDefaults.getProjectsByClientLeadId({ searchParams });
   }
 
-  async archived({ query, authUser, skip, limit }) {
+  async listArchivedProjects({ query, authUser, skip, limit }) {
     const searchParams = { ...query };
     if (authUser.role !== "ADMIN" && authUser.role !== "SUPER_ADMIN") {
       searchParams.userId = authUser.id;
@@ -175,7 +166,7 @@ export class ProjectUsecase {
     if (searchParams.userId) {
       where.projects.some.assignments = { some: { userId: Number(searchParams.userId) } };
     }
-    const { items, total } = await this.repo.findArchivedLeads({ where, skip, take });
+    const { items, total } = await projectRepository.findArchivedLeads({ where, skip, take });
     items.forEach((lead) => {
       lead.groupedProjects = groupProjects(lead.projects);
     });
@@ -187,23 +178,23 @@ export class ProjectUsecase {
   // requires PROJECT.LIST; the returned set is already assignment-narrowed by userId.
   async userProjects({ userId, query, limit, skip }) {
     const searchParams = { ...query, userId };
-    return this.legacy.getUserProjects(searchParams, Number(limit), Number(skip));
+    return legacyDefaults.getUserProjects(searchParams, Number(limit), Number(skip));
   }
 
   // GET /:id — project detail. Object scope already enforced by the checker; reproduce
   // the legacy designer/staff self-narrowing.
-  async getById({ id, query, authUser }) {
+  async getProject({ id, query, authUser }) {
     const { role } = authUser;
     const searchParams = { ...query };
     if (role === "THREE_D_DESIGNER" || role === "TWO_D_DESIGNER" || role === "STAFF") {
       searchParams.userId = authUser.id;
     }
-    return this.legacy.getProjectDetailsById({ id: Number(id), searchParams });
+    return legacyDefaults.getProjectDetailsById({ id: Number(id), searchParams });
   }
 
   // GET /:leadId/groups — unique project groups for a lead.
-  groups({ leadId }) {
-    return this.legacy.getUniqueProjectGroups({ clientLeadId: Number(leadId) });
+  listProjectGroups({ leadId }) {
+    return legacyDefaults.getUniqueProjectGroups({ clientLeadId: Number(leadId) });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -216,9 +207,9 @@ export class ProjectUsecase {
   async updateProject({ id, body, authUser, currentStatus }) {
     const isAdmin = this.isAdminUser(authUser);
     const serverOldStatus =
-      currentStatus ?? (await this.repo.findProjectStatus({ id: Number(id) }))?.status;
+      currentStatus ?? (await projectRepository.findProjectStatus({ id: Number(id) }))?.status;
     const { oldStatus: _ignored, ...rest } = body;
-    return this.legacy.updateProject({
+    return legacyDefaults.updateProject({
       data: { ...rest, id: Number(id), oldStatus: serverOldStatus, isAdmin },
       isAdmin,
     });
@@ -226,7 +217,7 @@ export class ProjectUsecase {
 
   // POST /:id/actions/assign-designer (was PUT /:id/assign-designer).
   async assignDesigner({ id, body }) {
-    return this.legacy.assignProjectToUser({
+    return legacyDefaults.assignProjectToUser({
       userId: body.designerId,
       projectId: Number(id),
       assignmentId: body.assignmentId,
@@ -243,9 +234,9 @@ export class ProjectUsecase {
   async changeDesignerStatus({ body, authUser, currentStatus }) {
     const isAdmin = this.isAdminUser(authUser);
     const serverOldStatus =
-      currentStatus ?? (body.id ? (await this.repo.findProjectStatus({ id: Number(body.id) }))?.status : undefined);
+      currentStatus ?? (body.id ? (await projectRepository.findProjectStatus({ id: Number(body.id) }))?.status : undefined);
     const { oldStatus: _ignored, ...rest } = body;
-    return this.legacy.updateProject({
+    return legacyDefaults.updateProject({
       data: { ...rest, oldStatus: serverOldStatus, isAdmin },
       isAdmin,
     });
@@ -253,35 +244,36 @@ export class ProjectUsecase {
 
   // ── parent-resolution helpers for the sibling surfaces' scope checks ──────────────
   async resolveProjectClientLead({ projectId }) {
-    const row = await this.repo.findProjectClientLead({ id: projectId });
-    if (!row) throw new AppError(C.PROJECT_NOT_FOUND, 404);
+    const row = await projectRepository.findProjectClientLead({ id: projectId });
+    if (!row) throw new AppError(projectsMessagesCodes.PROJECT_NOT_FOUND, 404);
     return row;
   }
 
   async resolveTaskProject({ taskId }) {
-    const row = await this.repo.findTaskParents({ id: taskId });
-    if (!row) throw new AppError(C.TASK_NOT_FOUND, 404);
+    const row = await projectRepository.findTaskParents({ id: taskId });
+    if (!row) throw new AppError(projectsMessagesCodes.TASK_NOT_FOUND, 404);
     return row;
   }
 
   async resolveUpdateClientLead({ updateId }) {
-    const row = await this.repo.findUpdateClientLead({ id: updateId });
-    if (!row) throw new AppError(C.UPDATE_NOT_FOUND, 404);
+    const row = await projectRepository.findUpdateClientLead({ id: updateId });
+    if (!row) throw new AppError(projectsMessagesCodes.UPDATE_NOT_FOUND, 404);
     return row;
   }
 
   async resolveSharedUpdateClientLead({ sharedUpdateId }) {
-    const row = await this.repo.findSharedUpdateClientLead({ id: sharedUpdateId });
-    if (!row || !row.update) throw new AppError(C.SHARED_UPDATE_NOT_FOUND, 404);
+    const row = await projectRepository.findSharedUpdateClientLead({ id: sharedUpdateId });
+    if (!row || !row.update) throw new AppError(projectsMessagesCodes.SHARED_UPDATE_NOT_FOUND, 404);
     return { ...row, clientLeadId: row.update.clientLeadId };
   }
 
   async resolveDeliveryProject({ deliveryId }) {
-    const row = await this.repo.findDeliveryProject({ id: deliveryId });
-    if (!row || !row.projectId) throw new AppError(C.DELIVERY_NOT_FOUND, 404);
+    const row = await projectRepository.findDeliveryProject({ id: deliveryId });
+    if (!row || !row.projectId) throw new AppError(projectsMessagesCodes.DELIVERY_NOT_FOUND, 404);
     return row;
   }
 }
 
-export const projectUsecase = new ProjectUsecase(projectRepository);
+export const projectUsecase = new ProjectUsecase();
+export { ProjectUsecase };
 export { LOCKED_FROM_STATUSES_FOR_NON_ADMIN };

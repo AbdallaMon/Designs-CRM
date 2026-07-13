@@ -1,9 +1,62 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the audit infra seam so contract usecases can be asserted without a DB.
 vi.mock("../../../infra/audit/record-action.js", () => ({
   recordAction: vi.fn(),
   auditCtxFromReq: vi.fn(() => ({})),
+}));
+
+// DI-removal: the usecases now call directly-imported singletons + lazy service modules.
+// Mock each seam so behavior can be asserted in isolation (no DB, no frozen PDF tier).
+vi.mock("../contract/contract.repo.js", () => ({
+  contractRepository: {
+    getContractClientLeadId: vi.fn(),
+    getPaymentClientLeadId: vi.fn(),
+    getStageClientLeadId: vi.fn(),
+    getDrawingClientLeadId: vi.fn(),
+    getSpecialItemClientLeadId: vi.fn(),
+  },
+}));
+
+vi.mock("../../leads/lead/lead.usecase.js", () => ({
+  leadUsecase: {
+    checkIfUserCanAccessLead: vi.fn(),
+    checkIfUserCanMutateLead: vi.fn(),
+  },
+}));
+
+vi.mock("../services/contract-services.js", () => ({
+  getLeadContractList: vi.fn(),
+  createContract: vi.fn(),
+  getContractDetailsById: vi.fn(),
+  updateContractBasics: vi.fn(),
+  markContractAsCancelled: vi.fn(),
+  generatePdfSessionToken: vi.fn(),
+  createContractStage: vi.fn(),
+  updateContractStage: vi.fn(),
+  deleteContractStage: vi.fn(),
+  getContractPaymentsGroupedService: vi.fn(),
+  updateContractPaymentStatus: vi.fn(),
+  updateContractPaymentAmounts: vi.fn(),
+  createNewContractPayment: vi.fn(),
+  updateContractPayment: vi.fn(),
+  deleteContractPayment: vi.fn(),
+  createContractDrawing: vi.fn(),
+  updateContractDrwaing: vi.fn(),
+  deleteContractDrawing: vi.fn(),
+  createContractSpecialItem: vi.fn(),
+  updateContractSpecialItem: vi.fn(),
+  deleteContractSpecialItem: vi.fn(),
+}));
+
+vi.mock("../services/client-contract-services.js", () => ({
+  getContractSessionByToken: vi.fn(),
+  getDefaultContractUtilityData: vi.fn(),
+  changeContractSessionStatus: vi.fn(),
+}));
+
+vi.mock("../services/generate-contract-pdf.js", () => ({
+  buildAndUploadContractPdf: vi.fn(),
 }));
 
 import { recordAction } from "../../../infra/audit/record-action.js";
@@ -17,12 +70,16 @@ import {
   contractsMessagesCodes,
 } from "@dms/shared";
 
-import { ContractUsecase } from "../contract/contract.usecase.js";
+import { contractUsecase } from "../contract/contract.usecase.js";
 import { ContractValidation } from "../contract/contract.validation.js";
-import { ClientContractUsecase } from "../client/client-contract.usecase.js";
+import { clientContractUsecase } from "../client/client-contract.usecase.js";
 import { ClientContractValidation } from "../client/client-contract.validation.js";
+import { contractRepository } from "../contract/contract.repo.js";
+import { leadUsecase } from "../../leads/lead/lead.usecase.js";
+import * as contractServices from "../services/contract-services.js";
+import * as clientContractServices from "../services/client-contract-services.js";
+import { buildAndUploadContractPdf } from "../services/generate-contract-pdf.js";
 
-const C = contractsMessagesCodes;
 const P = PERMISSIONS.CONTRACT;
 
 function makeReq(role, isSuperSales = false) {
@@ -34,39 +91,40 @@ function makeReq(role, isSuperSales = false) {
 //   - lead 100 → in READ + WRITE scope.
 //   - lead 200 → READable (access) but NOT writable (mutate).
 //   - anything else → out of scope: both denied.
-function makeLeads() {
-  return {
-    checkIfUserCanAccessLead: vi.fn(async ({ id }) => {
-      if (Number(id) === 100) return { id: 100 };
-      if (Number(id) === 200) return { id: 200 };
-      throw new AppError("LEAD_ACCESS_DENIED", 403);
-    }),
-    checkIfUserCanMutateLead: vi.fn(async ({ id }) => {
-      if (Number(id) === 100) return { id: 100 };
-      throw new AppError("LEAD_MUTATE_DENIED", 403);
-    }),
-  };
+function installLeadScope() {
+  leadUsecase.checkIfUserCanAccessLead.mockImplementation(async ({ id }) => {
+    if (Number(id) === 100) return { id: 100 };
+    if (Number(id) === 200) return { id: 200 };
+    throw new AppError("LEAD_ACCESS_DENIED", 403);
+  });
+  leadUsecase.checkIfUserCanMutateLead.mockImplementation(async ({ id }) => {
+    if (Number(id) === 100) return { id: 100 };
+    throw new AppError("LEAD_MUTATE_DENIED", 403);
+  });
 }
 
-// A repo whose contract/child rows all resolve to clientLeadId 100 (in-scope) unless the
-// id is 999 (missing → null).
-function makeRepo(clientLeadId = 100) {
-  const resolve = (idKey) =>
-    vi.fn(async (arg) => {
-      const id = arg[idKey];
-      if (Number(id) === 999) return null;
-      return { id: Number(id), contractId: 7, clientLeadId };
-    });
-  return {
-    getContractClientLeadId: vi.fn(async ({ contractId }) =>
-      Number(contractId) === 999 ? null : { id: Number(contractId), clientLeadId },
-    ),
-    getPaymentClientLeadId: resolve("paymentId"),
-    getStageClientLeadId: resolve("stageId"),
-    getDrawingClientLeadId: resolve("drawId"),
-    getSpecialItemClientLeadId: resolve("specialItemId"),
+// Contract/child rows all resolve to clientLeadId 100 (in-scope) unless the id is 999
+// (missing → null). Individual tests override to relocate a row to another lead.
+function installRepoScope(clientLeadId = 100) {
+  const resolve = (idKey) => async (arg) => {
+    const id = arg[idKey];
+    if (Number(id) === 999) return null;
+    return { id: Number(id), contractId: 7, clientLeadId };
   };
+  contractRepository.getContractClientLeadId.mockImplementation(async ({ contractId }) =>
+    Number(contractId) === 999 ? null : { id: Number(contractId), clientLeadId },
+  );
+  contractRepository.getPaymentClientLeadId.mockImplementation(resolve("paymentId"));
+  contractRepository.getStageClientLeadId.mockImplementation(resolve("stageId"));
+  contractRepository.getDrawingClientLeadId.mockImplementation(resolve("drawId"));
+  contractRepository.getSpecialItemClientLeadId.mockImplementation(resolve("specialItemId"));
 }
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  installLeadScope();
+  installRepoScope(100);
+});
 
 const AUTH = { id: 5, role: "STAFF" };
 
@@ -113,36 +171,29 @@ describe("contracts authed surface — role parity (legacy SHARED gate = all 9 r
 // ════════════════════════════════════════════════════════════════════════════
 describe("ContractUsecase object scope (the IDOR fix)", () => {
   it("listForLead: READ path uses access-scope, allows an in-scope lead", async () => {
-    const leads = makeLeads();
-    const legacy = { getLeadContractList: vi.fn().mockResolvedValue([{ id: 1 }]) };
-    const uc = new ContractUsecase(makeRepo(), leads, legacy);
-    const out = await uc.listForLead({ leadId: 100, authUser: AUTH });
+    contractServices.getLeadContractList.mockResolvedValue([{ id: 1 }]);
+    const out = await contractUsecase.listLeadContracts({ leadId: 100, authUser: AUTH });
     expect(out).toEqual([{ id: 1 }]);
-    expect(leads.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
-    expect(leads.checkIfUserCanMutateLead).not.toHaveBeenCalled();
+    expect(leadUsecase.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(leadUsecase.checkIfUserCanMutateLead).not.toHaveBeenCalled();
   });
 
   it("listForLead: DENIES an out-of-scope lead and never reads", async () => {
-    const legacy = { getLeadContractList: vi.fn() };
-    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.listForLead({ leadId: 999, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
-    expect(legacy.getLeadContractList).not.toHaveBeenCalled();
+    await expect(contractUsecase.listLeadContracts({ leadId: 999, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
+    expect(contractServices.getLeadContractList).not.toHaveBeenCalled();
   });
 
   it("create: WRITE uses mutate-scope on the body's clientLeadId; allows owner", async () => {
-    const leads = makeLeads();
-    const legacy = { createContract: vi.fn().mockResolvedValue({ id: 7 }) };
-    const uc = new ContractUsecase(makeRepo(), leads, legacy);
-    await uc.create({ payload: { clientLeadId: 100 }, authUser: AUTH });
-    expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
-    expect(legacy.createContract).toHaveBeenCalledWith({ payload: { clientLeadId: 100 } });
+    contractServices.createContract.mockResolvedValue({ id: 7 });
+    await contractUsecase.createContract({ payload: { clientLeadId: 100 }, authUser: AUTH });
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(contractServices.createContract).toHaveBeenCalledWith({ payload: { clientLeadId: 100 } });
   });
 
   it("create: records a CONTRACT_CREATED audit event once with the new contract id", async () => {
     recordAction.mockClear();
-    const legacy = { createContract: vi.fn().mockResolvedValue({ id: 7, clientLeadId: 100 }) };
-    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
-    await uc.create({ payload: { clientLeadId: 100 }, authUser: AUTH, auditCtx: {} });
+    contractServices.createContract.mockResolvedValue({ id: 7, clientLeadId: 100 });
+    await contractUsecase.createContract({ payload: { clientLeadId: 100 }, authUser: AUTH, auditCtx: {} });
     expect(recordAction).toHaveBeenCalledTimes(1);
     expect(recordAction).toHaveBeenCalledWith(
       {},
@@ -157,15 +208,14 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
   });
 
   it("updatePaymentStatus: records CONTRACT_PAYMENT_PAID only for a paid status", async () => {
-    const legacy = { updateContractPaymentStatus: vi.fn().mockResolvedValue(undefined) };
-    const uc = new ContractUsecase(makeRepo(100), makeLeads(), legacy);
+    contractServices.updateContractPaymentStatus.mockResolvedValue(undefined);
 
     recordAction.mockClear();
-    await uc.updatePaymentStatus({ paymentId: 42, status: "DUE", authUser: AUTH, auditCtx: {} });
+    await contractUsecase.updatePaymentStatus({ paymentId: 42, status: "DUE", authUser: AUTH, auditCtx: {} });
     expect(recordAction).not.toHaveBeenCalled();
 
     recordAction.mockClear();
-    await uc.updatePaymentStatus({ paymentId: 42, status: "RECEIVED", authUser: AUTH, auditCtx: {} });
+    await contractUsecase.updatePaymentStatus({ paymentId: 42, status: "RECEIVED", authUser: AUTH, auditCtx: {} });
     expect(recordAction).toHaveBeenCalledTimes(1);
     expect(recordAction).toHaveBeenCalledWith(
       {},
@@ -180,70 +230,54 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
   });
 
   it("create: DENIES a lead that is only READable (mutate-scope, not read-scope)", async () => {
-    const legacy = { createContract: vi.fn() };
-    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.create({ payload: { clientLeadId: 200 }, authUser: AUTH })).rejects.toMatchObject({
+    await expect(contractUsecase.createContract({ payload: { clientLeadId: 200 }, authUser: AUTH })).rejects.toMatchObject({
       statusCode: 403,
     });
-    expect(legacy.createContract).not.toHaveBeenCalled();
+    expect(contractServices.createContract).not.toHaveBeenCalled();
   });
 
   it("getById: resolves contract→lead and uses ACCESS scope (read)", async () => {
-    const leads = makeLeads();
-    const repo = makeRepo(100);
-    const legacy = { getContractDetailsById: vi.fn().mockResolvedValue({ id: 7 }) };
-    const uc = new ContractUsecase(repo, leads, legacy);
-    await uc.getById({ contractId: 7, authUser: AUTH });
-    expect(repo.getContractClientLeadId).toHaveBeenCalledWith({ contractId: 7 });
-    expect(leads.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
-    expect(legacy.getContractDetailsById).toHaveBeenCalledWith({ contractId: 7 });
+    contractServices.getContractDetailsById.mockResolvedValue({ id: 7 });
+    await contractUsecase.getContractById({ contractId: 7, authUser: AUTH });
+    expect(contractRepository.getContractClientLeadId).toHaveBeenCalledWith({ contractId: 7 });
+    expect(leadUsecase.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(contractServices.getContractDetailsById).toHaveBeenCalledWith({ contractId: 7 });
   });
 
   it("getById: 404s a missing/forged contract id before reading", async () => {
-    const legacy = { getContractDetailsById: vi.fn() };
-    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.getById({ contractId: 999, authUser: AUTH })).rejects.toMatchObject({
+    await expect(contractUsecase.getContractById({ contractId: 999, authUser: AUTH })).rejects.toMatchObject({
       statusCode: 404,
-      message: C.CONTRACT_NOT_FOUND,
+      message: contractsMessagesCodes.CONTRACT_NOT_FOUND,
     });
-    expect(legacy.getContractDetailsById).not.toHaveBeenCalled();
+    expect(contractServices.getContractDetailsById).not.toHaveBeenCalled();
   });
 
   it("cancel: resolves contract→lead and uses MUTATE scope; DENIES read-only-scope lead", async () => {
-    const leads = makeLeads();
-    const repo = makeRepo(200); // contract belongs to lead 200 (read-only scope)
-    const legacy = { markContractAsCancelled: vi.fn() };
-    const uc = new ContractUsecase(repo, leads, legacy);
-    await expect(uc.cancel({ contractId: 7, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
-    expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 200, authUser: AUTH });
-    expect(legacy.markContractAsCancelled).not.toHaveBeenCalled();
+    installRepoScope(200); // contract belongs to lead 200 (read-only scope)
+    await expect(contractUsecase.cancelContract({ contractId: 7, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 200, authUser: AUTH });
+    expect(contractServices.markContractAsCancelled).not.toHaveBeenCalled();
   });
 
   it("updatePayment: resolves payment→contract→lead (child-id resolution) and MUTATE-scopes", async () => {
-    const leads = makeLeads();
-    const repo = makeRepo(100);
-    const legacy = { updateContractPayment: vi.fn().mockResolvedValue(true) };
-    const uc = new ContractUsecase(repo, leads, legacy);
-    await uc.updatePayment({ paymentId: 42, newPayment: { amount: 10 }, authUser: AUTH });
-    expect(repo.getPaymentClientLeadId).toHaveBeenCalledWith({ paymentId: 42 });
-    expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
-    expect(legacy.updateContractPayment).toHaveBeenCalledWith({ paymentId: 42, newPayment: { amount: 10 } });
+    contractServices.updateContractPayment.mockResolvedValue(true);
+    await contractUsecase.updatePayment({ paymentId: 42, newPayment: { amount: 10 }, authUser: AUTH });
+    expect(contractRepository.getPaymentClientLeadId).toHaveBeenCalledWith({ paymentId: 42 });
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(contractServices.updateContractPayment).toHaveBeenCalledWith({ paymentId: 42, newPayment: { amount: 10 } });
   });
 
   it("deleteStage: 404s a forged stage id before the legacy delete runs", async () => {
-    const legacy = { deleteContractStage: vi.fn() };
-    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
-    await expect(uc.deleteStage({ contractId: 7, stageId: 999, authUser: AUTH })).rejects.toMatchObject({
+    await expect(contractUsecase.deleteStage({ contractId: 7, stageId: 999, authUser: AUTH })).rejects.toMatchObject({
       statusCode: 404,
     });
-    expect(legacy.deleteContractStage).not.toHaveBeenCalled();
+    expect(contractServices.deleteContractStage).not.toHaveBeenCalled();
   });
 
   it("paymentsGrouped: passes req.auth as `user` (frozen-service role-scope preserved)", async () => {
-    const legacy = { getContractPaymentsGroupedService: vi.fn().mockResolvedValue({ items: [], total: 0 }) };
-    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
-    await uc.paymentsGrouped({ page: 2, limit: 5, status: "DUE", authUser: AUTH });
-    expect(legacy.getContractPaymentsGroupedService).toHaveBeenCalledWith({
+    contractServices.getContractPaymentsGroupedService.mockResolvedValue({ items: [], total: 0 });
+    await contractUsecase.getGroupedPayments({ page: 2, limit: 5, status: "DUE", authUser: AUTH });
+    expect(contractServices.getContractPaymentsGroupedService).toHaveBeenCalledWith({
       page: 2,
       limit: 5,
       status: "DUE",
@@ -257,44 +291,39 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("ClientContractUsecase public signing — token is authoritative", () => {
   it("changeStatus keys the session by the TOKEN only (no client id override)", async () => {
-    const changeContractSessionStatus = vi.fn().mockResolvedValue({ id: 1 });
-    const uc = new ClientContractUsecase({ changeContractSessionStatus });
-    await uc.changeStatus({ token: "tok-abc", sessionStatus: "VIEWING" });
-    expect(changeContractSessionStatus).toHaveBeenCalledWith({ token: "tok-abc", sessionStatus: "VIEWING" });
+    clientContractServices.changeContractSessionStatus.mockResolvedValue({ id: 1 });
+    await clientContractUsecase.changeStatus({ token: "tok-abc", sessionStatus: "VIEWING" });
+    expect(clientContractServices.changeContractSessionStatus).toHaveBeenCalledWith({ token: "tok-abc", sessionStatus: "VIEWING" });
     // the legacy `id` selector is NOT forwarded — no key but token.
-    const arg = changeContractSessionStatus.mock.calls[0][0];
+    const arg = clientContractServices.changeContractSessionStatus.mock.calls[0][0];
     expect(arg).not.toHaveProperty("id");
   });
 
   it("changeStatus throws CONTRACT_SESSION_INVALID when no token", async () => {
-    const uc = new ClientContractUsecase({ changeContractSessionStatus: vi.fn() });
-    await expect(uc.changeStatus({ token: "", sessionStatus: "VIEWING" })).rejects.toMatchObject({
+    await expect(clientContractUsecase.changeStatus({ token: "", sessionStatus: "VIEWING" })).rejects.toMatchObject({
       statusCode: 400,
-      message: C.CONTRACT_SESSION_INVALID,
+      message: contractsMessagesCodes.CONTRACT_SESSION_INVALID,
     });
   });
 
   it("generatePdf operates ONLY on the token's session (SIGNING → 🔒 build → REGISTERED)", async () => {
-    const changeContractSessionStatus = vi.fn().mockResolvedValue({});
-    const buildAndUploadContractPdf = vi.fn().mockResolvedValue({});
-    const uc = new ClientContractUsecase({ changeContractSessionStatus, buildAndUploadContractPdf });
-    await uc.generatePdf({ token: "tok-xyz", signatureUrl: "s.png", lng: "ar" });
+    clientContractServices.changeContractSessionStatus.mockResolvedValue({});
+    buildAndUploadContractPdf.mockResolvedValue({});
+    await clientContractUsecase.generatePdf({ token: "tok-xyz", signatureUrl: "s.png", lng: "ar" });
 
     // every session mutation is keyed by the SAME token; the PDF builder gets that token.
-    expect(changeContractSessionStatus).toHaveBeenCalledTimes(2);
-    expect(changeContractSessionStatus.mock.calls[0][0]).toMatchObject({ token: "tok-xyz", sessionStatus: "SIGNING" });
-    expect(changeContractSessionStatus.mock.calls[1][0]).toMatchObject({ token: "tok-xyz", sessionStatus: "REGISTERED" });
+    expect(clientContractServices.changeContractSessionStatus).toHaveBeenCalledTimes(2);
+    expect(clientContractServices.changeContractSessionStatus.mock.calls[0][0]).toMatchObject({ token: "tok-xyz", sessionStatus: "SIGNING" });
+    expect(clientContractServices.changeContractSessionStatus.mock.calls[1][0]).toMatchObject({ token: "tok-xyz", sessionStatus: "REGISTERED" });
     expect(buildAndUploadContractPdf).toHaveBeenCalledWith({ token: "tok-xyz", signatureUrl: "s.png", lng: "ar" });
   });
 
   it("generatePdf maps a frozen-builder failure to a language-neutral code (no prose)", async () => {
-    const uc = new ClientContractUsecase({
-      changeContractSessionStatus: vi.fn().mockResolvedValue({}),
-      buildAndUploadContractPdf: vi.fn().mockRejectedValue(new Error("boom")),
-    });
-    await expect(uc.generatePdf({ token: "t", signatureUrl: "s", lng: "ar" })).rejects.toMatchObject({
+    clientContractServices.changeContractSessionStatus.mockResolvedValue({});
+    buildAndUploadContractPdf.mockRejectedValue(new Error("boom"));
+    await expect(clientContractUsecase.generatePdf({ token: "t", signatureUrl: "s", lng: "ar" })).rejects.toMatchObject({
       statusCode: 500,
-      message: C.CONTRACT_PDF_GENERATION_FAILED,
+      message: contractsMessagesCodes.CONTRACT_PDF_GENERATION_FAILED,
     });
   });
 });

@@ -27,7 +27,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { imageSessionController } from "./image-session.controller.js";
-import { ImageSessionValidation as V } from "./image-session.validation.js";
+import { ImageSessionValidation } from "./image-session.validation.js";
 
 const P = PERMISSIONS.IMAGE_SESSION;
 const router = Router();
@@ -38,7 +38,7 @@ router.use(AuthMiddleware.requireAuth);
 router.get(
   "/ids",
   AuthMiddleware.requirePermissions([P.SESSION_VIEW]),
-  validate(V.modelIdsQuery, "query"),
+  validate(ImageSessionValidation.modelIdsQuery, "query"),
   asyncHandler(imageSessionController.modelIds),
 );
 
@@ -46,14 +46,14 @@ router.get(
 router.get(
   "/:clientLeadId/sessions",
   AuthMiddleware.requirePermissions([P.SESSION_VIEW]),
-  validate(V.clientLeadIdParam, "params"),
+  validate(ImageSessionValidation.clientLeadIdParam, "params"),
   asyncHandler(imageSessionController.listForLead),
 );
 router.post(
   "/:clientLeadId/sessions",
   AuthMiddleware.requirePermissions([P.SESSION_MANAGE]),
-  validate(V.clientLeadIdParam, "params"),
-  validate(V.createSession),
+  validate(ImageSessionValidation.clientLeadIdParam, "params"),
+  validate(ImageSessionValidation.createSession),
   asyncHandler(imageSessionController.createForLead),
 );
 
@@ -61,20 +61,20 @@ router.post(
 router.put(
   "/:clientLeadId/sessions/:sessionId/re-generate",
   AuthMiddleware.requirePermissions([P.SESSION_MANAGE]),
-  validate(V.sessionParams, "params"),
+  validate(ImageSessionValidation.sessionParams, "params"),
   asyncHandler(imageSessionController.regenerateToken),
 );
 router.put(
   "/:clientLeadId/sessions/:sessionId",
   AuthMiddleware.requirePermissions([P.SESSION_MANAGE]),
-  validate(V.sessionParams, "params"),
-  validate(V.editSession),
+  validate(ImageSessionValidation.sessionParams, "params"),
+  validate(ImageSessionValidation.editSession),
   asyncHandler(imageSessionController.editFields),
 );
 router.delete(
   "/:clientLeadId/sessions/:sessionId",
   AuthMiddleware.requirePermissions([P.SESSION_MANAGE]),
-  validate(V.sessionParams, "params"),
+  validate(ImageSessionValidation.sessionParams, "params"),
   asyncHandler(imageSessionController.deleteSession),
 );
 

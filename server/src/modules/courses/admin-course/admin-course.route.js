@@ -18,7 +18,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { adminCourseController } from "./admin-course.controller.js";
-import { AdminCourseValidation as V } from "./admin-course.validation.js";
+import { AdminCourseValidation } from "./admin-course.validation.js";
 
 const P = PERMISSIONS.COURSE;
 const ctrl = adminCourseController;
@@ -30,13 +30,13 @@ adminCourseRouter.use(AuthMiddleware.requireAuth);
 adminCourseRouter.get(
   "/",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.listQuery, "query"),
+  validate(AdminCourseValidation.listQuery, "query"),
   asyncHandler(ctrl.listCourses),
 );
 adminCourseRouter.post(
   "/",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.createCourse),
+  validate(AdminCourseValidation.createCourse),
   asyncHandler(ctrl.createCourse),
 );
 adminCourseRouter.get(
@@ -49,46 +49,46 @@ adminCourseRouter.get(
 adminCourseRouter.get(
   "/tests",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.testOwnerQuery, "query"),
+  validate(AdminCourseValidation.testOwnerQuery, "query"),
   asyncHandler(ctrl.getTests),
 );
 adminCourseRouter.get(
   "/tests/attempts",
   AuthMiddleware.requirePermissions([P.ATTEMPT_MANAGE]),
-  validate(V.attemptsSummaryQuery, "query"),
+  validate(AdminCourseValidation.attemptsSummaryQuery, "query"),
   asyncHandler(ctrl.getAttemptsSummary),
 );
 adminCourseRouter.post(
   "/tests",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.testOwnerQuery, "query"),
-  validate(V.createTestBody),
+  validate(AdminCourseValidation.testOwnerQuery, "query"),
+  validate(AdminCourseValidation.createTestBody),
   asyncHandler(ctrl.createTest),
 );
 adminCourseRouter.get(
   "/tests/:testId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.testParams, "params"),
+  validate(AdminCourseValidation.testParams, "params"),
   asyncHandler(ctrl.getTestData),
 );
 adminCourseRouter.put(
   "/tests/:testId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.editTestBody),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.editTestBody),
   asyncHandler(ctrl.editTest),
 );
 adminCourseRouter.delete(
   "/tests/:testId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.testParams, "params"),
+  validate(AdminCourseValidation.testParams, "params"),
   asyncHandler(ctrl.deleteTest),
 );
 adminCourseRouter.get(
   "/tests/:testId/attempts",
   AuthMiddleware.requirePermissions([P.ATTEMPT_MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.userIdQuery, "query"),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.userIdQuery, "query"),
   asyncHandler(ctrl.getTestAttemptsSummary),
 );
 // Legacy `/tests/:testId/attampts/user?userId` (note legacy mis-spelling preserved)
@@ -96,62 +96,62 @@ adminCourseRouter.get(
 adminCourseRouter.get(
   "/tests/:testId/attampts/user",
   AuthMiddleware.requirePermissions([P.ATTEMPT_MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.requiredUserIdQuery, "query"),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.requiredUserIdQuery, "query"),
   asyncHandler(ctrl.getUserAttemptsForAdmin),
 );
 adminCourseRouter.post(
   "/tests/:testId/attempts/increase",
   AuthMiddleware.requirePermissions([P.ATTEMPT_MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.requiredUserIdQuery, "query"),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.requiredUserIdQuery, "query"),
   asyncHandler(ctrl.increaseAttempt),
 );
 adminCourseRouter.post(
   "/tests/:testId/attempts/decrease",
   AuthMiddleware.requirePermissions([P.ATTEMPT_MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.requiredUserIdQuery, "query"),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.requiredUserIdQuery, "query"),
   asyncHandler(ctrl.decreaseAttempt),
 );
 adminCourseRouter.post(
   "/tests/:testId/attempts/:attemptId/questions/:questionId/approve",
   AuthMiddleware.requirePermissions([P.ATTEMPT_MANAGE]),
-  validate(V.attemptApproveParams, "params"),
-  validate(V.approveAnswerBody),
+  validate(AdminCourseValidation.attemptApproveParams, "params"),
+  validate(AdminCourseValidation.approveAnswerBody),
   asyncHandler(ctrl.approveAnswer),
 );
 adminCourseRouter.post(
   "/tests/:testId/test-questions",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.createQuestionBody),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.createQuestionBody),
   asyncHandler(ctrl.createQuestion),
 );
 adminCourseRouter.post(
   "/tests/:testId/test-questions/re-order",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.testParams, "params"),
-  validate(V.reorderQuestionsBody),
+  validate(AdminCourseValidation.testParams, "params"),
+  validate(AdminCourseValidation.reorderQuestionsBody),
   asyncHandler(ctrl.reorderQuestions),
 );
 adminCourseRouter.get(
   "/tests/:testId/test-questions/:questionId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.questionParams, "params"),
+  validate(AdminCourseValidation.questionParams, "params"),
   asyncHandler(ctrl.getQuestionData),
 );
 adminCourseRouter.put(
   "/tests/:testId/test-questions/:questionId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.questionParams, "params"),
-  validate(V.editQuestionBody),
+  validate(AdminCourseValidation.questionParams, "params"),
+  validate(AdminCourseValidation.editQuestionBody),
   asyncHandler(ctrl.editQuestion),
 );
 adminCourseRouter.delete(
   "/tests/:testId/test-questions/:questionId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.questionParams, "params"),
+  validate(AdminCourseValidation.questionParams, "params"),
   asyncHandler(ctrl.deleteQuestion),
 );
 
@@ -159,8 +159,8 @@ adminCourseRouter.delete(
 adminCourseRouter.put(
   "/:courseId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.courseParams, "params"),
-  validate(V.editCourse),
+  validate(AdminCourseValidation.courseParams, "params"),
+  validate(AdminCourseValidation.editCourse),
   asyncHandler(ctrl.editCourse),
 );
 
@@ -168,40 +168,40 @@ adminCourseRouter.put(
 adminCourseRouter.get(
   "/:courseId/lessons",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.courseParams, "params"),
+  validate(AdminCourseValidation.courseParams, "params"),
   asyncHandler(ctrl.getLessons),
 );
 adminCourseRouter.post(
   "/:courseId/lessons",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.courseParams, "params"),
-  validate(V.lessonBody),
+  validate(AdminCourseValidation.courseParams, "params"),
+  validate(AdminCourseValidation.lessonBody),
   asyncHandler(ctrl.createLesson),
 );
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.getLessonById),
 );
 adminCourseRouter.put(
   "/:courseId/lessons/:lessonId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.lessonParams, "params"),
-  validate(V.lessonBody),
+  validate(AdminCourseValidation.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonBody),
   asyncHandler(ctrl.editLesson),
 );
 adminCourseRouter.post(
   "/:courseId/lessons/:lessonId/home-works/toggle",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.lessonParams, "params"),
-  validate(V.toggleHomework),
+  validate(AdminCourseValidation.lessonParams, "params"),
+  validate(AdminCourseValidation.toggleHomework),
   asyncHandler(ctrl.toggleHomework),
 );
 adminCourseRouter.delete(
   "/:courseId/lessons/:lessonId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.deleteLesson),
 );
 
@@ -209,27 +209,27 @@ adminCourseRouter.delete(
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/videos",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.getVideos),
 );
 adminCourseRouter.post(
   "/:courseId/lessons/:lessonId/videos",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.lessonParams, "params"),
-  validate(V.videoBody),
+  validate(AdminCourseValidation.lessonParams, "params"),
+  validate(AdminCourseValidation.videoBody),
   asyncHandler(ctrl.createVideo),
 );
 adminCourseRouter.put(
   "/:courseId/lessons/:lessonId/videos/:videoId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.videoParams, "params"),
-  validate(V.videoBody),
+  validate(AdminCourseValidation.videoParams, "params"),
+  validate(AdminCourseValidation.videoBody),
   asyncHandler(ctrl.editVideo),
 );
 adminCourseRouter.delete(
   "/:courseId/lessons/:lessonId/videos/:videoId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.videoParams, "params"),
+  validate(AdminCourseValidation.videoParams, "params"),
   asyncHandler(ctrl.deleteVideo),
 );
 
@@ -237,20 +237,20 @@ adminCourseRouter.delete(
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/videos/:videoId/pdfs",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.videoPdfParams, "params"),
+  validate(AdminCourseValidation.videoPdfParams, "params"),
   asyncHandler(ctrl.getVideoPdfs),
 );
 adminCourseRouter.post(
   "/:courseId/lessons/:lessonId/videos/:videoId/pdfs",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.videoPdfParams, "params"),
-  validate(V.videoPdfBody),
+  validate(AdminCourseValidation.videoPdfParams, "params"),
+  validate(AdminCourseValidation.videoPdfBody),
   asyncHandler(ctrl.createVideoPdf),
 );
 adminCourseRouter.delete(
   "/:courseId/lessons/:lessonId/videos/:videoId/pdfs/:pdfId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.videoPdfDeleteParams, "params"),
+  validate(AdminCourseValidation.videoPdfDeleteParams, "params"),
   asyncHandler(ctrl.deleteVideoPdf),
 );
 
@@ -258,27 +258,27 @@ adminCourseRouter.delete(
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/pdfs",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.getPdfs),
 );
 adminCourseRouter.post(
   "/:courseId/lessons/:lessonId/pdfs",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.lessonParams, "params"),
-  validate(V.pdfBody),
+  validate(AdminCourseValidation.lessonParams, "params"),
+  validate(AdminCourseValidation.pdfBody),
   asyncHandler(ctrl.createPdf),
 );
 adminCourseRouter.put(
   "/:courseId/lessons/:lessonId/pdfs/:pdfId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.pdfParams, "params"),
-  validate(V.pdfBody),
+  validate(AdminCourseValidation.pdfParams, "params"),
+  validate(AdminCourseValidation.pdfBody),
   asyncHandler(ctrl.editPdf),
 );
 adminCourseRouter.delete(
   "/:courseId/lessons/:lessonId/pdfs/:pdfId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.pdfParams, "params"),
+  validate(AdminCourseValidation.pdfParams, "params"),
   asyncHandler(ctrl.deletePdf),
 );
 
@@ -286,27 +286,27 @@ adminCourseRouter.delete(
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/links",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.getLinks),
 );
 adminCourseRouter.post(
   "/:courseId/lessons/:lessonId/links",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.lessonParams, "params"),
-  validate(V.linkBody),
+  validate(AdminCourseValidation.lessonParams, "params"),
+  validate(AdminCourseValidation.linkBody),
   asyncHandler(ctrl.createLink),
 );
 adminCourseRouter.put(
   "/:courseId/lessons/:lessonId/links/:linkId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.linkParams, "params"),
-  validate(V.linkBody),
+  validate(AdminCourseValidation.linkParams, "params"),
+  validate(AdminCourseValidation.linkBody),
   asyncHandler(ctrl.editLink),
 );
 adminCourseRouter.delete(
   "/:courseId/lessons/:lessonId/links/:linkId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
-  validate(V.linkParams, "params"),
+  validate(AdminCourseValidation.linkParams, "params"),
   asyncHandler(ctrl.deleteLink),
 );
 
@@ -314,32 +314,32 @@ adminCourseRouter.delete(
 adminCourseRouter.get(
   "/:courseId/allowed-roles",
   AuthMiddleware.requirePermissions([P.ACCESS_MANAGE]),
-  validate(V.courseParams, "params"),
+  validate(AdminCourseValidation.courseParams, "params"),
   asyncHandler(ctrl.getAllowedRoles),
 );
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/allowed-users",
   AuthMiddleware.requirePermissions([P.ACCESS_MANAGE]),
-  validate(V.accessParams, "params"),
+  validate(AdminCourseValidation.accessParams, "params"),
   asyncHandler(ctrl.getAllowedUsers),
 );
 adminCourseRouter.post(
   "/:courseId/lessons/:lessonId/allowed-users",
   AuthMiddleware.requirePermissions([P.ACCESS_MANAGE]),
-  validate(V.accessParams, "params"),
-  validate(V.grantAccessBody),
+  validate(AdminCourseValidation.accessParams, "params"),
+  validate(AdminCourseValidation.grantAccessBody),
   asyncHandler(ctrl.grantAccess),
 );
 adminCourseRouter.delete(
   "/:courseId/lessons/:lessonId/allowed-users/:accessId",
   AuthMiddleware.requirePermissions([P.ACCESS_MANAGE]),
-  validate(V.accessDeleteParams, "params"),
+  validate(AdminCourseValidation.accessDeleteParams, "params"),
   asyncHandler(ctrl.deleteAccess),
 );
 adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/home-works",
   AuthMiddleware.requirePermissions([P.VIEW]),
-  validate(V.lessonParams, "params"),
+  validate(AdminCourseValidation.lessonParams, "params"),
   asyncHandler(ctrl.getHomeworks),
 );
 

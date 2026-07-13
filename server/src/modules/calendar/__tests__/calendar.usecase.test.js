@@ -1,4 +1,79 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// ── Module mocks (hoisted above imports) ──────────────────────────────────────────────
+// After DI removal the usecases call their repos / infra side-effects / the month-view
+// function directly (no constructor injection), so the test seams move to vi.mock(). Factories
+// must not reference outer vars — declare inline vi.fn()s and configure them per-test.
+vi.mock("../availability/availability.repo.js", () => ({
+  availabilityRepository: {
+    findAvailableDays: vi.fn(),
+    findDayByUserDate: vi.fn(),
+    findDayByUserDateRaw: vi.fn(),
+    findDayByIdWithSlots: vi.fn(),
+    createDay: vi.fn(),
+    createSlots: vi.fn(),
+    deleteSlotsByDayId: vi.fn(),
+    deleteDayById: vi.fn(),
+    findDayById: vi.fn(),
+    findFirstDayByDateRange: vi.fn(),
+    findSlots: vi.fn(),
+    findSlotsForDayOrdered: vi.fn(),
+    findSlotById: vi.fn(),
+    deleteSlotByIdReturning: vi.fn(),
+    findFirstBookedSlot: vi.fn(),
+    deleteDayWithSlots: vi.fn(),
+    deleteSlot: vi.fn(),
+    findDayDate: vi.fn(),
+    findOverlappingSlots: vi.fn(),
+    createCustomSlot: vi.fn(),
+    findMonthMeetings: vi.fn(),
+    findMonthCalls: vi.fn(),
+    findDayMeetings: vi.fn(),
+    findDayCalls: vi.fn(),
+  },
+}));
+
+// The month-view function is a SEPARATE module, so the availability usecase's delegation to it
+// stays mockable exactly as before (the old `{ getCalendarDataForMonth }` injection).
+vi.mock("../availability/month-view.usecase.js", () => ({
+  getCalendarDataForMonth: vi.fn(),
+}));
+
+vi.mock("../client/client-calendar.repo.js", () => ({
+  clientCalendarRepository: {
+    findSlotById: vi.fn(),
+    findReminderByToken: vi.fn(),
+    updateMeetingReminderTime: vi.fn(),
+    findReminderForBooking: vi.fn(),
+    findSlotForAssign: vi.fn(),
+    assignSlotToReminder: vi.fn(),
+    markSlotBooked: vi.fn(),
+  },
+}));
+
+vi.mock("../../../infra/notifications/index.js", () => ({
+  newMeetingNotification: vi.fn(),
+}));
+
+vi.mock("../../../infra/mail/email-templates.js", () => ({
+  sendReminderCreatedToClient: vi.fn(),
+}));
+
+// Google infra client — provides both the OAuth adapters the google usecase lazily imports
+// AND createCalendarEvent (used by the client booking side-effect).
+vi.mock("../../../infra/google/google-calendar.client.js", () => ({
+  getAuthUrl: vi.fn(),
+  handleOAuthCallback: vi.fn(),
+  disconnectGoogleCalendar: vi.fn(),
+  isGoogleCalendarConnected: vi.fn(),
+  createCalendarEvent: vi.fn(),
+}));
+
+vi.mock("../google/google.repo.js", () => ({
+  googleCalendarRepository: {
+    findConnectionStatus: vi.fn(),
+  },
+}));
 
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -10,14 +85,26 @@ import {
   calendarMessagesCodes,
 } from "@dms/shared";
 
-import { AvailabilityUsecase } from "../availability/availability.usecase.js";
+import { availabilityUsecase } from "../availability/availability.usecase.js";
+import { availabilityRepository } from "../availability/availability.repo.js";
+import { getCalendarDataForMonth } from "../availability/month-view.usecase.js";
 import { AvailabilityValidation } from "../availability/availability.validation.js";
-import { GoogleCalendarUsecase } from "../google/google.usecase.js";
-import { ClientCalendarUsecase } from "../client/client-calendar.usecase.js";
+import { googleCalendarUsecase } from "../google/google.usecase.js";
+import { googleCalendarRepository } from "../google/google.repo.js";
+import {
+  getAuthUrl,
+  isGoogleCalendarConnected,
+} from "../../../infra/google/google-calendar.client.js";
+import { clientCalendarUsecase } from "../client/client-calendar.usecase.js";
+import { clientCalendarRepository } from "../client/client-calendar.repo.js";
+import { newMeetingNotification } from "../../../infra/notifications/index.js";
 import { ClientCalendarValidation } from "../client/client-calendar.validation.js";
 
-const C = calendarMessagesCodes;
 const P = PERMISSIONS.CALENDAR;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 function makeReq(role, isSuperSales = false) {
   const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
@@ -138,30 +225,33 @@ describe("availability body validation", () => {
 
 // ════════════════════════════════════════════════════════════════════════════
 //  AVAILABILITY USECASE — adminId default + month-view role filtering parity
+//  (DI removed: the usecase now drives the real *Impl functions, so the assertions
+//  observe the same behavior at the mocked repo / month-view boundary.)
 // ════════════════════════════════════════════════════════════════════════════
 describe("AvailabilityUsecase delegation + legacy parity", () => {
   it("getAvailableDays defaults adminId to the caller and forwards type/timezone defaults", async () => {
-    const getAvailableDays = vi.fn().mockResolvedValue({ weeks: [] });
-    const uc = new AvailabilityUsecase({}, { getAvailableDays });
-    await uc.getAvailableDays({ query: { month: "2026-06" }, authUser: { id: 42, role: "STAFF" } });
-    const arg = getAvailableDays.mock.calls[0][0];
-    expect(arg.adminId).toBe(42);
-    expect(arg.userId).toBe(42);
-    expect(arg.type).toBe("ADMIN");
-    expect(arg.timezone).toBe("Asia/Dubai");
+    availabilityRepository.findAvailableDays.mockResolvedValue([]);
+    await availabilityUsecase.getAvailableDays({ query: { month: "2026-06" }, authUser: { id: 42, role: "STAFF" } });
+    const where = availabilityRepository.findAvailableDays.mock.calls[0][0];
+    // adminId defaulted to the caller (42) → reached the day query as userId.
+    expect(where.userId).toBe(42);
+    // type "ADMIN" (default, not CLIENT) → no future-unbooked slot filter is applied.
+    expect(where.slots).toBeUndefined();
   });
 
   it("getAvailableDays keeps an explicit adminId from the query", async () => {
-    const getAvailableDays = vi.fn().mockResolvedValue({});
-    const uc = new AvailabilityUsecase({}, { getAvailableDays });
-    await uc.getAvailableDays({ query: { month: "2026-06", adminId: "9" }, authUser: { id: 42, role: "STAFF" } });
-    expect(getAvailableDays.mock.calls[0][0].adminId).toBe("9");
+    availabilityRepository.findAvailableDays.mockResolvedValue([]);
+    await availabilityUsecase.getAvailableDays({
+      query: { month: "2026-06", adminId: "9" },
+      authUser: { id: 42, role: "STAFF" },
+    });
+    // the explicit adminId ("9") wins over the caller id (42).
+    expect(availabilityRepository.findAvailableDays.mock.calls[0][0].userId).toBe(9);
   });
 
   it("month-view: a non-admin sees ONLY their own userId (legacy role filter preserved)", async () => {
-    const getCalendarDataForMonth = vi.fn().mockResolvedValue({});
-    const uc = new AvailabilityUsecase({}, { getCalendarDataForMonth });
-    await uc.getCalendarMonth({
+    getCalendarDataForMonth.mockResolvedValue({});
+    await availabilityUsecase.getCalendarMonth({
       query: { year: "2026", month: "6" },
       authUser: { id: 7, role: "STAFF", isSuperSales: false },
     });
@@ -169,9 +259,8 @@ describe("AvailabilityUsecase delegation + legacy parity", () => {
   });
 
   it("month-view: an ADMIN is NOT userId-filtered (sees all)", async () => {
-    const getCalendarDataForMonth = vi.fn().mockResolvedValue({});
-    const uc = new AvailabilityUsecase({}, { getCalendarDataForMonth });
-    await uc.getCalendarMonth({
+    getCalendarDataForMonth.mockResolvedValue({});
+    await availabilityUsecase.getCalendarMonth({
       query: { year: "2026", month: "6" },
       authUser: { id: 1, role: "ADMIN", isSuperSales: false },
     });
@@ -179,25 +268,23 @@ describe("AvailabilityUsecase delegation + legacy parity", () => {
   });
 
   it("createOrUpdateAvailableDay takes userId from the session, never the body", async () => {
-    const createOrUpdateAvailableDay = vi.fn().mockResolvedValue({ id: 5 });
-    const uc = new AvailabilityUsecase({}, { createOrUpdateAvailableDay });
-    await uc.createOrUpdateAvailableDay({
+    availabilityRepository.findDayByUserDate.mockResolvedValue(null);
+    availabilityRepository.createDay.mockResolvedValue({ id: 1 });
+    availabilityRepository.createSlots.mockResolvedValue(undefined);
+    await availabilityUsecase.createOrUpdateAvailableDay({
       body: { date: "2026-06-10", fromHour: "09:00", toHour: "17:00", duration: 30, breakMinutes: 5 },
       timezone: "Asia/Dubai",
       authUser: { id: 99 },
     });
-    const arg = createOrUpdateAvailableDay.mock.calls[0][0];
-    expect(arg.userId).toBe(99);
-    expect(arg.fromTime).toBe("09:00");
-    expect(arg.toTime).toBe("17:00");
-    expect(arg.timeZone).toBe("Asia/Dubai");
+    // userId comes from the session (99) at both the existence check and the create.
+    expect(availabilityRepository.findDayByUserDate.mock.calls[0][0].userId).toBe(99);
+    expect(availabilityRepository.createDay.mock.calls[0][0].userId).toBe(99);
   });
 
   it("deleteDay delegates to the repo (inline Prisma moved out of the route)", async () => {
-    const deleteDayWithSlots = vi.fn().mockResolvedValue(true);
-    const uc = new AvailabilityUsecase({ deleteDayWithSlots }, {});
-    await uc.deleteDay({ dayId: "3" });
-    expect(deleteDayWithSlots).toHaveBeenCalledWith({ dayId: "3" });
+    availabilityRepository.deleteDayWithSlots.mockResolvedValue(true);
+    await availabilityUsecase.deleteDay({ dayId: "3" });
+    expect(availabilityRepository.deleteDayWithSlots).toHaveBeenCalledWith({ dayId: "3" });
   });
 });
 
@@ -206,38 +293,31 @@ describe("AvailabilityUsecase delegation + legacy parity", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("GoogleCalendarUsecase", () => {
   it("connect throws GOOGLE_ALREADY_CONNECTED (400) when already connected", async () => {
-    const uc = new GoogleCalendarUsecase(
-      {},
-      { isGoogleCalendarConnected: vi.fn().mockResolvedValue(true), getAuthUrl: vi.fn() },
-    );
-    await expect(uc.connect({ authUser: { id: 1 } })).rejects.toMatchObject({
+    isGoogleCalendarConnected.mockResolvedValue(true);
+    await expect(googleCalendarUsecase.connect({ authUser: { id: 1 } })).rejects.toMatchObject({
       statusCode: 400,
-      message: C.GOOGLE_ALREADY_CONNECTED,
+      message: calendarMessagesCodes.GOOGLE_ALREADY_CONNECTED,
     });
   });
 
   it("connect returns the auth URL for the CALLER's id when not connected", async () => {
-    const getAuthUrl = vi.fn().mockResolvedValue("https://accounts.google.com/o/oauth2/...");
-    const uc = new GoogleCalendarUsecase(
-      {},
-      { isGoogleCalendarConnected: vi.fn().mockResolvedValue(false), getAuthUrl },
-    );
-    const res = await uc.connect({ authUser: { id: 55 } });
+    isGoogleCalendarConnected.mockResolvedValue(false);
+    getAuthUrl.mockResolvedValue("https://accounts.google.com/o/oauth2/...");
+    const res = await googleCalendarUsecase.connect({ authUser: { id: 55 } });
     expect(getAuthUrl).toHaveBeenCalledWith(55);
     expect(res).toEqual({ isConnected: false, authUrl: "https://accounts.google.com/o/oauth2/..." });
   });
 
   it("status exposes ONLY connection metadata, never tokens", async () => {
-    const findConnectionStatus = vi.fn().mockResolvedValue({
+    googleCalendarRepository.findConnectionStatus.mockResolvedValue({
       // Real schema fields — there is NO googleCalendarConnected column. `connected` is
       // derived from the presence of a stored refresh token, which must NOT leak out.
       googleRefreshToken: "1//refresh-secret",
       googleCalendarId: "primary@x",
       googleTokenExpiresAt: new Date(Date.now() + 3600_000),
     });
-    const uc = new GoogleCalendarUsecase({ findConnectionStatus }, {});
-    const res = await uc.status({ authUser: { id: 8 } });
-    expect(findConnectionStatus).toHaveBeenCalledWith({ userId: 8 });
+    const res = await googleCalendarUsecase.getGoogleStatus({ authUser: { id: 8 } });
+    expect(googleCalendarRepository.findConnectionStatus).toHaveBeenCalledWith({ userId: 8 });
     expect(res).toEqual({ connected: true, calendarId: "primary@x", tokenExpired: false });
     // No secret VALUES leak: the response carries no access/refresh-token fields.
     expect(res).not.toHaveProperty("googleAccessToken");
@@ -251,22 +331,35 @@ describe("GoogleCalendarUsecase", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("ClientCalendarUsecase (public, token-based)", () => {
   it("book ALWAYS derives reminder/lead from the verified token (body cannot override)", async () => {
-    const verifyAndExtractCalendarToken = vi
-      .fn()
-      .mockResolvedValue({ reminderId: 10, clientLeadId: 20, adminId: 30, userId: 40 });
-    const bookAMeeting = vi.fn().mockResolvedValue(true);
-    const uc = new ClientCalendarUsecase({ verifyAndExtractCalendarToken, bookAMeeting });
+    // The verified token (via the real dto shaping of this repo row) yields reminderId 10 /
+    // clientLeadId 20 — NOT the malicious body's 999 / 888.
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+    clientCalendarRepository.updateMeetingReminderTime.mockResolvedValue({ id: 10 });
+    clientCalendarRepository.findSlotForAssign.mockResolvedValue({ id: 5, isBooked: false });
+    clientCalendarRepository.assignSlotToReminder.mockResolvedValue({ id: 10 });
+    clientCalendarRepository.markSlotBooked.mockResolvedValue({ id: 5, isBooked: true });
+    clientCalendarRepository.findReminderForBooking.mockResolvedValue({
+      id: 10,
+      time: new Date(),
+      userTimezone: "Asia/Dubai",
+      clientLead: { client: { email: "c@x.com", name: "Client" } },
+    });
 
     // A malicious body tries to hijack the booking onto another reminder/lead.
-    await uc.book({
+    await clientCalendarUsecase.bookMeeting({
       token: "tok",
       body: { reminderId: 999, clientLeadId: 888, selectedSlot: { id: 5, startTime: "x" } },
     });
 
-    const arg = bookAMeeting.mock.calls[0][0];
-    // token spread comes AFTER the body spread, so the verified ids win.
-    expect(arg.reminderId).toBe(10);
-    expect(arg.clientLeadId).toBe(20);
+    // token spread comes AFTER the body spread, so the verified ids win: the reminder time
+    // update targets reminderId 10 and the notification fires for clientLeadId 20.
+    expect(clientCalendarRepository.updateMeetingReminderTime.mock.calls[0][0].reminderId).toBe(10);
+    expect(newMeetingNotification).toHaveBeenCalledWith(20, expect.anything());
   });
 
   it("book validation STRIPS body fields outside selectedSlot/selectedTimezone (parity: FE posts its whole session object)", () => {
@@ -297,8 +390,7 @@ describe("ClientCalendarUsecase (public, token-based)", () => {
   });
 
   it("timezones returns a non-empty grouped IANA list (pure, no token)", () => {
-    const uc = new ClientCalendarUsecase({});
-    const list = uc.timezones();
+    const list = clientCalendarUsecase.getTimezones();
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
     expect(list[0]).toHaveProperty("value");

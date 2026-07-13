@@ -1,11 +1,19 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { PERMISSIONS } from "@dms/shared";
 import {
   withProjectDetailCapabilities,
   computeProjectCapabilities,
 } from "../project/project.dto.js";
-import { ProjectController } from "../project/project.controller.js";
+
+// DI was removed: the controller now calls the imported `projectUsecase` singleton
+// directly, so the old `new ProjectController(usecase)` injection becomes a module mock.
+vi.mock("../project/project.usecase.js", () => ({
+  projectUsecase: { designerLeadDetail: vi.fn() },
+}));
+
+import { projectController } from "../project/project.controller.js";
+import { projectUsecase } from "../project/project.usecase.js";
 
 const P = PERMISSIONS;
 
@@ -29,6 +37,10 @@ function makeDetailRecord() {
     ],
   };
 }
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("withProjectDetailCapabilities (designer/project detail)", () => {
   it("is null-safe", () => {
@@ -76,15 +88,14 @@ describe("computeProjectCapabilities (single project row)", () => {
 
 describe("ProjectController.designerLeadDetail wiring", () => {
   it("responds with capabilities attached to the detail record + nested projects", async () => {
-    const usecase = { designerLeadDetail: vi.fn().mockResolvedValue(makeDetailRecord()) };
-    const controller = new ProjectController(usecase);
+    projectUsecase.designerLeadDetail.mockResolvedValue(makeDetailRecord());
     let payload;
     const res = { status: () => res, json: (body) => { payload = body; return res; } };
     const req = { params: { id: "5" }, query: {}, auth: assignedDesigner };
 
-    await controller.designerLeadDetail(req, res);
+    await projectController.designerLeadDetail(req, res);
 
-    expect(usecase.designerLeadDetail).toHaveBeenCalledWith({ id: "5", query: {}, authUser: assignedDesigner });
+    expect(projectUsecase.designerLeadDetail).toHaveBeenCalledWith({ id: "5", query: {}, authUser: assignedDesigner });
     expect(payload.success).toBe(true);
     expect(payload.data.capabilities).toBeTruthy();
     expect(payload.data.projects[0].capabilities.canEdit).toBe(true);

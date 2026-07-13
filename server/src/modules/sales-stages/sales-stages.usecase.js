@@ -16,29 +16,24 @@ import { leadUsecase } from "../leads/lead/lead.usecase.js";
 import { salesStagesRepository } from "./sales-stages.repo.js";
 
 export class SalesStagesUsecase {
-  constructor(repository, leads = leadUsecase) {
-    this.repo = repository;
-    this.leads = leads;
-  }
-
   // READ scope. Throws AppError(LEAD_ACCESS_DENIED, 403) when the lead is outside the
   // caller's scope or does not exist (we do not leak existence to an unauthorized
   // caller). Read scope INCLUDES the claimable unassigned-NEW pool — used by reads only.
   async assertLeadAccess({ clientLeadId, authUser }) {
-    return this.leads.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
   }
 
   // WRITE scope (owned-only, stricter). Throws AppError(LEAD_MUTATE_DENIED, 403) when
   // the lead is outside the caller's mutate scope or does not exist. A claimable
   // unassigned-NEW lead is NOT writable until claimed — used by the set-stage action.
   async assertLeadMutate({ clientLeadId, authUser }) {
-    return this.leads.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
   }
 
   // ── GET /:clientLeadId ───────────────────────────────────────────────────────────
   async getStages({ clientLeadId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
-    return this.repo.getSalesStages({ clientLeadId });
+    return salesStagesRepository.getSalesStages({ clientLeadId });
   }
 
   // ── POST /:clientLeadId/actions/set-stage ────────────────────────────────────────
@@ -49,16 +44,16 @@ export class SalesStagesUsecase {
     await this.assertLeadMutate({ clientLeadId, authUser });
 
     if (nextStage && nextStage.key && nextStage.key !== "NOT_INITIATED") {
-      const isPresent = await this.repo.findStage({ clientLeadId, stage: nextStage.key });
+      const isPresent = await salesStagesRepository.findStage({ clientLeadId, stage: nextStage.key });
       if (!isPresent) {
-        await this.repo.createStage({ clientLeadId, stage: nextStage.key });
+        await salesStagesRepository.createStage({ clientLeadId, stage: nextStage.key });
       }
     }
     if (action === "back" && currentStageType && currentStageType !== "NOT_INITIATED") {
-      await this.repo.deleteStage({ clientLeadId, stage: currentStageType });
+      await salesStagesRepository.deleteStage({ clientLeadId, stage: currentStageType });
     }
     return true;
   }
 }
 
-export const salesStagesUsecase = new SalesStagesUsecase(salesStagesRepository);
+export const salesStagesUsecase = new SalesStagesUsecase();

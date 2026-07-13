@@ -48,7 +48,7 @@ router.post(
 router.get(
   "/status",
   AuthMiddleware.requirePermissions([P.GOOGLE_VIEW]),
-  asyncHandler(googleCalendarController.status),
+  asyncHandler(googleCalendarController.getGoogleStatus),
 );
 
 export { router as googleCalendarRouter };

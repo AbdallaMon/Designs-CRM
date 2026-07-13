@@ -9,181 +9,177 @@ import { contractsMessagesCodes, messagesNames } from "@dms/shared";
 import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { contractUsecase } from "./contract.usecase.js";
 
-const C = contractsMessagesCodes;
 const TK = messagesNames.contractsMessages;
 
-export class ContractController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class ContractController {
+  // ── contract-level ────────────────────────────────────────────────────────────────
+  async listLeadContracts(req, res) {
+    const data = await contractUsecase.listLeadContracts({ leadId: req.params.leadId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACTS_FETCHED, TK);
   }
 
-  // ── contract-level ────────────────────────────────────────────────────────────────
-  listForLead = async (req, res) => {
-    const data = await this.usecase.listForLead({ leadId: req.params.leadId, authUser: req.auth });
-    return ok(res, data, C.CONTRACTS_FETCHED, TK);
-  };
+  async createContract(req, res) {
+    const data = await contractUsecase.createContract({ payload: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
+    return created(res, data, contractsMessagesCodes.CONTRACT_CREATED, TK);
+  }
 
-  create = async (req, res) => {
-    const data = await this.usecase.create({ payload: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
-    return created(res, data, C.CONTRACT_CREATED, TK);
-  };
+  async getContractById(req, res) {
+    const data = await contractUsecase.getContractById({ contractId: req.params.contractId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_FETCHED, TK);
+  }
 
-  getById = async (req, res) => {
-    const data = await this.usecase.getById({ contractId: req.params.contractId, authUser: req.auth });
-    return ok(res, data, C.CONTRACT_FETCHED, TK);
-  };
-
-  updateBasics = async (req, res) => {
-    const data = await this.usecase.updateBasics({
+  async updateContractBasics(req, res) {
+    const data = await contractUsecase.updateContractBasics({
       contractId: req.params.contractId,
       payload: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_UPDATED, TK);
+  }
 
-  cancel = async (req, res) => {
-    const data = await this.usecase.cancel({ contractId: req.params.contractId, authUser: req.auth });
-    return ok(res, data, C.CONTRACT_CANCELLED, TK);
-  };
+  async cancelContract(req, res) {
+    const data = await contractUsecase.cancelContract({ contractId: req.params.contractId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_CANCELLED, TK);
+  }
 
-  generatePdfToken = async (req, res) => {
-    const data = await this.usecase.generatePdfToken({ contractId: req.params.contractId, authUser: req.auth });
-    return ok(res, data, C.CONTRACT_PDF_TOKEN_GENERATED, TK);
-  };
+  async generatePdfToken(req, res) {
+    const data = await contractUsecase.generatePdfToken({ contractId: req.params.contractId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PDF_TOKEN_GENERATED, TK);
+  }
 
   // ── payments grouped list (global, role-scoped inside the frozen service) ────────────
-  paymentsGrouped = async (req, res) => {
-    const data = await this.usecase.paymentsGrouped({
+  async getGroupedPayments(req, res) {
+    const data = await contractUsecase.getGroupedPayments({
       page: req.query.page ?? 1,
       limit: req.query.limit ?? 10,
       status: req.query.status ?? "DUE",
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_PAYMENTS_FETCHED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENTS_FETCHED, TK);
+  }
 
   // ── stages ──────────────────────────────────────────────────────────────────────────
-  createStage = async (req, res) => {
-    const data = await this.usecase.createStage({
+  async createStage(req, res) {
+    const data = await contractUsecase.createStage({
       contractId: req.params.contractId,
       stage: req.body,
       authUser: req.auth,
     });
-    return created(res, data, C.CONTRACT_STAGE_CREATED, TK);
-  };
+    return created(res, data, contractsMessagesCodes.CONTRACT_STAGE_CREATED, TK);
+  }
 
-  updateStage = async (req, res) => {
-    const data = await this.usecase.updateStage({
+  async updateStage(req, res) {
+    const data = await contractUsecase.updateStage({
       contractId: req.params.contractId,
       stageId: req.params.stageId,
       newStage: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_STAGE_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_STAGE_UPDATED, TK);
+  }
 
-  deleteStage = async (req, res) => {
-    const data = await this.usecase.deleteStage({
+  async deleteStage(req, res) {
+    const data = await contractUsecase.deleteStage({
       contractId: req.params.contractId,
       stageId: req.params.stageId,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_STAGE_DELETED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_STAGE_DELETED, TK);
+  }
 
   // ── payments (CRUD + workflow actions) ───────────────────────────────────────────────
-  createPayment = async (req, res) => {
-    const data = await this.usecase.createPayment({
+  async createPayment(req, res) {
+    const data = await contractUsecase.createPayment({
       contractId: req.params.contractId,
       payment: req.body,
       authUser: req.auth,
     });
-    return created(res, data, C.CONTRACT_PAYMENT_CREATED, TK);
-  };
+    return created(res, data, contractsMessagesCodes.CONTRACT_PAYMENT_CREATED, TK);
+  }
 
-  updatePayment = async (req, res) => {
-    const data = await this.usecase.updatePayment({
+  async updatePayment(req, res) {
+    const data = await contractUsecase.updatePayment({
       paymentId: req.params.paymentId,
       newPayment: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_PAYMENT_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENT_UPDATED, TK);
+  }
 
-  deletePayment = async (req, res) => {
-    const data = await this.usecase.deletePayment({ paymentId: req.params.paymentId, authUser: req.auth });
-    return ok(res, data, C.CONTRACT_PAYMENT_DELETED, TK);
-  };
+  async deletePayment(req, res) {
+    const data = await contractUsecase.deletePayment({ paymentId: req.params.paymentId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENT_DELETED, TK);
+  }
 
-  updatePaymentStatus = async (req, res) => {
-    const data = await this.usecase.updatePaymentStatus({
+  async updatePaymentStatus(req, res) {
+    const data = await contractUsecase.updatePaymentStatus({
       paymentId: req.params.paymentId,
       status: req.body.status,
       authUser: req.auth,
       auditCtx: auditCtxFromReq(req),
     });
-    return ok(res, data, C.CONTRACT_PAYMENT_STATUS_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENT_STATUS_UPDATED, TK);
+  }
 
-  updatePaymentAmounts = async (req, res) => {
-    const data = await this.usecase.updatePaymentAmounts({
+  async updatePaymentAmounts(req, res) {
+    const data = await contractUsecase.updatePaymentAmounts({
       paymentId: req.params.paymentId,
       amountLost: req.body.amountLost,
       amountReceived: req.body.amountReceived,
       status: req.body.status,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_PAYMENT_AMOUNTS_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENT_AMOUNTS_UPDATED, TK);
+  }
 
   // ── drawings ─────────────────────────────────────────────────────────────────────────
-  createDrawing = async (req, res) => {
-    const data = await this.usecase.createDrawing({
+  async createDrawing(req, res) {
+    const data = await contractUsecase.createDrawing({
       contractId: req.params.contractId,
       drawing: req.body,
       authUser: req.auth,
     });
-    return created(res, data, C.CONTRACT_DRAWING_CREATED, TK);
-  };
+    return created(res, data, contractsMessagesCodes.CONTRACT_DRAWING_CREATED, TK);
+  }
 
-  updateDrawing = async (req, res) => {
-    const data = await this.usecase.updateDrawing({
+  async updateDrawing(req, res) {
+    const data = await contractUsecase.updateDrawing({
       drawId: req.params.drawId,
       newDrawing: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_DRAWING_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_DRAWING_UPDATED, TK);
+  }
 
-  deleteDrawing = async (req, res) => {
-    const data = await this.usecase.deleteDrawing({ drawId: req.params.drawId, authUser: req.auth });
-    return ok(res, data, C.CONTRACT_DRAWING_DELETED, TK);
-  };
+  async deleteDrawing(req, res) {
+    const data = await contractUsecase.deleteDrawing({ drawId: req.params.drawId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_DRAWING_DELETED, TK);
+  }
 
   // ── special items ──────────────────────────────────────────────────────────────────────
-  createSpecialItem = async (req, res) => {
-    const data = await this.usecase.createSpecialItem({
+  async createSpecialItem(req, res) {
+    const data = await contractUsecase.createSpecialItem({
       contractId: req.params.contractId,
       item: req.body,
       authUser: req.auth,
     });
-    return created(res, data, C.CONTRACT_SPECIAL_ITEM_CREATED, TK);
-  };
+    return created(res, data, contractsMessagesCodes.CONTRACT_SPECIAL_ITEM_CREATED, TK);
+  }
 
-  updateSpecialItem = async (req, res) => {
-    const data = await this.usecase.updateSpecialItem({
+  async updateSpecialItem(req, res) {
+    const data = await contractUsecase.updateSpecialItem({
       specialItemId: req.params.itemId,
       newSpecialItem: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, C.CONTRACT_SPECIAL_ITEM_UPDATED, TK);
-  };
+    return ok(res, data, contractsMessagesCodes.CONTRACT_SPECIAL_ITEM_UPDATED, TK);
+  }
 
-  deleteSpecialItem = async (req, res) => {
-    const data = await this.usecase.deleteSpecialItem({ specialItemId: req.params.itemId, authUser: req.auth });
-    return ok(res, data, C.CONTRACT_SPECIAL_ITEM_DELETED, TK);
-  };
+  async deleteSpecialItem(req, res) {
+    const data = await contractUsecase.deleteSpecialItem({ specialItemId: req.params.itemId, authUser: req.auth });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_SPECIAL_ITEM_DELETED, TK);
+  }
 }
 
-export const contractController = new ContractController(contractUsecase);
+export const contractController = new ContractController();
+export { ContractController };

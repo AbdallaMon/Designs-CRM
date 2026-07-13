@@ -7,40 +7,37 @@ import { adminResidualMessagesCodes, messagesNames } from "@dms/shared";
 import { adminProjectsUsecase } from "./admin-projects.usecase.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 
-const M = adminResidualMessagesCodes;
 const TK = messagesNames.adminResidualMessages;
 
 import { paginate } from "../../../shared/utility/pagination.js";
 
-export class AdminProjectsController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
+class AdminProjectsController {
   // create-group acts on a SPECIFIC clientLead (body.clientLeadId) → lead-scoped write.
   // Reuse the leads-module keystone mutate checker (admins have full scope, so behavior is
   // preserved 1:1; a non-full-scope admin sub-role is bounded). Throws 403 on denial.
-  checkIfUserCanMutateLeadFromBody = (req) =>
-    leadUsecase.checkIfUserCanMutateLead({ id: req.body.clientLeadId, authUser: req.auth });
+  checkIfUserCanMutateLeadFromBody(req) {
+    return leadUsecase.checkIfUserCanMutateLead({ id: req.body.clientLeadId, authUser: req.auth });
+  }
 
-  list = async (req, res) => {
+  async getAdminProjects(req, res) {
     const { page, limit, skip } = paginate(req.query);
-    const result = await this.usecase.list({ query: req.query, limit, skip });
+    const result = await adminProjectsUsecase.listAdminProjects({ query: req.query, limit, skip });
     return ok(
       res,
       { items: result.data ?? [], total: result.total ?? 0, page, pageSize: limit },
-      M.ADMIN_PROJECTS_FETCHED,
+      adminResidualMessagesCodes.ADMIN_PROJECTS_FETCHED,
       TK,
     );
-  };
+  }
 
-  createGroup = async (req, res) => {
-    const data = await this.usecase.createGroup({
+  async createProjectGroup(req, res) {
+    const data = await adminProjectsUsecase.createProjectGroup({
       clientLeadId: req.body.clientLeadId,
       title: req.body.title,
     });
-    return created(res, data, M.PROJECT_GROUP_CREATED, TK);
-  };
+    return created(res, data, adminResidualMessagesCodes.PROJECT_GROUP_CREATED, TK);
+  }
 }
 
-export const adminProjectsController = new AdminProjectsController(adminProjectsUsecase);
+export const adminProjectsController = new AdminProjectsController();
+export { AdminProjectsController };

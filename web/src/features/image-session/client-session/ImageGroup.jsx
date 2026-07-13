@@ -136,6 +136,7 @@ export function ImageGroup({
         selectedImages={selectedImages}
         onImageSelect={handleImageSelect}
         type={type}
+        token={token}
       />
     </Box>
   );

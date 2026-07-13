@@ -8,25 +8,18 @@ import { coursesMessagesCodes } from "@dms/shared";
 import { adminCourseRepository } from "./admin-course.repo.js";
 import { staffCourseUsecase } from "../staff-course/staff-course.usecase.js";
 
-export class AdminCourseUsecase {
-  /**
-   * @param {import("./admin-course.repo.js").AdminCourseRepository} repository
-   * @param {{ endAttempt?: Function }} [deps] — `endAttempt` re-scores an attempt
-   *   after a text answer is approved (legacy imported it from the staff service).
-   */
-  constructor(repository, { endAttempt } = {}) {
-    this.repository = repository;
-    // Default to the staff usecase's scoring routine (single source of scoring math).
-    this.endAttempt =
-      endAttempt || ((args) => staffCourseUsecase.endAttempt(args));
-  }
+// `endAttempt` re-scores an attempt after a text answer is approved (legacy imported it
+// from the staff service). Delegates to the staff usecase's scoring routine — the single
+// source of scoring math.
+const endAttempt = (args) => staffCourseUsecase.endAttempt(args);
 
+class AdminCourseUsecase {
   // ── courses ──────────────────────────────────────────────────────────────────
   // Legacy `getCourses({ limit, skip })` → { data: courses, totalPages, total }.
   async listCourses({ skip, take }) {
     const [courses, total] = await Promise.all([
-      this.repository.listCourses({ skip, take }),
-      this.repository.countCourses(),
+      adminCourseRepository.listCourses({ skip, take }),
+      adminCourseRepository.countCourses(),
     ]);
     const totalPages = take ? Math.ceil(total / take) : 1;
     return { courses, total, totalPages };
@@ -34,7 +27,7 @@ export class AdminCourseUsecase {
 
   // Legacy `createNewCourse` — nested-create the course roles.
   async createCourse({ data }) {
-    return this.repository.createCourse({
+    return adminCourseRepository.createCourse({
       data: {
         title: data.title,
         description: data.description,
@@ -56,32 +49,32 @@ export class AdminCourseUsecase {
     update.roles = data.roles
       ? { deleteMany: {}, create: data.roles.map((role) => ({ role })) }
       : undefined;
-    return this.repository.updateCourse({ id: courseId, data: update });
+    return adminCourseRepository.updateCourse({ id: courseId, data: update });
   }
 
   // ── lessons ──────────────────────────────────────────────────────────────────
   // Legacy `getLessonsByCourseId` → { lessons, courseTitle }.
   async getLessonsByCourseId({ courseId }) {
     const [lessons, course] = await Promise.all([
-      this.repository.listLessonsByCourseId({ courseId }),
-      this.repository.getCourseById({ id: courseId, select: { title: true } }),
+      adminCourseRepository.listLessonsByCourseId({ courseId }),
+      adminCourseRepository.getCourseById({ id: courseId, select: { title: true } }),
     ]);
     return { lessons, courseTitle: course?.title };
   }
 
   async getLessonById({ lessonId }) {
-    return this.repository.getLessonById({ id: lessonId });
+    return adminCourseRepository.getLessonById({ id: lessonId });
   }
 
   // Legacy `createNewLesson` — coerce order/duration, set courseId. M2: build the
   // payload from whitelisted lesson fields only (Zod strict already rejects extras).
   async createLesson({ data, courseId }) {
     const payload = { ...this.#lessonFields(data), courseId };
-    return this.repository.createLesson({ data: payload });
+    return adminCourseRepository.createLesson({ data: payload });
   }
 
   async editLesson({ data, lessonId }) {
-    return this.repository.updateLesson({
+    return adminCourseRepository.updateLesson({
       id: lessonId,
       data: this.#lessonFields(data),
     });
@@ -101,29 +94,29 @@ export class AdminCourseUsecase {
   }
 
   async toggleMustUploadHomework({ lessonId, mustUploadHomework }) {
-    return this.repository.updateLessonHomeworkFlag({
+    return adminCourseRepository.updateLessonHomeworkFlag({
       id: lessonId,
       mustUploadHomework,
     });
   }
 
   async deleteLesson({ lessonId }) {
-    return this.repository.deleteLessonCascade({ lessonId });
+    return adminCourseRepository.deleteLessonCascade({ lessonId });
   }
 
   // ── lesson videos ────────────────────────────────────────────────────────────
   async getVideosByLessonId({ lessonId }) {
-    return this.repository.listVideosByLessonId({ lessonId });
+    return adminCourseRepository.listVideosByLessonId({ lessonId });
   }
 
   async createLessonVideo({ data, lessonId }) {
-    return this.repository.createLessonVideo({
+    return adminCourseRepository.createLessonVideo({
       data: { ...this.#videoFields(data), lessonId },
     });
   }
 
   async editLessonVideo({ data, videoId }) {
-    return this.repository.updateLessonVideo({
+    return adminCourseRepository.updateLessonVideo({
       id: videoId,
       data: this.#videoFields(data),
     });
@@ -139,22 +132,22 @@ export class AdminCourseUsecase {
   }
 
   async deleteLessonVideo({ videoId }) {
-    return this.repository.deleteLessonVideo({ videoId });
+    return adminCourseRepository.deleteLessonVideo({ videoId });
   }
 
   // ── lesson pdfs ────────────────────────────────────────────────────────────────
   async getPdfsByLessonId({ lessonId }) {
-    return this.repository.listPdfsByLessonId({ lessonId });
+    return adminCourseRepository.listPdfsByLessonId({ lessonId });
   }
 
   async createLessonPdf({ data, lessonId }) {
-    return this.repository.createLessonPdf({
+    return adminCourseRepository.createLessonPdf({
       data: { ...this.#pdfFields(data), lessonId },
     });
   }
 
   async editLessonPdf({ data, pdfId }) {
-    return this.repository.updateLessonPdf({
+    return adminCourseRepository.updateLessonPdf({
       id: pdfId,
       data: this.#pdfFields(data),
     });
@@ -169,22 +162,22 @@ export class AdminCourseUsecase {
   }
 
   async deleteLessonPdf({ pdfId }) {
-    return this.repository.deleteLessonPdf({ id: pdfId });
+    return adminCourseRepository.deleteLessonPdf({ id: pdfId });
   }
 
   // ── lesson links ───────────────────────────────────────────────────────────────
   async getLinksByLessonId({ lessonId }) {
-    return this.repository.listLinksByLessonId({ lessonId });
+    return adminCourseRepository.listLinksByLessonId({ lessonId });
   }
 
   async createLessonLink({ data, lessonId }) {
-    return this.repository.createLessonLink({
+    return adminCourseRepository.createLessonLink({
       data: { ...this.#linkFields(data), lessonId },
     });
   }
 
   async editLessonLink({ data, linkId }) {
-    return this.repository.updateLessonLink({
+    return adminCourseRepository.updateLessonLink({
       id: linkId,
       data: this.#linkFields(data),
     });
@@ -200,44 +193,44 @@ export class AdminCourseUsecase {
   }
 
   async deleteLessonLink({ linkId }) {
-    return this.repository.deleteLessonLink({ id: linkId });
+    return adminCourseRepository.deleteLessonLink({ id: linkId });
   }
 
   // ── lesson video pdfs ──────────────────────────────────────────────────────────
   async getLessonVideoPdfs({ videoId }) {
-    return this.repository.listVideoPdfs({ videoId });
+    return adminCourseRepository.listVideoPdfs({ videoId });
   }
 
   async createLessonVideoPdf({ title, url, videoId }) {
-    return this.repository.createVideoPdf({ data: { title, url, videoId } });
+    return adminCourseRepository.createVideoPdf({ data: { title, url, videoId } });
   }
 
   async deleteLessonVideoPdf({ pdfId }) {
-    return this.repository.deleteVideoPdf({ id: pdfId });
+    return adminCourseRepository.deleteVideoPdf({ id: pdfId });
   }
 
   // ── lesson access / allowed roles ────────────────────────────────────────────────
   async getAllowedRoles({ courseId }) {
-    const rows = await this.repository.getAllowedRoles({ courseId });
+    const rows = await adminCourseRepository.getAllowedRoles({ courseId });
     return rows?.map((r) => r.role);
   }
 
   async getAllowedLessonUsers({ lessonId }) {
-    return this.repository.getAllowedLessonUsers({ lessonId });
+    return adminCourseRepository.getAllowedLessonUsers({ lessonId });
   }
 
   async grantLessonAccess({ lessonId, userId }) {
-    return this.repository.createLessonAccess({ lessonId, userId });
+    return adminCourseRepository.createLessonAccess({ lessonId, userId });
   }
 
   async deleteLessonAccess({ id }) {
-    return this.repository.deleteLessonAccess({ id });
+    return adminCourseRepository.deleteLessonAccess({ id });
   }
 
   // ── homeworks (admin review) ─────────────────────────────────────────────────────
   // Legacy `getListOfHomeWorks` — group homeworks by user.
   async getListOfHomeworks({ lessonId }) {
-    const rows = await this.repository.listHomeworksByLessonId({ lessonId });
+    const rows = await adminCourseRepository.listHomeworksByLessonId({ lessonId });
     return Object.values(
       rows.reduce((acc, hw) => {
         const uid = hw.user.id;
@@ -258,24 +251,24 @@ export class AdminCourseUsecase {
   // ── tests ──────────────────────────────────────────────────────────────────────
   // Legacy `getTests({ key, id })` → { title, tests }.
   async getTests({ key, id }) {
-    const item = await this.repository.getTestOwnerTitle({ key, id });
+    const item = await adminCourseRepository.getTestOwnerTitle({ key, id });
     let where = { [key]: id };
     if (key === "courseId") {
       where = { OR: [{ courseId: id }, { lesson: { courseId: id } }] };
     }
-    const tests = await this.repository.listTests({ where });
+    const tests = await adminCourseRepository.listTests({ where });
     return { title: item?.title, tests };
   }
 
   // Legacy `getTestData` returns just the ordered questions list.
   async getTestData({ testId }) {
-    const test = await this.repository.getTestQuestionsOrdered({ testId });
+    const test = await adminCourseRepository.getTestQuestionsOrdered({ testId });
     return test?.questions;
   }
 
   // Legacy `createTest({ key, id, attemptLimit, type, timeLimit, title, published })`.
   async createTest({ key, id, attemptLimit, type, timeLimit, title, published }) {
-    return this.repository.createTest({
+    return adminCourseRepository.createTest({
       data: {
         [key]: id,
         title,
@@ -298,11 +291,11 @@ export class AdminCourseUsecase {
     if (data.published !== undefined) update.published = data.published;
     if (data.certificateApprovedByAdmin !== undefined)
       update.certificateApprovedByAdmin = data.certificateApprovedByAdmin;
-    return this.repository.updateTest({ id: testId, data: update });
+    return adminCourseRepository.updateTest({ id: testId, data: update });
   }
 
   async deleteTest({ testId }) {
-    await this.repository.deleteTestCascade({ testId });
+    await adminCourseRepository.deleteTestCascade({ testId });
     return true;
   }
 
@@ -310,7 +303,7 @@ export class AdminCourseUsecase {
   // Legacy `reOrderTestQuestions` — set order = index + 1 for each posted id.
   async reorderTestQuestions({ data }) {
     for (let index = 0; index < data.length; index++) {
-      await this.repository.reorderQuestion({
+      await adminCourseRepository.reorderQuestion({
         id: Number(data[index].id),
         order: index + 1,
       });
@@ -319,12 +312,12 @@ export class AdminCourseUsecase {
   }
 
   async getTestQuestionData({ id }) {
-    return this.repository.getQuestionById({ id });
+    return adminCourseRepository.getQuestionById({ id });
   }
 
   // Legacy `createTestQuestion` — next order, nested-create choices.
   async createTestQuestion({ id, data }) {
-    const last = await this.repository.getLastQuestionOrder({ testId: id });
+    const last = await adminCourseRepository.getLastQuestionOrder({ testId: id });
     const nextOrder = last ? last.order + 1 : 1;
     const choices = data.choices.map((choice) => ({
       text: choice.text,
@@ -332,7 +325,7 @@ export class AdminCourseUsecase {
       isCorrect: choice.isCorrect,
       order: choice.order,
     }));
-    return this.repository.createQuestion({
+    return adminCourseRepository.createQuestion({
       data: {
         testId: id,
         type: data.type,
@@ -347,9 +340,9 @@ export class AdminCourseUsecase {
   async editQuestion({ data, questionId }) {
     for (const choice of data.choices) {
       if (choice.type === "DELETE") {
-        await this.repository.deleteChoice({ id: Number(choice.id) });
+        await adminCourseRepository.deleteChoice({ id: Number(choice.id) });
       } else if (choice.type === "CREATE") {
-        await this.repository.createChoice({
+        await adminCourseRepository.createChoice({
           data: {
             isCorrect: choice.isCorrect,
             text: choice.text,
@@ -359,7 +352,7 @@ export class AdminCourseUsecase {
           },
         });
       } else {
-        await this.repository.updateChoice({
+        await adminCourseRepository.updateChoice({
           id: Number(choice.id),
           data: {
             text: choice.text,
@@ -370,7 +363,7 @@ export class AdminCourseUsecase {
         });
       }
     }
-    await this.repository.updateQuestionText({
+    await adminCourseRepository.updateQuestionText({
       id: questionId,
       question: data.question,
     });
@@ -378,7 +371,7 @@ export class AdminCourseUsecase {
   }
 
   async deleteQuestion({ questionId }) {
-    await this.repository.deleteQuestionCascade({ questionId });
+    await adminCourseRepository.deleteQuestionCascade({ questionId });
     return true;
   }
 
@@ -394,7 +387,7 @@ export class AdminCourseUsecase {
   async getTestAttemptsSummary({ testId, userId }) {
     const where = { testId };
     if (userId) where.userId = userId;
-    const attempts = await this.repository.listAttemptsForSummary({ where });
+    const attempts = await adminCourseRepository.listAttemptsForSummary({ where });
     return this.#groupAttemptsByUser(attempts);
   }
 
@@ -403,8 +396,8 @@ export class AdminCourseUsecase {
     const where = {};
     if (userId) where.userId = userId;
     const [attempts, total] = await Promise.all([
-      this.repository.listAttemptsForSummary({ where, skip, take }),
-      this.repository.countAttempts(),
+      adminCourseRepository.listAttemptsForSummary({ where, skip, take }),
+      adminCourseRepository.countAttempts(),
     ]);
     const totalPages = take ? Math.ceil(total / take) : 1;
     return { attempts, total, totalPages };
@@ -412,22 +405,22 @@ export class AdminCourseUsecase {
 
   // Legacy `approveUserAnswer` — flip approval, then re-score the attempt.
   async approveUserAnswer({ attemptId, questionId, isApproved }) {
-    await this.repository.updateUserAnswerApproval({
+    await adminCourseRepository.updateUserAnswerApproval({
       questionId,
       attemptId,
       isApproved,
     });
     // H1: admin re-score path explicitly bypasses the staff terminal-state guard —
     // approving a TEXT answer legitimately re-scores an already-finalized attempt.
-    await this.endAttempt({ attemptId, reScore: true });
+    await endAttempt({ attemptId, reScore: true });
     return true;
   }
 
   // Legacy `increaseAttemptToUser` — bump the latest attempt's limit by one.
   async increaseAttemptToUser({ testId, userId }) {
-    const last = await this.repository.getLastUserAttempt({ testId, userId });
+    const last = await adminCourseRepository.getLastUserAttempt({ testId, userId });
     if (!last) throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
-    await this.repository.updateAttemptLimit({
+    await adminCourseRepository.updateAttemptLimit({
       id: last.id,
       attemptLimit: last.attemptLimit + 1,
     });
@@ -436,12 +429,12 @@ export class AdminCourseUsecase {
 
   // Legacy `decreaseAttemptToUser` — guard against dropping below consumed count.
   async decreaseAttemptToUser({ testId, userId }) {
-    const last = await this.repository.getLastUserAttempt({ testId, userId });
+    const last = await adminCourseRepository.getLastUserAttempt({ testId, userId });
     if (!last) throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
     if (last.attemptLimit === last.attemptCount) {
       throw new AppError(coursesMessagesCodes.ATTEMPT_CANNOT_DECREASE, 400);
     }
-    await this.repository.updateAttemptLimit({
+    await adminCourseRepository.updateAttemptLimit({
       id: last.id,
       attemptLimit: last.attemptLimit - 1,
     });
@@ -451,22 +444,22 @@ export class AdminCourseUsecase {
   // ── admin dashboard ────────────────────────────────────────────────────────────
   // Legacy `getDashBoardDataForAdmin` — aggregation ported verbatim.
   async getDashboardData() {
-    const testStats = await this.repository.aggregateTestAttempts();
+    const testStats = await adminCourseRepository.aggregateTestAttempts();
     const totalAttempts = testStats._count;
     const averageScore = Number((testStats._avg.score ?? 0).toFixed(2));
-    const passedAttempts = await this.repository.countPassedAttempts();
+    const passedAttempts = await adminCourseRepository.countPassedAttempts();
     const failedAttempts = totalAttempts - passedAttempts;
 
-    const totalCourses = await this.repository.countCourses();
-    const publishedCourses = await this.repository.countPublishedCourses();
-    const totalLessons = await this.repository.countLessons();
-    const totalVideos = await this.repository.countVideos();
-    const totalPDFs = await this.repository.countPdfs();
-    const totalTestAttempts = await this.repository.countAttempts();
-    const passedTests = await this.repository.countPassedAttempts();
-    const courseCompletions = await this.repository.countCourseCompletions();
+    const totalCourses = await adminCourseRepository.countCourses();
+    const publishedCourses = await adminCourseRepository.countPublishedCourses();
+    const totalLessons = await adminCourseRepository.countLessons();
+    const totalVideos = await adminCourseRepository.countVideos();
+    const totalPDFs = await adminCourseRepository.countPdfs();
+    const totalTestAttempts = await adminCourseRepository.countAttempts();
+    const passedTests = await adminCourseRepository.countPassedAttempts();
+    const courseCompletions = await adminCourseRepository.countCourseCompletions();
 
-    const progressData = await this.repository.listAllProgressForDashboard();
+    const progressData = await adminCourseRepository.listAllProgressForDashboard();
     const progressList = progressData.map((cp) => {
       const totalItems = cp.course.lessons.length;
       const completedItems = cp.completedLessons.length;
@@ -479,8 +472,8 @@ export class AdminCourseUsecase {
       ).toFixed(2),
     );
 
-    const totalHomeworkSubmissions = await this.repository.countHomeworks();
-    const topCoursesRaw = await this.repository.listTopCourses();
+    const totalHomeworkSubmissions = await adminCourseRepository.countHomeworks();
+    const topCoursesRaw = await adminCourseRepository.listTopCourses();
     const topCourses = topCoursesRaw.map((course) => {
       const enrollments = course.progress.length;
       const totalItems = course.lessons?.length || 0;
@@ -556,4 +549,5 @@ export class AdminCourseUsecase {
   }
 }
 
-export const adminCourseUsecase = new AdminCourseUsecase(adminCourseRepository);
+export const adminCourseUsecase = new AdminCourseUsecase();
+export { AdminCourseUsecase };

@@ -8,6 +8,11 @@
 // resolved back to Arabic here.
 
 export const imageSessionsMessages = {
+  // ── client notes (public token-scoped surface) ──────────────────────────────────────
+  NOTES_FETCHED: "Notes loaded",
+  NOTE_CREATED: "Note added",
+  NOTE_TARGET_INVALID: "This note can't be added here",
+  NOTE_NOT_AUTHORIZED: "Your session link is invalid or expired — please reopen it",
   // ── ADMIN reference-data reads ──────────────────────────────────────────────────────
   IMAGE_SESSION_REFERENCE_FETCHED: "Data fetched",
 

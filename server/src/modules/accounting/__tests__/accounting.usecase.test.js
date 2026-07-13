@@ -1,4 +1,43 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// After DI removal the usecases call their repo singletons directly, so fakes are injected
+// via module mocking (not constructor args). Repo factories use inline vi.fn()s (vi.mock is
+// hoisted above imports — no outer refs allowed); defaults/overrides are set per-test.
+vi.mock("../payment/payment.repo.js", () => ({
+  paymentRepository: {
+    findPaymentState: vi.fn(),
+    getPayments: vi.fn(),
+    changePaymentLevel: vi.fn(),
+    getListOfPaymentInvoices: vi.fn(),
+    findPayment: vi.fn(),
+    updatePaymentAmounts: vi.fn(),
+    createInvoice: vi.fn(),
+    createInvoiceNote: vi.fn(),
+    updatePaymentOverdue: vi.fn(),
+  },
+}));
+vi.mock("../rent/rent.repo.js", () => ({
+  rentRepository: {
+    findRentState: vi.fn(),
+    findManyRents: vi.fn(),
+    countRents: vi.fn(),
+    createRent: vi.fn(),
+    findRentRow: vi.fn(),
+    findRentForRenew: vi.fn(),
+    createRentPeriod: vi.fn(),
+    createRentOutcome: vi.fn(),
+  },
+}));
+vi.mock("../salary/salary.repo.js", () => ({
+  salaryRepository: {
+    findMonthlySalaryForMonth: vi.fn(),
+    createMonthlySalaryWithOutcome: vi.fn(),
+    createBaseSalary: vi.fn(),
+    editBaseSalary: vi.fn(),
+    getSalaryData: vi.fn(),
+    getUsersWithSalaries: vi.fn(),
+  },
+}));
 
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -18,9 +57,15 @@ import { SalaryValidation } from "../salary/salary.validation.js";
 import { RentUsecase } from "../rent/rent.usecase.js";
 import { SalaryUsecase } from "../salary/salary.usecase.js";
 import { mapLegacyError } from "../accounting.errors.js";
+import { paymentRepository } from "../payment/payment.repo.js";
+import { rentRepository } from "../rent/rent.repo.js";
+import { salaryRepository } from "../salary/salary.repo.js";
 
-const C = accountingMessagesCodes;
 const P = PERMISSIONS.ACCOUNTING;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 function makeReq(role, isSuperSales = false) {
   const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
@@ -147,29 +192,27 @@ describe("accounting money validation", () => {
 //  PAYMENT WORKFLOW ACTION — existence guard + delegation
 // ════════════════════════════════════════════════════════════════════════════
 describe("PaymentUsecase money workflow actions", () => {
-  function makePaymentRepo(overrides = {}) {
-    return { findPaymentState: vi.fn(), ...overrides };
-  }
-
   it("checkPaymentExists 404s a missing/forged payment id (no money mutation runs)", async () => {
-    const repo = makePaymentRepo({ findPaymentState: vi.fn().mockResolvedValue(null) });
-    const usecase = new PaymentUsecase(repo, {});
+    paymentRepository.findPaymentState.mockResolvedValue(null);
+    const usecase = new PaymentUsecase();
     await expect(usecase.checkPaymentExists({ paymentId: 999 })).rejects.toMatchObject({
       statusCode: 404,
-      message: C.PAYMENT_NOT_FOUND,
+      message: accountingMessagesCodes.PAYMENT_NOT_FOUND,
     });
   });
 
   it("checkPaymentExists returns the loaded state for an existing payment", async () => {
     const state = { id: 7, status: "PENDING", paymentLevel: "LEVEL_1", amount: 100, amountPaid: 0 };
-    const repo = makePaymentRepo({ findPaymentState: vi.fn().mockResolvedValue(state) });
-    const usecase = new PaymentUsecase(repo, {});
+    paymentRepository.findPaymentState.mockResolvedValue(state);
+    const usecase = new PaymentUsecase();
     await expect(usecase.checkPaymentExists({ paymentId: 7 })).resolves.toEqual(state);
   });
 
-  it("pay delegates to the legacy processPayment with coerced args (paymentId, amount, date, file, userId)", async () => {
-    const processPayment = vi.fn().mockResolvedValue({ id: 7, status: "FULLY_PAID" });
-    const usecase = new PaymentUsecase(makePaymentRepo(), { processPayment });
+  it("pay delegates to the money orchestration with coerced args (paymentId, amount, date, file, userId)", async () => {
+    const usecase = new PaymentUsecase();
+    const processPayment = vi
+      .spyOn(usecase, "_processPayment")
+      .mockResolvedValue({ id: 7, status: "FULLY_PAID" });
     await usecase.pay({
       paymentId: "7",
       body: { amount: "50", issuedDate: "2026-06-01", file: "f.pdf" },
@@ -184,11 +227,11 @@ describe("PaymentUsecase money workflow actions", () => {
     expect(userId).toBe(3);
   });
 
-  it("changeStatus delegates the enum-validated level to the legacy changePaymentLevel", async () => {
-    const changePaymentLevel = vi.fn().mockResolvedValue({ id: 7, paymentLevel: "LEVEL_2" });
-    const usecase = new PaymentUsecase(makePaymentRepo(), { changePaymentLevel });
+  it("changeStatus delegates the enum-validated level to the repo changePaymentLevel", async () => {
+    paymentRepository.changePaymentLevel.mockResolvedValue({ id: 7, paymentLevel: "LEVEL_2" });
+    const usecase = new PaymentUsecase();
     await usecase.changeStatus({ paymentId: "7", body: { newPaymentLevel: "LEVEL_2" } });
-    expect(changePaymentLevel).toHaveBeenCalledWith("7", "LEVEL_2");
+    expect(paymentRepository.changePaymentLevel).toHaveBeenCalledWith("7", "LEVEL_2");
   });
 });
 
@@ -203,25 +246,25 @@ describe("PaymentUsecase money workflow actions", () => {
 describe("accounting legacy-error → AppError mapping", () => {
   // The exact legacy strings (incl. the two typos) → expected code + status.
   const CASES = [
-    ["Please fill all data", C.REQUIRED_FIELDS_MISSING, 422],
-    ["Please enter a date", C.PAYMENT_DATE_REQUIRED, 422],
-    ["Payment not found", C.PAYMENT_NOT_FOUND, 404],
-    ["Invalid Payment: The payment has already been fully paid.", C.PAYMENT_ALREADY_FULLY_PAID, 409],
+    ["Please fill all data", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
+    ["Please enter a date", accountingMessagesCodes.PAYMENT_DATE_REQUIRED, 422],
+    ["Payment not found", accountingMessagesCodes.PAYMENT_NOT_FOUND, 404],
+    ["Invalid Payment: The payment has already been fully paid.", accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID, 409],
     [
       "Invalid Payment: The pending amount is 50. The amount provided (90) exceeds the pending balance.",
-      C.PAYMENT_AMOUNT_EXCEEDS_PENDING,
+      accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING,
       400,
     ],
     [
       "Invalid Payment: The payment amount must be greater than zero. You provided -5.",
-      C.PAYMENT_AMOUNT_INVALID,
+      accountingMessagesCodes.PAYMENT_AMOUNT_INVALID,
       400,
     ],
-    ["Fill all the fields please", C.REQUIRED_FIELDS_MISSING, 422],
-    ["Rent not found", C.RENT_NOT_FOUND, 404],
-    ["Please fill all fiels", C.REQUIRED_FIELDS_MISSING, 422],
-    ["Fill all the fileds please", C.REQUIRED_FIELDS_MISSING, 422],
-    ["Monthly salary for June 2026 already exists for this user", C.MONTHLY_SALARY_ALREADY_EXISTS, 409],
+    ["Fill all the fields please", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
+    ["Rent not found", accountingMessagesCodes.RENT_NOT_FOUND, 404],
+    ["Please fill all fiels", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
+    ["Fill all the fileds please", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
+    ["Monthly salary for June 2026 already exists for this user", accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS, 409],
   ];
 
   it.each(CASES)("maps %j → %s (%i)", (message, code, status) => {
@@ -236,107 +279,113 @@ describe("accounting legacy-error → AppError mapping", () => {
   });
 
   it("does not re-map an existing AppError", () => {
-    expect(mapLegacyError(new AppError(C.PAYMENT_NOT_FOUND, 404))).toBeNull();
+    expect(mapLegacyError(new AppError(accountingMessagesCodes.PAYMENT_NOT_FOUND, 404))).toBeNull();
   });
 });
 
 describe("accounting usecases translate legacy throws end-to-end", () => {
   it("PaymentUsecase.pay: already-fully-paid → AppError 409 PAYMENT_ALREADY_FULLY_PAID", async () => {
-    const processPayment = vi
-      .fn()
-      .mockRejectedValue(new Error("Invalid Payment: The payment has already been fully paid."));
-    const usecase = new PaymentUsecase({ findPaymentState: vi.fn() }, { processPayment });
+    const usecase = new PaymentUsecase();
+    vi.spyOn(usecase, "_processPayment").mockRejectedValue(
+      new Error("Invalid Payment: The payment has already been fully paid."),
+    );
     await expect(
       usecase.pay({ paymentId: "1", body: { amount: "10", issuedDate: "2026-06-01" }, authUser: { id: 1 } }),
-    ).rejects.toMatchObject({ statusCode: 409, message: C.PAYMENT_ALREADY_FULLY_PAID });
+    ).rejects.toMatchObject({ statusCode: 409, message: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID });
   });
 
   it("PaymentUsecase.pay: amount-exceeds-pending → AppError 400 PAYMENT_AMOUNT_EXCEEDS_PENDING", async () => {
-    const processPayment = vi
-      .fn()
-      .mockRejectedValue(
-        new Error("Invalid Payment: The pending amount is 50. The amount provided (90) exceeds the pending balance."),
-      );
-    const usecase = new PaymentUsecase({ findPaymentState: vi.fn() }, { processPayment });
+    const usecase = new PaymentUsecase();
+    vi.spyOn(usecase, "_processPayment").mockRejectedValue(
+      new Error("Invalid Payment: The pending amount is 50. The amount provided (90) exceeds the pending balance."),
+    );
     await expect(
       usecase.pay({ paymentId: "1", body: { amount: "90", issuedDate: "2026-06-01" }, authUser: { id: 1 } }),
-    ).rejects.toMatchObject({ statusCode: 400, message: C.PAYMENT_AMOUNT_EXCEEDS_PENDING });
+    ).rejects.toMatchObject({ statusCode: 400, message: accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING });
   });
 
   it("PaymentUsecase.pay: re-throws an UNKNOWN legacy error as-is (still 500-class)", async () => {
     const boom = new Error("totally unexpected crash");
-    const processPayment = vi.fn().mockRejectedValue(boom);
-    const usecase = new PaymentUsecase({ findPaymentState: vi.fn() }, { processPayment });
+    const usecase = new PaymentUsecase();
+    vi.spyOn(usecase, "_processPayment").mockRejectedValue(boom);
     await expect(
       usecase.pay({ paymentId: "1", body: { amount: "10", issuedDate: "2026-06-01" }, authUser: { id: 1 } }),
     ).rejects.toBe(boom);
   });
 
   it("PaymentUsecase.markOverdue: payment-not-found → AppError 404 PAYMENT_NOT_FOUND", async () => {
-    const markPaymentAsOverdue = vi.fn().mockRejectedValue(new Error("Payment not found"));
-    const usecase = new PaymentUsecase({ findPaymentState: vi.fn() }, { markPaymentAsOverdue });
+    const usecase = new PaymentUsecase();
+    vi.spyOn(usecase, "_markPaymentAsOverdue").mockRejectedValue(new Error("Payment not found"));
     await expect(usecase.markOverdue({ paymentId: 999 })).rejects.toMatchObject({
       statusCode: 404,
-      message: C.PAYMENT_NOT_FOUND,
+      message: accountingMessagesCodes.PAYMENT_NOT_FOUND,
     });
   });
 
   it("RentUsecase.renew: rent-not-found → AppError 404 RENT_NOT_FOUND", async () => {
-    const renewRentAndMakeOutCome = vi.fn().mockRejectedValue(new Error("Rent not found"));
-    const usecase = new RentUsecase({ findRentState: vi.fn() }, { renewRentAndMakeOutCome });
+    const usecase = new RentUsecase();
+    vi.spyOn(usecase, "_renewRentAndMakeOutCome").mockRejectedValue(new Error("Rent not found"));
     await expect(usecase.renew({ rentId: "5", body: { amount: 10 } })).rejects.toMatchObject({
       statusCode: 404,
-      message: C.RENT_NOT_FOUND,
+      message: accountingMessagesCodes.RENT_NOT_FOUND,
     });
   });
 
   it("RentUsecase.create: missing-fields → AppError 422 REQUIRED_FIELDS_MISSING", async () => {
-    const createARent = vi.fn().mockRejectedValue(new Error("Fill all the fields please"));
-    const usecase = new RentUsecase({ findRentState: vi.fn() }, { createARent });
-    await expect(usecase.create({ body: {} })).rejects.toMatchObject({
+    const usecase = new RentUsecase();
+    vi.spyOn(usecase, "_createARent").mockRejectedValue(new Error("Fill all the fields please"));
+    await expect(usecase.createRent({ body: {} })).rejects.toMatchObject({
       statusCode: 422,
-      message: C.REQUIRED_FIELDS_MISSING,
+      message: accountingMessagesCodes.REQUIRED_FIELDS_MISSING,
     });
   });
 
   it("SalaryUsecase.payMonthly: already-exists → AppError 409 MONTHLY_SALARY_ALREADY_EXISTS", async () => {
-    const generateMonthlySalary = vi
-      .fn()
-      .mockRejectedValue(new Error("Monthly salary for June 2026 already exists for this user"));
-    const usecase = new SalaryUsecase({ generateMonthlySalary });
-    await expect(usecase.payMonthly({ body: {} })).rejects.toMatchObject({
-      statusCode: 409,
-      message: C.MONTHLY_SALARY_ALREADY_EXISTS,
-    });
+    // Drive the real generateMonthlySalary to the already-exists guard: valid fields +
+    // an existing monthly row → it throws the dynamic "Monthly salary for … already exists".
+    salaryRepository.findMonthlySalaryForMonth.mockResolvedValue({ id: 1 });
+    const usecase = new SalaryUsecase();
+    await expect(
+      usecase.payMonthly({
+        body: { baseSalaryId: 1, totalHoursWorked: 160, netSalary: 100, paymentDate: "2026-06-30" },
+      }),
+    ).rejects.toMatchObject({ statusCode: 409, message: accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS });
   });
 
   it("SalaryUsecase.editBase: missing-fields (legacy typo string) → AppError 422 REQUIRED_FIELDS_MISSING", async () => {
-    const editBaseSalary = vi.fn().mockRejectedValue(new Error("Please fill all fiels"));
-    const usecase = new SalaryUsecase({ editBaseSalary });
+    // Real editBaseSalary throws "Please fill all fiels" when a required field is absent.
+    const usecase = new SalaryUsecase();
     await expect(usecase.editBase({ id: 1, body: {} })).rejects.toMatchObject({
       statusCode: 422,
-      message: C.REQUIRED_FIELDS_MISSING,
+      message: accountingMessagesCodes.REQUIRED_FIELDS_MISSING,
     });
   });
 
   it("SalaryUsecase.payMonthly: re-throws an UNKNOWN error as-is", async () => {
+    // Valid fields, no existing monthly row → the write runs; make the repo write reject with
+    // an unrecognized error, which translateLegacyAccountingError must re-throw unchanged.
     const boom = new Error("db pool exhausted");
-    const generateMonthlySalary = vi.fn().mockRejectedValue(boom);
-    const usecase = new SalaryUsecase({ generateMonthlySalary });
-    await expect(usecase.payMonthly({ body: {} })).rejects.toBe(boom);
+    salaryRepository.findMonthlySalaryForMonth.mockResolvedValue(null);
+    salaryRepository.createMonthlySalaryWithOutcome.mockRejectedValue(boom);
+    const usecase = new SalaryUsecase();
+    await expect(
+      usecase.payMonthly({
+        body: { baseSalaryId: 1, totalHoursWorked: 160, netSalary: 100, paymentDate: "2026-06-30" },
+      }),
+    ).rejects.toBe(boom);
   });
 });
 
 describe("PaymentUsecase list (legacy filters parsing preserved)", () => {
   it("parses the `filters` JSON string and forwards status/level (legacy behavior)", async () => {
-    const getPayments = vi.fn().mockResolvedValue({ data: [{ id: 1 }], total: 1, totalPages: 1 });
-    const usecase = new PaymentUsecase({ findPaymentState: vi.fn() }, { getPayments });
-    const result = await usecase.list({
+    paymentRepository.getPayments.mockResolvedValue({ data: [{ id: 1 }], total: 1, totalPages: 1 });
+    const usecase = new PaymentUsecase();
+    const result = await usecase.listPayments({
       query: { filters: JSON.stringify({ status: "OVERDUE", level: "LEVEL_2" }) },
       skip: 0,
       limit: 10,
     });
-    const arg = getPayments.mock.calls[0][0];
+    const arg = paymentRepository.getPayments.mock.calls[0][0];
     expect(arg.status).toBe("OVERDUE");
     expect(arg.level).toBe("LEVEL_2");
     expect(arg.skip).toBe(0);

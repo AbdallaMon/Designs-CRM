@@ -4,28 +4,19 @@
 // module (UTILITY.FIXED_DATA_LIST). Only the WRITES are residual.
 import { fixedDataRepository } from "./fixed-data.repo.js";
 
-const legacyDefaults = {
-  createAFixedData: (a) => fixedDataRepository.createAFixedData(a),
-  editAFixedData: (a) => fixedDataRepository.editAFixedData(a),
-  deleteAFixedData: (a) => fixedDataRepository.deleteAFixedData(a),
-};
-
-export class FixedDataUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
+class FixedDataUsecase {
+  createFixedData({ data }) {
+    return fixedDataRepository.createAFixedData({ data });
   }
 
-  create({ data }) {
-    return this.legacy.createAFixedData({ data });
+  updateFixedData({ id, data }) {
+    return fixedDataRepository.editAFixedData({ id: Number(id), data });
   }
 
-  update({ id, data }) {
-    return this.legacy.editAFixedData({ id: Number(id), data });
-  }
-
-  remove({ id }) {
-    return this.legacy.deleteAFixedData({ id: Number(id) });
+  deleteFixedData({ id }) {
+    return fixedDataRepository.deleteAFixedData({ id: Number(id) });
   }
 }
 
 export const fixedDataUsecase = new FixedDataUsecase();
+export { FixedDataUsecase };

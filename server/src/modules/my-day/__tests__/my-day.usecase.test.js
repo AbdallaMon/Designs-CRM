@@ -2,7 +2,22 @@
 // truncation, the supervisor scope checker (super-sales = sales-domain only), and the
 // team overview domain gating (designers block is admin-tier only). Repos are DI-stubbed.
 import { describe, it, expect, vi } from "vitest";
+
+// DI was removed: the usecase now calls the imported `myDayRepository` and `leadRepository`
+// singletons directly. Mock both singletons (keeping each module's other real exports the
+// usecase + engines import); make() seeds them per test via Object.assign.
+vi.mock("../my-day.repo.js", async (importActual) => {
+  const actual = await importActual();
+  return { ...actual, myDayRepository: {} };
+});
+vi.mock("../../leads/lead/lead.repo.js", async (importActual) => {
+  const actual = await importActual();
+  return { ...actual, leadRepository: {} };
+});
+
 import { MyDayUsecase } from "../my-day.usecase.js";
+import { myDayRepository } from "../my-day.repo.js";
+import { leadRepository } from "../../leads/lead/lead.repo.js";
 
 const NOW = new Date("2026-07-12T12:00:00.000Z");
 const daysAgo = (d) => new Date(NOW.getTime() - d * 24 * 3600_000);
@@ -83,7 +98,13 @@ const designerUser = { id: 42, currentProfileKey: "DESIGNER_3D", isAdminTier: fa
 const superSales = { id: 8, currentProfileKey: "SUPER_SALES", isAdminTier: true, role: "STAFF" };
 const admin = { id: 1, currentProfileKey: "ADMIN", isAdminTier: true, role: "ADMIN" };
 
-const make = (o = {}) => new MyDayUsecase(makeMyDayRepo(o.myDay), makeLeadRepo(o.lead));
+// Seed both mocked repo singletons, then build the usecase (constructor takes no args now).
+// The seeded vi.fns ARE the singletons' methods, so `leadRepository.xxx.mock` assertions hold.
+const make = (o = {}) => {
+  Object.assign(myDayRepository, makeMyDayRepo(o.myDay));
+  Object.assign(leadRepository, makeLeadRepo(o.lead));
+  return new MyDayUsecase();
+};
 
 describe("getMyQueue — sales family", () => {
   it("runs the engine per bundle, drops zero-action leads, sorts critical-first", async () => {
@@ -171,7 +192,7 @@ describe("getQueueForTarget", () => {
     const u = make();
     const q = await u.getQueueForTarget({ targetUser: target, now: NOW });
     expect(q.family).toBe("SALES");
-    expect(u.leadRepo.findCockpitBundlesForUser).toHaveBeenCalledWith({ userId: 9, take: 50 });
+    expect(leadRepository.findCockpitBundlesForUser).toHaveBeenCalledWith({ userId: 9, take: 50 });
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Box, Typography, Skeleton } from "@mui/material";
 
 export const ImageLoader = ({
@@ -17,6 +17,7 @@ export const ImageLoader = ({
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const imgRef = useRef(null);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -29,21 +30,24 @@ export const ImageLoader = ({
     if (onError) onError();
   };
 
-  return (
-    <Box position="relative" {...props}>
-      {/* Loading Skeleton */}
-      {!imageLoaded && (
-        <Skeleton
-          variant="rectangular"
-          width={width}
-          height={skeletonHeight}
-          sx={{ borderRadius }}
-          animation="wave"
-        />
-      )}
+  // A cached image can finish loading BEFORE React attaches onLoad — the event
+  // then never fires and the skeleton spins forever. On mount / src change we
+  // reset and synchronously check `img.complete`, so already-decoded images
+  // reveal immediately instead of getting stuck.
+  useEffect(() => {
+    setImageLoaded(false);
+    setImageError(false);
+    const img = imgRef.current;
+    if (img && img.complete) {
+      if (img.naturalWidth > 0) handleImageLoad();
+      else handleImageError();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
 
-      {/* Error State */}
-      {imageError ? (
+  if (imageError) {
+    return (
+      <Box position="relative" {...props}>
         <Box
           sx={{
             width: width,
@@ -60,59 +64,78 @@ export const ImageLoader = ({
             Failed to load image
           </Typography>
         </Box>
-      ) : (
-        /* Image Container */
-        <Box
-          sx={{
-            borderRadius,
-            overflow: "hidden",
-            position: "relative",
-            display: imageLoaded ? "block" : "none",
-          }}
-        >
-          <img
-            src={src}
-            alt={alt}
-            loading="lazy"
-            decoding="async"
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            style={{
-              width: width,
-              height: height,
-              display: "block",
-              transition: "transform 0.3s ease",
-              ...style,
-            }}
-          />
+      </Box>
+    );
+  }
 
-          {/* Overlay for archived/special states */}
-          {isArchived && imageLoaded && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                bgcolor: "rgba(0, 0, 0, 0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius,
-              }}
-            >
-              <Typography
-                variant="h6"
-                color="white"
-                sx={{ fontWeight: "bold" }}
-              >
-                {overlayText}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      )}
+  return (
+    <Box position="relative" {...props}>
+      {/* The <img> stays in the layout at all times (never display:none) so
+          native lazy-loading actually fires; the skeleton is overlaid on top
+          and the image fades in once decoded. */}
+      <Box
+        sx={{
+          borderRadius,
+          overflow: "hidden",
+          position: "relative",
+          minHeight: imageLoaded ? undefined : skeletonHeight,
+        }}
+      >
+        {!imageLoaded && (
+          <Skeleton
+            variant="rectangular"
+            sx={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              borderRadius,
+              zIndex: 1,
+            }}
+            animation="wave"
+          />
+        )}
+
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          style={{
+            width: width,
+            height: height,
+            display: "block",
+            opacity: imageLoaded ? 1 : 0,
+            transition: "opacity 0.3s ease",
+            ...style,
+          }}
+        />
+
+        {/* Overlay for archived/special states */}
+        {isArchived && imageLoaded && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: "rgba(0, 0, 0, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius,
+            }}
+          >
+            <Typography variant="h6" color="white" sx={{ fontWeight: "bold" }}>
+              {overlayText}
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

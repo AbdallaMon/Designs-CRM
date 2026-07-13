@@ -13,14 +13,14 @@ import { Router } from "express";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
-import { noteController as c } from "./note.controller.js";
-import { NoteValidation as V } from "./note.validation.js";
+import { noteController } from "./note.controller.js";
+import { NoteValidation } from "./note.validation.js";
 
 const router = Router();
 
 router.use(AuthMiddleware.requireAuth);
 
-router.get("/", validate(V.listQuery, "query"), asyncHandler(c.list));
-router.post("/", validate(V.addNote), asyncHandler(c.create));
+router.get("/", validate(NoteValidation.listQuery, "query"), asyncHandler(noteController.getNotes));
+router.post("/", validate(NoteValidation.addNote), asyncHandler(noteController.createNote));
 
 export { router as noteRouter };

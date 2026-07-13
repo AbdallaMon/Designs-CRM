@@ -25,8 +25,6 @@ app.use(cookieParser());
 
 // ─── Static files ─────────────────────────────────────────────────────────────
 
-app.use("/uploads", express.static(env.UPLOADS_PATH));
-
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 // ─── Error handling ───────────────────────────────────────────────────────────
@@ -35,8 +33,10 @@ app.use("/uploads", express.static(env.UPLOADS_PATH));
 if (env.ISLOCAL) {
   app.use(
     "/uploads",
-    express.static("E:/home/dreamstudiio.com/public_html/uploads"),
+    express.static("C:/home/dreamstudiio.com/public_html/uploads"),
   );
+} else {
+  app.use("/uploads", express.static(env.UPLOADS_PATH));
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────

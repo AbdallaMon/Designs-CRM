@@ -22,7 +22,7 @@ router.post(
   AuthMiddleware.requirePermissions([P.CREATE]),
   validate(DeliveryValidation.create),
   AuthMiddleware.requireSpecialChecker(deliveryController.checkIfUserCanMutateProjectFromBody),
-  asyncHandler(deliveryController.create),
+  asyncHandler(deliveryController.createDeliverySchedule),
 );
 
 // ── delivery schedules of a project (object-scoped READ) ─────────────────────────
@@ -31,7 +31,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.LIST]),
   validate(DeliveryValidation.projectIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(deliveryController.checkIfUserCanAccessProject),
-  asyncHandler(deliveryController.schedules),
+  asyncHandler(deliveryController.getDeliverySchedules),
 );
 
 // ── link a delivery to a meeting → workflow action (was POST /:deliveryId/link-meeting) ──
@@ -50,7 +50,7 @@ router.delete(
   AuthMiddleware.requirePermissions([P.DELETE]),
   validate(DeliveryValidation.deliveryIdParams, "params"),
   AuthMiddleware.requireSpecialChecker(deliveryController.checkIfUserCanMutateDelivery),
-  asyncHandler(deliveryController.remove),
+  asyncHandler(deliveryController.deleteDeliverySchedule),
 );
 
 export { router as deliveryRouter };

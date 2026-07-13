@@ -7,92 +7,87 @@ import { ok, created } from "../../shared/http/response.js";
 import { questionsMessagesCodes, messagesNames } from "@dms/shared";
 import { questionsUsecase } from "./questions.usecase.js";
 
-const C = questionsMessagesCodes;
 const TK = messagesNames.questionsMessages;
 
 export class QuestionsController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  getQuestionTypes = async (req, res) => {
-    const data = await this.usecase.getQuestionTypes({
+  async getQuestionTypes(req, res) {
+    const data = await questionsUsecase.getQuestionTypes({
       clientLeadId: req.params.clientLeadId,
       authUser: req.auth,
     });
-    return ok(res, data, C.QUESTION_TYPES_FETCHED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.QUESTION_TYPES_FETCHED, TK);
+  }
 
-  getSessionQuestions = async (req, res) => {
-    const data = await this.usecase.getSessionQuestions({
+  async getSessionQuestions(req, res) {
+    const data = await questionsUsecase.getSessionQuestions({
       clientLeadId: req.params.clientLeadId,
       questionTypeId: req.query.questionTypeId,
       authUser: req.auth,
     });
-    return ok(res, data, C.SESSION_QUESTIONS_FETCHED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.SESSION_QUESTIONS_FETCHED, TK);
+  }
 
-  submitAnswer = async (req, res) => {
-    const data = await this.usecase.submitAnswer({
+  async submitAnswer(req, res) {
+    const data = await questionsUsecase.submitAnswer({
       sessionQuestionId: req.params.sessionQuestionId,
       response: req.body.response,
       authUser: req.auth,
     });
-    return ok(res, data, C.ANSWER_SAVED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.ANSWER_SAVED, TK);
+  }
 
-  submitBulkAnswers = async (req, res) => {
-    const data = await this.usecase.submitBulkAnswers({
+  async submitBulkAnswers(req, res) {
+    const data = await questionsUsecase.submitBulkAnswers({
       answers: req.body.answers,
       authUser: req.auth,
     });
-    return ok(res, data, C.ANSWERS_SAVED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.ANSWERS_SAVED, TK);
+  }
 
-  createCustomQuestion = async (req, res) => {
-    const data = await this.usecase.createCustomQuestion({
+  async createCustomQuestion(req, res) {
+    const data = await questionsUsecase.createCustomQuestion({
       clientLeadId: req.params.clientLeadId,
       questionTypeId: req.body.questionTypeId,
       title: req.body.title,
       authUser: req.auth,
     });
-    return created(res, data, C.CUSTOM_QUESTION_CREATED, TK);
-  };
+    return created(res, data, questionsMessagesCodes.CUSTOM_QUESTION_CREATED, TK);
+  }
 
-  getVersaCategories = async (req, res) => {
-    const data = await this.usecase.getVersaCategories({
+  async getVersaCategories(req, res) {
+    const data = await questionsUsecase.getVersaCategories({
       clientLeadId: req.params.clientLeadId,
       authUser: req.auth,
     });
-    return ok(res, data, C.VERSA_CATEGORIES_FETCHED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.VERSA_CATEGORIES_FETCHED, TK);
+  }
 
-  getVersaByCategory = async (req, res) => {
-    const data = await this.usecase.getVersaByCategory({
-      clientLeadId: req.params.clientLeadId,
-      categoryId: req.params.categoryId,
-      authUser: req.auth,
-    });
-    return ok(res, data, C.VERSA_FETCHED, TK);
-  };
-
-  createVersa = async (req, res) => {
-    const data = await this.usecase.createVersa({
+  async getVersaByCategory(req, res) {
+    const data = await questionsUsecase.getVersaByCategory({
       clientLeadId: req.params.clientLeadId,
       categoryId: req.params.categoryId,
       authUser: req.auth,
     });
-    return created(res, data, C.VERSA_CREATED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.VERSA_FETCHED, TK);
+  }
 
-  updateVersaStep = async (req, res) => {
-    const data = await this.usecase.updateVersaStep({
+  async createVersa(req, res) {
+    const data = await questionsUsecase.createVersa({
+      clientLeadId: req.params.clientLeadId,
+      categoryId: req.params.categoryId,
+      authUser: req.auth,
+    });
+    return created(res, data, questionsMessagesCodes.VERSA_CREATED, TK);
+  }
+
+  async updateVersaStep(req, res) {
+    const data = await questionsUsecase.updateVersaStep({
       stepId: req.params.stepId,
       fields: req.body,
       authUser: req.auth,
     });
-    return ok(res, data, C.VERSA_STEP_SAVED, TK);
-  };
+    return ok(res, data, questionsMessagesCodes.VERSA_STEP_SAVED, TK);
+  }
 }
 
-export const questionsController = new QuestionsController(questionsUsecase);
+export const questionsController = new QuestionsController();

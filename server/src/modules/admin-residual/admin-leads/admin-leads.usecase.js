@@ -19,6 +19,8 @@ import XLSX from "xlsx";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { authMessagesCodes } from "@dms/shared";
 import { adminLeadsRepository } from "./admin-leads.repo.js";
+import { leadRepository } from "../../leads/lead/lead.repo.js";
+import { newLeadNotification } from "../../../infra/notifications/index.js";
 import {
   addUsersToATeleChannelUsingQueue,
   createChannelAndAddUsers,
@@ -111,31 +113,10 @@ export async function addAllProjectUsersToChannel({ clientLeadId }) {
   });
 }
 
-const legacyDefaults = {
-  // admin lead field update (also wrapped by the leads module — reused here)
-  updateLeadField: (a) => adminLeadsRepository.updateLeadField(a),
-  // admin client field update
-  updateClientField: (a) => adminLeadsRepository.updateClientField(a),
-  // admin delete lead (FK-aware transactional delete)
-  deleteALead: (leadId) => adminLeadsRepository.deleteALead(leadId),
-  // telegram — create channel + queue project users (lead-scoped)
-  createNewTelegramLink: (a) => createNewTelegramLink(a),
-  addAllProjectUsersToChannel: (a) => addAllProjectUsersToChannel(a),
-  // new-lead side effects (the CORRECT fns the public handler uses — deviation #2)
-  generateCodeForNewLead: (clientId) =>
-    import("../../leads/lead/lead.repo.js").then((m) => m.leadRepository.generateCodeForNewLead(clientId)),
-  uploadFile: (body, clientLeadId) =>
-    import("../../leads/lead/lead.repo.js").then((m) => m.leadRepository.uploadFile(body, clientLeadId)),
-  newLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../infra/notifications/index.js").then((m) => m.newLeadNotification(leadId, client, isAdmin)),
-};
+// new-lead side effects use the CORRECT fns the public handler uses (deviation #2):
+// leadRepository.generateCodeForNewLead / leadRepository.uploadFile (imported at top).
 
-export class AdminLeadsUsecase {
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class AdminLeadsUsecase {
   // ── bulk excel import ─────────────────────────────────────────────────────────────
   // Orchestration ported VERBATIM from the legacy createLeadFromExcelData (XLSX parse +
   // per-row client/lead/note writes through the repo). The controller owns req/res (the
@@ -159,12 +140,12 @@ export class AdminLeadsUsecase {
       const name = row[2] || "unknown";
 
       // Generate fake email based on last client ID
-      const lastClient = await this.repo.findLastClient();
+      const lastClient = await adminLeadsRepository.findLastClient();
       const newClientId = lastClient ? lastClient.id + 1 : 1;
       const email = `fakeEmail${newClientId}@example.com`;
 
       // Create client
-      const client = await this.repo.createClient({
+      const client = await adminLeadsRepository.createClient({
         data: {
           phone,
           name,
@@ -180,7 +161,7 @@ export class AdminLeadsUsecase {
         ? XLSX.SSF.format("yyyy-mm-dd", row[9])
         : new Date().toISOString();
 
-      const clientLead = await this.repo.createClientLead({
+      const clientLead = await adminLeadsRepository.createClientLead({
         data: {
           clientId: client.id,
           selectedCategory: "OLDLEAD",
@@ -212,7 +193,7 @@ export class AdminLeadsUsecase {
       }
 
       for (const note of notes) {
-        await this.repo.createNote({
+        await adminLeadsRepository.createNote({
           data: {
             content: note.content,
             clientLeadId: clientLead.id,
@@ -252,37 +233,37 @@ export class AdminLeadsUsecase {
 
   // ── admin lead field update (lead-scoped; checker ran at the route) ──────────────
   updateLeadField({ id, body }) {
-    return this.legacy.updateLeadField({ data: this.#buildSingleFieldUpdate(body), leadId: id });
+    return adminLeadsRepository.updateLeadField({ data: this.#buildSingleFieldUpdate(body), leadId: id });
   }
 
   // ── admin client field update (client-keyed; no single lead to scope) ────────────
   updateClientField({ clientId, body }) {
-    return this.legacy.updateClientField({ data: this.#buildSingleFieldUpdate(body), clientId });
+    return adminLeadsRepository.updateClientField({ data: this.#buildSingleFieldUpdate(body), clientId });
   }
 
   // ── admin delete lead (base-role-ADMIN only — FIX 1; lead-scope checker ran at the
   //    route too). The guard runs before the destructive cascading delete. ──────────
   deleteLead({ id, authUser }) {
     this.assertCanDeleteLead({ authUser });
-    return this.legacy.deleteALead(id);
+    return adminLeadsRepository.deleteALead(id);
   }
 
   // ── telegram (lead-scoped; checker ran at the route) ─────────────────────────────
   createTelegramLink({ leadId }) {
-    return this.legacy.createNewTelegramLink({ leadId });
+    return createNewTelegramLink({ leadId });
   }
 
   assignTelegramUsers({ clientLeadId }) {
-    return this.legacy.addAllProjectUsersToChannel({ clientLeadId });
+    return addAllProjectUsersToChannel({ clientLeadId });
   }
 
   // ── admin create new lead (inline-in-legacy logic, faithfully ported) ────────────
   async createNewLead({ body }) {
-    const created = await this.repo.runInTransaction(async (tx) => {
-      let client = await this.repo.findClientByEmail({ email: body.email, client: tx });
+    const created = await adminLeadsRepository.runInTransaction(async (tx) => {
+      let client = await adminLeadsRepository.findClientByEmail({ email: body.email, client: tx });
 
       if (!client) {
-        client = await this.repo.createClient({
+        client = await adminLeadsRepository.createClient({
           data: {
             name: body.name,
             phone: body.phone.replace(/\s+/g, ""),
@@ -291,7 +272,7 @@ export class AdminLeadsUsecase {
           client: tx,
         });
       } else {
-        await this.repo.updateClientPhone({ id: client.id, phone: body.phone, client: tx });
+        await adminLeadsRepository.updateClientPhone({ id: client.id, phone: body.phone, client: tx });
       }
 
       const data = {
@@ -304,7 +285,7 @@ export class AdminLeadsUsecase {
         }`,
       };
 
-      data.code = await this.legacy.generateCodeForNewLead(client.id);
+      data.code = await leadRepository.generateCodeForNewLead(client.id);
 
       if (body.clientDescription) data.clientDescription = body.clientDescription;
       if (body.emirate) data.emirate = body.emirate;
@@ -338,17 +319,18 @@ export class AdminLeadsUsecase {
 
       data.initialConsult = false;
 
-      const clientLead = await this.repo.createClientLead({ data, client: tx });
+      const clientLead = await adminLeadsRepository.createClientLead({ data, client: tx });
       return { clientLead, client };
     });
 
     // Side effects AFTER the transaction commits (file upload + notification), matching
     // the legacy ordering. `uploadFile` is the correct fn (deviation #2).
-    if (body.url) await this.legacy.uploadFile(body, created.clientLead.id);
-    await this.legacy.newLeadNotification(created.clientLead.id, created.client, true);
+    if (body.url) await leadRepository.uploadFile(body, created.clientLead.id);
+    await newLeadNotification(created.clientLead.id, created.client, true);
 
     return created.clientLead;
   }
 }
 
-export const adminLeadsUsecase = new AdminLeadsUsecase(adminLeadsRepository);
+export const adminLeadsUsecase = new AdminLeadsUsecase();
+export { AdminLeadsUsecase };

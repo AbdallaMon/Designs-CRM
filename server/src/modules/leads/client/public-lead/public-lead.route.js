@@ -14,8 +14,8 @@
 import { Router } from "express";
 import { asyncHandler } from "../../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../../shared/middlewares/validate.middleware.js";
-import { publicLeadController as c } from "./public-lead.controller.js";
-import { PublicLeadValidation as V } from "./public-lead.validation.js";
+import { publicLeadController } from "./public-lead.controller.js";
+import { PublicLeadValidation } from "./public-lead.validation.js";
 import {
   createLeadLimiter,
   generalLeadLimiter,
@@ -26,30 +26,30 @@ const router = Router();
 router.post(
   "/new-lead",
   createLeadLimiter,
-  validate(V.newLead),
-  asyncHandler(c.createLead),
+  validate(PublicLeadValidation.newLead),
+  asyncHandler(publicLeadController.createLead),
 );
 
 router.post(
   "/new-lead/register",
   createLeadLimiter,
-  validate(V.registerLead),
-  asyncHandler(c.registerLead),
+  validate(PublicLeadValidation.registerLead),
+  asyncHandler(publicLeadController.registerLead),
 );
 
 router.post(
   "/new-lead/complete-register/:leadId",
   generalLeadLimiter,
-  validate(V.leadIdParams, "params"),
-  validate(V.completeRegister),
-  asyncHandler(c.completeRegister),
+  validate(PublicLeadValidation.leadIdParams, "params"),
+  validate(PublicLeadValidation.completeRegister),
+  asyncHandler(publicLeadController.completeRegister),
 );
 
 router.post(
   "/cooperation-requests",
   generalLeadLimiter,
-  validate(V.cooperationRequest),
-  asyncHandler(c.cooperationRequest),
+  validate(PublicLeadValidation.cooperationRequest),
+  asyncHandler(publicLeadController.cooperationRequest),
 );
 
 export { router as publicLeadRouter };

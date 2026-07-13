@@ -108,7 +108,6 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
             <VersaModelEditor
               category={selectedCategory}
               versaData={versaData}
-              onSave={async () => await handleCategorySelect(selectedCategory)}
               onClose={handleBackToCategories}
             />
           )

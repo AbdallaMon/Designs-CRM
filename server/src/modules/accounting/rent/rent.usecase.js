@@ -3,42 +3,25 @@
 // required-fields / "Rent not found" guards (byte-identical to legacy) and the row-shaping
 // (via rent.dto.js) are orchestrated here. The renew guard 404s a forged/missing rent id
 // before the writes run (additive hardening, unchanged from before this reorg).
-//
-// The `legacy` constructor param remains a dependency-injection seam; its defaults now point
-// at the relocated repo/usecase code instead of the deleted accountant service.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { accountingMessagesCodes as C } from "@dms/shared";
+import { accountingMessagesCodes } from "@dms/shared";
 import { rentRepository } from "./rent.repo.js";
 import { shapeRentRow, shapeRentList } from "./rent.dto.js";
 import { translateLegacyAccountingError } from "../accounting.errors.js";
 
-export class RentUsecase {
-  /**
-   * @param {import("./rent.repo.js").RentRepository} repository
-   * @param {object} [legacy] dependency-injection seam (defaults to the relocated code)
-   */
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    const defaults = {
-      getRents: (a) => this._getRents(a),
-      createARent: (a) => this._createARent(a),
-      renewRentAndMakeOutCome: (a) => this._renewRentAndMakeOutCome(a),
-    };
-    this.legacy = { ...defaults, ...legacy };
-  }
-
+class RentUsecase {
   async checkRentExists({ rentId }) {
-    const rent = await this.repo.findRentState({ rentId });
-    if (!rent) throw new AppError(C.RENT_NOT_FOUND, 404);
+    const rent = await rentRepository.findRentState({ rentId });
+    if (!rent) throw new AppError(accountingMessagesCodes.RENT_NOT_FOUND, 404);
     return rent;
   }
 
   // ── relocated list read + shaping (formerly legacy getRents) ─────────────────────
   async _getRents({ limit = 1, skip = 10 }) {
-    let rents = await this.repo.findManyRents({ limit, skip });
+    let rents = await rentRepository.findManyRents({ limit, skip });
 
     rents = shapeRentList(rents);
-    const total = await this.repo.countRents();
+    const total = await rentRepository.countRents();
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -57,7 +40,7 @@ export class RentUsecase {
 
     amount = Number(amount);
 
-    const newRent = await this.repo.createRent({
+    const newRent = await rentRepository.createRent({
       name,
       description,
     });
@@ -71,7 +54,7 @@ export class RentUsecase {
       endDate,
       paymentDate,
     });
-    let createdRent = await this.repo.findRentRow({ id: newRent.id });
+    let createdRent = await rentRepository.findRentRow({ id: newRent.id });
     createdRent = shapeRentRow(createdRent);
 
     return {
@@ -87,20 +70,20 @@ export class RentUsecase {
     }
 
     amount = Number(amount);
-    const rent = await this.repo.findRentForRenew({ id: rentId });
+    const rent = await rentRepository.findRentForRenew({ id: rentId });
 
     if (!rent) {
       throw new Error("Rent not found");
     }
 
-    const newRentPeriod = await this.repo.createRentPeriod({
+    const newRentPeriod = await rentRepository.createRentPeriod({
       amount,
       rentId: rent.id,
       startDate,
       endDate,
     });
 
-    const outcome = await this.repo.createRentOutcome({
+    const outcome = await rentRepository.createRentOutcome({
       amount,
       name,
       paymentDate,
@@ -113,21 +96,21 @@ export class RentUsecase {
     };
   }
 
-  list({ skip, limit }) {
-    return this.legacy.getRents({ limit: Number(limit), skip: Number(skip) });
+  listRents({ skip, limit }) {
+    return this._getRents({ limit: Number(limit), skip: Number(skip) });
   }
 
   // Known legacy throw: "Fill all the fields please" (createARent also delegates to
   // renewRentAndMakeOutCome, whose required-fields/"Rent not found" throws are covered too).
-  create({ body }) {
-    return translateLegacyAccountingError(() => this.legacy.createARent(body));
+  createRent({ body }) {
+    return translateLegacyAccountingError(() => this._createARent(body));
   }
 
   // Known legacy throws: "Fill all the fields please" / "Rent not found".
   renew({ rentId, body }) {
     const { amount, startDate, endDate, paymentDate, name } = body;
     return translateLegacyAccountingError(() =>
-      this.legacy.renewRentAndMakeOutCome({
+      this._renewRentAndMakeOutCome({
         rentId: Number(rentId),
         amount,
         startDate,
@@ -139,4 +122,5 @@ export class RentUsecase {
   }
 }
 
-export const rentUsecase = new RentUsecase(rentRepository);
+export const rentUsecase = new RentUsecase();
+export { RentUsecase };

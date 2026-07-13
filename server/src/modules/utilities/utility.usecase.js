@@ -19,48 +19,34 @@
 // (UTILITY_MODEL_PROJECTIONS). The legacy builders are NO LONGER called.
 import { AppError } from "../../shared/errors/AppError.js";
 import {
-  utilitiesMessagesCodes as C,
+  utilitiesMessagesCodes,
   UTILITY_MODEL_ALLOWLIST,
   UTILITY_MODEL_PROJECTIONS,
 } from "@dms/shared";
 import { utilityRepository } from "./utility.repo.js";
 
 // The cross-model search (`searchData`) is now owned here (ported 1:1 from the former
-// legacy/utility.js). Its Prisma I/O is delegated to the repo; the DI seam is retained so
-// tests can still override the search implementation via the constructor.
-const legacyDefaults = {
-  searchData: (body, currentUser) => searchData(body, currentUser),
-};
-
+// legacy/utility.js). Its Prisma I/O is delegated to the repo (see below).
 export class UtilityUsecase {
-  /**
-   * @param {import("./utility.repo.js").UtilityRepository} repository
-   * @param {Partial<typeof legacyDefaults>} [legacy]
-   */
-  constructor(repository, legacy = {}) {
-    this.repo = repository;
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
   // Reject any model not in the allow-list (the mass-read hardening). Returns the model's
   // fixed server-side projection on success — the ONLY columns/relations the caller may
   // read for that model (FIX 2). Never trusts a client `select`/`include`.
   #resolveModelProjection(model) {
     if (!UTILITY_MODEL_ALLOWLIST.includes(model) || !UTILITY_MODEL_PROJECTIONS[model]) {
-      throw new AppError(C.MODEL_NOT_ALLOWED, 400);
+      throw new AppError(utilitiesMessagesCodes.MODEL_NOT_ALLOWED, 400);
     }
     return UTILITY_MODEL_PROJECTIONS[model];
   }
 
   // ── simple lookups ──────────────────────────────────────────────────────────────
   listFixedData() {
-    return this.repo.listFixedData();
+    return utilityRepository.listFixedData();
   }
 
   // GET /user-logs — self-scoped: does a log exist for the AUTHENTICATED user in range?
   // The subject is authUser.id, NEVER a client-supplied userId (FIX 1).
   checkUserLog({ query, authUser }) {
-    return this.repo.userLogExists({
+    return utilityRepository.userLogExists({
       userId: authUser.id,
       startTime: query.startTime,
       endTime: query.endTime,
@@ -70,7 +56,7 @@ export class UtilityUsecase {
   // POST /user-logs — self-scoped: creates the AUTHENTICATED user's log. The subject is
   // authUser.id, NEVER a client-supplied userId (FIX 1).
   async submitUserLog({ body, authUser }) {
-    const log = await this.repo.createUserLog({
+    const log = await utilityRepository.createUserLog({
       userId: authUser.id,
       date: body.date,
       description: body.description,
@@ -80,15 +66,15 @@ export class UtilityUsecase {
   }
 
   getUserRole({ userId }) {
-    return this.repo.getUserRole({ userId });
+    return utilityRepository.getUserRole({ userId });
   }
 
   getOtherRoles({ userId }) {
-    return this.repo.getOtherRoles({ userId });
+    return utilityRepository.getOtherRoles({ userId });
   }
 
   getAdmins() {
-    return this.repo.getAdmins();
+    return utilityRepository.getAdmins();
   }
 
   getImages({ query }) {
@@ -99,7 +85,7 @@ export class UtilityUsecase {
             .map((id) => Number(id))
             .filter(Boolean)
         : [];
-    return this.repo.listImages({
+    return utilityRepository.listImages({
       patternIdList: toIdList(query.patternIds),
       spaceIdList: toIdList(query.spaceIds),
     });
@@ -111,12 +97,12 @@ export class UtilityUsecase {
   // allow-list denial surfaces as a rejected promise (asyncHandler → error handler).
   async getModelData({ query }) {
     const select = this.#resolveModelProjection(query.model);
-    return this.repo.findModelPickList({ model: query.model, select });
+    return utilityRepository.findModelPickList({ model: query.model, select });
   }
 
   async getModelIds({ query }) {
     const select = this.#resolveModelProjection(query.model);
-    return this.repo.findModelPickList({ model: query.model, select });
+    return utilityRepository.findModelPickList({ model: query.model, select });
   }
 
   // ── cross-model search ────────────────────────────────────────────────────────────
@@ -124,11 +110,11 @@ export class UtilityUsecase {
   // the same role/isSuperSales fields, so we pass it directly (no extra DB hit, no cookie
   // re-decode). The legacy searchData applies its own role-derived scoping.
   search({ query, authUser }) {
-    return this.legacy.searchData(query, authUser);
+    return searchData(query, authUser);
   }
 }
 
-export const utilityUsecase = new UtilityUsecase(utilityRepository);
+export const utilityUsecase = new UtilityUsecase();
 
 // ── cross-model search (ported VERBATIM from the former legacy/utility.js) ───────────
 // Orchestration only: builds the role-derived `where`, then delegates every Prisma read

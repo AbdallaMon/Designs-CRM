@@ -5,24 +5,19 @@ import { ok } from "../../shared/http/response.js";
 import { salesStagesMessagesCodes, messagesNames } from "@dms/shared";
 import { salesStagesUsecase } from "./sales-stages.usecase.js";
 
-const C = salesStagesMessagesCodes;
 const TK = messagesNames.salesStagesMessages;
 
 export class SalesStagesController {
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
-  getStages = async (req, res) => {
-    const data = await this.usecase.getStages({
+  async getStages(req, res) {
+    const data = await salesStagesUsecase.getStages({
       clientLeadId: req.params.clientLeadId,
       authUser: req.auth,
     });
-    return ok(res, data, C.SALES_STAGES_FETCHED, TK);
-  };
+    return ok(res, data, salesStagesMessagesCodes.SALES_STAGES_FETCHED, TK);
+  }
 
-  setStage = async (req, res) => {
-    const data = await this.usecase.setStage({
+  async setStage(req, res) {
+    const data = await salesStagesUsecase.setStage({
       clientLeadId: req.params.clientLeadId,
       nextStage: req.body.nextStage,
       // accept the legacy misspelling `curentStageType` as a fallback (1:1 compat).
@@ -30,8 +25,8 @@ export class SalesStagesController {
       action: req.body.action,
       authUser: req.auth,
     });
-    return ok(res, data, C.SALES_STAGE_UPDATED, TK);
-  };
+    return ok(res, data, salesStagesMessagesCodes.SALES_STAGE_UPDATED, TK);
+  }
 }
 
-export const salesStagesController = new SalesStagesController(salesStagesUsecase);
+export const salesStagesController = new SalesStagesController();

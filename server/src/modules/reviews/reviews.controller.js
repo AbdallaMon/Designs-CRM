@@ -4,31 +4,26 @@ import { ok } from "../../shared/http/response.js";
 import { reviewsMessagesCodes, messagesNames } from "@dms/shared";
 import { reviewsUsecase } from "./reviews.usecase.js";
 
-const C = reviewsMessagesCodes;
 const TK = messagesNames.reviewsMessages;
 
 export class ReviewsController {
-  constructor(usecase) {
-    this.usecase = usecase;
+  async oauthCallback(req, res) {
+    const data = await reviewsUsecase.handleOAuthCallback({ code: req.query.code });
+    return ok(res, data, reviewsMessagesCodes.REVIEW_OAUTH_CONNECTED, TK);
   }
 
-  oauthCallback = async (req, res) => {
-    const data = await this.usecase.handleOAuthCallback({ code: req.query.code });
-    return ok(res, data, C.REVIEW_OAUTH_CONNECTED, TK);
-  };
+  async getLocations(req, res) {
+    const data = await reviewsUsecase.getLocations({ code: req.query.code });
+    return ok(res, data, reviewsMessagesCodes.REVIEW_LOCATIONS_FETCHED, TK);
+  }
 
-  getLocations = async (req, res) => {
-    const data = await this.usecase.getLocations({ code: req.query.code });
-    return ok(res, data, C.REVIEW_LOCATIONS_FETCHED, TK);
-  };
-
-  getReviews = async (req, res) => {
-    const data = await this.usecase.getReviews({
+  async getReviews(req, res) {
+    const data = await reviewsUsecase.getReviews({
       accountId: req.query.accountId,
       locationId: req.query.locationId,
     });
-    return ok(res, data, C.REVIEWS_FETCHED, TK);
-  };
+    return ok(res, data, reviewsMessagesCodes.REVIEWS_FETCHED, TK);
+  }
 }
 
-export const reviewsController = new ReviewsController(reviewsUsecase);
+export const reviewsController = new ReviewsController();

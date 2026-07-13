@@ -11,12 +11,12 @@ import { ExpenseValidation } from "./expense.validation.js";
 const P = PERMISSIONS.ACCOUNTING;
 const router = Router();
 
-router.get("/", AuthMiddleware.requirePermissions([P.EXPENSE_LIST]), asyncHandler(expenseController.list));
+router.get("/", AuthMiddleware.requirePermissions([P.EXPENSE_LIST]), asyncHandler(expenseController.getExpenses));
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.EXPENSE_CREATE]),
   validate(ExpenseValidation.create),
-  asyncHandler(expenseController.create),
+  asyncHandler(expenseController.createExpense),
 );
 
 export { router as expenseRouter };

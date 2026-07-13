@@ -1,16 +1,16 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { ContractUtilityUsecase } from "../contract-utility.usecase.js";
-
-/** Minimal fake repository — only the methods the tested usecases touch. */
-function makeRepo(overrides = {}) {
-  return {
+// DI removed: the usecase calls the imported `contractUtilityRepository` singleton directly.
+vi.mock("../contract-utility.repo.js", () => ({
+  contractUtilityRepository: {
     getUtility: vi.fn(),
     createUtility: vi.fn(),
     updateUtility: vi.fn(),
-    ...overrides,
-  };
-}
+  },
+}));
+
+import { contractUtilityUsecase } from "../contract-utility.usecase.js";
+import { contractUtilityRepository } from "../contract-utility.repo.js";
 
 const INPUT = {
   obligationsPartyOneAr: "a",
@@ -19,40 +19,36 @@ const INPUT = {
   obligationsPartyTwoEn: "d",
 };
 
+beforeEach(() => vi.clearAllMocks());
+
 describe("ContractUtilityUsecase.saveObligations", () => {
   it("creates the singleton with an explicit id when none exists", async () => {
     // Regression: ContractUtility.id has no DB default, so a create() without an
     // explicit id makes Prisma throw "Argument `id` is missing". The usecase must
     // supply the fixed singleton id (1) so the first obligations save succeeds.
     const created = { id: 1, ...INPUT };
-    const repo = makeRepo({
-      getUtility: vi.fn().mockResolvedValue(null),
-      createUtility: vi.fn().mockResolvedValue(created),
-    });
-    const usecase = new ContractUtilityUsecase(repo);
+    contractUtilityRepository.getUtility.mockResolvedValue(null);
+    contractUtilityRepository.createUtility.mockResolvedValue(created);
 
-    const result = await usecase.saveObligations({ input: INPUT });
+    const result = await contractUtilityUsecase.saveObligations({ input: INPUT });
 
-    expect(repo.createUtility).toHaveBeenCalledWith({
+    expect(contractUtilityRepository.createUtility).toHaveBeenCalledWith({
       data: { ...INPUT, id: 1 },
     });
-    expect(repo.updateUtility).not.toHaveBeenCalled();
+    expect(contractUtilityRepository.updateUtility).not.toHaveBeenCalled();
     expect(result).toBe(created);
   });
 
   it("updates the existing singleton (no id injected into the update)", async () => {
     const existing = { id: 1, ...INPUT };
     const updated = { ...existing, obligationsPartyOneAr: "z" };
-    const repo = makeRepo({
-      getUtility: vi.fn().mockResolvedValue(existing),
-      updateUtility: vi.fn().mockResolvedValue(updated),
-    });
-    const usecase = new ContractUtilityUsecase(repo);
+    contractUtilityRepository.getUtility.mockResolvedValue(existing);
+    contractUtilityRepository.updateUtility.mockResolvedValue(updated);
 
-    const result = await usecase.saveObligations({ input: INPUT });
+    const result = await contractUtilityUsecase.saveObligations({ input: INPUT });
 
-    expect(repo.updateUtility).toHaveBeenCalledWith({ id: 1, data: INPUT });
-    expect(repo.createUtility).not.toHaveBeenCalled();
+    expect(contractUtilityRepository.updateUtility).toHaveBeenCalledWith({ id: 1, data: INPUT });
+    expect(contractUtilityRepository.createUtility).not.toHaveBeenCalled();
     expect(result).toBe(updated);
   });
 });

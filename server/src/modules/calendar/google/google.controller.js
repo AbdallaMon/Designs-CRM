@@ -6,36 +6,31 @@ import { ok, deleted } from "../../../shared/http/response.js";
 import { calendarMessagesCodes, messagesNames } from "@dms/shared";
 import { googleCalendarUsecase } from "./google.usecase.js";
 
-const C = calendarMessagesCodes;
 const TK = messagesNames.calendarMessages;
 
-export class GoogleCalendarController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class GoogleCalendarController {
+  // GET /google/connect — legacy returned { isConnected:false, authUrl }.
+  async connectGet(req, res) {
+    const data = await googleCalendarUsecase.connect({ authUser: req.auth });
+    return ok(res, data, calendarMessagesCodes.GOOGLE_AUTH_URL_GENERATED, TK);
   }
 
-  // GET /google/connect — legacy returned { isConnected:false, authUrl }.
-  connectGet = async (req, res) => {
-    const data = await this.usecase.connect({ authUser: req.auth });
-    return ok(res, data, C.GOOGLE_AUTH_URL_GENERATED, TK);
-  };
-
   // POST /google/connect — legacy returned { isConnected:false, redirectUrl }.
-  connectPost = async (req, res) => {
-    const { isConnected, authUrl } = await this.usecase.connect({ authUser: req.auth });
-    return ok(res, { isConnected, redirectUrl: authUrl }, C.GOOGLE_AUTH_URL_GENERATED, TK);
-  };
+  async connectPost(req, res) {
+    const { isConnected, authUrl } = await googleCalendarUsecase.connect({ authUser: req.auth });
+    return ok(res, { isConnected, redirectUrl: authUrl }, calendarMessagesCodes.GOOGLE_AUTH_URL_GENERATED, TK);
+  }
 
   // GET /google/callback — PUBLIC OAuth callback. Google redirects the browser here with
   // ?code&state. Behavior frozen: on success/failure redirect to the legacy dashboard URL.
   // We do NOT log code/state/tokens.
-  callback = async (req, res) => {
+  async callback(req, res) {
     const { code, state } = req.query;
     if (!code || !state) {
       return res.status(400).send("Missing authorization code or state");
     }
     try {
-      await this.usecase.handleCallback({ code, state });
+      await googleCalendarUsecase.handleCallback({ code, state });
       return res.redirect(
         `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard?googleAuthSuccess=1&profileOpen=true`,
       );
@@ -46,19 +41,20 @@ export class GoogleCalendarController {
         )}&profileOpen=true`,
       );
     }
-  };
+  }
 
   // POST /google/disconnect.
-  disconnect = async (req, res) => {
-    await this.usecase.disconnect({ authUser: req.auth });
-    return deleted(res, C.GOOGLE_DISCONNECTED, TK);
-  };
+  async disconnect(req, res) {
+    await googleCalendarUsecase.disconnect({ authUser: req.auth });
+    return deleted(res, calendarMessagesCodes.GOOGLE_DISCONNECTED, TK);
+  }
 
   // GET /google/status.
-  status = async (req, res) => {
-    const data = await this.usecase.status({ authUser: req.auth });
-    return ok(res, data, C.GOOGLE_STATUS_FETCHED, TK);
-  };
+  async getGoogleStatus(req, res) {
+    const data = await googleCalendarUsecase.getGoogleStatus({ authUser: req.auth });
+    return ok(res, data, calendarMessagesCodes.GOOGLE_STATUS_FETCHED, TK);
+  }
 }
 
-export const googleCalendarController = new GoogleCalendarController(googleCalendarUsecase);
+export const googleCalendarController = new GoogleCalendarController();
+export { GoogleCalendarController };

@@ -23,6 +23,7 @@ export const clientPortalMessagesCodes = {
   NOTES_FETCHED: "NOTES_FETCHED",
   NOTE_CREATED: "NOTE_CREATED",
   NOTE_TARGET_INVALID: "NOTE_TARGET_INVALID", // idKey not in the client allow-list
+  NOTE_NOT_AUTHORIZED: "NOTE_NOT_AUTHORIZED", // token missing/invalid or target not owned by the token's session
   NOTE_CONTENT_TOO_LONG: "NOTE_CONTENT_TOO_LONG",
 
   // ── languages (public lookup) ──────────────────────────────────────────────────

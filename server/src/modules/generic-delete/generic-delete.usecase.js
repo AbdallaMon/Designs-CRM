@@ -79,24 +79,16 @@ export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
   return { data: item, message: `${data.model} deleted successfully` };
 }
 
-const legacyDefaults = {
-  deleteAModel,
-};
-
-export class GenericDeleteUsecase {
-  constructor(legacy = {}) {
-    this.legacy = { ...legacyDefaults, ...legacy };
-  }
-
+class GenericDeleteUsecase {
   isAdminUser(authUser) {
     return authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
   }
 
-  async remove({ id, body, authUser }) {
+  async deleteModel({ id, body, authUser }) {
     if (!body?.model) throw new AppError("DELETE_MODEL_REQUIRED", 400);
     // NOTE: `deleteModelesBeforeMain` is intentionally NOT forwarded (the schema strips it),
     // so this endpoint can never cascade-delete arbitrary models.
-    return this.legacy.deleteAModel({
+    return deleteAModel({
       id: Number(id),
       isAdmin: this.isAdminUser(authUser),
       isSuperSales: authUser?.currentProfileKey === "SUPER_SALES",
@@ -106,3 +98,4 @@ export class GenericDeleteUsecase {
 }
 
 export const genericDeleteUsecase = new GenericDeleteUsecase();
+export { GenericDeleteUsecase };

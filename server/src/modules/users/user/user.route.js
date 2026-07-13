@@ -67,13 +67,13 @@ router.get(
 router.get(
   "/",
   AuthMiddleware.requirePermissions([P.LIST]),
-  asyncHandler(userController.list),
+  asyncHandler(userController.getUsers),
 );
 router.post(
   "/",
   AuthMiddleware.requirePermissions([P.CREATE]),
   validate(UserValidation.createUser),
-  asyncHandler(userController.create),
+  asyncHandler(userController.createUser),
 );
 
 // ── max-leads (legacy literal-prefixed `/max-leads/:userId`) ─────────────────────
@@ -188,7 +188,7 @@ router.put(
   AuthMiddleware.requirePermissions([P.UPDATE]),
   validate(UserValidation.userIdParams, "params"),
   validate(UserValidation.updateUser),
-  asyncHandler(userController.update),
+  asyncHandler(userController.updateUser),
 );
 
 export { router as userRouter };

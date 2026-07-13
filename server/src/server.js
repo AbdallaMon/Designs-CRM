@@ -25,7 +25,9 @@ startSocketSubscriber(getIo());
   try {
     const r = await runProfileBackfill({ prisma });
     if (r.assigned || r.currentSet)
-      console.log(`✅ Profile backfill: ${r.assigned} assignments, ${r.currentSet} currents set (${r.scanned} users)`);
+      console.log(
+        `✅ Profile backfill: ${r.assigned} assignments, ${r.currentSet} currents set (${r.scanned} users)`,
+      );
   } catch (e) {
     console.error("❌ Profile backfill failed:", e?.message);
   }
@@ -34,7 +36,9 @@ startSocketSubscriber(getIo());
   // requireAuth resolves each request's codes with zero per-request DB reads.
   try {
     await profileCache.load();
-    console.log(`✅ Profile permission cache loaded (${profileCache.size} profiles)`);
+    console.log(
+      `✅ Profile permission cache loaded (${profileCache.size} profiles)`,
+    );
   } catch (e) {
     console.error("❌ Profile cache load failed:", e?.message);
   }

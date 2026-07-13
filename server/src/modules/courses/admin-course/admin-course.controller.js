@@ -6,7 +6,6 @@ import { coursesMessagesCodes, messagesNames } from "@dms/shared";
 import { adminCourseUsecase } from "./admin-course.usecase.js";
 import { decorateCourseList } from "./admin-course.dto.js";
 
-const C = coursesMessagesCodes;
 const TK = messagesNames.coursesMessages;
 
 // Legacy default pagination: page=1, limit=10 (services/main/utility getPagination).
@@ -16,249 +15,244 @@ function paginate(query) {
   return { page, limit, skip: (page - 1) * limit, take: limit };
 }
 
-export class AdminCourseController {
-  /** @param {import("./admin-course.usecase.js").AdminCourseUsecase} usecase */
-  constructor(usecase) {
-    this.usecase = usecase;
-  }
-
+class AdminCourseController {
   // ── courses ──────────────────────────────────────────────────────────────────
-  listCourses = async (req, res) => {
+  async listCourses(req, res) {
     const { page, limit, skip, take } = paginate(req.query);
-    const { courses, total } = await this.usecase.listCourses({ skip, take });
+    const { courses, total } = await adminCourseUsecase.listCourses({ skip, take });
     const items = decorateCourseList(courses, {
       permissions: req.auth.permissions,
     });
-    return ok(res, { items, total, page, pageSize: limit }, C.COURSES_FETCHED, TK);
-  };
+    return ok(res, { items, total, page, pageSize: limit }, coursesMessagesCodes.COURSES_FETCHED, TK);
+  }
 
-  createCourse = async (req, res) => {
-    const data = await this.usecase.createCourse({ data: req.body });
-    return created(res, data, C.COURSE_CREATED, TK);
-  };
+  async createCourse(req, res) {
+    const data = await adminCourseUsecase.createCourse({ data: req.body });
+    return created(res, data, coursesMessagesCodes.COURSE_CREATED, TK);
+  }
 
-  getDashboard = async (req, res) => {
-    const data = await this.usecase.getDashboardData();
-    return ok(res, data, C.DASHBOARD_FETCHED, TK);
-  };
+  async getDashboard(req, res) {
+    const data = await adminCourseUsecase.getDashboardData();
+    return ok(res, data, coursesMessagesCodes.DASHBOARD_FETCHED, TK);
+  }
 
-  editCourse = async (req, res) => {
-    const data = await this.usecase.editCourse({
+  async editCourse(req, res) {
+    const data = await adminCourseUsecase.editCourse({
       data: req.body,
       courseId: req.params.courseId,
     });
-    return ok(res, data, C.COURSE_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.COURSE_UPDATED, TK);
+  }
 
   // ── lessons ──────────────────────────────────────────────────────────────────
-  getLessons = async (req, res) => {
-    const data = await this.usecase.getLessonsByCourseId({
+  async getLessons(req, res) {
+    const data = await adminCourseUsecase.getLessonsByCourseId({
       courseId: req.params.courseId,
     });
-    return ok(res, data, C.LESSONS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSONS_FETCHED, TK);
+  }
 
-  createLesson = async (req, res) => {
-    const data = await this.usecase.createLesson({
+  async createLesson(req, res) {
+    const data = await adminCourseUsecase.createLesson({
       courseId: req.params.courseId,
       data: req.body,
     });
-    return created(res, data, C.LESSON_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.LESSON_CREATED, TK);
+  }
 
-  getLessonById = async (req, res) => {
-    const data = await this.usecase.getLessonById({
+  async getLessonById(req, res) {
+    const data = await adminCourseUsecase.getLessonById({
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.LESSON_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_FETCHED, TK);
+  }
 
-  editLesson = async (req, res) => {
-    const data = await this.usecase.editLesson({
+  async editLesson(req, res) {
+    const data = await adminCourseUsecase.editLesson({
       data: req.body,
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.LESSON_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_UPDATED, TK);
+  }
 
-  toggleHomework = async (req, res) => {
-    const data = await this.usecase.toggleMustUploadHomework({
+  async toggleHomework(req, res) {
+    const data = await adminCourseUsecase.toggleMustUploadHomework({
       lessonId: req.params.lessonId,
       mustUploadHomework: req.body.mustUploadHomework,
     });
-    return ok(res, data, C.LESSON_HOMEWORK_TOGGLED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_HOMEWORK_TOGGLED, TK);
+  }
 
-  deleteLesson = async (req, res) => {
-    await this.usecase.deleteLesson({ lessonId: req.params.lessonId });
-    return deleted(res, C.LESSON_DELETED, TK);
-  };
+  async deleteLesson(req, res) {
+    await adminCourseUsecase.deleteLesson({ lessonId: req.params.lessonId });
+    return deleted(res, coursesMessagesCodes.LESSON_DELETED, TK);
+  }
 
   // ── lesson videos ────────────────────────────────────────────────────────────
-  getVideos = async (req, res) => {
-    const data = await this.usecase.getVideosByLessonId({
+  async getVideos(req, res) {
+    const data = await adminCourseUsecase.getVideosByLessonId({
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.LESSON_VIDEOS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_VIDEOS_FETCHED, TK);
+  }
 
-  createVideo = async (req, res) => {
-    const data = await this.usecase.createLessonVideo({
+  async createVideo(req, res) {
+    const data = await adminCourseUsecase.createLessonVideo({
       lessonId: req.params.lessonId,
       data: req.body,
     });
-    return created(res, data, C.LESSON_VIDEO_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.LESSON_VIDEO_CREATED, TK);
+  }
 
-  editVideo = async (req, res) => {
-    const data = await this.usecase.editLessonVideo({
+  async editVideo(req, res) {
+    const data = await adminCourseUsecase.editLessonVideo({
       data: req.body,
       videoId: req.params.videoId,
     });
-    return ok(res, data, C.LESSON_VIDEO_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_VIDEO_UPDATED, TK);
+  }
 
-  deleteVideo = async (req, res) => {
-    const data = await this.usecase.deleteLessonVideo({
+  async deleteVideo(req, res) {
+    const data = await adminCourseUsecase.deleteLessonVideo({
       videoId: req.params.videoId,
     });
-    return ok(res, data, C.LESSON_VIDEO_DELETED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_VIDEO_DELETED, TK);
+  }
 
   // ── lesson pdfs ────────────────────────────────────────────────────────────────
-  getPdfs = async (req, res) => {
-    const data = await this.usecase.getPdfsByLessonId({
+  async getPdfs(req, res) {
+    const data = await adminCourseUsecase.getPdfsByLessonId({
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.LESSON_PDFS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_PDFS_FETCHED, TK);
+  }
 
-  createPdf = async (req, res) => {
-    const data = await this.usecase.createLessonPdf({
+  async createPdf(req, res) {
+    const data = await adminCourseUsecase.createLessonPdf({
       lessonId: req.params.lessonId,
       data: req.body,
     });
-    return created(res, data, C.LESSON_PDF_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.LESSON_PDF_CREATED, TK);
+  }
 
-  editPdf = async (req, res) => {
-    const data = await this.usecase.editLessonPdf({
+  async editPdf(req, res) {
+    const data = await adminCourseUsecase.editLessonPdf({
       data: req.body,
       pdfId: req.params.pdfId,
     });
-    return ok(res, data, C.LESSON_PDF_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_PDF_UPDATED, TK);
+  }
 
-  deletePdf = async (req, res) => {
-    const data = await this.usecase.deleteLessonPdf({ pdfId: req.params.pdfId });
-    return ok(res, data, C.LESSON_PDF_DELETED, TK);
-  };
+  async deletePdf(req, res) {
+    const data = await adminCourseUsecase.deleteLessonPdf({ pdfId: req.params.pdfId });
+    return ok(res, data, coursesMessagesCodes.LESSON_PDF_DELETED, TK);
+  }
 
   // ── lesson links ───────────────────────────────────────────────────────────────
-  getLinks = async (req, res) => {
-    const data = await this.usecase.getLinksByLessonId({
+  async getLinks(req, res) {
+    const data = await adminCourseUsecase.getLinksByLessonId({
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.LESSON_LINKS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_LINKS_FETCHED, TK);
+  }
 
-  createLink = async (req, res) => {
-    const data = await this.usecase.createLessonLink({
+  async createLink(req, res) {
+    const data = await adminCourseUsecase.createLessonLink({
       lessonId: req.params.lessonId,
       data: req.body,
     });
-    return created(res, data, C.LESSON_LINK_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.LESSON_LINK_CREATED, TK);
+  }
 
-  editLink = async (req, res) => {
-    const data = await this.usecase.editLessonLink({
+  async editLink(req, res) {
+    const data = await adminCourseUsecase.editLessonLink({
       data: req.body,
       linkId: req.params.linkId,
     });
-    return ok(res, data, C.LESSON_LINK_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_LINK_UPDATED, TK);
+  }
 
-  deleteLink = async (req, res) => {
-    const data = await this.usecase.deleteLessonLink({
+  async deleteLink(req, res) {
+    const data = await adminCourseUsecase.deleteLessonLink({
       linkId: req.params.linkId,
     });
-    return ok(res, data, C.LESSON_LINK_DELETED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_LINK_DELETED, TK);
+  }
 
   // ── lesson video pdfs ──────────────────────────────────────────────────────────
-  getVideoPdfs = async (req, res) => {
-    const data = await this.usecase.getLessonVideoPdfs({
+  async getVideoPdfs(req, res) {
+    const data = await adminCourseUsecase.getLessonVideoPdfs({
       videoId: req.params.videoId,
     });
-    return ok(res, data, C.LESSON_VIDEO_PDFS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_VIDEO_PDFS_FETCHED, TK);
+  }
 
-  createVideoPdf = async (req, res) => {
-    const data = await this.usecase.createLessonVideoPdf({
+  async createVideoPdf(req, res) {
+    const data = await adminCourseUsecase.createLessonVideoPdf({
       videoId: req.params.videoId,
       title: req.body.title,
       url: req.body.url,
     });
-    return created(res, data, C.LESSON_VIDEO_PDF_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.LESSON_VIDEO_PDF_CREATED, TK);
+  }
 
-  deleteVideoPdf = async (req, res) => {
-    const data = await this.usecase.deleteLessonVideoPdf({
+  async deleteVideoPdf(req, res) {
+    const data = await adminCourseUsecase.deleteLessonVideoPdf({
       pdfId: req.params.pdfId,
     });
-    return ok(res, data, C.LESSON_VIDEO_PDF_DELETED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_VIDEO_PDF_DELETED, TK);
+  }
 
   // ── lesson access / allowed roles ────────────────────────────────────────────────
-  getAllowedRoles = async (req, res) => {
-    const data = await this.usecase.getAllowedRoles({
+  async getAllowedRoles(req, res) {
+    const data = await adminCourseUsecase.getAllowedRoles({
       courseId: req.params.courseId,
     });
-    return ok(res, data, C.ALLOWED_ROLES_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ALLOWED_ROLES_FETCHED, TK);
+  }
 
-  getAllowedUsers = async (req, res) => {
-    const data = await this.usecase.getAllowedLessonUsers({
+  async getAllowedUsers(req, res) {
+    const data = await adminCourseUsecase.getAllowedLessonUsers({
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.ALLOWED_USERS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ALLOWED_USERS_FETCHED, TK);
+  }
 
-  grantAccess = async (req, res) => {
-    const data = await this.usecase.grantLessonAccess({
+  async grantAccess(req, res) {
+    const data = await adminCourseUsecase.grantLessonAccess({
       lessonId: req.params.lessonId,
       userId: req.body.userId,
     });
-    return created(res, data, C.LESSON_ACCESS_GRANTED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.LESSON_ACCESS_GRANTED, TK);
+  }
 
-  deleteAccess = async (req, res) => {
-    const data = await this.usecase.deleteLessonAccess({
+  async deleteAccess(req, res) {
+    const data = await adminCourseUsecase.deleteLessonAccess({
       id: req.params.accessId,
     });
-    return ok(res, data, C.LESSON_ACCESS_DELETED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.LESSON_ACCESS_DELETED, TK);
+  }
 
   // ── homeworks ──────────────────────────────────────────────────────────────────
-  getHomeworks = async (req, res) => {
-    const data = await this.usecase.getListOfHomeworks({
+  async getHomeworks(req, res) {
+    const data = await adminCourseUsecase.getListOfHomeworks({
       lessonId: req.params.lessonId,
     });
-    return ok(res, data, C.HOMEWORKS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.HOMEWORKS_FETCHED, TK);
+  }
 
   // ── tests ──────────────────────────────────────────────────────────────────────
-  getTests = async (req, res) => {
-    const data = await this.usecase.getTests({
+  async getTests(req, res) {
+    const data = await adminCourseUsecase.getTests({
       key: req.query.key,
       id: req.query.id,
     });
-    return ok(res, data, C.TESTS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.TESTS_FETCHED, TK);
+  }
 
-  getAttemptsSummary = async (req, res) => {
+  async getAttemptsSummary(req, res) {
     const { page, limit, skip, take } = paginate(req.query);
-    const { attempts, total } = await this.usecase.getAttemptsSummary({
+    const { attempts, total } = await adminCourseUsecase.getAttemptsSummary({
       skip,
       take,
       userId: req.query.userId,
@@ -266,13 +260,13 @@ export class AdminCourseController {
     return ok(
       res,
       { items: attempts, total, page, pageSize: limit },
-      C.ATTEMPTS_FETCHED,
+      coursesMessagesCodes.ATTEMPTS_FETCHED,
       TK,
     );
-  };
+  }
 
-  createTest = async (req, res) => {
-    const data = await this.usecase.createTest({
+  async createTest(req, res) {
+    const data = await adminCourseUsecase.createTest({
       key: req.query.key,
       id: req.query.id,
       attemptLimit: req.body.attemptLimit,
@@ -281,105 +275,104 @@ export class AdminCourseController {
       title: req.body.title,
       published: req.body.published,
     });
-    return created(res, data, C.TEST_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.TEST_CREATED, TK);
+  }
 
-  getTestData = async (req, res) => {
-    const data = await this.usecase.getTestData({ testId: req.params.testId });
-    return ok(res, data, C.TEST_FETCHED, TK);
-  };
+  async getTestData(req, res) {
+    const data = await adminCourseUsecase.getTestData({ testId: req.params.testId });
+    return ok(res, data, coursesMessagesCodes.TEST_FETCHED, TK);
+  }
 
-  editTest = async (req, res) => {
-    const data = await this.usecase.editTest({
+  async editTest(req, res) {
+    const data = await adminCourseUsecase.editTest({
       testId: req.params.testId,
       data: req.body,
     });
-    return ok(res, data, C.TEST_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.TEST_UPDATED, TK);
+  }
 
-  deleteTest = async (req, res) => {
-    await this.usecase.deleteTest({ testId: req.params.testId });
-    return deleted(res, C.TEST_DELETED, TK);
-  };
+  async deleteTest(req, res) {
+    await adminCourseUsecase.deleteTest({ testId: req.params.testId });
+    return deleted(res, coursesMessagesCodes.TEST_DELETED, TK);
+  }
 
-  getUserAttemptsForAdmin = async (req, res) => {
-    const data = await this.usecase.getUserAttempts({
+  async getUserAttemptsForAdmin(req, res) {
+    const data = await adminCourseUsecase.getUserAttempts({
       testId: req.params.testId,
       userId: req.query.userId,
     });
-    return ok(res, data, C.ATTEMPTS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ATTEMPTS_FETCHED, TK);
+  }
 
-  getTestAttemptsSummary = async (req, res) => {
-    const data = await this.usecase.getTestAttemptsSummary({
+  async getTestAttemptsSummary(req, res) {
+    const data = await adminCourseUsecase.getTestAttemptsSummary({
       testId: req.params.testId,
       userId: req.query.userId,
     });
-    return ok(res, data, C.ATTEMPTS_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ATTEMPTS_FETCHED, TK);
+  }
 
-  increaseAttempt = async (req, res) => {
-    const data = await this.usecase.increaseAttemptToUser({
+  async increaseAttempt(req, res) {
+    const data = await adminCourseUsecase.increaseAttemptToUser({
       testId: req.params.testId,
       userId: req.query.userId,
     });
-    return ok(res, data, C.ATTEMPT_INCREASED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ATTEMPT_INCREASED, TK);
+  }
 
-  decreaseAttempt = async (req, res) => {
-    const data = await this.usecase.decreaseAttemptToUser({
+  async decreaseAttempt(req, res) {
+    const data = await adminCourseUsecase.decreaseAttemptToUser({
       testId: req.params.testId,
       userId: req.query.userId,
     });
-    return ok(res, data, C.ATTEMPT_DECREASED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ATTEMPT_DECREASED, TK);
+  }
 
-  approveAnswer = async (req, res) => {
-    const data = await this.usecase.approveUserAnswer({
+  async approveAnswer(req, res) {
+    const data = await adminCourseUsecase.approveUserAnswer({
       questionId: req.params.questionId,
       attemptId: req.params.attemptId,
       isApproved: req.body.isApproved,
     });
-    return ok(res, data, C.ANSWER_APPROVED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.ANSWER_APPROVED, TK);
+  }
 
   // ── test questions ────────────────────────────────────────────────────────────────
-  createQuestion = async (req, res) => {
-    const data = await this.usecase.createTestQuestion({
+  async createQuestion(req, res) {
+    const data = await adminCourseUsecase.createTestQuestion({
       data: req.body,
       id: req.params.testId,
     });
-    return created(res, data, C.TEST_QUESTION_CREATED, TK);
-  };
+    return created(res, data, coursesMessagesCodes.TEST_QUESTION_CREATED, TK);
+  }
 
-  reorderQuestions = async (req, res) => {
-    const data = await this.usecase.reorderTestQuestions({ data: req.body });
-    return ok(res, data, C.TEST_QUESTIONS_REORDERED, TK);
-  };
+  async reorderQuestions(req, res) {
+    const data = await adminCourseUsecase.reorderTestQuestions({ data: req.body });
+    return ok(res, data, coursesMessagesCodes.TEST_QUESTIONS_REORDERED, TK);
+  }
 
-  getQuestionData = async (req, res) => {
-    const data = await this.usecase.getTestQuestionData({
+  async getQuestionData(req, res) {
+    const data = await adminCourseUsecase.getTestQuestionData({
       id: req.params.questionId,
     });
-    return ok(res, data, C.TEST_QUESTION_FETCHED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.TEST_QUESTION_FETCHED, TK);
+  }
 
-  editQuestion = async (req, res) => {
-    const data = await this.usecase.editQuestion({
+  async editQuestion(req, res) {
+    const data = await adminCourseUsecase.editQuestion({
       data: req.body,
       questionId: req.params.questionId,
     });
-    return ok(res, data, C.TEST_QUESTION_UPDATED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.TEST_QUESTION_UPDATED, TK);
+  }
 
-  deleteQuestion = async (req, res) => {
-    const data = await this.usecase.deleteQuestion({
+  async deleteQuestion(req, res) {
+    const data = await adminCourseUsecase.deleteQuestion({
       questionId: req.params.questionId,
     });
-    return ok(res, data, C.TEST_QUESTION_DELETED, TK);
-  };
+    return ok(res, data, coursesMessagesCodes.TEST_QUESTION_DELETED, TK);
+  }
 }
 
-export const adminCourseController = new AdminCourseController(
-  adminCourseUsecase,
-);
+export const adminCourseController = new AdminCourseController();
+export { AdminCourseController };

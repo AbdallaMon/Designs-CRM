@@ -17,7 +17,7 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { reportsController } from "./reports.controller.js";
-import { ReportsValidation as V } from "./reports.validation.js";
+import { ReportsValidation } from "./reports.validation.js";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 const router = Router();
@@ -26,19 +26,19 @@ const router = Router();
 router.post(
   "/lead-report/excel",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
-  validate(V.leadReportBody),
+  validate(ReportsValidation.leadReportBody),
   asyncHandler(reportsController.leadReportExcel),
 );
 router.post(
   "/lead-report/pdf",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
-  validate(V.leadReportBody),
+  validate(ReportsValidation.leadReportBody),
   asyncHandler(reportsController.leadReportPdf),
 );
 router.post(
   "/lead-report",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
-  validate(V.leadReportBody),
+  validate(ReportsValidation.leadReportBody),
   asyncHandler(reportsController.leadReportData),
 );
 
@@ -46,19 +46,19 @@ router.post(
 router.post(
   "/staff-report/excel",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
-  validate(V.staffReportBody),
+  validate(ReportsValidation.staffReportBody),
   asyncHandler(reportsController.staffReportExcel),
 );
 router.post(
   "/staff-report/pdf",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
-  validate(V.staffReportBody),
+  validate(ReportsValidation.staffReportBody),
   asyncHandler(reportsController.staffReportPdf),
 );
 router.post(
   "/staff-report",
   AuthMiddleware.requirePermissions([P.REPORT_GENERATE]),
-  validate(V.staffReportBody),
+  validate(ReportsValidation.staffReportBody),
   asyncHandler(reportsController.staffReportData),
 );
 

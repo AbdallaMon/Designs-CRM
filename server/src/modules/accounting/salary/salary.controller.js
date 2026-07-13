@@ -5,52 +5,48 @@ import { ok, created } from "../../../shared/http/response.js";
 import { accountingMessagesCodes, messagesNames } from "@dms/shared";
 import { salaryUsecase } from "./salary.usecase.js";
 
-const C = accountingMessagesCodes;
 const TK = messagesNames.accountingMessages;
 
 import { paginate } from "../../../shared/utility/pagination.js";
 
-export class SalaryController {
-  constructor(usecase) {
-    this.usecase = usecase;
+class SalaryController {
+  // accountant-scoped user helper lists (for salaries)
+  async listUsers(req, res) {
+    const { page, limit, skip } = paginate(req.query);
+    const { users, total } = await salaryUsecase.listUsers({ query: req.query, limit, skip });
+    return ok(res, { items: users ?? [], total: total ?? 0, page, pageSize: limit }, accountingMessagesCodes.USERS_FETCHED, TK);
   }
 
-  // accountant-scoped user helper lists (for salaries)
-  listUsers = async (req, res) => {
-    const { page, limit, skip } = paginate(req.query);
-    const { users, total } = await this.usecase.listUsers({ query: req.query, limit, skip });
-    return ok(res, { items: users ?? [], total: total ?? 0, page, pageSize: limit }, C.USERS_FETCHED, TK);
-  };
-
-  userLastSeen = async (req, res) => {
-    const data = await this.usecase.userLastSeen({
+  async userLastSeen(req, res) {
+    const data = await salaryUsecase.userLastSeen({
       userId: req.params.userId,
       month: req.query.month,
       year: req.query.year,
     });
-    return ok(res, data, C.USER_LAST_SEEN_FETCHED, TK);
-  };
+    return ok(res, data, accountingMessagesCodes.USER_LAST_SEEN_FETCHED, TK);
+  }
 
   // salaries
-  salaryData = async (req, res) => {
-    const data = await this.usecase.salaryData({ query: req.query });
-    return ok(res, data, C.SALARY_DATA_FETCHED, TK);
-  };
+  async salaryData(req, res) {
+    const data = await salaryUsecase.salaryData({ query: req.query });
+    return ok(res, data, accountingMessagesCodes.SALARY_DATA_FETCHED, TK);
+  }
 
-  createBase = async (req, res) => {
-    const result = await this.usecase.createBase({ userId: req.params.userId, body: req.body });
-    return created(res, result.data ?? result, C.SALARY_CREATED, TK);
-  };
+  async createBase(req, res) {
+    const result = await salaryUsecase.createBase({ userId: req.params.userId, body: req.body });
+    return created(res, result.data ?? result, accountingMessagesCodes.SALARY_CREATED, TK);
+  }
 
-  editBase = async (req, res) => {
-    const result = await this.usecase.editBase({ id: req.params.id, body: req.body });
-    return ok(res, result.data ?? result, C.SALARY_UPDATED, TK);
-  };
+  async editBase(req, res) {
+    const result = await salaryUsecase.editBase({ id: req.params.id, body: req.body });
+    return ok(res, result.data ?? result, accountingMessagesCodes.SALARY_UPDATED, TK);
+  }
 
-  payMonthly = async (req, res) => {
-    const result = await this.usecase.payMonthly({ body: req.body });
-    return created(res, result.data ?? result, C.MONTHLY_SALARY_PAID, TK);
-  };
+  async payMonthly(req, res) {
+    const result = await salaryUsecase.payMonthly({ body: req.body });
+    return created(res, result.data ?? result, accountingMessagesCodes.MONTHLY_SALARY_PAID, TK);
+  }
 }
 
-export const salaryController = new SalaryController(salaryUsecase);
+export const salaryController = new SalaryController();
+export { SalaryController };

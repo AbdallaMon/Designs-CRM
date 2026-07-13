@@ -24,7 +24,7 @@ const P = PERMISSIONS.ACCOUNTING;
 const router = Router();
 
 // ── list / invoices (reads) ──────────────────────────────────────────────────────
-router.get("/", AuthMiddleware.requirePermissions([P.PAYMENT_LIST]), asyncHandler(paymentController.list));
+router.get("/", AuthMiddleware.requirePermissions([P.PAYMENT_LIST]), asyncHandler(paymentController.getPayments));
 
 router.get(
   "/:paymentId/invoices",

@@ -1,6 +1,7 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { addDayGrouping } from "./chat.helpers.js";
 import { chatMessagesCodes } from "@dms/shared";
+import { chatRepository } from "./chat.repo.js";
 
 // Lazily resolve the socket server at call time. A static `import { getIo }`
 // here would recreate a load-order-fragile cycle:
@@ -26,7 +27,7 @@ export const messageMethods = {
     const parsedLimit = limit ? Number(limit) : 50;
     const skip = parsedPage * parsedLimit;
 
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
@@ -35,14 +36,14 @@ export const messageMethods = {
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const [messages, total, unreadCount] = await Promise.all([
-      this.repository.getMessagesWithReceipts({
+      chatRepository.getMessagesWithReceipts({
         roomId,
         memberId: member.id,
         skip,
         limit: parsedLimit,
       }),
-      this.repository.countMessages(roomId),
-      this.repository.countUnreadMessages({
+      chatRepository.countMessages(roomId),
+      chatRepository.countUnreadMessages({
         roomId,
         memberId: member.id,
         userId,
@@ -68,11 +69,11 @@ export const messageMethods = {
   },
 
   async getMessagePage(messageId, limit = 50) {
-    return this.repository.getMessageIndexInRoom(messageId, limit);
+    return chatRepository.getMessageIndexInRoom(messageId, limit);
   },
 
   async getPinnedMessages(roomId, userId, clientId) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
@@ -80,31 +81,31 @@ export const messageMethods = {
     if (!member)
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    const pins = await this.repository.getPinnedMessages(roomId);
+    const pins = await chatRepository.getPinnedMessages(roomId);
     return pins.map((p) => p.message);
   },
 
   async markRoomRead(roomId, userId, clientId) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
     });
     if (!member) return;
 
-    const unreadMessages = await this.repository.getUnreadMessages({
+    const unreadMessages = await chatRepository.getUnreadMessages({
       roomId,
       memberId: member.id,
       userId,
       clientId,
     });
 
-    await this.repository.bulkMarkMessagesRead({
+    await chatRepository.bulkMarkMessagesRead({
       memberId: member.id,
       messageIds: unreadMessages.map((m) => m.id),
     });
 
-    await this.repository.updateMemberReadAt(member.id);
+    await chatRepository.updateMemberReadAt(member.id);
 
     if (unreadMessages.length > 0) {
       const io = await getIo();
@@ -127,7 +128,7 @@ export const messageMethods = {
   },
 
   async markMessageRead(roomId, messageId, userId, clientId) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
@@ -135,10 +136,10 @@ export const messageMethods = {
     if (!member)
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    await this.repository.updateMemberReadAt(member.id);
+    await chatRepository.updateMemberReadAt(member.id);
 
     if (messageId) {
-      await this.repository.upsertReadReceipt({
+      await chatRepository.upsertReadReceipt({
         messageId,
         memberId: member.id,
       });
@@ -158,10 +159,10 @@ export const messageMethods = {
   async markAllRead(userId, roomIds) {
     let resolvedRoomIds = roomIds;
     if (!resolvedRoomIds?.length) {
-      const memberships = await this.repository.getUserMemberships(userId);
+      const memberships = await chatRepository.getUserMemberships(userId);
       resolvedRoomIds = memberships.map((m) => m.roomId);
     }
-    await this.repository.updateManyMembersReadAt({
+    await chatRepository.updateManyMembersReadAt({
       userId,
       roomIds: resolvedRoomIds.map(Number),
     });
@@ -169,7 +170,7 @@ export const messageMethods = {
   },
 
   async addReaction(messageId, userId, emoji) {
-    const reaction = await this.repository.upsertReaction({
+    const reaction = await chatRepository.upsertReaction({
       messageId,
       userId,
       emoji,
@@ -184,13 +185,13 @@ export const messageMethods = {
   },
 
   async removeReaction(messageId, userId, emoji) {
-    const reaction = await this.repository.findReaction({
+    const reaction = await chatRepository.findReaction({
       messageId,
       userId,
       emoji,
     });
     if (!reaction) throw new AppError(chatMessagesCodes.REACTION_NOT_FOUND, 404);
-    await this.repository.deleteReaction(reaction.id);
+    await chatRepository.deleteReaction(reaction.id);
     const io = await getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:removed", {
       messageId: Number(messageId),
@@ -211,7 +212,7 @@ export const messageMethods = {
     attachments = [],
     replyToId,
   }) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
@@ -219,14 +220,14 @@ export const messageMethods = {
     if (!member)
       throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    const room = await this.repository.findRoomBasic(roomId);
+    const room = await chatRepository.findRoomBasic(roomId);
     if (!room?.isChatEnabled)
       throw new AppError(chatMessagesCodes.CHAT_DISABLED, 400);
     if ((type === "FILE" || attachments?.length) && !room.allowFiles) {
       throw new AppError(chatMessagesCodes.FILES_DISABLED, 400);
     }
 
-    const message = await this.repository.createMessage({
+    const message = await chatRepository.createMessage({
       roomId,
       senderId: userId,
       senderClient: clientId,
@@ -265,7 +266,7 @@ export const messageMethods = {
   },
 
   async editMessage({ messageId, userId, clientId, content }) {
-    const message = await this.repository.getMessageById(messageId);
+    const message = await chatRepository.getMessageById(messageId);
     if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
 
     const isOwner =
@@ -275,7 +276,7 @@ export const messageMethods = {
     if (!isOwner)
       throw new AppError(chatMessagesCodes.MESSAGE_FORBIDDEN, 403);
 
-    const updated = await this.repository.updateMessage(messageId, {
+    const updated = await chatRepository.updateMessage(messageId, {
       content,
       isEdited: true,
     });
@@ -287,10 +288,10 @@ export const messageMethods = {
   },
 
   async deleteMessage({ messageId, userId, clientId }) {
-    const message = await this.repository.getMessageById(messageId);
+    const message = await chatRepository.getMessageById(messageId);
     if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
 
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId: message.roomId,
       userId,
       clientId,
@@ -303,7 +304,7 @@ export const messageMethods = {
     if (!isOwner && !isAdmin)
       throw new AppError(chatMessagesCodes.MESSAGE_FORBIDDEN, 403);
 
-    await this.repository.softDeleteMessage(messageId);
+    await chatRepository.softDeleteMessage(messageId);
 
     const io = await getIo();
     io.to(`room:${message.roomId}`).emit("message:deleted", {
@@ -315,14 +316,14 @@ export const messageMethods = {
   },
 
   async pinMessage({ roomId, messageId, userId, clientId }) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
     });
     if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    const room = await this.repository.findRoomBasic(roomId);
+    const room = await chatRepository.findRoomBasic(roomId);
     if (
       room.type !== "STAFF_TO_STAFF" &&
       member.role !== "ADMIN" &&
@@ -331,7 +332,7 @@ export const messageMethods = {
       throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
-    const pinned = await this.repository.createPin({
+    const pinned = await chatRepository.createPin({
       roomId,
       messageId,
       pinnedById: userId || clientId,
@@ -351,14 +352,14 @@ export const messageMethods = {
   },
 
   async unpinMessage({ roomId, messageId, userId, clientId }) {
-    const member = await this.repository.getMember({
+    const member = await chatRepository.getMember({
       roomId,
       userId,
       clientId,
     });
     if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
-    const room = await this.repository.findRoomBasic(roomId);
+    const room = await chatRepository.findRoomBasic(roomId);
     if (
       room.type !== "STAFF_TO_STAFF" &&
       member.role !== "ADMIN" &&
@@ -367,7 +368,7 @@ export const messageMethods = {
       throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
-    const result = await this.repository.deletePins({ roomId, messageId });
+    const result = await chatRepository.deletePins({ roomId, messageId });
 
     await this.emitToAllMembers({
       roomId,
@@ -383,7 +384,7 @@ export const messageMethods = {
   },
 
   async forwardMessages({ roomsIds, messageIds, userId }) {
-    const messages = await this.repository.getMessagesForForward(messageIds);
+    const messages = await chatRepository.getMessagesForForward(messageIds);
     for (const roomId of roomsIds) {
       for (const msg of messages) {
         await this.sendMessage({

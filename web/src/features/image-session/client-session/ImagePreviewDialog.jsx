@@ -35,6 +35,7 @@ export function ImagePreviewDialog({
   selectedImages,
   onImageSelect,
   type = "SELECT",
+  token,
 }) {
   const getVisiblePages = (current, total, maxVisible = 7) => {
     if (total <= maxVisible) return Array.from({ length: total }, (_, i) => i);
@@ -412,6 +413,7 @@ export function ImagePreviewDialog({
                 id={currentImage.id}
                 idKey="selectedImageId"
                 slug="client"
+                token={token}
                 text={lng === "ar" ? "اضف ملاحظة للتصميم" : "Add note for this"}
               />
             )}
