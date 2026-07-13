@@ -1,20 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * Guards the lazy-import refactor that broke the static cycle
+ * Guards the socket-resolution wiring. The old static cycle
  *   infra/socket/index.js → chat.socket.js → chat.usecase.js → chat.usecase.*.js
  *   → infra/socket/index.js
- * The realtime emit helpers now resolve `getIo` via a cached dynamic
- * `import("../../infra/socket/index.js")` at call time instead of a top-level
- * static import. These tests prove that deferred resolution still yields the
- * live io instance and emits to each member's room exactly as before.
+ * was broken by moving `getIo` into the dependency-free leaf
+ * `infra/socket/io-registry.js`, which the realtime emit helpers now import
+ * statically. These tests prove resolution still yields the live io instance and
+ * emits to each member's room exactly as before.
  */
 
-const emit = vi.fn();
-const to = vi.fn(() => ({ emit }));
-const getIo = vi.fn(() => ({ to }));
+const { emit, to, getIo } = vi.hoisted(() => {
+  const emit = vi.fn();
+  const to = vi.fn(() => ({ emit }));
+  const getIo = vi.fn(() => ({ to }));
+  return { emit, to, getIo };
+});
 
-vi.mock("../../../infra/socket/index.js", () => ({ getIo }));
+vi.mock("../../../infra/socket/io-registry.js", () => ({ getIo }));
 
 // Repository I/O now goes through the directly-imported `chatRepository`
 // singleton — mock the module and configure the members per test.

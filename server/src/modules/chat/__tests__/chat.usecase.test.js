@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// The usecase imports `getIo` from the socket infra, whose module graph pulls in
-// the Prisma client + env validation. None of the methods under test emit, so we
-// stub the socket infra to keep the unit tests isolated and fast.
-vi.mock("../../../infra/socket/index.js", () => ({
+// The usecase imports `getIo` from the dependency-free socket leaf registry. None of
+// the methods under test emit, so we stub it to keep the unit tests isolated and fast.
+vi.mock("../../../infra/socket/io-registry.js", () => ({
   getIo: () => ({ to: () => ({ emit: () => {} }) }),
 }));
 

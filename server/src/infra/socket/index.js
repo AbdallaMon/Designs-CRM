@@ -2,8 +2,7 @@ import { Server } from "socket.io";
 import { allowedOrigins } from "../../config/env.js";
 import { normalizeOrigin } from "./socket.helpers.js";
 import { registerChatSocketHandlers } from "../../modules/chat/chat.socket.js";
-
-let io;
+import { setIo, getIo } from "./io-registry.js";
 
 /**
  * Initialises Socket.IO on the given HTTP server.
@@ -12,7 +11,7 @@ let io;
  * @param {import("http").Server} httpServer
  */
 export function initSocket(httpServer) {
-  io = new Server(httpServer, {
+  const io = new Server(httpServer, {
     // Gate connections at the handshake level so unapproved origins never reach the server
     allowRequest: (req, callback) => {
       const origin = normalizeOrigin(req.headers.origin);
@@ -25,6 +24,9 @@ export function initSocket(httpServer) {
       credentials: true,
     },
   });
+
+  // Publish the instance to the leaf registry so usecases resolve it without a cycle.
+  setIo(io);
 
   // Override Access-Control-Allow-Origin with the normalised origin on every response
   io.engine.on("headers", (headers, req) => {
@@ -56,13 +58,8 @@ export function initSocket(httpServer) {
   });
 }
 
-/**
- * Returns the active Socket.IO server instance.
- * Throws if initSocket has not been called yet.
- */
-export function getIo() {
-  if (!io) throw new Error("Socket.IO not initialised — call initSocket first");
-  return io;
-}
+// getIo lives in the leaf ./io-registry.js (cycle-free); re-exported here so existing
+// importers of this module keep working.
+export { getIo };
 
 export { normalizeOrigin };

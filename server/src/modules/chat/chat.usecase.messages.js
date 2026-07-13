@@ -1,16 +1,9 @@
+import { getIo } from "../../infra/socket/io-registry.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { addDayGrouping } from "./chat.helpers.js";
 import { chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
 
-// Lazily resolve the socket server at call time. A static `import { getIo }`
-// here would recreate a load-order-fragile cycle:
-// infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
-// infra/socket/index.js. The dynamic import is cached by the module loader, so
-// this only defers resolution; the io instance and emit behavior are unchanged.
-async function getIo() {
-  return (await import("../../infra/socket/index.js")).getIo();
-}
 
 /**
  * Messages concern of ChatUsecase — reads, read-receipts, reactions, and the
@@ -108,7 +101,7 @@ export const messageMethods = {
     await chatRepository.updateMemberReadAt(member.id);
 
     if (unreadMessages.length > 0) {
-      const io = await getIo();
+      const io = getIo();
       if (userId) {
         io.to(`user:${userId}`).emit("notification:messages_read", {
           roomId: Number(roomId),
@@ -144,7 +137,7 @@ export const messageMethods = {
         memberId: member.id,
       });
 
-      const io = await getIo();
+      const io = getIo();
       io.to(`room:${roomId}`).emit("message:read", {
         messageId: Number(messageId),
         userId: userId ? Number(userId) : null,
@@ -175,7 +168,7 @@ export const messageMethods = {
       userId,
       emoji,
     });
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:added", {
       messageId: Number(messageId),
       userId: Number(userId),
@@ -192,7 +185,7 @@ export const messageMethods = {
     });
     if (!reaction) throw new AppError(chatMessagesCodes.REACTION_NOT_FOUND, 404);
     await chatRepository.deleteReaction(reaction.id);
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:removed", {
       messageId: Number(messageId),
       userId: Number(userId),
@@ -238,7 +231,7 @@ export const messageMethods = {
       memberId: member.id,
     });
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${roomId}`).emit("message:created", {
       ...message,
       roomId: Number(roomId),
@@ -281,7 +274,7 @@ export const messageMethods = {
       isEdited: true,
     });
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${message.roomId}`).emit("message:edited", updated);
 
     return updated;
@@ -306,7 +299,7 @@ export const messageMethods = {
 
     await chatRepository.softDeleteMessage(messageId);
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${message.roomId}`).emit("message:deleted", {
       messageId: Number(messageId),
       roomId: message.roomId,

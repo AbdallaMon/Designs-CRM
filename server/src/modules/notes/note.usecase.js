@@ -19,6 +19,10 @@ import {
 import { noteRepository } from "./note.repo.js";
 import { leadRepository } from "../leads/lead/lead.repo.js";
 import { updateRepository } from "../projects/update/update.repo.js";
+// note ↔ task is a runtime-only mutual reference (task imports getNotes/addNote; we call
+// updateTask). Both sides are hoisted `export async function`s used only at call time, so a
+// static import here is cycle-safe — no lazy edge needed.
+import { updateTask } from "../projects/task/task.usecase.js";
 
 export async function getNotes({ idKey, id }) {
   return noteRepository.findNotesByOwner({ idKey, id });
@@ -73,7 +77,6 @@ export async function addNote({
     await leadRepository.touchLead({ id: update.clientLeadId });
   }
   if (actualNote.taskId) {
-    const { updateTask } = await import("../projects/task/task.usecase.js");
     await updateTask({ data: {}, taskId: actualNote.taskId, isAdmin, userId });
   }
 

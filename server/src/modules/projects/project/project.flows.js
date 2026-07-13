@@ -15,6 +15,14 @@ import {
   newProjectAssingmentNotification,
   updateProjectNotification,
 } from "../../../infra/notifications/index.js";
+// system-rooms imports nothing from projects → no cycle. contract-services forms a
+// runtime-only cycle (flows → contract-services → project.usecase → flows) resolved by
+// hoisted `export async function`s called only at request time — cycle-safe as static.
+import { addADesginerToAllRelatedProjectsRooms } from "../../chat/system-rooms.js";
+import {
+  checkIfProjectHasStagesAndUpdateNextAndPrevious,
+  checkIfProjectHasPaymentAndUpdate,
+} from "../../contracts/services/contract-services.js";
 import {
   addUsersToATeleChannelUsingQueue,
   notifyUsersAddedToProject,
@@ -184,9 +192,6 @@ export async function assignProjectToUser({
         clientLeadId: project.clientLeadId,
         usersList: [user],
       });
-      const { addADesginerToAllRelatedProjectsRooms } = await import(
-        "../../chat/system-rooms.js"
-      );
       await addADesginerToAllRelatedProjectsRooms({
         clientLeadId: project.clientLeadId,
         userId: user.id,
@@ -315,8 +320,6 @@ async function updateProject({ data, isAdmin }) {
   } else if (isAdmin) {
     await updateProjectNotification(project.id, null, content + extra, isAdmin);
   }
-  const { checkIfProjectHasStagesAndUpdateNextAndPrevious, checkIfProjectHasPaymentAndUpdate } =
-    await import("../../contracts/services/contract-services.js");
   await checkIfProjectHasStagesAndUpdateNextAndPrevious({
     projectId: project.id,
     status: project.status,

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // The usecase pulls chat.socket.js (Prisma + socket graph) lazily, but importing the
 // route module eagerly imports the controller -> usecase module. Stub the socket
 // infra so the import graph stays light and no real DB/socket is touched.
-vi.mock("../../../../infra/socket/index.js", () => ({
+vi.mock("../../../../infra/socket/io-registry.js", () => ({
   getIo: () => ({ to: () => ({ emit: () => {} }) }),
 }));
 

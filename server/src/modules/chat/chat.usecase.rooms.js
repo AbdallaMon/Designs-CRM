@@ -1,16 +1,9 @@
+import { getIo } from "../../infra/socket/io-registry.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { computeRoomCapabilities } from "./chat.dto.js";
 import { chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
 
-// Lazily resolve the socket server at call time. A static `import { getIo }`
-// here would recreate a load-order-fragile cycle:
-// infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
-// infra/socket/index.js. The dynamic import is cached by the module loader, so
-// this only defers resolution; the io instance and emit behavior are unchanged.
-async function getIo() {
-  return (await import("../../infra/socket/index.js")).getIo();
-}
 
 /**
  * Rooms concern of ChatUsecase — scope check, room CRUD, membership resolution.
@@ -339,7 +332,7 @@ export const roomMethods = {
       ? await chatRepository.updateMemberSelf(member.id, sanitized)
       : await chatRepository.updateRoom(roomId, sanitized);
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${roomId}`).emit("room:updated", {
       roomId: Number(roomId),
       updates: sanitized,

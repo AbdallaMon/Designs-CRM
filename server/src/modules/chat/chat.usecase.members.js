@@ -1,15 +1,8 @@
+import { getIo } from "../../infra/socket/io-registry.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
 
-// Lazily resolve the socket server at call time. A static `import { getIo }`
-// here would recreate a load-order-fragile cycle:
-// infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
-// infra/socket/index.js. The dynamic import is cached by the module loader, so
-// this only defers resolution; the io instance and emit behavior are unchanged.
-async function getIo() {
-  return (await import("../../infra/socket/index.js")).getIo();
-}
 
 /**
  * Members concern of ChatUsecase — list/add/remove members and role updates.
@@ -60,7 +53,7 @@ export const memberMethods = {
       userIds,
     );
 
-    const io = await getIo();
+    const io = getIo();
     for (const uid of userIds) {
       io.to(`user:${uid}`).emit("notification:room_created", {
         roomId: Number(roomId),
@@ -92,7 +85,7 @@ export const memberMethods = {
 
     await chatRepository.removeMember(memberId);
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${roomId}`).emit("member:removed", {
       roomId: Number(roomId),
       memberId: Number(memberId),
@@ -118,7 +111,7 @@ export const memberMethods = {
 
     await chatRepository.removeMember(member.id);
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${roomId}`).emit("member:removed", {
       roomId: Number(roomId),
       memberId: Number(member.id),
@@ -147,7 +140,7 @@ export const memberMethods = {
 
     const updated = await chatRepository.updateMemberRole(memberId, role);
 
-    const io = await getIo();
+    const io = getIo();
     io.to(`room:${roomId}`).emit("member:role_updated", {
       roomId: Number(roomId),
       memberId: Number(memberId),
