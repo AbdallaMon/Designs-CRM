@@ -41,7 +41,9 @@ router.get(
   "/designers/:id",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(ProjectValidation.idParams, "params"),
-  AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessProject),
+  // `:id` is a clientLeadId here (getDesignerLeadDetail is lead-keyed) — scope on the
+  // LEAD, not the Project table, or every non-colliding id 403s (PROJECT_ACCESS_DENIED).
+  AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessDesignerLead),
   asyncHandler(projectController.getDesignerLeadDetail),
 );
 

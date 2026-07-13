@@ -9,7 +9,11 @@ import {
 // DI was removed: the controller now calls the imported `projectUsecase` singleton
 // directly, so the old `new ProjectController(usecase)` injection becomes a module mock.
 vi.mock("../project/project.usecase.js", () => ({
-  projectUsecase: { getDesignerLeadDetail: vi.fn() },
+  projectUsecase: {
+    getDesignerLeadDetail: vi.fn(),
+    checkIfUserCanAccessLeadProjects: vi.fn(),
+    checkIfUserCanAccessProject: vi.fn(),
+  },
 }));
 
 import { projectController } from "../project/project.controller.js";
@@ -83,6 +87,29 @@ describe("computeProjectCapabilities (single project row)", () => {
     const project = { id: 10, status: "In Progress", assignments: [{ user: { id: 4 } }] };
     expect(computeProjectCapabilities(project, assignedDesigner).canEdit).toBe(true);
     expect(computeProjectCapabilities(project, otherDesigner).canEdit).toBe(false);
+  });
+});
+
+describe("ProjectController.checkIfUserCanAccessDesignerLead (GET /designers/:id scope)", () => {
+  // Regression: `:id` on /designers/:id is a clientLeadId (the handler is lead-keyed).
+  // The checker must scope on the LEAD, not the Project table — else an assigned
+  // designer whose leadId doesn't collide with one of their projectIds gets 403.
+  it("scopes `:id` as a clientLeadId via checkIfUserCanAccessLeadProjects (NOT the project checker)", async () => {
+    projectUsecase.checkIfUserCanAccessLeadProjects.mockResolvedValue({ clientLeadId: 5 });
+    const req = { params: { id: "5" }, auth: assignedDesigner };
+
+    await projectController.checkIfUserCanAccessDesignerLead(req);
+
+    expect(projectUsecase.checkIfUserCanAccessLeadProjects).toHaveBeenCalledWith({ clientLeadId: "5", authUser: assignedDesigner });
+    expect(projectUsecase.checkIfUserCanAccessProject).not.toHaveBeenCalled();
+  });
+
+  it("propagates the lead-scope 403 for a designer with no assigned project under the lead", async () => {
+    const denied = Object.assign(new Error("PROJECT_ACCESS_DENIED"), { statusCode: 403 });
+    projectUsecase.checkIfUserCanAccessLeadProjects.mockRejectedValue(denied);
+    const req = { params: { id: "5" }, auth: otherDesigner };
+
+    await expect(projectController.checkIfUserCanAccessDesignerLead(req)).rejects.toMatchObject({ statusCode: 403 });
   });
 });
 

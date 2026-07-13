@@ -17,9 +17,16 @@ import { paginate } from "../../../shared/utility/pagination.js";
 
 class ProjectController {
   // ── object-scope checkers ──────────────────────────────────────────────────────
-  // GET/PUT /:id and GET /designers/:id → project id is `:id`.
+  // GET/PUT /:id → project id is `:id`.
   checkIfUserCanAccessProject(req) {
     return projectUsecase.checkIfUserCanAccessProject({ id: req.params.id, authUser: req.auth });
+  }
+
+  // GET /designers/:id → `:id` is a clientLeadId (the handler is getDesignerLeadDetail →
+  // getLeadDetailsByProject(clientLeadId), a LEAD-keyed read). Scope on the LEAD, not the
+  // Project table — a designer passes if they hold any assigned project under this lead.
+  checkIfUserCanAccessDesignerLead(req) {
+    return projectUsecase.checkIfUserCanAccessLeadProjects({ clientLeadId: req.params.id, authUser: req.auth });
   }
 
   checkIfUserCanMutateProject(req) {
