@@ -65,7 +65,10 @@ export function computeWorkStageActions({ assignments } = {}, now) {
           cta,
         };
       }
-      return { type: "WORK_STAGE_ASSIGNED_TO_YOU", severity: "warning", params: baseParams, cta };
+      // info (not warning): the routine "this stage is yours" fallback — real deadline
+      // pressure is expressed by the two rules above, and the My Day queue groups
+      // info-only items under an "On track" section.
+      return { type: "WORK_STAGE_ASSIGNED_TO_YOU", severity: "info", params: baseParams, cta };
     });
 }
 

@@ -61,61 +61,108 @@ export default function MyWorkQueue({ userId }) {
     );
   }
 
+  // "On track" = items whose every signal is informational (routine work); anything
+  // carrying a critical/warning signal is urgent and stays on top.
+  const isOnTrack = (item) => item.signals.every((s) => s.severity === "info");
+  const urgent = queue.items.filter((i) => !isOnTrack(i));
+  const onTrack = queue.items.filter(isOnTrack);
+  const countBy = (sev) =>
+    queue.items.filter((i) => i.signals.some((s) => s.severity === sev)).length;
+
+  const renderItem = (item) => {
+    const top = item.signals[0];
+    const cfg = getMyDaySignalConfig(top.type);
+    const paletteKey = SEVERITY_PALETTE[top.severity] || "info";
+    const color = theme.palette[paletteKey].main;
+    return (
+      <Box
+        key={`${item.kind}-${item.kind === "WORK_STAGE" ? item.projectId : item.leadId}`}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          p: 1.5,
+          borderRadius: 2,
+          borderLeft: `3px solid ${color}`,
+          bgcolor: alpha(color, 0.04),
+          border: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, flexWrap: "wrap" }}>
+            <Typography variant="body2" fontWeight={700} noWrap>
+              {item.clientName || `Lead #${item.leadId}`}
+            </Typography>
+            {item.status && <Chip size="small" label={item.status} variant="outlined" />}
+            {item.level && <Chip size="small" label={item.level} variant="outlined" />}
+            {item.health && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={
+                  item.health.contractLevel
+                    ? `Contract ${item.health.contractLevel} (${item.health.levelsDone}/${item.health.levelsTotal})`
+                    : `Stage ${Math.max(item.health.stageIndex + 1, 0)}/${item.health.stageCount}`
+                }
+              />
+            )}
+            {item.health?.paymentFlag === "OVERDUE" && (
+              <Chip size="small" color="error" variant="outlined" label="Payment overdue" />
+            )}
+            {item.health?.paymentFlag === "DUE" && (
+              <Chip size="small" color="warning" variant="outlined" label="Payment due" />
+            )}
+          </Stack>
+          <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
+            {item.signals.map((s, i) => {
+              const sCfg = getMyDaySignalConfig(s.type);
+              if (!sCfg) return null;
+              return (
+                <Chip
+                  key={i}
+                  size="small"
+                  color={SEVERITY_PALETTE[s.severity] || "default"}
+                  variant={i === 0 ? "filled" : "outlined"}
+                  label={`${sCfg.title(s.params)} — ${sCfg.description(s.params)}`}
+                  sx={{ maxWidth: "100%" }}
+                />
+              );
+            })}
+          </Stack>
+        </Box>
+        <Button component={Link} href={itemHref(item)} size="small" variant="outlined" sx={{ flexShrink: 0 }}>
+          {cfg?.ctaLabel || "Open"}
+        </Button>
+      </Box>
+    );
+  };
+
   return (
     <Stack spacing={1.5}>
+      <Typography variant="caption" color="text.secondary">
+        {countBy("critical")} critical · {countBy("warning")} warning · {countBy("info")} info
+      </Typography>
       {queue.truncated && (
         <Alert severity="info">Showing the {queue.items.length} most at-risk items.</Alert>
       )}
-      {queue.items.map((item) => {
-        const top = item.signals[0];
-        const cfg = getMyDaySignalConfig(top.type);
-        const paletteKey = SEVERITY_PALETTE[top.severity] || "info";
-        const color = theme.palette[paletteKey].main;
-        return (
-          <Box
-            key={`${item.kind}-${item.kind === "WORK_STAGE" ? item.projectId : item.leadId}`}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              p: 1.5,
-              borderRadius: 2,
-              borderLeft: `3px solid ${color}`,
-              bgcolor: alpha(color, 0.04),
-              border: `1px solid ${theme.palette.divider}`,
-            }}
+      {urgent.map(renderItem)}
+      {urgent.length === 0 && onTrack.length > 0 && (
+        <Typography variant="body2" sx={{ color: theme.palette.success.main, fontWeight: 600 }}>
+          Nothing urgent — all your work is on track.
+        </Typography>
+      )}
+      {onTrack.length > 0 && (
+        <>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            sx={{ pt: 1, borderTop: `1px dashed ${theme.palette.divider}` }}
           >
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, flexWrap: "wrap" }}>
-                <Typography variant="body2" fontWeight={700} noWrap>
-                  {item.clientName || `Lead #${item.leadId}`}
-                </Typography>
-                {item.status && <Chip size="small" label={item.status} variant="outlined" />}
-                {item.level && <Chip size="small" label={item.level} variant="outlined" />}
-              </Stack>
-              <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
-                {item.signals.map((s, i) => {
-                  const sCfg = getMyDaySignalConfig(s.type);
-                  if (!sCfg) return null;
-                  return (
-                    <Chip
-                      key={i}
-                      size="small"
-                      color={SEVERITY_PALETTE[s.severity] || "default"}
-                      variant={i === 0 ? "filled" : "outlined"}
-                      label={`${sCfg.title(s.params)} — ${sCfg.description(s.params)}`}
-                      sx={{ maxWidth: "100%" }}
-                    />
-                  );
-                })}
-              </Stack>
-            </Box>
-            <Button component={Link} href={itemHref(item)} size="small" variant="outlined" sx={{ flexShrink: 0 }}>
-              {cfg?.ctaLabel || "Open"}
-            </Button>
-          </Box>
-        );
-      })}
+            On track — your active work ({onTrack.length})
+          </Typography>
+          {onTrack.map(renderItem)}
+        </>
+      )}
     </Stack>
   );
 }

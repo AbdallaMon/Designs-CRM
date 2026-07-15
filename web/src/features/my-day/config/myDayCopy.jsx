@@ -24,7 +24,7 @@ const MY_DAY_ONLY_CONFIG = {
   },
   WORK_STAGE_ASSIGNED_TO_YOU: {
     icon: <MdTimeline />,
-    severity: "warning",
+    severity: "info", // routine work — grouped under "On track" so urgencies stand alone
     title: () => "Stage in progress",
     description: (p = {}) => `Your ${p.projectType ?? ""} stage is in progress.`,
     ctaLabel: "Open work stage",

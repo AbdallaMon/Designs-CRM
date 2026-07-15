@@ -169,6 +169,30 @@ export const COCKPIT_ACTION_CONFIG = {
     description: (p = {}) => `${p.count || 0} payment(s) awaiting collection`,
     ctaLabel: "Record payment",
   },
+  FIRST_TOUCH_SLA: {
+    icon: <RiAlarmLine />,
+    severity: "warning", // backend escalates to critical at 48h
+    title: () => "No first contact yet",
+    description: (p = {}) =>
+      `Claimed ${p.hoursSinceAssigned ?? 0}h ago with no contact logged — call now, speed wins deals.`,
+    ctaLabel: "Log a call",
+  },
+  OFFER_AWAITING_DECISION: {
+    icon: <PiCurrencyDollarSimpleLight />,
+    severity: "warning",
+    title: () => "Offer awaiting decision",
+    description: (p = {}) =>
+      `Offer sent ${p.daysSinceOffer ?? 0}d ago with no answer — follow up with the client.`,
+    ctaLabel: "View offers",
+  },
+  POOL_FIRST_TOUCH: {
+    icon: <RiAlarmLine />,
+    severity: "warning", // backend escalates to critical at 24h
+    title: () => "Unclaimed new lead",
+    description: (p = {}) =>
+      `Waiting ${p.hoursSincePool ?? 0}h in the pool — claim it and make first contact.`,
+    ctaLabel: "Open lead",
+  },
 };
 
 // Severity → theme palette key (color of the accent rail, icon tile, and CTA).

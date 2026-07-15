@@ -19,7 +19,9 @@ describe("computeWorkStageActions", () => {
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({
       type: "WORK_STAGE_ASSIGNED_TO_YOU",
-      severity: "warning",
+      // info, not warning: routine "assigned to you" work must not drown real
+      // urgencies (DELIVERY_OVERDUE / STAGE_DUE_SOON) in the My Day queue.
+      severity: "info",
       params: { projectType: "3D_Designer", level: "LEVEL_3" },
     });
     expect(r[0].cta).toMatchObject({ kind: "GOTO_WORKSTAGE", capability: null });
