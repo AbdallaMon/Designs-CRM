@@ -11,17 +11,41 @@ import { Box, Chip, LinearProgress, Stack, Typography, alpha, useTheme } from "@
 import { MdCheckCircle } from "react-icons/md";
 import {
   ClientLeadStatus,
-  PaymentStatus,
   statusColors,
 } from "@/app/helpers/constants";
 import { stageLabel } from "@/features/leads/cockpit/config/cockpitActions.jsx";
+
+// Payment chip from the REAL truth (health.payment, derived from ContractPayment) — the
+// legacy health.paymentStatus column is inert and deliberately ignored here. No chip
+// pre-contract (the column never meant anything there either).
+function paymentChip(health) {
+  if (!health.contract || !health.payment) return null;
+  const p = health.payment;
+  if (p.overdueCount > 0) {
+    return { color: "error", label: `Payment overdue ${p.oldestOverdueDays ?? 0}d` };
+  }
+  if (p.hasDue) {
+    return { color: "warning", label: `${p.outstandingCount} payment(s) due` };
+  }
+  return { color: "success", label: "Payments on track" };
+}
+
+function formatTouchTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 export function DealHealthBar({ health }) {
   const theme = useTheme();
   if (!health) return null;
 
-  const { status, paymentStatus, currentStage, nextStage, stageIndex, stageCount } =
-    health;
+  const { status, currentStage, nextStage, stageIndex, stageCount } = health;
 
   const notInitiated = typeof stageIndex !== "number" || stageIndex < 0;
   const count = stageCount || 0;
@@ -30,6 +54,7 @@ export function DealHealthBar({ health }) {
   const percent = count > 0 ? (completed / count) * 100 : 0;
 
   const statusColor = statusColors[status] || theme.palette.primary.main;
+  const payChip = paymentChip(health);
 
   return (
     <Box
@@ -82,6 +107,15 @@ export function DealHealthBar({ health }) {
                 : `Contract: ${health.contract.currentLevel || "—"} (${health.contract.levelsDone}/${health.contract.levelsTotal})`}
             </Typography>
           )}
+          {(health.lastActivityDays != null || health.nextTouch) && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>
+              {health.lastActivityDays != null &&
+                `Last activity ${health.lastActivityDays}d ago`}
+              {health.lastActivityDays != null && health.nextTouch && " · "}
+              {health.nextTouch &&
+                `Next ${health.nextTouch.kind === "MEETING" ? "meeting" : "call"}: ${formatTouchTime(health.nextTouch.at)}`}
+            </Typography>
+          )}
         </Box>
 
         {/* Status / payment chips */}
@@ -99,12 +133,12 @@ export function DealHealthBar({ health }) {
               }}
             />
           )}
-          {paymentStatus && (
+          {payChip && (
             <Chip
-              label={`Payment: ${PaymentStatus[paymentStatus] || paymentStatus}`}
+              label={payChip.label}
               size="small"
               variant="outlined"
-              color="primary"
+              color={payChip.color}
               sx={{ fontWeight: 600, borderRadius: 2 }}
             />
           )}

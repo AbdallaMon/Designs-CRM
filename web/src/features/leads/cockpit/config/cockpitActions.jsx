@@ -75,8 +75,9 @@ export const COCKPIT_ACTION_CONFIG = {
     icon: <FaMoneyBillWave />,
     severity: "critical",
     title: () => "Payment overdue",
-    description: () => "A payment on this deal is overdue.",
-    ctaLabel: "Add payments",
+    description: (p = {}) =>
+      `${p.count || 1} payment(s) past due — oldest ${p.overdueDays ?? 0}d overdue`,
+    ctaLabel: "Record payment",
   },
   DISCOVERY_INCOMPLETE: {
     icon: <MdAnalytics />,
