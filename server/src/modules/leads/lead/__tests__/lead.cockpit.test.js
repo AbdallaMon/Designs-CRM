@@ -190,6 +190,97 @@ describe("computeCockpit — payment truth (date-based PAYMENT_OVERDUE + health.
   });
 });
 
+describe("computeCockpit — FIRST_TOUCH_SLA", () => {
+  const hoursAgo = (h) => new Date(NOW.getTime() - h * 3600_000);
+  const claimed = (h, overrides = {}) =>
+    baseBundle({ assignedAt: hoursAgo(h), salesStages: [], ...overrides });
+
+  it("silent under 24h since claim", () => {
+    expect(types(computeCockpit(claimed(23), NOW))).not.toContain("FIRST_TOUCH_SLA");
+  });
+
+  it("warning at 24h, critical at 48h, with hoursSinceAssigned", () => {
+    const warn = computeCockpit(claimed(24), NOW).actions.find((a) => a.type === "FIRST_TOUCH_SLA");
+    expect(warn?.severity).toBe("warning");
+    expect(warn?.params).toMatchObject({ hoursSinceAssigned: 24 });
+    const crit = computeCockpit(claimed(50), NOW).actions.find((a) => a.type === "FIRST_TOUCH_SLA");
+    expect(crit?.severity).toBe("critical");
+    expect(crit?.cta).toMatchObject({ kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" });
+  });
+
+  it("silent once first contact happened (a stage exists or a call was completed)", () => {
+    expect(
+      types(computeCockpit(claimed(72, { salesStages: [{ stage: "INITIAL_CONTACT" }] }), NOW)),
+    ).not.toContain("FIRST_TOUCH_SLA");
+    expect(
+      types(computeCockpit(claimed(72, { callReminders: [{ time: hoursAgo(10), status: "DONE" }] }), NOW)),
+    ).not.toContain("FIRST_TOUCH_SLA");
+  });
+
+  it("silent when unassigned, on closed-won, or when LEAD_STALE already fires", () => {
+    expect(types(computeCockpit(baseBundle(), NOW))).not.toContain("FIRST_TOUCH_SLA");
+    expect(
+      types(computeCockpit(claimed(72, { status: "FINALIZED" }), NOW)),
+    ).not.toContain("FIRST_TOUCH_SLA");
+    // 6 days stale → LEAD_STALE fires and subsumes the first-touch nag.
+    const stale = computeCockpit(
+      claimed(6 * 24, { updatedAt: hoursAgo(6 * 24) }),
+      NOW,
+    );
+    expect(types(stale)).toContain("LEAD_STALE");
+    expect(types(stale)).not.toContain("FIRST_TOUCH_SLA");
+  });
+});
+
+describe("computeCockpit — OFFER_AWAITING_DECISION", () => {
+  const daysAgo = (d) => new Date(NOW.getTime() - d * 24 * 3600_000);
+
+  it("fires at 3+ days since the newest unaccepted offer", () => {
+    const bundle = baseBundle({
+      status: "NEGOTIATING",
+      priceOffers: [
+        { isAccepted: false, createdAt: daysAgo(10) },
+        { isAccepted: false, createdAt: daysAgo(4) }, // newest
+      ],
+    });
+    const a = computeCockpit(bundle, NOW).actions.find(
+      (x) => x.type === "OFFER_AWAITING_DECISION",
+    );
+    expect(a?.severity).toBe("warning");
+    expect(a?.params).toMatchObject({ daysSinceOffer: 4, offerCount: 2 });
+    expect(a?.cta).toMatchObject({ kind: "GOTO_TAB", tabKey: "priceOffers" });
+  });
+
+  it("silent when newer than 3 days, when accepted, or when closed-won", () => {
+    const fresh = baseBundle({
+      status: "NEGOTIATING",
+      priceOffers: [{ isAccepted: false, createdAt: daysAgo(2) }],
+    });
+    expect(types(computeCockpit(fresh, NOW))).not.toContain("OFFER_AWAITING_DECISION");
+    const accepted = baseBundle({
+      status: "NEGOTIATING",
+      priceOffers: [{ isAccepted: true, createdAt: daysAgo(10) }],
+    });
+    expect(types(computeCockpit(accepted, NOW))).not.toContain("OFFER_AWAITING_DECISION");
+    const won = baseBundle({
+      status: "FINALIZED",
+      priceOffers: [{ isAccepted: false, createdAt: daysAgo(10) }],
+    });
+    expect(types(computeCockpit(won, NOW))).not.toContain("OFFER_AWAITING_DECISION");
+  });
+});
+
+describe("poolTouchSeverity — unclaimed-pool first-touch ramp", () => {
+  it("null under 4h, warning at 4h, critical at 24h", async () => {
+    const { poolTouchSeverity } = await import("../lead.cockpit.js");
+    const hoursAgo = (h) => new Date(NOW.getTime() - h * 3600_000);
+    expect(poolTouchSeverity(hoursAgo(3), NOW)).toBeNull();
+    expect(poolTouchSeverity(hoursAgo(4), NOW)).toBe("warning");
+    expect(poolTouchSeverity(hoursAgo(24), NOW)).toBe("critical");
+    expect(poolTouchSeverity(null, NOW)).toBeNull();
+  });
+});
+
 describe("computeCockpit — health lastActivityDays + nextTouch", () => {
   const days = (n) => new Date(NOW.getTime() - n * 24 * 3600_000);
 

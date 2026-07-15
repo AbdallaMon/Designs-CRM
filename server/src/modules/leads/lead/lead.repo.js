@@ -1135,6 +1135,8 @@ const COCKPIT_BUNDLE_SELECT = {
   status: true, // health + rules + capability status guard
   paymentStatus: true,
   updatedAt: true, // LEAD_STALE age input (7b) — safe scalar, no free text
+  assignedAt: true, // FIRST_TOUCH_SLA age input (7c)
+  createdAt: true, // pool-aging input (poolTouchSeverity, initiator queue)
   // Active contract (latest IN_PROGRESS or COMPLETED) — read-only, drives the post-finalize
   // signals + health.contract/payment. Language-neutral primitives only (no free text).
   contracts: {

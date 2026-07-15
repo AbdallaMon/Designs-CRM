@@ -72,6 +72,20 @@ const SEVERITY_RANK = { critical: 0, warning: 1, info: 2 };
 // SQL imports this so both lenses breach at the same moment.
 export const STALE_LEAD_DAYS = 5;
 
+// Speed-to-lead SLA: a claimed lead with NO first contact yet (no stage reached, no
+// completed call) breaches at these ages. First-touch time is the strongest conversion
+// lever — days-granularity staleness is far too late for it.
+export const FIRST_TOUCH_WARN_HOURS = 24;
+export const FIRST_TOUCH_CRIT_HOURS = 48;
+
+// An unaccepted price offer older than this is "awaiting decision" — chase it.
+export const OFFER_DECISION_DAYS = 3;
+
+// Unclaimed NEW-pool aging ramp (contact-initiator queue).
+export const POOL_TOUCH_WARN_HOURS = 4;
+export const POOL_TOUCH_CRIT_HOURS = 24;
+
+const MS_PER_HOUR = 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function arr(v) {
@@ -452,6 +466,56 @@ function computeSalesActions(bundle, now, health, status) {
       }
     }
 
+    // 7c. FIRST_TOUCH_SLA — claimed but never contacted (no stage reached, no DONE call).
+    // Suppressed when LEAD_STALE already fired: staleness subsumes the first-touch nag.
+    const staleFired = actions.some((a) => a.type === "LEAD_STALE");
+    if (
+      !staleFired &&
+      bundle.assignedAt != null &&
+      health.stageIndex < 0 &&
+      ACTIVE_STATUSES.includes(status) &&
+      !callReminders.some((c) => c.status === "DONE")
+    ) {
+      const hoursSinceAssigned = Math.floor(
+        (now.getTime() - toDate(bundle.assignedAt).getTime()) / MS_PER_HOUR,
+      );
+      if (hoursSinceAssigned >= FIRST_TOUCH_WARN_HOURS) {
+        actions.push(
+          action(
+            "FIRST_TOUCH_SLA",
+            hoursSinceAssigned >= FIRST_TOUCH_CRIT_HOURS ? "critical" : "warning",
+            { hoursSinceAssigned },
+            { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+          ),
+        );
+      }
+    }
+
+    // 7d. OFFER_AWAITING_DECISION — offer(s) sent, none accepted, aging past the
+    // decision window. (NO_PRICE_OFFER covers the zero-offer case; this covers the
+    // "sent and forgotten" black hole after it.)
+    const offerDates = priceOffers
+      .filter((p) => p.createdAt != null)
+      .map((p) => toDate(p.createdAt));
+    if (
+      offerDates.length &&
+      !health.hasAcceptedPriceOffer &&
+      ACTIVE_STATUSES.includes(status)
+    ) {
+      const newestOffer = offerDates.reduce((a, b) => (a > b ? a : b));
+      const daysSinceOffer = daysBetween(newestOffer, now);
+      if (daysSinceOffer >= OFFER_DECISION_DAYS) {
+        actions.push(
+          action(
+            "OFFER_AWAITING_DECISION",
+            "warning",
+            { daysSinceOffer, offerCount: priceOffers.length },
+            { kind: "GOTO_TAB", capability: null, tabKey: "priceOffers" },
+          ),
+        );
+      }
+    }
+
     // A critical/warning funnel action above "blocks" the (info) advance suggestion.
     const hasBlocking = actions.length > 0;
 
@@ -591,6 +655,21 @@ export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
   }
 
   return { health, actions: sortActions(actions) };
+}
+
+/**
+ * Aging severity for an UNCLAIMED NEW-pool lead (contact-initiator queue). Pure;
+ * `null` while still fresh (< POOL_TOUCH_WARN_HOURS).
+ * @param {Date|string|null} createdAt  when the lead entered the pool
+ * @param {Date} now
+ * @returns {"critical"|"warning"|null}
+ */
+export function poolTouchSeverity(createdAt, now) {
+  if (createdAt == null) return null;
+  const hours = (now.getTime() - toDate(createdAt).getTime()) / MS_PER_HOUR;
+  if (hours >= POOL_TOUCH_CRIT_HOURS) return "critical";
+  if (hours >= POOL_TOUCH_WARN_HOURS) return "warning";
+  return null;
 }
 
 // Exported for the repo/usecase select + tests to stay in lock-step with the enum.
