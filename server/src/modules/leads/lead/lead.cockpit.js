@@ -136,8 +136,27 @@ function contractStageProgress(stages) {
   };
 }
 
+// Earliest FUTURE in-progress touchpoint (call or meeting) — the positive counterpart
+// of NO_UPCOMING_TOUCH, so the FE can show "Next call: …" instead of only the absence.
+function nextTouch(bundle, now) {
+  const candidates = [];
+  for (const c of arr(bundle.callReminders)) {
+    if (c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now) {
+      candidates.push({ kind: "CALL", at: toDate(c.time) });
+    }
+  }
+  for (const m of arr(bundle.meetingReminders)) {
+    if (m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now) {
+      candidates.push({ kind: "MEETING", at: toDate(m.time) });
+    }
+  }
+  if (!candidates.length) return null;
+  const earliest = candidates.reduce((a, b) => (a.at <= b.at ? a : b));
+  return { kind: earliest.kind, at: earliest.at.toISOString() };
+}
+
 /** Deal-health summary: sales-stage progress + status/payment/offer facts + contract progress. */
-function computeHealth(bundle) {
+function computeHealth(bundle, now) {
   const presentIndices = arr(bundle.salesStages)
     .map((s) => STAGE_ORDER.indexOf(s.stage))
     .filter((i) => i >= 0);
@@ -167,13 +186,28 @@ function computeHealth(bundle) {
         }
       : null,
     // Payment track — derived from ContractPayment (ClientLead.paymentStatus is inert).
-    payment: paymentHealth(contract),
+    payment: paymentHealth(contract, now),
+    // Age of the last touch on the record + the next scheduled touchpoint (or null).
+    lastActivityDays:
+      bundle.updatedAt != null ? daysBetween(toDate(bundle.updatedAt), now) : null,
+    nextTouch: nextTouch(bundle, now),
   };
 }
 
+// A ContractPayment row is date-overdue when it is DUE and its dueDate has passed.
+function overduePayments(pays, now) {
+  return pays.filter(
+    (p) => p.status === "DUE" && p.dueDate != null && toDate(p.dueDate) < now,
+  );
+}
+
 // Payment summary derived from the contract's ContractPayment rows (not ClientLead.paymentStatus).
-function paymentHealth(contract) {
+function paymentHealth(contract, now) {
   const pays = arr(contract?.paymentsNew);
+  const overdue = overduePayments(pays, now);
+  const oldestDue = overdue.length
+    ? overdue.map((p) => toDate(p.dueDate)).reduce((a, b) => (a < b ? a : b))
+    : null;
   return {
     outstandingCount: pays.filter((p) => p.status === "DUE").length,
     hasDue: pays.some((p) => p.status === "DUE"),
@@ -182,13 +216,15 @@ function paymentHealth(contract) {
         p.paymentCondition === "SIGNATURE" &&
         (p.status === "RECEIVED" || p.status === "TRANSFERRED"),
     ),
+    overdueCount: overdue.length,
+    oldestOverdueDays: oldestDue ? daysBetween(oldestDue, now) : null,
   };
 }
 
 // ── ACCOUNTANT rule set ──────────────────────────────────────────────────────
 // Payment collection, derived live from ContractPayment.status. The down-payment
 // (SIGNATURE condition) is the critical gate that unblocks production.
-function computeAccountantActions(bundle) {
+function computeAccountantActions(bundle, now) {
   const actions = [];
   const payments = arr(firstContract(bundle)?.paymentsNew);
 
@@ -212,8 +248,32 @@ function computeAccountantActions(bundle) {
     );
   }
 
+  // Date-based overdue (real truth): DUE rows whose dueDate has passed.
+  const overdue = overduePayments(payments, now);
+  if (overdue.length) {
+    const oldest = overdue
+      .map((p) => toDate(p.dueDate))
+      .reduce((a, b) => (a < b ? a : b));
+    actions.push(
+      action(
+        "PAYMENT_OVERDUE",
+        "critical",
+        { count: overdue.length, overdueDays: daysBetween(oldest, now) },
+        {
+          kind: "OPEN_PAYMENT",
+          capability: "canAddPayment",
+          tabKey: "payments",
+        },
+      ),
+    );
+  }
+
+  const overdueSet = new Set(overdue);
   const otherDue = payments.filter(
-    (p) => p.status === "DUE" && p.paymentCondition !== "SIGNATURE",
+    (p) =>
+      p.status === "DUE" &&
+      p.paymentCondition !== "SIGNATURE" &&
+      !overdueSet.has(p),
   );
   if (otherDue.length) {
     actions.push(
@@ -297,21 +357,9 @@ function computeSalesActions(bundle, now, health, status) {
       );
     }
 
-    // 3. PAYMENT_OVERDUE (critical).
-    if (bundle.paymentStatus === "OVERDUE") {
-      actions.push(
-        action(
-          "PAYMENT_OVERDUE",
-          "critical",
-          {},
-          {
-            kind: "OPEN_PAYMENT",
-            capability: "canAddPayment",
-            tabKey: "payments",
-          },
-        ),
-      );
-    }
+    // (Rule 3 — the old paymentStatus-based PAYMENT_OVERDUE — was retired: the column is
+    // inert (never set by app code). The real, date-based rule lives in the contract
+    // signals block below, derived from ContractPayment.dueDate.)
 
     // 4. DISCOVERY_INCOMPLETE (warning) — unanswered SPIN questions while still early.
     const unansweredDiscovery = sessionQuestions.filter(
@@ -426,6 +474,26 @@ function computeSalesActions(bundle, now, health, status) {
 
   // ── Contract signals (run whenever a contract exists; survive into FINALIZED) ──
   if (contract) {
+    // PAYMENT_OVERDUE (critical) — real, date-based: DUE ContractPayment past its dueDate.
+    const overdue = overduePayments(arr(contract.paymentsNew), now);
+    if (overdue.length) {
+      const oldest = overdue
+        .map((p) => toDate(p.dueDate))
+        .reduce((a, b) => (a < b ? a : b));
+      actions.push(
+        action(
+          "PAYMENT_OVERDUE",
+          "critical",
+          { count: overdue.length, overdueDays: daysBetween(oldest, now) },
+          {
+            kind: "OPEN_PAYMENT",
+            capability: "canAddPayment",
+            tabKey: "payments",
+          },
+        ),
+      );
+    }
+
     // SIGNING_AWAITED (warning) — the contract is out for signing (real sessionStatus,
     // not the old accepted-offer proxy).
     if (contract.sessionStatus === "SIGNING") {
@@ -506,7 +574,7 @@ export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
       "computeCockpit: `now` (a Date) is required — inject the clock for determinism.",
     );
   }
-  const health = computeHealth(bundle);
+  const health = computeHealth(bundle, now);
   const status = bundle.status ?? null;
 
   // Dead statuses (lost deals) → health-only, no actions.
@@ -519,7 +587,7 @@ export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
   if (ruleSet === "SALES") {
     actions = computeSalesActions(bundle, now, health, status);
   } else if (ruleSet === "ACCOUNTANT") {
-    actions = computeAccountantActions(bundle);
+    actions = computeAccountantActions(bundle, now);
   }
 
   return { health, actions: sortActions(actions) };

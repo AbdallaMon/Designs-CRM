@@ -105,12 +105,116 @@ describe("computeCockpit — critical rules", () => {
     expect(a.cta.kind).toBe("OPEN_MEETING");
   });
 
-  it("PAYMENT_OVERDUE when paymentStatus is OVERDUE", () => {
+  it("PAYMENT_OVERDUE no longer fires from the inert ClientLead.paymentStatus column", () => {
     const result = computeCockpit(baseBundle({ paymentStatus: "OVERDUE" }), NOW);
+    expect(types(result)).not.toContain("PAYMENT_OVERDUE");
+  });
+});
+
+describe("computeCockpit — payment truth (date-based PAYMENT_OVERDUE + health.payment)", () => {
+  const days = (n) => new Date(NOW.getTime() - n * 24 * 3600_000);
+  const contractWith = (paymentsNew, extra = {}) => ({
+    contracts: [
+      {
+        status: "IN_PROGRESS",
+        sessionStatus: "REGISTERED",
+        stages: [{ title: "LEVEL_2", stageStatus: "IN_PROGRESS", order: 2 }],
+        paymentsNew,
+        ...extra,
+      },
+    ],
+  });
+
+  it("DUE payment with a past dueDate → PAYMENT_OVERDUE (critical) with count/overdueDays — sales set", () => {
+    const bundle = baseBundle({
+      status: "FINALIZED", // survives close (the whole point)
+      ...contractWith([
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: days(12) },
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: days(3) },
+        { status: "RECEIVED", paymentCondition: "SIGNATURE", dueDate: days(30) },
+      ]),
+    });
+    const result = computeCockpit(bundle, NOW);
     const a = result.actions.find((x) => x.type === "PAYMENT_OVERDUE");
     expect(a).toBeTruthy();
     expect(a.severity).toBe("critical");
+    expect(a.params).toMatchObject({ count: 2, overdueDays: 12 });
     expect(a.cta).toMatchObject({ kind: "OPEN_PAYMENT", capability: "canAddPayment" });
+  });
+
+  it("accountant profile also gets the date-based PAYMENT_OVERDUE; non-overdue DUE stays PAYMENT_DUE", () => {
+    const bundle = baseBundle({
+      status: "FINALIZED",
+      ...contractWith([
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: days(5) }, // overdue
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: null }, // due, no date
+      ]),
+    });
+    const result = computeCockpit(bundle, NOW, { profileKey: "ACCOUNTANT" });
+    const overdue = result.actions.find((x) => x.type === "PAYMENT_OVERDUE");
+    const due = result.actions.find((x) => x.type === "PAYMENT_DUE");
+    expect(overdue?.params).toMatchObject({ count: 1, overdueDays: 5 });
+    expect(due?.params).toMatchObject({ count: 1 });
+  });
+
+  it("DUE with only future/null dueDate → no PAYMENT_OVERDUE", () => {
+    const bundle = baseBundle({
+      ...contractWith([
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: future(48) },
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: null },
+      ]),
+    });
+    expect(types(computeCockpit(bundle, NOW))).not.toContain("PAYMENT_OVERDUE");
+  });
+
+  it("health.payment carries overdueCount + oldestOverdueDays", () => {
+    const bundle = baseBundle({
+      ...contractWith([
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: days(9) },
+        { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: days(2) },
+      ]),
+    });
+    const { health } = computeCockpit(bundle, NOW);
+    expect(health.payment).toMatchObject({
+      outstandingCount: 2,
+      hasDue: true,
+      overdueCount: 2,
+      oldestOverdueDays: 9,
+    });
+  });
+
+  it("health.payment.oldestOverdueDays is null when nothing is overdue", () => {
+    const { health } = computeCockpit(baseBundle(), NOW);
+    expect(health.payment.overdueCount).toBe(0);
+    expect(health.payment.oldestOverdueDays).toBeNull();
+  });
+});
+
+describe("computeCockpit — health lastActivityDays + nextTouch", () => {
+  const days = (n) => new Date(NOW.getTime() - n * 24 * 3600_000);
+
+  it("lastActivityDays derives from updatedAt; null when absent", () => {
+    expect(computeCockpit(baseBundle({ updatedAt: days(6) }), NOW).health.lastActivityDays).toBe(6);
+    expect(computeCockpit(baseBundle(), NOW).health.lastActivityDays).toBeNull();
+  });
+
+  it("nextTouch = earliest FUTURE in-progress touchpoint across calls and meetings", () => {
+    const bundle = baseBundle({
+      callReminders: [
+        { time: future(30), status: "IN_PROGRESS" },
+        { time: past(2), status: "IN_PROGRESS" }, // past — not a next touch
+      ],
+      meetingReminders: [
+        { time: future(5), status: "IN_PROGRESS" }, // earliest future
+        { time: future(2), status: "DONE" }, // not in progress
+      ],
+    });
+    const { health } = computeCockpit(bundle, NOW);
+    expect(health.nextTouch).toEqual({ kind: "MEETING", at: future(5).toISOString() });
+  });
+
+  it("nextTouch is null when nothing future is scheduled", () => {
+    expect(computeCockpit(baseBundle(), NOW).health.nextTouch).toBeNull();
   });
 });
 
@@ -344,7 +448,15 @@ describe("computeCockpit — sorting & suppression", () => {
   it("sorts critical > warning > info, ties kept in rule order", () => {
     const bundle = baseBundle({
       status: "INTERESTED",
-      paymentStatus: "OVERDUE", // PAYMENT_OVERDUE (critical)
+      // PAYMENT_OVERDUE (critical) — real date-based rule: DUE payment past its dueDate.
+      contracts: [
+        {
+          status: "IN_PROGRESS",
+          sessionStatus: "REGISTERED",
+          stages: [],
+          paymentsNew: [{ status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: past(72) }],
+        },
+      ],
       callReminders: [{ time: past(3), status: "IN_PROGRESS" }], // CALL_OVERDUE (critical)
       priceOffers: [], // NO_PRICE_OFFER (warning)
       salesStages: [{ stage: "WHATSAPP_QA" }],
