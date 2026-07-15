@@ -44,6 +44,7 @@ vi.mock("@dms/db", () => ({
       groupBy: vi.fn().mockResolvedValue([]),
     },
     callReminder: { groupBy: vi.fn().mockResolvedValue([]), findMany: vi.fn().mockResolvedValue([]) },
+    meetingReminder: { findMany: vi.fn().mockResolvedValue([]) },
     contract: { findMany: vi.fn().mockResolvedValue([]) },
     deliverySchedule: { findMany: vi.fn().mockResolvedValue([]) },
     assignment: { findMany: vi.fn().mockResolvedValue([]) },

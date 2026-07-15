@@ -106,6 +106,14 @@ function makeMyDayRepo(overrides = {}) {
     unclaimedAgingLeads: vi.fn().mockResolvedValue([
       { id: 20, createdAt: daysAgo(3), client: { name: "Walk-in" } },
     ]),
+    findTodaysAgendaForUser: vi.fn().mockResolvedValue({
+      calls: [
+        { id: 1, time: daysAgo(1), reminderReason: "follow up", clientLead: { id: 5, client: { name: "Aisha" } } },
+      ],
+      meetings: [
+        { id: 2, time: new Date(NOW.getTime() + 2 * 3600_000), reminderReason: "site visit", clientLead: { id: 6, client: { name: "Quiet" } } },
+      ],
+    }),
     ...overrides,
   };
 }
@@ -145,6 +153,39 @@ describe("getMyQueue — sales family", () => {
   it("role fallback: un-migrated session (no currentProfileKey) with STAFF role → SALES", async () => {
     const q = await make().getMyQueue({ authUser: { id: 7, role: "STAFF" }, now: NOW });
     expect(q.family).toBe("SALES");
+  });
+});
+
+describe("getMyQueue — today's agenda (calls + meetings, incl. overdue)", () => {
+  it("merges calls + meetings time-ordered with overdue flags", async () => {
+    const q = await make().getMyQueue({ authUser: salesUser, now: NOW });
+    expect(q.agenda).toHaveLength(2);
+    // Overdue call (yesterday) sorts before the upcoming meeting.
+    expect(q.agenda[0]).toMatchObject({
+      kind: "CALL",
+      id: 1,
+      leadId: 5,
+      clientName: "Aisha",
+      overdue: true,
+      reminderReason: "follow up",
+    });
+    expect(q.agenda[1]).toMatchObject({ kind: "MEETING", id: 2, leadId: 6, overdue: false });
+  });
+
+  it("LEAD queue items carry a compact health strip (stage/contract/payment)", async () => {
+    const q = await make().getMyQueue({ authUser: salesUser, now: NOW });
+    expect(q.items[0].health).toMatchObject({
+      stageIndex: -1,
+      stageCount: 10,
+      contractLevel: null,
+      paymentFlag: null,
+    });
+  });
+
+  it("the supervisor drill-down has NO agenda (exception-focused surface)", async () => {
+    const salesTarget = { id: 9, name: "Rep", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } };
+    const q = await make().getQueueForTarget({ targetUser: salesTarget, now: NOW });
+    expect(q.agenda).toBeUndefined();
   });
 });
 
@@ -227,6 +268,17 @@ describe("getQueueForTarget — SALES drill-down (itemized)", () => {
   it("sorts the critical (issue-bearing) lead ahead of the on-track one", async () => {
     const q = await make().getQueueForTarget({ targetUser: salesTarget, now: NOW });
     expect(q.items[0].leadId).toBe(5);
+  });
+
+  it("a non-sales-profile owner surfaced via sales work (e.g. an admin who owns leads) still drills into the SALES queue, not a 403", async () => {
+    // The team lens groups leads/calls by owner (role-agnostic), so an ADMIN who owns active
+    // leads legitimately appears in the sales rollup (spec §1: "admin has 1 overdue call(s)").
+    // targetFamily() can't classify them by profile — the drill-down must still show the work.
+    const adminOwner = { id: 1, name: "Owner", role: "ADMIN", profile: null, currentProfile: { key: "ADMIN" } };
+    const q = await make().getQueueForTarget({ targetUser: adminOwner, now: NOW });
+    expect(q.family).toBe("SALES");
+    expect(q.user).toMatchObject({ id: 1, name: "Owner" });
+    expect(q.items.map((i) => i.leadId)).toContain(5);
   });
 
   it("surfaces a lead that has an overdue call even if it is not in the active set", async () => {

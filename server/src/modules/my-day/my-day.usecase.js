@@ -51,12 +51,32 @@ class MyDayUsecase {
   // ── personal queue ─────────────────────────────────────────────────────────────────
 
   async getMyQueue({ authUser, now = new Date() }) {
-    return this.#queueFor({
+    const queue = await this.#queueFor({
       userId: authUser.id,
       profileKey: authUser?.currentProfileKey ?? null,
       family: familyOf({ profileKey: authUser?.currentProfileKey, role: authUser?.role ?? authUser?.activeRole }),
       now,
     });
+    // Today's agenda (self surface only — the supervisor drill-down stays exception-
+    // focused): the caller's schedule for the day + anything already overdue.
+    queue.agenda = await this.#agendaFor({ userId: authUser.id, now });
+    return queue;
+  }
+
+  async #agendaFor({ userId, now }) {
+    const { calls, meetings } = await myDayRepository.findTodaysAgendaForUser({ userId, now });
+    const toRow = (kind) => (r) => ({
+      kind,
+      id: r.id,
+      leadId: r.clientLead?.id ?? null,
+      clientName: r.clientLead?.client?.name ?? null,
+      time: new Date(r.time).toISOString(),
+      overdue: new Date(r.time).getTime() < now.getTime(),
+      reminderReason: r.reminderReason ?? null,
+    });
+    return [...calls.map(toRow("CALL")), ...meetings.map(toRow("MEETING"))].sort(
+      (a, b) => new Date(a.time) - new Date(b.time),
+    );
   }
 
   // Drill-down: target already scope-checked by checkIfUserCanViewMyDayOf (req.scoped).
@@ -64,13 +84,17 @@ class MyDayUsecase {
   // active lead (SALES) / stage (DESIGNER), including on-track ones — so "1 active" always
   // shows that one lead with a link, and every counted issue names its lead/call.
   async getQueueForTarget({ targetUser, now = new Date() }) {
-    const family = targetFamily(targetUser);
-    if (family === "SALES") return this.#salesTargetQueue({ user: targetUser, now });
+    // A drill-down target is surfaced by the team lens from actual WORK, not a profile: the
+    // SALES rollup groups leads/calls by owner (role-agnostic), so a non-sales-profile user
+    // who owns active leads — e.g. an ADMIN who holds leads (spec §1: "admin has 1 overdue
+    // call(s)") — legitimately appears and must drill into that work. Designers are role-gated,
+    // so targetFamily() always classifies them as DESIGNER; a null family therefore means the
+    // target was listed via sales work → the SALES queue (all reads keyed purely by userId)
+    // itemizes it. (Previously this threw MY_DAY_PROFILE_UNSUPPORTED, making every such card /
+    // exception open an empty/errored drawer.)
+    const family = targetFamily(targetUser) ?? "SALES";
     if (family === "DESIGNER") return this.#designerTargetQueue({ user: targetUser, now });
-    throw new AppError(myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED, 403, null, {
-      translationKey: TK,
-      reason: `no My Day queue family for target ${targetUser?.id}`,
-    });
+    return this.#salesTargetQueue({ user: targetUser, now });
   }
 
   // SALES drill-down: a flat, severity-sorted list of the rep's attention-worthy + active
@@ -205,7 +229,7 @@ class MyDayUsecase {
       ]);
       const items = bundles
         .map((b) => {
-          const { actions } = computeCockpit(normalizeBundle(b), now, { profileKey });
+          const { health, actions } = computeCockpit(normalizeBundle(b), now, { profileKey });
           return {
             kind: "LEAD",
             leadId: b.id,
@@ -213,6 +237,7 @@ class MyDayUsecase {
             status: b.status,
             sortAt: b.updatedAt ?? null,
             signals: actions,
+            health: compactHealth(health),
           };
         })
         .filter((i) => i.signals.length > 0);
@@ -418,6 +443,27 @@ class MyDayUsecase {
 
     return { exceptions: sortExceptions(exceptions), people };
   }
+}
+
+// Compact per-item deal-health strip for queue cards (the engine computes the full
+// health anyway — this keeps only the display-safe progress/payment facts, no amounts).
+function compactHealth(health) {
+  if (!health) return null;
+  return {
+    stageIndex: health.stageIndex,
+    stageCount: health.stageCount,
+    contractLevel: health.contract?.currentLevel ?? null,
+    levelsDone: health.contract?.levelsDone ?? null,
+    levelsTotal: health.contract?.levelsTotal ?? null,
+    paymentFlag:
+      health.payment?.overdueCount > 0
+        ? "OVERDUE"
+        : health.payment?.hasDue
+          ? "DUE"
+          : health.contract
+            ? "OK"
+            : null,
+  };
 }
 
 // Earliest live-stage delivery date, else the project fallback (spec §5.2).

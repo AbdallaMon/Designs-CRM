@@ -82,6 +82,35 @@ class MyDayRepository {
     });
   }
 
+  // ── personal agenda ────────────────────────────────────────────────────────────────
+  // The caller's own IN_PROGRESS call + meeting reminders up to end-of-day (server day):
+  // today's schedule PLUS anything already overdue from earlier days — both actionable now.
+  async findTodaysAgendaForUser({ userId, now }) {
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+    const where = {
+      userId: Number(userId),
+      status: "IN_PROGRESS",
+      time: { not: null, lte: endOfDay },
+    };
+    const select = {
+      id: true,
+      time: true,
+      reminderReason: true,
+      clientLead: { select: { id: true, client: { select: { name: true } } } },
+    };
+    const [calls, meetings] = await Promise.all([
+      prisma.callReminder.findMany({
+        where: { ...where, time: { lte: endOfDay } }, // CallReminder.time is non-nullable
+        select,
+        orderBy: { time: "asc" },
+        take: 100,
+      }),
+      prisma.meetingReminder.findMany({ where, select, orderBy: { time: "asc" }, take: 100 }),
+    ]);
+    return { calls, meetings };
+  }
+
   // ── drill-down scope lookup ────────────────────────────────────────────────────────
   // Target user's active profile for the supervisor scope check. Reads currentProfile.key
   // (DB-relational truth) + the transitional `profile` column — NEVER the legacy flags.
