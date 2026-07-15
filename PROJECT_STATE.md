@@ -5,6 +5,13 @@
 >
 > Last updated: **2026-07-12** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
+> **NEXT UP (2026-07-15) — My Day + Deal Preview productivity pass (design approved, implementation not started).**
+> Four phases: A truth fixes (real payment chip + date-based `PAYMENT_OVERDUE` + last-activity/next-touch lines),
+> B new warning rules (`FIRST_TOUCH_SLA`, `OFFER_AWAITING_DECISION`, designer triage), C My Day ritual (today's
+> agenda rail + required outcome→next-touch flow + richer cards), D coverage (accountant + contact-initiator
+> queues) + 08:00 personal digest. Spec: `docs/superpowers/specs/2026-07-15-my-day-preview-productivity-pass-design.md`.
+> Next step: writing-plans → implementation plan (user green-lights).
+>
 > **LATEST (2026-07-12) — PDF assets from SiteUtility + full elimination of `legacy`-named code (branch `feat/audit-log-sales-admin`).**
 > Two-phase effort (`docs/superpowers/specs/2026-07-12-pdf-assets-from-site-utility-design.md`).
 > **Phase 1 (feature):** both PDF subsystems (contract + image-session) now source their **intro page, company
