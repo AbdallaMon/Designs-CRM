@@ -28,4 +28,29 @@ export class MyDayDto {
   static toTeam({ domains, now }) {
     return { generatedAt: now.toISOString(), domains };
   }
+
+  // Supervisor drill-down for a SALES target: a flat, severity-sorted list of the rep's
+  // attention-worthy + active leads, each carrying issue flags + a derived severity so the
+  // FE can chip + link every row. `counts` mirror the person-card counts.
+  static toTargetQueue({ user, family, counts, items, now }) {
+    const sorted = [...items].sort((a, b) => {
+      const bySeverity = (SEVERITY_RANK[a.severity] ?? 2) - (SEVERITY_RANK[b.severity] ?? 2);
+      if (bySeverity !== 0) return bySeverity;
+      const at = a.sortAt ? new Date(a.sortAt).getTime() : 0;
+      const bt = b.sortAt ? new Date(b.sortAt).getTime() : 0;
+      return at - bt;
+    });
+    return {
+      user: user ? { id: user.id, name: user.name ?? null } : null,
+      family,
+      generatedAt: now.toISOString(),
+      counts,
+      items: sorted,
+    };
+  }
+
+  // The aging unclaimed leads behind LEAD_UNCLAIMED_AGING — oldest first, each linkable.
+  static toUnclaimed({ items, now }) {
+    return { generatedAt: now.toISOString(), items };
+  }
 }

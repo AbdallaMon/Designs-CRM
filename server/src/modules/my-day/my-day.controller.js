@@ -20,6 +20,13 @@ class MyDayController {
     return ok(res, data, myDayMessagesCodes.MY_DAY_TEAM_FETCHED, TK);
   }
 
+  // GET /v2/my-day/unclaimed — the aging unclaimed leads behind the LEAD_UNCLAIMED_AGING
+  // exception (my_day.team.view). Sales-domain only; no owner to scope.
+  async getUnclaimed(req, res) {
+    const data = await myDayUsecase.getUnclaimedLeads({});
+    return ok(res, data, myDayMessagesCodes.MY_DAY_UNCLAIMED_FETCHED, TK);
+  }
+
   // requireSpecialChecker adapter — MUST throw on denial (AuthMiddleware contract).
   checkTargetScope(req) {
     return myDayUsecase.checkIfUserCanViewMyDayOf({ id: req.params.userId, authUser: req.auth });

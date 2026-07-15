@@ -15,7 +15,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import Link from "next/link";
 
-const PaymentDialog = ({ payments }) => {
+const PaymentDialog = ({ payments, fullWidth = false }) => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
@@ -29,8 +29,13 @@ const PaymentDialog = ({ payments }) => {
   };
 
   return (
-    <Box>
-      <Button variant="contained" color="primary" onClick={handleClickOpen}>
+    <Box sx={fullWidth ? { width: "100%" } : undefined}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleClickOpen}
+        fullWidth={fullWidth}
+      >
         View Payments
       </Button>
 

@@ -333,8 +333,8 @@ export function linksForRole(user) {
 // website-utilities no longer shares the rents home).
 const ICON_BY_KEY = {
   dashboard: <FiGrid size={20} />,
-  "command-center": <FiActivity size={20} />,
   "my-day": <FiSunrise size={20} />,
+  "audit-logs": <FiActivity size={20} />,
   "users-admin": <FiUsers size={20} />,
   "users-super-sales": <FiUsers size={20} />,
   leads: <FiTarget size={20} />,
@@ -361,7 +361,7 @@ const ICON_BY_KEY = {
 // under. Group order = first appearance in the backend-ordered tab list.
 const SECTION_BY_KEY = {
   dashboard: "overview",
-  "command-center": "overview",
+  "my-day": "overview",
   leads: "sales",
   "contact-initiator-leads": "sales",
   "executor-leads": "sales",
@@ -379,6 +379,7 @@ const SECTION_BY_KEY = {
   "users-admin": "admin",
   "users-super-sales": "admin",
   reports: "admin",
+  "audit-logs": "admin",
   "website-utilities": "admin",
 };
 

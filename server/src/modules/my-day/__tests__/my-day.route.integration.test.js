@@ -43,7 +43,7 @@ vi.mock("@dms/db", () => ({
       count: vi.fn().mockResolvedValue(1),
       groupBy: vi.fn().mockResolvedValue([]),
     },
-    callReminder: { groupBy: vi.fn().mockResolvedValue([]) },
+    callReminder: { groupBy: vi.fn().mockResolvedValue([]), findMany: vi.fn().mockResolvedValue([]) },
     contract: { findMany: vi.fn().mockResolvedValue([]) },
     deliverySchedule: { findMany: vi.fn().mockResolvedValue([]) },
     assignment: { findMany: vi.fn().mockResolvedValue([]) },
@@ -146,10 +146,13 @@ describe("GET /v2/my-day/team — supervisor rollup", () => {
 });
 
 describe("GET /v2/my-day/users/:userId — supervisor drill-down", () => {
-  it("SUPER_SALES -> sales target 200", async () => {
+  it("SUPER_SALES -> sales target 200 (itemized: user + counts + items)", async () => {
     const { status, body } = await getJson("/my-day/users/9", signFor({ id: 8, role: "SUPER_SALES" }));
     expect(status).toBe(200);
     expect(body.data.family).toBe("SALES");
+    expect(body.data.user).toMatchObject({ id: 9, name: "Rep" });
+    expect(body.data.counts).toMatchObject({ active: expect.any(Number) });
+    expect(body.data.items.some((i) => i.leadId === 5)).toBe(true);
   });
 
   it("SUPER_SALES -> designer target 403 MY_DAY_TEAM_SCOPE_DENIED", async () => {
@@ -174,5 +177,20 @@ describe("GET /v2/my-day/users/:userId — supervisor drill-down", () => {
   it("STAFF -> 403 (no team code)", async () => {
     const { status } = await getJson("/my-day/users/9", signFor({ id: 7, role: "STAFF" }));
     expect(status).toBe(403);
+  });
+});
+
+describe("GET /v2/my-day/unclaimed — aging unclaimed leads", () => {
+  it("STAFF -> 403 (no team code)", async () => {
+    const { status, body } = await getJson("/my-day/unclaimed", signFor({ id: 7, role: "STAFF" }));
+    expect(status).toBe(403);
+    expect(body.details.requiredPermissions).toContain("my_day.team.view");
+  });
+
+  it("ADMIN -> 200 with an items array", async () => {
+    const { status, body } = await getJson("/my-day/unclaimed", signFor({ id: 1, role: "ADMIN" }));
+    expect(status).toBe(200);
+    expect(body.message).toBe(myDayMessagesCodes.MY_DAY_UNCLAIMED_FETCHED);
+    expect(Array.isArray(body.data.items)).toBe(true);
   });
 });

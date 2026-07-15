@@ -36,7 +36,6 @@ import { clientNotesRouter } from "../modules/client-portal/notes/notes.route.js
 import { clientLanguagesRouter } from "../modules/client-portal/languages/languages.route.js";
 
 import { auditRouter } from "../modules/audit/audit.route.js";
-import { commandCenterRouter } from "../modules/command-center/command-center.route.js";
 import { myDayRouter } from "../modules/my-day/my-day.route.js";
 
 import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.route.js";
@@ -271,14 +270,6 @@ router.use("/staff", staffRouter);
 // read-only + append-only (no create/update/delete). Every row is global (no per-record
 // owner), so the code is the gate — no object-scope checker.
 router.use("/audit-logs", auditRouter);
-
-// Command Center — the ADMIN/SUPER_ADMIN-only operational cockpit (a NEW additive surface,
-// no legacy equivalent). Auth once at the aggregate; the single composite read `GET /overview`
-// is gated by COMMAND_CENTER.VIEW (granted to ADMIN/SUPER_ADMIN only, mirroring AUDIT.LOG_VIEW).
-// Every aggregation is global (no per-record owner) → the code is the gate, no object-scope
-// checker. 🔒 Money figures reuse ONLY already-admin-visible sources (Invoice/Commission/
-// ClientLead.averagePrice) — NO Payment/ContractPayment/Outcome (the ACCOUNTANT-only boundary).
-router.use("/command-center", commandCenterRouter);
 
 // My Day — profile-scoped work queue + supervisor team lens (additive, 2026-07-12).
 router.use("/my-day", myDayRouter);

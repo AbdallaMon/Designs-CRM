@@ -60,13 +60,141 @@ class MyDayUsecase {
   }
 
   // Drill-down: target already scope-checked by checkIfUserCanViewMyDayOf (req.scoped).
+  // Unlike the personal queue, the supervisor drawer itemizes the rep's REAL work — every
+  // active lead (SALES) / stage (DESIGNER), including on-track ones — so "1 active" always
+  // shows that one lead with a link, and every counted issue names its lead/call.
   async getQueueForTarget({ targetUser, now = new Date() }) {
-    return this.#queueFor({
-      userId: targetUser.id,
-      profileKey: targetProfileKey(targetUser),
-      family: targetFamily(targetUser),
-      now,
+    const family = targetFamily(targetUser);
+    if (family === "SALES") return this.#salesTargetQueue({ user: targetUser, now });
+    if (family === "DESIGNER") return this.#designerTargetQueue({ user: targetUser, now });
+    throw new AppError(myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED, 403, null, {
+      translationKey: TK,
+      reason: `no My Day queue family for target ${targetUser?.id}`,
     });
+  }
+
+  // SALES drill-down: a flat, severity-sorted list of the rep's attention-worthy + active
+  // leads. The item set = active leads ∪ any lead with an overdue call / unsigned contract
+  // (so a counted issue surfaces even if the lead's status isn't "active"). Each row carries
+  // issue flags; `counts` equal the person-card counts (same predicates as the team lens).
+  async #salesTargetQueue({ user, now }) {
+    const userId = user.id;
+    const [active, stale, overdueCalls, unsigned] = await Promise.all([
+      myDayRepository.activeLeadsForRep(userId),
+      myDayRepository.staleLeadsForRep(userId, now),
+      myDayRepository.overdueCallsForRep(userId, now),
+      myDayRepository.signingStalledForRep(userId, now),
+    ]);
+
+    const staleSet = new Set(stale.map((l) => l.id));
+    const unsignedSet = new Set(unsigned.map((c) => c.clientLeadId).filter((id) => id != null));
+    const overdueByLead = new Map();
+    for (const c of overdueCalls) {
+      if (c.clientLeadId == null) continue;
+      overdueByLead.set(c.clientLeadId, (overdueByLead.get(c.clientLeadId) ?? 0) + 1);
+    }
+
+    // Merge every source into one row per lead (first non-null wins for display fields).
+    const rowById = new Map();
+    const upsert = (leadId, base) => {
+      if (leadId == null) return;
+      const existing = rowById.get(leadId);
+      if (!existing) { rowById.set(leadId, { leadId, clientName: null, status: null, sortAt: null, ...base }); return; }
+      for (const [k, v] of Object.entries(base)) if (existing[k] == null && v != null) existing[k] = v;
+    };
+    for (const l of active) upsert(l.id, { clientName: l.client?.name ?? null, status: l.status, sortAt: l.updatedAt ?? null });
+    for (const l of stale) upsert(l.id, { clientName: l.client?.name ?? null, status: l.status, sortAt: l.updatedAt ?? null });
+    for (const c of overdueCalls) upsert(c.clientLeadId, { clientName: c.clientLead?.client?.name ?? null, status: c.clientLead?.status ?? null, sortAt: c.time ?? null });
+    for (const c of unsigned) upsert(c.clientLeadId, { clientName: c.clientLead?.client?.name ?? null, status: c.clientLead?.status ?? null, sortAt: c.createdAt ?? null });
+
+    const items = [...rowById.values()].map((r) => {
+      const overdue = overdueByLead.get(r.leadId) ?? 0;
+      const isStale = staleSet.has(r.leadId);
+      const isUnsigned = unsignedSet.has(r.leadId);
+      return {
+        leadId: r.leadId,
+        clientName: r.clientName,
+        status: r.status,
+        sortAt: r.sortAt ? new Date(r.sortAt).toISOString() : null,
+        flags: { overdueCalls: overdue, stale: isStale, unsigned: isUnsigned },
+        severity: overdue > 0 ? "critical" : isStale || isUnsigned ? "warning" : "info",
+      };
+    });
+
+    const counts = {
+      active: active.length,
+      stale: stale.length,
+      overdueCalls: overdueCalls.length,
+      unsigned: unsigned.length,
+    };
+    return MyDayDto.toTargetQueue({ user, family: "SALES", counts, items, now });
+  }
+
+  // DESIGNER drill-down: the rep's active stages, on-track ones INCLUDED (empty signals →
+  // "On track" in the FE), sorted most-at-risk first.
+  async #designerTargetQueue({ user, now }) {
+    const rows = await myDayRepository.findDesignerAssignments({ userId: user.id });
+    const seen = new Set();
+    const items = [];
+    for (const row of rows) {
+      const p = row.project;
+      if (!p || seen.has(p.id)) continue;
+      seen.add(p.id);
+      const deliveryAt = resolveDeliveryAt(p);
+      const signals = computeWorkStageActions(
+        {
+          assignments: [
+            {
+              projectType: p.type,
+              contractLevel: PROJECT_TYPE_TO_LEVEL[p.type] ?? null,
+              projectStatus: "IN_PROGRESS",
+              stageStatus: "IN_PROGRESS",
+              deliveryAt,
+            },
+          ],
+        },
+        now,
+      );
+      items.push({
+        kind: "WORK_STAGE",
+        projectId: p.id,
+        leadId: p.clientLeadId,
+        clientName: p.clientLead?.client?.name ?? null,
+        projectType: p.type,
+        level: PROJECT_TYPE_TO_LEVEL[p.type] ?? null,
+        deliveryAt: deliveryAt ? new Date(deliveryAt).toISOString() : null,
+        sortAt: deliveryAt ?? null,
+        signals,
+      });
+    }
+    const rankOf = (it) =>
+      it.signals.length ? Math.min(...it.signals.map((s) => EXCEPTION_RANK[s.severity] ?? 2)) : 3;
+    items.sort((a, b) => {
+      const byRank = rankOf(a) - rankOf(b);
+      if (byRank !== 0) return byRank;
+      const at = a.sortAt ? new Date(a.sortAt).getTime() : 0;
+      const bt = b.sortAt ? new Date(b.sortAt).getTime() : 0;
+      return at - bt;
+    });
+    return {
+      user: { id: user.id, name: user.name ?? null },
+      family: "DESIGNER",
+      generatedAt: now.toISOString(),
+      items,
+    };
+  }
+
+  // Aging unclaimed leads behind LEAD_UNCLAIMED_AGING — no owner, so anyone holding
+  // my_day.team.view may list them to pick up. Sales-domain only (unclaimed leads are sales).
+  async getUnclaimedLeads({ now = new Date() } = {}) {
+    const rows = await myDayRepository.unclaimedAgingLeads(now);
+    const items = rows.map((l) => ({
+      leadId: l.id,
+      clientName: l.client?.name ?? null,
+      createdAt: new Date(l.createdAt).toISOString(),
+      agingDays: Math.floor((now.getTime() - new Date(l.createdAt).getTime()) / 86400_000),
+    }));
+    return MyDayDto.toUnclaimed({ items, now });
   }
 
   async #queueFor({ userId, profileKey, family, now }) {

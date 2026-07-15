@@ -170,13 +170,6 @@ export const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 // isSuperSales, and NOT granted to any staff/sales/designer/accountant role.
 export const AUDIT_ADMIN = [P.AUDIT.LOG_VIEW];
 
-// Command Center — ADMIN + SUPER_ADMIN ONLY (a NEW additive operational cockpit, no
-// legacy equivalent). Spread into the ADMIN + SUPER_ADMIN role arrays below and the
-// ADMIN/SUPER_ADMIN profiles — deliberately NOT in SHARED_AUTHED, NOT layered onto
-// isSuperSales, and NOT granted to any staff/sales/designer/accountant role. Mirrors
-// AUDIT_ADMIN exactly.
-export const COMMAND_CENTER_ADMIN = [P.COMMAND_CENTER.VIEW];
-
 // My Day — personal queue for the working tiers; team lens for supervisors. Additive
 // (new surface, no legacy equivalent). Admins get TEAM only (no personal queue).
 export const MY_DAY_PERSONAL = [P.MY_DAY.VIEW];
@@ -394,7 +387,6 @@ export const ROLE_PERMISSIONS = {
     ...IMAGE_SESSION_ADMIN,
     ...ADMIN_RESIDUAL,
     ...AUDIT_ADMIN,
-    ...COMMAND_CENTER_ADMIN,
     ...MY_DAY_TEAM,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
@@ -410,7 +402,6 @@ export const ROLE_PERMISSIONS = {
     ...IMAGE_SESSION_ADMIN,
     ...ADMIN_RESIDUAL,
     ...AUDIT_ADMIN,
-    ...COMMAND_CENTER_ADMIN,
     ...MY_DAY_TEAM,
   ],
 

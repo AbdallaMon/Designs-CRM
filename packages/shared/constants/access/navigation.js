@@ -225,18 +225,6 @@ export const NAVIGATION = [
     allowedRoles: [...ADMIN_SET],
   },
 
-  // 6c) Command Center — ADMIN/SUPER_ADMIN only (a NEW admin-cluster operational
-  //     cockpit, no master equivalent). Placed right after the Audit Log row in the
-  //     admin sidebar cluster. RouteGuard auto-gates the segment (not in
-  //     ALWAYS_ALLOWED_SEGMENTS); the page also gates on `command_center.view`.
-  {
-    key: "command-center",
-    label: "Command Center",
-    href: "/dashboard/command-center",
-    icon: "FiActivity",
-    allowedRoles: [...ADMIN_SET],
-  },
-
   // My Day — profile-scoped work queue (additive screen, 2026-07-12). Sales tiers +
   // designers get the personal queue; SUPER_SALES + admins additionally get the Team tab
   // (tab visibility inside the page is permission-gated; this row only lists the roles

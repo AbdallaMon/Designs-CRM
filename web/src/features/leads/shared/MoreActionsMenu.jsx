@@ -85,7 +85,8 @@ export const MoreActionsMenu = ({
             mt: 1,
             borderRadius: 2,
             boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
-            minWidth: 220,
+            minWidth: 240,
+            py: 0.5,
           }),
         }}
       >
@@ -132,7 +133,16 @@ export const MoreActionsMenu = ({
 
         {/* Admin Actions */}
         {admin && [
-          <MenuItem key="delete-action">
+          <MenuItem
+            key="delete-action"
+            disableRipple
+            sx={{
+              px: 1.25,
+              py: 0.75,
+              "&:hover": { bgcolor: "transparent" },
+              "& > *": { width: "100%" },
+            }}
+          >
             <DeleteModal
               item={lead}
               href={"admin/client-leads"}
@@ -150,7 +160,16 @@ export const MoreActionsMenu = ({
               }}
             />
           </MenuItem>,
-          <MenuItem key="assign-action">
+          <MenuItem
+            key="assign-action"
+            disableRipple
+            sx={{
+              px: 1.25,
+              py: 0.75,
+              "&:hover": { bgcolor: "transparent" },
+              "& > *": { width: "100%" },
+            }}
+          >
             <AssignNewStaffModal
               lead={lead}
               onUpdate={(newLead) => {
@@ -189,7 +208,16 @@ export const MoreActionsMenu = ({
             user.role === "SUPER_ADMIN" ||
             user.role === "ADMIN") &&
             (!payments || payments?.length < 1) && (
-              <MenuItem key="add-payment">
+              <MenuItem
+                key="add-payment"
+                disableRipple
+                sx={{
+                  px: 1.25,
+                  py: 0.75,
+                  "&:hover": { bgcolor: "transparent" },
+                  "& > *": { width: "100%" },
+                }}
+              >
                 <AddPayments
                   fullButtonWidth={true}
                   lead={lead}
@@ -202,8 +230,17 @@ export const MoreActionsMenu = ({
               </MenuItem>
             ),
           payments?.length > 0 && (
-            <MenuItem key="view-payment" sx={{ py: 1.5 }}>
-              <PaymentDialog payments={payments} />
+            <MenuItem
+              key="view-payment"
+              disableRipple
+              sx={{
+              px: 1.25,
+              py: 0.75,
+              "&:hover": { bgcolor: "transparent" },
+              "& > *": { width: "100%" },
+            }}
+            >
+              <PaymentDialog payments={payments} fullWidth />
             </MenuItem>
           ),
         ]}

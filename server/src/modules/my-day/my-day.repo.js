@@ -1,18 +1,47 @@
 // my-day repository — Prisma I/O ONLY (no business rules, no AppError). Two surfaces:
 //   1. Personal-queue inputs: the caller's OWN designer assignments (the sales queue
 //      reuses leadRepository.findCockpitBundlesForUser — not duplicated here).
-//   2. Team-lens aggregates: indexed exception counts/groupBys (command-center style).
+//   2. Team-lens aggregates: indexed exception counts/groupBys.
 //
 // THRESHOLD SINGLE-SOURCE (spec §6): the stale/delivery cutoffs IMPORT the constants the
 // pure rules use, so the team lens and the personal queue breach at the same moment.
 // UNCLAIMED_NEW_DAYS / UNSIGNED_CONTRACT_DAYS are team-lens-only and live here.
 //
-// 🔒 MONEY BOUNDARY (spec §5.4): like command-center, this repo NEVER touches Payment /
-// ContractPayment / Outcome. Contract rows are read for sessionStatus only.
+// 🔒 MONEY BOUNDARY (spec §5.4): this repo NEVER touches Payment / ContractPayment /
+// Outcome. Contract rows are read for sessionStatus only.
 import prisma from "../../infra/prisma/prisma.js";
-import { INACTIVE_PROJECT_STATUSES, ACTIVE_DEAL_STATUSES, ACTIVE_LEAD_STATUSES, DESIGNER_ROLES } from "../command-center/command-center.repo.js";
 import { STALE_LEAD_DAYS } from "../leads/lead/lead.cockpit.js";
 import { DELIVERY_SOON_HOURS } from "../leads/lead/lead.workstage-cockpit.js";
+
+// ── business status vocabularies (query shapes) ──────────────────────────────────────
+// Deals actively being worked in the pipeline. Excludes raw NEW (an unworked lead) and
+// every terminal/parked status.
+export const ACTIVE_DEAL_STATUSES = Object.freeze([
+  "IN_PROGRESS",
+  "INTERESTED",
+  "NEEDS_IDENTIFIED",
+  "NEGOTIATING",
+]);
+
+// A salesperson's current lead workload (compared to User.maxLeadsCounts). Includes NEW
+// (an assigned-but-unworked lead still counts toward the cap) plus the active-deal set.
+export const ACTIVE_LEAD_STATUSES = Object.freeze(["NEW", ...ACTIVE_DEAL_STATUSES]);
+
+// Designer/executor roles whose active-project load the team lens surfaces.
+export const DESIGNER_ROLES = Object.freeze([
+  "THREE_D_DESIGNER",
+  "TWO_D_DESIGNER",
+  "TWO_D_EXECUTOR",
+]);
+
+// Project.status is a FREE-FORM String (not an enum). A project is "active" when its status
+// is NOT one of these terminal/parked boards.
+export const INACTIVE_PROJECT_STATUSES = Object.freeze([
+  "Completed",
+  "Hold",
+  "Rejected",
+  "To Do",
+]);
 
 // Team-lens-only thresholds (spec §6).
 export const UNCLAIMED_NEW_DAYS = 2;
@@ -128,8 +157,8 @@ class MyDayRepository {
     });
   }
 
-  // Sales load: active leads per owner + the cap (mirrors command-center.salesLoad — the
-  // people cards need the same shape plus per-rep exception counts merged in the usecase).
+  // Sales load: active leads per owner + the cap. The people cards need this shape plus
+  // per-rep exception counts merged in the usecase.
   async salesLoad() {
     const grouped = await prisma.clientLead.groupBy({
       by: ["userId"],
@@ -180,7 +209,7 @@ class MyDayRepository {
     });
   }
 
-  // Active-stage count per active designer (mirrors command-center.designerLoad).
+  // Active-stage count per active designer.
   async designerLoad() {
     const designers = await prisma.user.findMany({
       where: { role: { in: [...DESIGNER_ROLES] }, isActive: true },
@@ -198,6 +227,89 @@ class MyDayRepository {
       ),
     );
     return designers.map((d, i) => ({ userId: d.id, name: d.name, role: d.role, activeStages: counts[i] }));
+  }
+
+  // ── drill-down itemization (a single rep) ────────────────────────────────────────────
+  // The actual rows behind a person card's counts, so the supervisor drawer can list WHICH
+  // leads/calls (not just how many) and each row deep-links to its record. Safe projections:
+  // id + status + client display name + the timestamps the UI shows. Same money boundary.
+
+  // The rep's active leads (matches the salesLoad `activeLeads` count for this rep).
+  activeLeadsForRep(userId) {
+    return prisma.clientLead.findMany({
+      where: { userId: Number(userId), status: { in: [...ACTIVE_LEAD_STATUSES] } },
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
+        client: { select: { name: true } },
+      },
+      orderBy: { updatedAt: "asc" },
+    });
+  }
+
+  // Stale leads for ONE rep — the itemized form of staleLeadsByRep (identical predicate,
+  // scoped to a single userId), so the drawer's stale rows equal the card's staleCount.
+  staleLeadsForRep(userId, now) {
+    const cutoff = new Date(now.getTime() - STALE_LEAD_DAYS * MS_PER_DAY);
+    return prisma.clientLead.findMany({
+      where: {
+        userId: Number(userId),
+        status: { in: [...ACTIVE_DEAL_STATUSES] },
+        updatedAt: { lt: cutoff },
+        callReminders: { none: { status: "IN_PROGRESS", time: { gte: now } } },
+        meetingReminders: { none: { status: "IN_PROGRESS", time: { gte: now } } },
+      },
+      select: { id: true, status: true, updatedAt: true, client: { select: { name: true } } },
+      orderBy: { updatedAt: "asc" },
+    });
+  }
+
+  // Overdue calls for ONE rep — the itemized form of overdueCallsByRep, with the lead each
+  // call hangs off so the row can link to `/dashboard/deals/:leadId?tab=calls`.
+  overdueCallsForRep(userId, now) {
+    return prisma.callReminder.findMany({
+      where: { userId: Number(userId), status: "IN_PROGRESS", time: { lt: now } },
+      select: {
+        id: true,
+        time: true,
+        clientLeadId: true,
+        clientLead: { select: { id: true, status: true, client: { select: { name: true } } } },
+      },
+      orderBy: { time: "asc" },
+    });
+  }
+
+  // Stalled unsigned contracts for ONE rep — the itemized form of signingStalled scoped to
+  // the rep who owns the lead (same SIGNING + createdAt cutoff predicate).
+  signingStalledForRep(userId, now) {
+    const cutoff = new Date(now.getTime() - UNSIGNED_CONTRACT_DAYS * MS_PER_DAY);
+    return prisma.contract.findMany({
+      where: {
+        sessionStatus: "SIGNING",
+        createdAt: { lt: cutoff },
+        clientLead: { userId: Number(userId) },
+      },
+      select: {
+        id: true,
+        clientLeadId: true,
+        createdAt: true,
+        clientLead: { select: { status: true, client: { select: { name: true } } } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  // The actual aging unclaimed leads behind unclaimedAgingCount — no owner, so the drawer
+  // lists them for anyone holding my_day.team.view to pick up. Same NEW + createdAt cutoff.
+  unclaimedAgingLeads(now, take = 50) {
+    const cutoff = new Date(now.getTime() - UNCLAIMED_NEW_DAYS * MS_PER_DAY);
+    return prisma.clientLead.findMany({
+      where: { userId: null, status: "NEW", createdAt: { lt: cutoff } },
+      select: { id: true, createdAt: true, client: { select: { name: true } } },
+      orderBy: { createdAt: "asc" },
+      take,
+    });
   }
 }
 

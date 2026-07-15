@@ -80,10 +80,11 @@
 > (ADMIN/SUPER_ADMIN only) + a config-driven viewer at `/dashboard/audit-logs`.
 > **(2) Sales Deal Cockpit** — `GET /v2/leads/:id/cockpit` (pure `computeCockpit` next-best-action engine, object-scoped)
 > + a capability-gated cockpit strip on the deal detail (CTAs reuse existing dialogs).
-> **(3) Admin Command Center** — admin-only `command_center.view` + `GET /v2/command-center/overview` (pipeline/
-> capacity/delivery KPIs) + `/dashboard/command-center` screen with the audit activity feed. **Money boundary preserved:**
-> uses ONLY already-admin-visible figures (Invoice revenue, Commission, `averagePrice`); NO Payment/ContractPayment/
-> Outcome aggregates (accounting stays ACCOUNTANT-only — widening deferred pending explicit sign-off + parity update).
+> **(3) ~~Admin Command Center~~ — REMOVED (2026-07-15).** The admin-only Command Center (`command_center.view`,
+> `GET /v2/command-center/overview`, `/dashboard/command-center`) was deleted at the user's request: the backend module,
+> frontend feature/page, shared permission/navigation/message-code constants, message maps, and its tests are all gone.
+> The status-vocabulary constants it exported (`ACTIVE_DEAL_STATUSES`, `ACTIVE_LEAD_STATUSES`, `DESIGNER_ROLES`,
+> `INACTIVE_PROJECT_STATUSES`) — still needed by My Day — were relocated into `server/src/modules/my-day/my-day.repo.js`.
 > Plus tech-debt fixes: chat↔socket import cycle broken (lazy import), `LOCKED_FROM_STATUSES_FOR_NON_ADMIN` deduped,
 > notification icon/color key `LEAD_STATUS_CHANGE`→`LEAD_STATUS_CHANGED`, 15 raw `throw new Error(prose)` in the lead
 > usecases → `AppError`+message-codes (+ stop swallowing column-status errors), and a stray `oad()` ReferenceError in

@@ -89,6 +89,23 @@ function makeMyDayRepo(overrides = {}) {
     ]),
     salesLoad: vi.fn().mockResolvedValue([{ userId: 7, name: "Ahmed", activeLeads: 12, maxLeads: 10 }]),
     designerLoad: vi.fn().mockResolvedValue([{ userId: 42, name: "Sara", role: "THREE_D_DESIGNER", activeStages: 4 }]),
+    // Drill-down itemization reads (the supervisor drawer).
+    activeLeadsForRep: vi.fn().mockResolvedValue([
+      { id: 5, status: "IN_PROGRESS", updatedAt: daysAgo(6), client: { name: "Aisha" } },
+      { id: 6, status: "NEW", updatedAt: daysAgo(0), client: { name: "Quiet" } },
+    ]),
+    staleLeadsForRep: vi.fn().mockResolvedValue([
+      { id: 5, status: "IN_PROGRESS", updatedAt: daysAgo(6), client: { name: "Aisha" } },
+    ]),
+    overdueCallsForRep: vi.fn().mockResolvedValue([
+      { id: 1, time: daysAgo(1), clientLeadId: 5, clientLead: { id: 5, status: "IN_PROGRESS", client: { name: "Aisha" } } },
+    ]),
+    signingStalledForRep: vi.fn().mockResolvedValue([
+      { id: 1, clientLeadId: 5, createdAt: daysAgo(4), clientLead: { status: "IN_PROGRESS", client: { name: "Aisha" } } },
+    ]),
+    unclaimedAgingLeads: vi.fn().mockResolvedValue([
+      { id: 20, createdAt: daysAgo(3), client: { name: "Walk-in" } },
+    ]),
     ...overrides,
   };
 }
@@ -186,13 +203,64 @@ describe("checkIfUserCanViewMyDayOf — supervisor scope", () => {
   });
 });
 
-describe("getQueueForTarget", () => {
-  it("computes the SALES queue for a sales target", async () => {
-    const target = { id: 9, name: "Rep", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } };
-    const u = make();
-    const q = await u.getQueueForTarget({ targetUser: target, now: NOW });
+describe("getQueueForTarget — SALES drill-down (itemized)", () => {
+  const salesTarget = { id: 9, name: "Rep", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } };
+
+  it("returns a flat item list with per-lead flags + counts matching the reads", async () => {
+    const q = await make().getQueueForTarget({ targetUser: salesTarget, now: NOW });
     expect(q.family).toBe("SALES");
-    expect(leadRepository.findCockpitBundlesForUser).toHaveBeenCalledWith({ userId: 9, take: 50 });
+    expect(q.user).toMatchObject({ id: 9, name: "Rep" });
+    // counts equal the itemized-read lengths (so they match the person-card counts).
+    expect(q.counts).toEqual({ active: 2, stale: 1, overdueCalls: 1, unsigned: 1 });
+    // lead 5 carries all three issues → critical; lead 6 is on-track → info.
+    const lead5 = q.items.find((i) => i.leadId === 5);
+    expect(lead5).toMatchObject({
+      leadId: 5,
+      clientName: "Aisha",
+      severity: "critical",
+      flags: { overdueCalls: 1, stale: true, unsigned: true },
+    });
+    const lead6 = q.items.find((i) => i.leadId === 6);
+    expect(lead6).toMatchObject({ leadId: 6, severity: "info", flags: { overdueCalls: 0, stale: false, unsigned: false } });
+  });
+
+  it("sorts the critical (issue-bearing) lead ahead of the on-track one", async () => {
+    const q = await make().getQueueForTarget({ targetUser: salesTarget, now: NOW });
+    expect(q.items[0].leadId).toBe(5);
+  });
+
+  it("surfaces a lead that has an overdue call even if it is not in the active set", async () => {
+    const u = make({
+      myDay: makeMyDayRepo({
+        activeLeadsForRep: vi.fn().mockResolvedValue([]), // no active leads
+        staleLeadsForRep: vi.fn().mockResolvedValue([]),
+        signingStalledForRep: vi.fn().mockResolvedValue([]),
+        overdueCallsForRep: vi.fn().mockResolvedValue([
+          { id: 9, time: daysAgo(2), clientLeadId: 77, clientLead: { id: 77, status: "NEW", client: { name: "Late" } } },
+        ]),
+      }),
+    });
+    const q = await u.getQueueForTarget({ targetUser: salesTarget, now: NOW });
+    expect(q.items.map((i) => i.leadId)).toContain(77);
+    expect(q.items.find((i) => i.leadId === 77).flags.overdueCalls).toBe(1);
+  });
+});
+
+describe("getQueueForTarget — DESIGNER drill-down (on-track included)", () => {
+  it("returns the designer's stages with the family tag", async () => {
+    const target = { id: 42, name: "Sara", role: "THREE_D_DESIGNER", profile: null, currentProfile: { key: "DESIGNER_3D" } };
+    const q = await make().getQueueForTarget({ targetUser: target, now: NOW });
+    expect(q.family).toBe("DESIGNER");
+    expect(q.user).toMatchObject({ id: 42, name: "Sara" });
+    expect(q.items[0]).toMatchObject({ kind: "WORK_STAGE", projectId: 31, leadId: 5 });
+  });
+});
+
+describe("getUnclaimedLeads", () => {
+  it("returns the aging unclaimed leads with a computed agingDays", async () => {
+    const q = await make().getUnclaimedLeads({ now: NOW });
+    expect(q.items).toHaveLength(1);
+    expect(q.items[0]).toMatchObject({ leadId: 20, clientName: "Walk-in", agingDays: 3 });
   });
 });
 

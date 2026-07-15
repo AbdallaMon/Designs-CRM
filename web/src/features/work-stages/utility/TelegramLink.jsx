@@ -10,8 +10,8 @@ import {
   Chip,
   InputAdornment,
 } from "@mui/material";
-import { BsLink, BsTelegram } from "react-icons/bs";
-import { MdEdit, MdSave, MdCancel } from "react-icons/md";
+import { BsLink, BsTelegram, BsPlusCircle } from "react-icons/bs";
+import { MdSave, MdCancel, MdGroupAdd } from "react-icons/md";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { usePermission } from "@/app/hooks/usePermission";
@@ -296,6 +296,11 @@ function CreateNewTeleGramGroup({ isAdmin, lead, setLead, setleads }) {
           removeAfterConfirm={true}
           handleConfirm={createNewGroup}
           label={"New Channel"}
+          variant="outlined"
+          color="primary"
+          size="small"
+          startIcon={<BsPlusCircle size={14} />}
+          sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
         />
       )}
     </>
@@ -322,7 +327,12 @@ export function AddUserToAChannel({ isAdmin, lead }) {
           description="By confirming we will all users related to the project with a valid username to the channel"
           removeAfterConfirm={true}
           handleConfirm={createNewGroup}
-          label={"Add staff"}
+          label={"Add Members"}
+          variant="outlined"
+          color="primary"
+          size="small"
+          startIcon={<MdGroupAdd size={16} />}
+          sx={{ borderRadius: 2, whiteSpace: "nowrap" }}
         />
       )}
     </>
