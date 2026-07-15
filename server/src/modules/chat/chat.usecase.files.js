@@ -47,9 +47,10 @@ export const fileMethods = {
       total,
       page: parsedPage,
       pageSize: parsedLimit,
-      // Domain-specific extra the FE file gallery needs (month dividers); kept
-      // alongside the normalized list envelope.
-      uniqueMonths: parsedUniqueMonths,
+      // Domain-specific extra the FE file gallery needs (month dividers).
+      // Must live under extraData — the FE envelope normalizer flattens
+      // paginated payloads to the items array and only carries extraData.
+      extraData: { uniqueMonths: parsedUniqueMonths },
     };
   },
 

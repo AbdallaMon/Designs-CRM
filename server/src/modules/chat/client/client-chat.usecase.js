@@ -199,10 +199,12 @@ export class ClientChatUsecase {
   }
 
   // ── GET /:roomId/files ────────────────────────────────────────────────────────
-  // Legacy paginated and returned { data: { files, uniqueMonths }, total, totalPages,
-  // page, limit }. PRESERVE that exact shape (the FE file gallery relies on it for
-  // infinite scroll + month dividers). Reuses the authed getFiles projection + the
-  // addMonthGrouping helper. `sort`/`uniqueMonths` JSON parse is guarded.
+  // Returns the standard paginated envelope { items, total, page, pageSize } with
+  // uniqueMonths under extraData — the SAME shape as the authed getFiles, because
+  // both are consumed by the one FE hook (useChatFiles) through the envelope
+  // normalizer, which flattens `items` and only carries `extraData`. (The legacy
+  // { data: { files, uniqueMonths } } shape double-nested under the v2 envelope
+  // and never reached the FE.) `sort`/`uniqueMonths` JSON parse is guarded.
   async getFiles({ token, roomId, query }) {
     const resolved = await this.resolveRoom({ token, roomId });
     const repo = await this.getChatRepository();
@@ -230,11 +232,11 @@ export class ClientChatUsecase {
     const files = await addMonthGrouping(attachments, parsedUniqueMonths);
 
     return {
-      data: { files, uniqueMonths: parsedUniqueMonths },
+      items: files,
       total,
-      totalPages: Math.ceil(total / parsedLimit),
       page: parsedPage,
-      limit: parsedLimit,
+      pageSize: parsedLimit,
+      extraData: { uniqueMonths: parsedUniqueMonths },
     };
   }
 }

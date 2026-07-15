@@ -124,18 +124,18 @@ describe("ClientChatUsecase reads derive the room from the token, not the param"
     );
   });
 
-  it("getFiles preserves the legacy { data: { files, uniqueMonths }, total, totalPages, page, limit } shape", async () => {
+  it("getFiles returns the contract { items, total, page, pageSize, extraData.uniqueMonths } paginated shape", async () => {
     const res = await uc.getFiles({
       token: TOKEN,
       roomId: 42,
       query: { uniqueMonths: '{"2025-01":2}' },
     });
-    expect(res.data).toHaveProperty("files");
-    expect(res.data).toHaveProperty("uniqueMonths");
+    expect(res).toHaveProperty("items");
+    expect(Array.isArray(res.items)).toBe(true);
     expect(res).toHaveProperty("total");
-    expect(res).toHaveProperty("totalPages");
     expect(res).toHaveProperty("page");
-    expect(res).toHaveProperty("limit");
+    expect(res).toHaveProperty("pageSize");
+    expect(res.extraData).toHaveProperty("uniqueMonths");
   });
 
   it("getFiles guards a malformed uniqueMonths / sort JSON (no throw)", async () => {
@@ -144,7 +144,7 @@ describe("ClientChatUsecase reads derive the room from the token, not the param"
       roomId: 42,
       query: { uniqueMonths: "{not-json", sort: "{bad" },
     });
-    expect(res.data.uniqueMonths).toEqual({});
+    expect(res.extraData.uniqueMonths).toEqual({});
   });
 
   it("getMessagePage rejects a message that belongs to a different room (cross-room probe)", async () => {

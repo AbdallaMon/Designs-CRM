@@ -9,7 +9,7 @@ import { AttachmentViewer } from "@/shared/components/media/renderers/Attachment
 dayjs.extend(relativeTime);
 
 export function RenderListOfFiles({
-  attachments,
+  attachments = [],
   groupByMonth,
   currentRenderedMonths,
   onNearToEnd,

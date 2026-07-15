@@ -69,12 +69,12 @@ export function useChatFiles(
       });
 
       if (response?.status === 200) {
-        const newFiles = response.data || [];
-        setFiles((prev) =>
-          append ? [...prev, ...newFiles.files] : newFiles.files
-        );
+        // getData flattens the paginated envelope: data = the items array,
+        // extraData carries the month-divider map.
+        const newFiles = Array.isArray(response.data) ? response.data : [];
+        setFiles((prev) => (append ? [...prev, ...newFiles] : newFiles));
         setUniqueMonths((prev) => {
-          return { ...prev, ...newFiles.uniqueMonths };
+          return { ...prev, ...(response.extraData?.uniqueMonths || {}) };
         });
 
         setTotalPages(response.totalPages || 1);
