@@ -131,6 +131,11 @@ export function computeProjectCardMeta(project, { now = new Date() } = {}) {
   return { nextAction, overdue, timeInStageDays, latestActivityAt };
 }
 
+/** Decorate one project-shaped record with capabilities + cardMeta (additive). */
+export function decorateProject(p, authUser) {
+  return { ...p, capabilities: computeProjectCapabilities(p, authUser), cardMeta: computeProjectCardMeta(p) };
+}
+
 /** Attach capabilities to a list of project-shaped records. */
 export function withProjectListCapabilities(items, authUser) {
   if (!Array.isArray(items)) return items;
@@ -139,13 +144,7 @@ export function withProjectListCapabilities(items, authUser) {
     capabilities: computeProjectCapabilities(record, authUser),
     // grouped designer-board leads carry nested `projects[]`; decorate those too.
     ...(Array.isArray(record?.projects)
-      ? {
-          projects: record.projects.map((p) => ({
-            ...p,
-            capabilities: computeProjectCapabilities(p, authUser),
-            cardMeta: computeProjectCardMeta(p),
-          })),
-        }
+      ? { projects: record.projects.map((p) => decorateProject(p, authUser)) }
       : {}),
   }));
 }
@@ -163,13 +162,7 @@ export function withProjectDetailCapabilities(record, authUser) {
     ...record,
     capabilities: computeProjectCapabilities(record, authUser),
     ...(Array.isArray(record?.projects)
-      ? {
-          projects: record.projects.map((p) => ({
-            ...p,
-            capabilities: computeProjectCapabilities(p, authUser),
-            cardMeta: computeProjectCardMeta(p),
-          })),
-        }
+      ? { projects: record.projects.map((p) => decorateProject(p, authUser)) }
       : {}),
   };
 }

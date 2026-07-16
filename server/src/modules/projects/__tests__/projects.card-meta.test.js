@@ -4,6 +4,8 @@ import { describe, it, expect } from "vitest";
 import {
   computeProjectCardMeta,
   withProjectListCapabilities,
+  withProjectDetailCapabilities,
+  decorateProject,
 } from "../project/project.dto.js";
 
 const NOW = new Date("2026-07-16T12:00:00.000Z");
@@ -82,5 +84,33 @@ describe("withProjectListCapabilities attaches cardMeta", () => {
     expect(out[0].projects[0].capabilities).toBeTruthy();
     expect(out[0].projects[0].cardMeta).toBeTruthy();
     expect(out[0].projects[0].id).toBe(10); // additive, no field loss
+  });
+});
+
+describe("withProjectDetailCapabilities attaches cardMeta", () => {
+  it("decorates nested board projects with BOTH capabilities and cardMeta", () => {
+    const record = { id: 5, client: { name: "Acme" }, projects: [baseProject] };
+    const out = withProjectDetailCapabilities(record, authUser);
+    expect(out.projects[0].capabilities).toBeTruthy();
+    // cardMeta uses the real clock here (no `now` override plumbed through the
+    // decorator), so assert the fields that are independent of wall-clock time and
+    // just the type/shape of the one that isn't.
+    expect(out.projects[0].cardMeta.nextAction).toBeNull();
+    expect(out.projects[0].cardMeta.overdue).toBe(false);
+    expect(out.projects[0].cardMeta.latestActivityAt).toBe("2026-07-15T12:00:00.000Z");
+    expect(typeof out.projects[0].cardMeta.timeInStageDays).toBe("number");
+    expect(out.projects[0].id).toBe(10); // additive, no field loss
+  });
+});
+
+describe("decorateProject (used for the standalone project-detail + flat list surfaces)", () => {
+  it("attaches BOTH capabilities and cardMeta to a single project-shaped record", () => {
+    const out = decorateProject(baseProject, authUser);
+    expect(out.capabilities).toBeTruthy();
+    expect(out.cardMeta.nextAction).toBeNull();
+    expect(out.cardMeta.overdue).toBe(false);
+    expect(out.cardMeta.latestActivityAt).toBe("2026-07-15T12:00:00.000Z");
+    expect(typeof out.cardMeta.timeInStageDays).toBe("number");
+    expect(out.id).toBe(10); // additive, no field loss
   });
 });

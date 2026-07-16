@@ -8,7 +8,7 @@ import { projectUsecase } from "./project.usecase.js";
 import {
   withProjectListCapabilities,
   withProjectDetailCapabilities,
-  computeProjectCapabilities,
+  decorateProject,
 } from "./project.dto.js";
 
 const TK = messagesNames.projectsMessages;
@@ -72,7 +72,8 @@ class ProjectController {
   // ── project list & detail ────────────────────────────────────────────────────
   async listByClientLead(req, res) {
     const items = await projectUsecase.listByClientLead({ query: req.query, authUser: req.auth });
-    return ok(res, { items: withProjectListCapabilities(items, req.auth) }, projectsMessagesCodes.PROJECTS_FETCHED, TK);
+    const decorated = items.map((p) => decorateProject(p, req.auth));
+    return ok(res, { items: decorated }, projectsMessagesCodes.PROJECTS_FETCHED, TK);
   }
 
   async getArchivedProjects(req, res) {
@@ -94,7 +95,7 @@ class ProjectController {
 
   async getProject(req, res) {
     const data = await projectUsecase.getProject({ id: req.params.id, query: req.query, authUser: req.auth });
-    const withCaps = data ? { ...data, capabilities: computeProjectCapabilities(data, req.auth) } : data;
+    const withCaps = data ? decorateProject(data, req.auth) : data;
     return ok(res, withCaps, projectsMessagesCodes.PROJECT_FETCHED, TK);
   }
 

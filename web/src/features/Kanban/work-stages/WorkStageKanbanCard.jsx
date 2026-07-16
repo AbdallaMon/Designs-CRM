@@ -67,6 +67,7 @@ const WorkStageKanbanCard = ({
     ? Boolean(project.capabilities.canChangeStatus)
     : !admin;
   const assignee = project?.assignments?.[0]?.user;
+  const dealValue = Number(lead.averagePrice || lead.price);
   const { hasUnseen, markSeen } = useUnseenActivity(lead.id, cardMeta?.latestActivityAt);
 
   const openPreview = () => {
@@ -122,10 +123,10 @@ const WorkStageKanbanCard = ({
           {/* sales/admin: value + assignee row */}
           {isSalesView && (
             <Box display="flex" alignItems="center" gap={1} mt={0.5} flexWrap="wrap">
-              {(lead.averagePrice || lead.price) && (
+              {Number.isFinite(dealValue) && dealValue > 0 && (
                 <Chip
                   size="small"
-                  label={`AED ${Number(lead.averagePrice || lead.price).toLocaleString()}`}
+                  label={`AED ${dealValue.toLocaleString()}`}
                   variant="outlined"
                   sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600 }}
                 />
@@ -166,7 +167,7 @@ const WorkStageKanbanCard = ({
         <MenuItem onClick={() => { setMenuAnchorEl(null); openPreview(); }}>
           <PreviewIcon fontSize="small" style={{ marginRight: 8 }} /> Preview
         </MenuItem>
-        <MenuItem component={Link} href={`/dashboard/projects/${project.id}`}>
+        <MenuItem component={Link} href={`/dashboard/projects/${project.id}`} onClick={() => setMenuAnchorEl(null)}>
           <MdOpenInNew fontSize="small" style={{ marginRight: 8 }} /> Open project page
         </MenuItem>
         <MenuItem onClick={() => {}}>
