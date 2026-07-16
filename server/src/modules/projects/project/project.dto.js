@@ -85,6 +85,52 @@ export function computeProjectCapabilities(record, authUser) {
   );
 }
 
+// Statuses in which an overdue deliveryTime no longer matters.
+const TERMINAL_STATUSES = ["Completed", "Canceled", "Rejected"];
+
+const toIso = (d) => (d ? new Date(d).toISOString() : null);
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Pure, additive card metadata for a board/detail project record. Null-safe on
+ * undecorated records (all fields optional). `now` is injectable for tests.
+ *   nextAction: the single most urgent item — the next upcoming delivery schedule,
+ *               else the first open task (repo orders tasks priority desc, updatedAt desc).
+ *   overdue: Project.deliveryTime is past and the project is not terminal.
+ *   timeInStageDays: whole days since statusChangedAt (fallback updatedAt, createdAt).
+ *   latestActivityAt: max(project.updatedAt, first task.updatedAt) — unseen-dot source.
+ */
+export function computeProjectCardMeta(project, { now = new Date() } = {}) {
+  if (!project) return null;
+
+  const delivery = project.deliverySchedules?.[0]?.deliveryAt ?? null;
+  const task = project.tasks?.[0] ?? null;
+  let nextAction = null;
+  if (delivery) {
+    nextAction = { kind: "DELIVERY", title: "Delivery", dueAt: toIso(delivery) };
+  } else if (task) {
+    nextAction = { kind: "TASK", title: task.title ?? "Task", dueAt: toIso(task.dueDate) };
+  }
+
+  const overdue = Boolean(
+    project.deliveryTime &&
+      new Date(project.deliveryTime) < now &&
+      !TERMINAL_STATUSES.includes(project.status),
+  );
+
+  const stageSince = project.statusChangedAt ?? project.updatedAt ?? project.createdAt ?? null;
+  const timeInStageDays = stageSince
+    ? Math.max(0, Math.floor((now - new Date(stageSince)) / MS_PER_DAY))
+    : null;
+
+  const candidates = [project.updatedAt, task?.updatedAt].filter(Boolean).map((d) => new Date(d));
+  const latestActivityAt = candidates.length
+    ? toIso(new Date(Math.max(...candidates.map((d) => d.getTime()))))
+    : null;
+
+  return { nextAction, overdue, timeInStageDays, latestActivityAt };
+}
+
 /** Attach capabilities to a list of project-shaped records. */
 export function withProjectListCapabilities(items, authUser) {
   if (!Array.isArray(items)) return items;
@@ -93,7 +139,13 @@ export function withProjectListCapabilities(items, authUser) {
     capabilities: computeProjectCapabilities(record, authUser),
     // grouped designer-board leads carry nested `projects[]`; decorate those too.
     ...(Array.isArray(record?.projects)
-      ? { projects: record.projects.map((p) => ({ ...p, capabilities: computeProjectCapabilities(p, authUser) })) }
+      ? {
+          projects: record.projects.map((p) => ({
+            ...p,
+            capabilities: computeProjectCapabilities(p, authUser),
+            cardMeta: computeProjectCardMeta(p),
+          })),
+        }
       : {}),
   }));
 }
@@ -111,7 +163,13 @@ export function withProjectDetailCapabilities(record, authUser) {
     ...record,
     capabilities: computeProjectCapabilities(record, authUser),
     ...(Array.isArray(record?.projects)
-      ? { projects: record.projects.map((p) => ({ ...p, capabilities: computeProjectCapabilities(p, authUser) })) }
+      ? {
+          projects: record.projects.map((p) => ({
+            ...p,
+            capabilities: computeProjectCapabilities(p, authUser),
+            cardMeta: computeProjectCardMeta(p),
+          })),
+        }
       : {}),
   };
 }

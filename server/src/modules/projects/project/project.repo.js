@@ -489,6 +489,9 @@ class ProjectRepository {
             isModification: true,
             groupTitle: true,
             groupId: true,
+            statusChangedAt: true,
+            updatedAt: true,
+            createdAt: true,
             assignments: {
               select: {
                 user: {
@@ -596,6 +599,9 @@ class ProjectRepository {
             isModification: true,
             groupTitle: true,
             groupId: true,
+            statusChangedAt: true,
+            updatedAt: true,
+            createdAt: true,
             deliverySchedules: {
               where: {
                 ...meetingOrNot,
@@ -729,6 +735,9 @@ class ProjectRepository {
             role: true,
             groupTitle: true,
             groupId: true,
+            statusChangedAt: true,
+            updatedAt: true,
+            createdAt: true,
             isModification: true,
             assignments: {
               select: {
