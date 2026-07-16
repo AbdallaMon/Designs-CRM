@@ -2,6 +2,7 @@
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import StaffLeadsKanbanBoard from "@/features/Kanban/staff/StaffLeadsKanbanBoard";
+import MyDayStrip from "@/features/my-day/MyDayStrip.jsx";
 
 export default function Page() {
   const { user } = useAuth();
@@ -9,8 +10,17 @@ export default function Page() {
   if (!user?.role) return null;
   const role = user.role;
 
-  if (role === "STAFF" && user.profile !== "SUPER_SALES") {
-    return <StaffLeadsKanbanBoard />;
-  }
-  return <StaffLeadsKanbanBoard staffId={sp.get("staffId") ?? undefined} />;
+  const board =
+    role === "STAFF" && user.profile !== "SUPER_SALES" ? (
+      <StaffLeadsKanbanBoard />
+    ) : (
+      <StaffLeadsKanbanBoard staffId={sp.get("staffId") ?? undefined} />
+    );
+
+  return (
+    <>
+      <MyDayStrip />
+      {board}
+    </>
+  );
 }
