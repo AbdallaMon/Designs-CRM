@@ -46,7 +46,7 @@ const WorkStageKanbanCard = ({
     type: ItemTypes.CARD,
     item: {
       id: lead.id,
-      status: type === "STAFF" ? lead.status : lead.projects[0].status,
+      status: type === "STAFF" ? lead.status : lead.projects?.[0]?.status,
       ...lead,
     },
   });
@@ -163,7 +163,7 @@ const WorkStageKanbanCard = ({
       </StyledCard>
 
       <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={() => setMenuAnchorEl(null)}>
-        <MenuItem onClick={openPreview}>
+        <MenuItem onClick={() => { setMenuAnchorEl(null); openPreview(); }}>
           <PreviewIcon fontSize="small" style={{ marginRight: 8 }} /> Preview
         </MenuItem>
         <MenuItem component={Link} href={`/dashboard/projects/${project.id}`}>
