@@ -8,6 +8,7 @@ import { Alert, Box, Button, Chip, Skeleton, Stack, Typography } from "@mui/mate
 import { getData } from "@/app/helpers/functions/getData.js";
 import { GOTO_SECTION, SEVERITY_PALETTE } from "@/features/leads/cockpit/config/cockpitActions.jsx";
 import { getMyDaySignalConfig } from "@/features/my-day/config/myDayCopy.jsx";
+import AgendaRail from "@/features/my-day/AgendaRail.jsx";
 
 function itemHref(item) {
   if (item.kind === "WORK_STAGE") return `/dashboard/work-stages/${item.leadId}`;
@@ -51,13 +52,20 @@ export default function MyWorkQueue({ userId }) {
       </Alert>
     );
   }
+  // Agenda renders only on the caller's own surface (the supervisor drill-down passes
+  // userId and stays exception-focused).
+  const agendaRail = !userId ? <AgendaRail agenda={queue?.agenda} onRefresh={fetchQueue} /> : null;
+
   if (!queue?.items?.length) {
     return (
-      <Box sx={{ py: 6, textAlign: "center" }}>
-        <Typography variant="subtitle1" fontWeight={700} sx={{ color: theme.palette.success.main }}>
-          All clear — nothing needs you right now.
-        </Typography>
-      </Box>
+      <>
+        {agendaRail}
+        <Box sx={{ py: 6, textAlign: "center" }}>
+          <Typography variant="subtitle1" fontWeight={700} sx={{ color: theme.palette.success.main }}>
+            All clear — nothing needs you right now.
+          </Typography>
+        </Box>
+      </>
     );
   }
 
@@ -139,6 +147,7 @@ export default function MyWorkQueue({ userId }) {
 
   return (
     <Stack spacing={1.5}>
+      {agendaRail}
       <Typography variant="caption" color="text.secondary">
         {countBy("critical")} critical · {countBy("warning")} warning · {countBy("info")} info
       </Typography>

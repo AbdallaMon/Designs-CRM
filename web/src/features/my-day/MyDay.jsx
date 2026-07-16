@@ -3,7 +3,7 @@
 // "My work" only; admins see "Team" only (no personal queue); super-sales sees both.
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Box, Tab, Tabs } from "@mui/material";
+import { Box, Tab, Tabs, Typography } from "@mui/material";
 import { usePermission } from "@/app/hooks/usePermission.js";
 import MyWorkQueue from "@/features/my-day/MyWorkQueue.jsx";
 import TeamLens from "@/features/my-day/TeamLens.jsx";
@@ -41,11 +41,18 @@ export default function MyDay() {
   return (
     <Box>
       {showTabs && (
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2.5 }}>
+        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 1.5 }}>
           <Tab label="My work" value="my-work" />
           <Tab label="Team" value="team" />
         </Tabs>
       )}
+      {/* Ownership caption — makes "whose work am I looking at?" explicit, especially for
+          super-sales who hold both surfaces. */}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {activeTab === "my-work" && canView
+          ? "Your personal queue — only leads and stages assigned to you."
+          : "Your team — the people you supervise. Click a person to see their queue."}
+      </Typography>
       {activeTab === "my-work" && canView && <MyWorkQueue />}
       {activeTab === "team" && canTeam && <TeamLens />}
     </Box>
