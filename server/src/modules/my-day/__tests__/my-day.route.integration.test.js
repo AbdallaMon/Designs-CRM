@@ -33,8 +33,20 @@ const BUNDLE = {
 const userFindUnique = vi.fn(async ({ where }) => {
   if (where.id === 9) return { id: 9, name: "Rep", isActive: true, role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } };
   if (where.id === 42) return { id: 42, name: "Sara", isActive: true, role: "THREE_D_DESIGNER", profile: null, currentProfile: { key: "DESIGNER_3D" } };
+  // The reported real-world case: an ADMIN-profiled user surfaced by the team lens via an
+  // overdue call THEY own on a lead OWNED BY SOMEONE ELSE (they hold no leads themselves).
+  if (where.id === 1) return { id: 1, name: "admin", isActive: true, role: "ADMIN", profile: null, currentProfile: { key: "ADMIN" } };
   return null;
 });
+
+// The admin's overdue call hangs off lead 55, owned by rep 7 — the drill-down must still
+// itemize it (the team lens counted it by CallReminder.userId, role-agnostic).
+const ADMIN_OVERDUE_CALL = {
+  id: 91,
+  time: new Date("2026-01-02T00:00:00.000Z"),
+  clientLeadId: 55,
+  clientLead: { id: 55, status: "IN_PROGRESS", client: { name: "Rep's Client" } },
+};
 
 vi.mock("@dms/db", () => ({
   default: {
@@ -43,7 +55,11 @@ vi.mock("@dms/db", () => ({
       count: vi.fn().mockResolvedValue(1),
       groupBy: vi.fn().mockResolvedValue([]),
     },
-    callReminder: { groupBy: vi.fn().mockResolvedValue([]), findMany: vi.fn().mockResolvedValue([]) },
+    callReminder: {
+      groupBy: vi.fn().mockResolvedValue([]),
+      // Overdue-call reads key on CallReminder.userId (reminder OWNER, not lead owner).
+      findMany: vi.fn(async ({ where }) => (where?.userId === 1 ? [ADMIN_OVERDUE_CALL] : [])),
+    },
     meetingReminder: { findMany: vi.fn().mockResolvedValue([]) },
     contract: { findMany: vi.fn().mockResolvedValue([]) },
     deliverySchedule: { findMany: vi.fn().mockResolvedValue([]) },
@@ -186,6 +202,20 @@ describe("GET /v2/my-day/users/:userId — supervisor drill-down", () => {
     const { status, body } = await getJson("/my-day/users/42", signFor({ id: 1, role: "ADMIN" }));
     expect(status).toBe(200);
     expect(body.data.family).toBe("DESIGNER");
+  });
+
+  it("ADMIN -> admin target 200 with the overdue call itemized (team-lens count ↔ drawer parity)", async () => {
+    // Reported bug: the team lens says "admin has 1 overdue call(s)" but the drawer showed
+    // "Nothing active". The drill-down must itemize work keyed the same way the lens counts
+    // it — by CallReminder.userId — even when the target owns zero leads.
+    const { status, body } = await getJson("/my-day/users/1", signFor({ id: 1, role: "ADMIN" }));
+    expect(status).toBe(200);
+    expect(body.data.family).toBe("SALES");
+    expect(body.data.counts.overdueCalls).toBe(1);
+    const row = body.data.items.find((i) => i.leadId === 55);
+    expect(row).toBeTruthy();
+    expect(row.flags.overdueCalls).toBe(1);
+    expect(row.severity).toBe("critical");
   });
 
   it("unknown target -> 404; invalid param -> 422", async () => {
