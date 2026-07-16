@@ -226,6 +226,8 @@ async function updateProject({ data, isAdmin }) {
     delete rest.isAdmin;
   }
 
+  const oldProject = await projectRepository.findProjectDeliveryStatus({ id });
+
   const updatedData = {
     ...rest,
     deliveryTime: deliveryTime
@@ -233,6 +235,8 @@ async function updateProject({ data, isAdmin }) {
       : undefined,
     status,
     ...(status === "Completed" && { endedAt: new Date() }),
+    // Stamp the stage clock only on a REAL status transition (aging badge source).
+    ...(status && status !== oldProject?.status && { statusChangedAt: new Date() }),
   };
 
   delete updatedData.id;
@@ -247,7 +251,6 @@ async function updateProject({ data, isAdmin }) {
   if (updatedData.deliverySchedules?.length === 0) {
     delete updatedData.deliverySchedules;
   }
-  const oldProject = await projectRepository.findProjectDeliveryStatus({ id });
   const updatedProject = await projectRepository.updateProjectById({ id, data: updatedData });
   const project = await projectRepository.findProjectWithAssignments({ projectId: id });
 

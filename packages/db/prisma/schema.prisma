@@ -448,6 +448,9 @@ model Project {
   startedAt         DateTime?
   endedAt           DateTime?
   status            String
+  // When `status` last changed (stamped by the app's single status-write path).
+  // Null on rows predating the column — readers fall back to updatedAt/createdAt.
+  statusChangedAt   DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   type              String
