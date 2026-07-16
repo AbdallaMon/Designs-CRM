@@ -255,24 +255,101 @@ export async function createFile({
   return { ...file, name, url, description, isUserFile: userId !== null };
 }
 
+// Lead statuses on which closing the LAST touchpoint must plan the next one (spec
+// 2026-07-15 §5.2 "required with escape"). Mirrors the cockpit's ACTIVE_STATUSES.
+const NEXT_TOUCH_ACTIVE_STATUSES = [
+  "IN_PROGRESS",
+  "INTERESTED",
+  "NEEDS_IDENTIFIED",
+  "NEGOTIATING",
+];
+
+// Throw 422 NEXT_TOUCH_REQUIRED when marking DONE/MISSED would leave an ACTIVE lead
+// with no future touchpoint and the caller planned neither a next touch nor an explicit
+// no-follow-up. Runs BEFORE the status write so the 422 path is side-effect-free.
+async function assertNextTouchPlanned({ clientLeadId, exclude, status, next, noFollowUp }) {
+  if (status !== "DONE" && status !== "MISSED") return;
+  if (next || noFollowUp) return;
+  if (clientLeadId == null) return;
+  const lead = await leadRepository.findLeadStatus({ id: clientLeadId });
+  if (!lead || !NEXT_TOUCH_ACTIVE_STATUSES.includes(lead.status)) return;
+  const hasFuture = await leadRepository.hasOtherFutureTouch({
+    clientLeadId,
+    now: new Date(),
+    ...exclude,
+  });
+  if (!hasFuture) {
+    throw new AppError(leadsMessagesCodes.NEXT_TOUCH_REQUIRED, 422, null, {
+      reason:
+        "closing the last touchpoint on an active lead — schedule the next touch or record why none is needed",
+    });
+  }
+}
+
+// Apply the planned follow-up after the status write: schedule the next call/meeting
+// (reuses the create flows incl. their time-in-future validation + notifications) or
+// persist the explicit no-follow-up reason as a lead note.
+async function applyNextTouchPlan({ clientLeadId, currentUser, next, noFollowUp }) {
+  if (clientLeadId == null) return;
+  if (next) {
+    if (next.type === "MEETING") {
+      await createMeetingReminder({
+        clientLeadId,
+        userId: currentUser.id,
+        time: next.time,
+        reminderReason: next.reason,
+        currentUser,
+      });
+    } else {
+      await createCallReminder({
+        clientLeadId,
+        userId: currentUser.id,
+        time: next.time,
+        reminderReason: next.reason,
+      });
+    }
+  } else if (noFollowUp?.reason) {
+    await createNote({
+      clientLeadId,
+      userId: currentUser.id,
+      content: `No follow-up planned: ${noFollowUp.reason}`,
+    });
+  }
+}
+
 export async function updateCallReminderStatus({
   reminderId,
   currentUser,
   status,
   callResult = null,
+  next = null,
+  noFollowUp = null,
 }) {
+  const callReminder = await leadRepository.findCallReminderOwner({
+    reminderId,
+  });
   if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
-    const callReminder = await leadRepository.findCallReminderOwner({
-      reminderId,
-    });
     if (callReminder.user.id !== currentUser.id) {
       throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
     }
   }
+  await assertNextTouchPlanned({
+    clientLeadId: callReminder?.clientLeadId ?? null,
+    exclude: { excludeCallId: Number(reminderId) },
+    status,
+    next,
+    noFollowUp,
+  });
   const updatedReminder = await leadRepository.updateCallReminderStatusRecord({
     reminderId,
     status,
     callResult: status === "DONE" ? callResult : "Missed call",
+  });
+  await applyNextTouchPlan({
+    clientLeadId: updatedReminder.clientLeadId,
+    currentUser,
+    next,
+    noFollowUp,
   });
   await leadRepository.touchLead({ id: updatedReminder.clientLeadId });
   await updateCallNotification(
@@ -288,6 +365,8 @@ export async function updateMeetingReminderStatus({
   currentUser,
   status,
   meetingResult = null,
+  next = null,
+  noFollowUp = null,
 }) {
   if (
     currentUser.role === "THREE_D_DESIGNER" ||
@@ -296,18 +375,31 @@ export async function updateMeetingReminderStatus({
     throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
   }
 
+  const meetingReminder = await leadRepository.findMeetingReminderOwner({
+    reminderId,
+  });
   if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
-    const meetingReminder = await leadRepository.findMeetingReminderOwner({
-      reminderId,
-    });
     if (meetingReminder.user.id !== currentUser.id) {
       throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
     }
   }
+  await assertNextTouchPlanned({
+    clientLeadId: meetingReminder?.clientLeadId ?? null,
+    exclude: { excludeMeetingId: Number(reminderId) },
+    status,
+    next,
+    noFollowUp,
+  });
   const updatedReminder = await leadRepository.updateMeetingReminderStatusRecord({
     reminderId,
     status,
     meetingResult: status === "DONE" ? meetingResult : "Missed Meeting",
+  });
+  await applyNextTouchPlan({
+    clientLeadId: updatedReminder.clientLeadId,
+    currentUser,
+    next,
+    noFollowUp,
   });
   await leadRepository.touchLead({ id: updatedReminder.clientLeadId });
   await updateMettingNotification(

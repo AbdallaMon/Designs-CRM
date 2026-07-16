@@ -43,6 +43,12 @@ export const CallResultDialog = ({
   const [result, setResult] = useState("");
   const [status, setStatus] = useState("DONE");
   const [open, setOpen] = useState(false);
+  // Next-step plan (backend "required with escape": closing the LAST touchpoint on an
+  // active lead 422s unless the next touch is scheduled or a no-follow-up reason given).
+  const [followUpMode, setFollowUpMode] = useState("NONE");
+  const [nextTime, setNextTime] = useState("");
+  const [nextReason, setNextReason] = useState("");
+  const [noFollowUpReason, setNoFollowUpReason] = useState("");
 
   const { setAlertError } = useAlertContext();
   const { user } = useAuth();
@@ -70,6 +76,23 @@ export const CallResultDialog = ({
       requestedData.meetingResult = result;
     } else {
       requestedData.callResult = result;
+    }
+    if (followUpMode === "SCHEDULE_CALL" || followUpMode === "SCHEDULE_MEETING") {
+      if (!nextTime) {
+        setAlertError("Pick a time for the next touchpoint");
+        return;
+      }
+      requestedData.next = {
+        type: followUpMode === "SCHEDULE_MEETING" ? "MEETING" : "CALL",
+        time: dayjs(nextTime).utc().toISOString(),
+        reason: nextReason || undefined,
+      };
+    } else if (followUpMode === "NO_FOLLOW_UP") {
+      if (noFollowUpReason.trim().length < 3) {
+        setAlertError("Write why no follow-up is needed");
+        return;
+      }
+      requestedData.noFollowUp = { reason: noFollowUpReason.trim() };
     }
 
     const request = await handleRequestSubmit(
@@ -196,6 +219,60 @@ export const CallResultDialog = ({
                   placeholder="Summarize the outcome of this call..."
                 />
               )}
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                  Next step
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+                  Required when this is the last scheduled touchpoint on an active lead —
+                  never leave a deal without a next step.
+                </Typography>
+                <FormControl fullWidth>
+                  <InputLabel id="follow-up-mode-label">Plan</InputLabel>
+                  <Select
+                    labelId="follow-up-mode-label"
+                    label="Plan"
+                    value={followUpMode}
+                    onChange={(e) => setFollowUpMode(e.target.value)}
+                  >
+                    <MenuItem value="NONE">Nothing extra (another touchpoint already scheduled)</MenuItem>
+                    <MenuItem value="SCHEDULE_CALL">Schedule the next call</MenuItem>
+                    <MenuItem value="SCHEDULE_MEETING">Schedule the next meeting</MenuItem>
+                    <MenuItem value="NO_FOLLOW_UP">No follow-up needed (give a reason)</MenuItem>
+                  </Select>
+                </FormControl>
+                {(followUpMode === "SCHEDULE_CALL" || followUpMode === "SCHEDULE_MEETING") && (
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    <TextField
+                      type="datetime-local"
+                      label={followUpMode === "SCHEDULE_MEETING" ? "Next meeting time" : "Next call time"}
+                      value={nextTime}
+                      onChange={(e) => setNextTime(e.target.value)}
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                      label="Reason (optional)"
+                      value={nextReason}
+                      onChange={(e) => setNextReason(e.target.value)}
+                      fullWidth
+                      placeholder="Why this follow-up?"
+                    />
+                  </Stack>
+                )}
+                {followUpMode === "NO_FOLLOW_UP" && (
+                  <TextField
+                    label="Why is no follow-up needed?"
+                    value={noFollowUpReason}
+                    onChange={(e) => setNoFollowUpReason(e.target.value)}
+                    fullWidth
+                    multiline
+                    minRows={2}
+                    sx={{ mt: 2 }}
+                    placeholder="e.g. client asked to pause until next month — saved as a lead note"
+                  />
+                )}
+              </Box>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: "divider" }}>

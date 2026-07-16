@@ -66,9 +66,21 @@ export class LeadValidation {
     reminderReason: z.string().optional(),
   }).passthrough();
 
+  // Next-touch plan on completion (spec 2026-07-15 §5.2): schedule the next touchpoint
+  // OR record an explicit no-follow-up reason. Both optional at the schema level — the
+  // usecase enforces the conditional requirement (it needs DB state: last-touch check).
+  static reminderNext = z.object({
+    type: z.enum(["CALL", "MEETING"]),
+    time: z.union([z.string(), z.date()]),
+    reason: z.string().optional(),
+  });
+  static reminderNoFollowUp = z.object({ reason: z.string().min(3) });
+
   static updateCall = z.object({
     status: z.string(),
     callResult: z.string().nullish(),
+    next: LeadValidation.reminderNext.nullish(),
+    noFollowUp: LeadValidation.reminderNoFollowUp.nullish(),
   }).passthrough();
 
   static createMeeting = z.object({
@@ -82,6 +94,8 @@ export class LeadValidation {
   static updateMeeting = z.object({
     status: z.string(),
     meetingResult: z.string().nullish(),
+    next: LeadValidation.reminderNext.nullish(),
+    noFollowUp: LeadValidation.reminderNoFollowUp.nullish(),
   }).passthrough();
 
   static createPriceOffer = z.object({

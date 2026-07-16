@@ -358,6 +358,25 @@ class LeadRepository {
     });
   }
 
+  // Any OTHER future in-progress touchpoint (call or meeting) on the lead — used by the
+  // next-touch enforcement when closing a reminder (exclude the row being closed).
+  async hasOtherFutureTouch({ clientLeadId, excludeCallId = null, excludeMeetingId = null, now }) {
+    const base = {
+      clientLeadId: Number(clientLeadId),
+      status: "IN_PROGRESS",
+      time: { gte: now },
+    };
+    const [calls, meetings] = await Promise.all([
+      prisma.callReminder.count({
+        where: { ...base, ...(excludeCallId != null ? { id: { not: Number(excludeCallId) } } : {}) },
+      }),
+      prisma.meetingReminder.count({
+        where: { ...base, ...(excludeMeetingId != null ? { id: { not: Number(excludeMeetingId) } } : {}) },
+      }),
+    ]);
+    return calls + meetings > 0;
+  }
+
   findPriceOfferLeadId({ priceOfferId }) {
     return prisma.priceOffers.findUnique({
       where: { id: Number(priceOfferId) },

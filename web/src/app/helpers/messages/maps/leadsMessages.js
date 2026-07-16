@@ -51,6 +51,8 @@ export const leadsMessages = {
   LEAD_MAX_PER_DAY_REACHED: "You have reached the daily maximum number of leads",
   MEETING_NOT_ALLOWED_FOR_ROLE: "This role cannot create/edit meetings",
   REMINDER_TIME_IN_PAST: "The reminder time is in the past",
+  NEXT_TOUCH_REQUIRED:
+    "Schedule the next call/meeting or record why no follow-up is needed before closing this one",
   NO_AVAILABLE_SLOT: "No available slot",
   PRICE_OFFER_RANGE_INVALID: "Invalid price range",
   NOTE_CONTENT_EMPTY: "Note content is empty",
