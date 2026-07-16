@@ -64,20 +64,25 @@ describe("my_day permission wiring", () => {
     }
   });
 
-  it("accountant + contact-initiator are out of scope (v1)", () => {
-    expect(PROFILES.ACCOUNTANT).not.toContain(VIEW);
-    expect(PROFILES.CONTACT_INITIATOR).not.toContain(VIEW);
+  it("accountant + contact-initiator hold the personal queue (2026-07-15 additive: collections + first-touch queues)", () => {
+    expect(PROFILES.ACCOUNTANT).toContain(VIEW);
+    expect(PROFILES.CONTACT_INITIATOR).toContain(VIEW);
+    expect(ROLE_PERMISSIONS[R.ACCOUNTANT]).toContain(VIEW);
+    expect(ROLE_PERMISSIONS[R.CONTACT_INITIATOR]).toContain(VIEW);
   });
 
-  it("NAVIGATION carries the My Day tab for the five in-scope roles", () => {
+  it("NAVIGATION carries the My Day tab for every personal-queue + team-lens role", () => {
     const tab = NAVIGATION.find((t) => t.key === "my-day");
     expect(tab).toBeTruthy();
     expect(tab.href).toBe("/dashboard/my-day");
     expect(tab.allowedRoles).toEqual(
-      expect.arrayContaining([R.ADMIN, R.SUPER_ADMIN, R.STAFF, R.SUPER_SALES, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR]),
+      expect.arrayContaining([
+        R.ADMIN, R.SUPER_ADMIN, R.STAFF, R.SUPER_SALES,
+        R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR,
+        // 2026-07-15 additive: accountant collections + initiator first-touch queues.
+        R.ACCOUNTANT, R.CONTACT_INITIATOR,
+      ]),
     );
-    expect(tab.allowedRoles).not.toContain(R.ACCOUNTANT);
-    expect(tab.allowedRoles).not.toContain(R.CONTACT_INITIATOR);
   });
 
   it("registers the my-day message codes + translation bucket", () => {

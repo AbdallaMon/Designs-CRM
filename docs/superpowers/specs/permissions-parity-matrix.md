@@ -357,3 +357,18 @@ Two NEW permission codes were added for the My Day feature (`docs/superpowers/sp
 - **`my_day.team.view`** — the supervisor team lens + drill-down. Granted to SUPER_SALES (+ SUPER_SALES_BASE) and ADMIN / SUPER_ADMIN only.
 
 Object scope on the drill-down (`GET /v2/my-day/users/:userId`): a `requireSpecialChecker` throws `MY_DAY_TEAM_SCOPE_DENIED` (403) when a SUPER_SALES supervisor targets a non-sales-tier user; admins may target anyone. No existing route's guard changed. Money boundary preserved (the team lens never reads Payment/ContractPayment/Outcome — same as command-center).
+
+---
+
+## Addendum 2026-07-15 — Productivity pass (2 additive grants + 1 documented contract change + 1 display truth fix)
+
+Spec: `docs/superpowers/specs/2026-07-15-my-day-preview-productivity-pass-design.md`.
+
+1. **`my_day.view` → ACCOUNTANT profile/role (additive, no data widening).** The accountant collections queue in My Day. Accountants already hold **full lead read scope** (`FULL_SCOPE_ROLES` in `lead.repo.js`) — this adds a *surface* (a queue view over leads with DUE `ContractPayment`s via the engine's dormant ACCOUNTANT ruleset), not new data. Nav `my-day` row gains ACCOUNTANT.
+2. **`my_day.view` → CONTACT_INITIATOR profile/role (additive, no data widening).** The first-touch queue: their OWN claimed leads + the unclaimed NEW pool (which initiators already read via the lead view scope's claimable-pool clause). Nav row gains CONTACT_INITIATOR.
+   - `my_day.team.view` unchanged for both (still SUPER_SALES + admins only; route-tested 403).
+   - **Deploy note:** the DB-relational `ProfilePermission` rows come from the idempotent seed — run `node packages/db/prisma/seed.js` after deploy so the two profiles pick up the code (the code-map fallback covers un-migrated environments meanwhile).
+3. **⚠️ Contract change (intentional, D2 "required with escape"):** `PUT shared/client-leads/call-reminders/:id` and `.../meeting-reminders/:id` — marking `DONE`/`MISSED` on the **last** future touchpoint of an **ACTIVE** lead now requires `next: {type,time,reason?}` (atomically schedules the follow-up) or `noFollowUp: {reason}` (persisted as a lead note), else **422 `NEXT_TOUCH_REQUIRED`**. Master allowed silent closes. Exemptions: non-active lead statuses, non-last touchpoints. FE (`CallResultDialog`) ships the new section in the same change; no other caller exists (verified: only the lead routes reach these usecases; the public booking site books via the calendar module).
+4. **Display truth fix:** the preview's payment chip no longer renders the inert `ClientLead.paymentStatus` (never updated by app code — study G2); it renders the `ContractPayment`-derived `health.payment` (and is hidden pre-contract). The dead `PAYMENT_OVERDUE` engine predicate was replaced by a real date-based rule (`ContractPayment.dueDate`). `health.paymentStatus` stays in the payload for back-compat.
+
+Verification: full suite **988/988** green (incl. updated nav-parity fixtures documenting the two nav rows) + `next build` compiled OK.

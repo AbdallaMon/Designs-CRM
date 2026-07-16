@@ -5,12 +5,31 @@
 >
 > Last updated: **2026-07-12** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
-> **NEXT UP (2026-07-15) — My Day + Deal Preview productivity pass (design approved, implementation not started).**
-> Four phases: A truth fixes (real payment chip + date-based `PAYMENT_OVERDUE` + last-activity/next-touch lines),
-> B new warning rules (`FIRST_TOUCH_SLA`, `OFFER_AWAITING_DECISION`, designer triage), C My Day ritual (today's
-> agenda rail + required outcome→next-touch flow + richer cards), D coverage (accountant + contact-initiator
-> queues) + 08:00 personal digest. Spec: `docs/superpowers/specs/2026-07-15-my-day-preview-productivity-pass-design.md`.
-> Next step: writing-plans → implementation plan (user green-lights).
+> **LATEST (2026-07-16) — My Day + Deal Preview productivity pass ✅ IMPLEMENTED (all 4 phases).**
+> Spec `docs/superpowers/specs/2026-07-15-my-day-preview-productivity-pass-design.md`, plan
+> `docs/superpowers/plans/2026-07-15-my-day-preview-productivity-pass.md`. **(A) Truth fixes:** preview payment
+> chip now renders `ContractPayment`-derived `health.payment` (hidden pre-contract; the inert
+> `ClientLead.paymentStatus` is no longer displayed); `PAYMENT_OVERDUE` rewired to real `dueDate` aging
+> (SALES + ACCOUNTANT sets, survives FINALIZED); health gains `lastActivityDays` + `nextTouch` (shown in
+> DealHealthBar). **(B) Rules:** `FIRST_TOUCH_SLA` (24h warn/48h crit, suppressed by LEAD_STALE),
+> `OFFER_AWAITING_DECISION` (3d), `WORK_STAGE_ASSIGNED_TO_YOU` demoted to info + FE "On track" divider.
+> **(C) Ritual:** `GET /v2/my-day` gains `agenda[]` (today's + overdue calls/meetings, self-only) + FE agenda
+> rail with inline outcome logging; **next-touch required-with-escape** — closing the LAST touchpoint on an
+> ACTIVE lead 422s (`NEXT_TOUCH_REQUIRED`) unless `next{}` (atomic follow-up) or `noFollowUp{reason}` (lead
+> note) — ⚠️ documented intentional contract change on the two reminder-status PUTs (FE dialog shipped
+> together; no other caller). Queue cards gain compact health (stage/contract/payment) + counts header +
+> yours-vs-team captions. **(D) Coverage + digest:** `my_day.view` additively granted to ACCOUNTANT
+> (collections queue via the dormant ACCOUNTANT ruleset over DUE-payment leads) and CONTACT_INITIATOR
+> (own leads + hours-ramped `POOL_FIRST_TOUCH` unclaimed pool); 08:00 Asia/Dubai personal digest cron
+> (in-app + email via `sendToUser`, top-5, empty-skipped; new `MY_DAY_DIGEST` Notification_type). Plus
+> contextual `MyDayStrip` (counts + top item + Open My Day) on dashboard landing, deals board, and
+> work-stages — the full queue stays ONLY at `/dashboard/my-day` (placement decision: one canonical page,
+> contextual pulses elsewhere). Parity addendum 2026-07-15 in `permissions-parity-matrix.md`.
+> **Verified: full suite 988/988 green + `next build` compiled OK.** **PENDING (user-run):**
+> `npm run db:migrate -- --name add_my_day_digest_notification_type` → `npm run db:generate` → re-run
+> `node packages/db/prisma/seed.js` (so the relational ProfilePermission rows pick up the 2 new grants),
+> and commit schema+migration together. Also merged in: user's own drill-down fix (null target family →
+> SALES itemization instead of 403) — reviewed + tested (37/37 at the time).
 >
 > **LATEST (2026-07-12) — PDF assets from SiteUtility + full elimination of `legacy`-named code (branch `feat/audit-log-sales-admin`).**
 > Two-phase effort (`docs/superpowers/specs/2026-07-12-pdf-assets-from-site-utility-design.md`).

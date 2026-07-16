@@ -33,8 +33,8 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
   it("SUPER_SALES (role) sees users by role (master behavior)", () => {
     expect(hrefs({ role: "SUPER_SALES" })).toContain("/dashboard/users");
   });
-  it("CONTACT_INITIATOR sees only leads", () => {
-    expect(hrefs({ role: "CONTACT_INITIATOR" })).toEqual(["/dashboard"]);
+  it("CONTACT_INITIATOR sees My Day (2026-07-15 additive) + leads", () => {
+    expect(hrefs({ role: "CONTACT_INITIATOR" })).toEqual(["/dashboard/my-day", "/dashboard"]);
   });
   it("ADMIN sees users + website utilities + reports", () => {
     const h = hrefs({ role: "ADMIN" });
@@ -190,14 +190,20 @@ const MASTER = {
     { label: "Leads", href: "/dashboard", subLinks: undefined },
     { label: "Work stage", href: "/dashboard/work-stages", subLinks: undefined },
   ],
+  // ACCOUNTANT + CONTACT_INITIATOR: master's nav PLUS the My Day tab (2026-07-15
+  // documented additive change — collections / first-touch queues; parity addendum).
   ACCOUNTANT: [
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Payments", href: "/dashboard", subLinks: undefined },
     { label: "Operational Expenses", href: "/dashboard/operational-expenses", subLinks: undefined },
     { label: "Rents", href: "/dashboard/rents", subLinks: undefined },
     { label: "Salaries", href: "/dashboard/salaries", subLinks: undefined },
     { label: "Outstanding Payments", href: "/dashboard/outcome", subLinks: undefined },
   ],
-  CONTACT_INITIATOR: [{ label: "Leads", href: "/dashboard", subLinks: undefined }],
+  CONTACT_INITIATOR: [
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
+    { label: "Leads", href: "/dashboard", subLinks: undefined },
+  ],
 };
 
 describe("full per-role parity with linksForRole (all 9 roles)", () => {
