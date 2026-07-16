@@ -2,16 +2,8 @@
 import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import {
-  Box,
-  Button,
-  CardContent,
-  Divider,
-  Grid,
-  IconButton,
-  Menu,
-  MenuItem,
-  Tooltip,
-  Typography,
+  Avatar, Badge, Box, CardContent, Chip, Divider, IconButton,
+  Menu, MenuItem, Tooltip, Typography,
 } from "@mui/material";
 import {
   AiOutlineEllipsis as MoreVertIcon,
@@ -20,44 +12,35 @@ import {
   AiOutlinePlus as AddIcon,
   AiOutlineSwap as ChangeStatusIcon,
 } from "react-icons/ai";
+import { MdOpenInNew } from "react-icons/md";
+import Link from "next/link";
 
 import { statusColors } from "@/app/helpers/constants";
 import { NewNoteDialog } from "@/features/leads/dialogs/NoteDialog";
-import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
-import { FaEye } from "react-icons/fa";
-import { useAuth } from "@/app/providers/AuthProvider";
-import FloatingIdBadge from "@/features/leads/core/IdBadge";
-import CountdownTimer from "@/features/leads/widgets/CountdownTimer";
 import { NewCallDialog } from "@/features/leads/dialogs/CallsDialog";
+import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
+import FloatingIdBadge from "@/features/leads/core/IdBadge";
 import ClientImageSessionManager from "@/features/image-session/users/ClientSessionImageManager";
 import TelegramLink from "@/features/work-stages/utility/TelegramLink.jsx";
 import PreviewWorkStage from "@/features/work-stages/PreviewWorkStage.jsx";
 import { KanbanUpdateSection } from "@/features/leads/leadUpdates/KanbanUpdateSection.jsx";
-import { ProjectTasksDialog } from "@/features/work-stages/utility/ProjectTasksDialog.jsx";
 import {
-  GroupTitleChip,
-  PriorityBadge,
-  StyledCard,
-  TasksContainer,
+  GroupTitleChip, PriorityBadge, StyledCard,
 } from "@/features/Kanban/work-stages/workStageKanbanStyles.js";
-import TaskItem from "@/features/Kanban/work-stages/TaskItem.jsx";
-import TaskPreviewModal from "@/features/Kanban/work-stages/TaskPreviewModal.jsx";
-import DesignersPreviewModal from "@/features/Kanban/work-stages/DesignersPreviewModal.jsx";
+import { useUnseenActivity } from "@/features/Kanban/work-stages/cardMeta.js";
+import {
+  AgingBadge, NextActionLine, StageProgress,
+} from "@/features/Kanban/work-stages/WorkStageCardSignals.jsx";
 
 export { PriorityBadge } from "@/features/Kanban/work-stages/workStageKanbanStyles.js";
 
-const ItemTypes = {
-  CARD: "card",
-};
+const ItemTypes = { CARD: "card" };
 
 const WorkStageKanbanCard = ({
-  lead,
-  movelead,
-  setleads,
-  type,
-  statusArray,
-  setRerenderColumns,
-  reRenderColumns,
+  lead, movelead, setleads, type, statusArray, setRerenderColumns, reRenderColumns,
 }) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
@@ -69,242 +52,106 @@ const WorkStageKanbanCard = ({
   });
 
   const { user } = useAuth();
+  const { hasPermission } = usePermission();
   const admin = checkIfAdmin(user);
+  // Sales/admin-tier view (lead.assign.other == admin-tier operator set): shows the
+  // assignee avatar + deal-value chip. Designers see the priority chip instead.
+  const isSalesView = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
-  const [taskPreviewOpen, setTaskPreviewOpen] = useState(false);
-  const [modificationPreviewOpen, setModificationPreviewOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [selectedModification, setSelectedModification] = useState(null);
+  const project = lead.projects?.[0];
+  const cardMeta = project?.cardMeta;
+  // capability-with-fallback: undecorated legacy rows keep master behavior (non-admin menu)
+  const canChangeStatus = project?.capabilities
+    ? Boolean(project.capabilities.canChangeStatus)
+    : !admin;
+  const assignee = project?.assignments?.[0]?.user;
+  const { hasUnseen, markSeen } = useUnseenActivity(lead.id, cardMeta?.latestActivityAt);
 
-  const regularTasks = lead.projects?.[0]?.tasks || [];
-  const modifications = lead.projects?.[0]?.modifications || [];
-  const totalTasks = regularTasks.length || 0;
-  const totalModifications = modifications.length || 0;
-  const latestTasks = regularTasks.slice(0, 4);
-  const latestModifications = modifications.slice(0, 4);
-  const projectPriority = lead.projects?.[0]?.priority || "MEDIUM";
-
-  // Get group information
-  const groupId = lead.projects?.[0]?.groupId;
-  const groupTitle = lead.projects?.[0]?.groupTitle;
-
-  // Check if project should show modifications
-  const shouldShowModifications =
-    lead.projects?.[0]?.type === "3D_Modification" ||
-    (lead.projects?.[0]?.type === "3D_Designer" &&
-      lead.projects?.[0]?.status === "Modification");
-
-  const handleMenuClick = (event) => {
-    setMenuAnchorEl(event.currentTarget);
+  const openPreview = () => {
+    markSeen();
+    setPreviewDialogOpen(true);
   };
 
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
-  const handleStatusChange = async (newStatus) => {
-    movelead(lead, newStatus);
-  };
-
-  const handleTaskPreview = (task) => {
-    setSelectedTask(task);
-    setTaskPreviewOpen(true);
-  };
-
-  const handleModificationPreview = (modification) => {
-    setSelectedModification(modification);
-    setModificationPreviewOpen(true);
-  };
+  if (!project) return null;
 
   return (
     <div ref={drag}>
-      <StyledCard
-        status={type === "STAFF" ? lead.status : lead.projects[0].status}
-        groupId={groupId}
-      >
+      <StyledCard status={type === "STAFF" ? lead.status : project.status} groupId={project.groupId}>
         <FloatingIdBadge
           leadId={lead.id}
           backgroundColor={"white"}
-          color={statusColors[lead.projects[0].status]}
+          color={statusColors[project.status]}
           forceWhite={true}
         />
-        {groupTitle && (
-          <GroupTitleChip
-            groupId={groupId}
-            label={groupTitle}
+        {project.groupTitle && (
+          <GroupTitleChip groupId={project.groupId} label={project.groupTitle} extra={{ top: 20 }} />
+        )}
+        {!isSalesView && (
+          <PriorityBadge
+            priority={project.priority || "MEDIUM"}
+            label={(project.priority || "MEDIUM").replace("_", " ")}
             extra={{ top: 20 }}
           />
         )}
 
-        <PriorityBadge
-          priority={projectPriority}
-          label={projectPriority.replace("_", " ")}
-          extra={{ top: 20 }}
-        />
-
-        <CardContent sx={{ pt: 3 }}>
-          <Box
-            display="flex"
-            gap={1}
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography variant="h6" component="div" sx={{ mb: 1 }}>
-              {lead.client.name}
-            </Typography>
-
+        <CardContent sx={{ pt: 3, pb: "12px !important" }}>
+          {/* header: client + unseen dot + actions */}
+          <Box display="flex" gap={1} justifyContent="space-between" alignItems="center">
+            <Badge color="secondary" variant="dot" invisible={!hasUnseen} overlap="rectangular">
+              <Typography variant="h6" component="div" noWrap>
+                {lead.client.name}
+              </Typography>
+            </Badge>
             <ClientImageSessionManager clientLeadId={lead.id} />
-            <Box my={1} display="flex" alignItems="center" gap={1}>
-              {!admin ? (
-                <Tooltip title="Actions">
-                  <IconButton size="small" onClick={handleMenuClick}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Tooltip>
-              ) : (
-                <Tooltip title="Preview">
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setPreviewDialogOpen(true);
-                    }}
-                  >
-                    <FaEye />
-                  </IconButton>
-                </Tooltip>
-              )}
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <Tooltip title="Preview">
+                <IconButton size="small" onClick={openPreview}>
+                  <PreviewIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Actions">
+                <IconButton size="small" onClick={(e) => setMenuAnchorEl(e.currentTarget)}>
+                  <MoreVertIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
-          <TelegramLink lead={lead} setleads={setleads} />
 
-          {lead.projects && lead.projects[0] && (
-            <Box
-              sx={{
-                mt: 1,
-                mb: 2,
-                p: 1,
-                borderRadius: 1,
-                bgcolor: "background.paper",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              {admin && (
-                <>
-                  <DesignersPreviewModal lead={lead} />
-                </>
+          {/* sales/admin: value + assignee row */}
+          {isSalesView && (
+            <Box display="flex" alignItems="center" gap={1} mt={0.5} flexWrap="wrap">
+              {(lead.averagePrice || lead.price) && (
+                <Chip
+                  size="small"
+                  label={`AED ${Number(lead.averagePrice || lead.price).toLocaleString()}`}
+                  variant="outlined"
+                  sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600 }}
+                />
               )}
-
-              <Grid container spacing={1} sx={{ mb: 2 }}>
-                <Grid size={shouldShowModifications ? 4 : 6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Delivery Time
-                  </Typography>
-                  <Typography variant="body2">
-                    {lead.projects[0].deliverySchedules?.length > 0 ? (
-                      <CountdownTimer
-                        time={lead.projects[0].deliverySchedules[0].deliveryAt}
-                      />
-                    ) : (
-                      <Typography variant="body2">Not set</Typography>
-                    )}
-                  </Typography>
-                </Grid>
-                <Grid size={shouldShowModifications ? 4 : 6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Tasks
-                  </Typography>
-                  <Typography variant="body2">
-                    {totalTasks} task{totalTasks !== 1 ? "s" : ""}
-                  </Typography>
-                </Grid>
-                {shouldShowModifications && (
-                  <Grid size={4}>
-                    <Typography variant="caption" color="text.secondary">
-                      Modifications
-                    </Typography>
-                    <Typography variant="body2">
-                      {totalModifications} mod
-                      {totalModifications !== 1 ? "s" : ""}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
-
-              {/* Latest Tasks Section */}
-              <Box sx={{ mt: 2 }}>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={1}
-                >
-                  <Typography variant="subtitle2" fontWeight="medium">
-                    Updated Tasks
-                  </Typography>
-                  <ProjectTasksDialog
-                    project={lead.projects[0]}
-                    text="View all"
-                    simple={true}
-                  />
-                </Box>
-                {latestTasks.length > 0 && (
-                  <TasksContainer>
-                    {latestTasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        onPreview={handleTaskPreview}
-                      />
-                    ))}
-                  </TasksContainer>
-                )}
-              </Box>
-
-              {shouldShowModifications && (
-                <Box sx={{ mt: 2 }}>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={1}
-                  >
-                    <Typography
-                      variant="subtitle2"
-                      fontWeight="medium"
-                      color="warning.main"
-                    >
-                      Updated Modifications
-                    </Typography>
-                    <ProjectTasksDialog
-                      project={lead.projects[0]}
-                      text="View all"
-                      type="MODIFICATION"
-                      simple={true}
-                    />
-                  </Box>
-                  {latestModifications.length > 0 && (
-                    <TasksContainer
-                      sx={{
-                        backgroundColor: "#fff8e1",
-                        borderColor: "#ffcc02",
-                      }}
-                    >
-                      {latestModifications.map((modification) => (
-                        <TaskItem
-                          key={modification.id}
-                          task={modification}
-                          onPreview={handleModificationPreview}
-                        />
-                      ))}
-                    </TasksContainer>
-                  )}
-                </Box>
+              {assignee && (
+                <Tooltip title={assignee.name}>
+                  <Avatar sx={{ width: 22, height: 22, fontSize: "0.7rem" }}>
+                    {assignee.name?.charAt(0)}
+                  </Avatar>
+                </Tooltip>
               )}
             </Box>
           )}
+
+          <TelegramLink lead={lead} setleads={setleads} />
+
+          {/* the triage signals */}
+          <NextActionLine cardMeta={cardMeta} />
+          <StageProgress status={project.status} statusArray={statusArray} />
+          <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+            <AgingBadge status={project.status} cardMeta={cardMeta} />
+            <Typography variant="caption" color="text.secondary">
+              {project.tasks?.length || 0} open task{(project.tasks?.length || 0) === 1 ? "" : "s"}
+            </Typography>
+          </Box>
+
           <KanbanUpdateSection
             lead={lead}
             setleads={setleads}
@@ -315,71 +162,47 @@ const WorkStageKanbanCard = ({
         </CardContent>
       </StyledCard>
 
-      {!admin && (
-        <Menu
-          anchorEl={menuAnchorEl}
-          open={Boolean(menuAnchorEl)}
-          onClose={handleMenuClose}
-        >
+      <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={() => setMenuAnchorEl(null)}>
+        <MenuItem onClick={openPreview}>
+          <PreviewIcon fontSize="small" style={{ marginRight: 8 }} /> Preview
+        </MenuItem>
+        <MenuItem component={Link} href={`/dashboard/projects/${project.id}`}>
+          <MdOpenInNew fontSize="small" style={{ marginRight: 8 }} /> Open project page
+        </MenuItem>
+        <MenuItem onClick={() => {}}>
+          <NewNoteDialog type="children" setleads={setleads} lead={lead}>
+            <NoteIcon fontSize="small" style={{ marginRight: 8 }} /> Add Note
+          </NewNoteDialog>
+        </MenuItem>
+        <MenuItem>
+          <NewCallDialog type="children" setleads={setleads} lead={lead}>
+            <AddIcon fontSize="small" style={{ marginRight: 8 }} /> Schedule Call
+          </NewCallDialog>
+        </MenuItem>
+        {canChangeStatus && <Divider />}
+        {canChangeStatus && (
           <Box sx={{ px: 2, py: 1, bgcolor: "grey.50" }}>
-            <Typography variant="caption" color="text.secondary">
-              Available Actions
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Change Status</Typography>
           </Box>
-
-          <MenuItem onClick={() => {}}>
-            <NewNoteDialog type="children" setleads={setleads} lead={lead}>
-              <NoteIcon fontSize="small" sx={{ mr: 1 }} />
-              Add Note
-            </NewNoteDialog>
-          </MenuItem>
-          <MenuItem>
-            <NewCallDialog type="children" setleads={setleads} lead={lead}>
-              <AddIcon fontSize="small" sx={{ mr: 1 }} />
-              Schedule Call
-            </NewCallDialog>
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              setPreviewDialogOpen(true);
-            }}
-          >
-            <Button
-              sx={{
-                display: "flex",
-                gap: 1,
-                justifyContent: "flex-start",
-                width: "100%",
-              }}
-              variant={"text"}
-            >
-              <PreviewIcon fontSize="small" sx={{ mr: 1 }} />
-              Preview Details
-            </Button>
-          </MenuItem>
-          <Divider />
-          <Box sx={{ px: 2, py: 1, bgcolor: "grey.50" }}>
-            <Typography variant="caption" color="text.secondary">
-              Change Status
-            </Typography>
-          </Box>
-          {statusArray.map((status) => (
+        )}
+        {canChangeStatus &&
+          statusArray.map((status) => (
             <MenuItem
               key={status}
-              onClick={() => handleStatusChange(status)}
+              onClick={() => {
+                setMenuAnchorEl(null);
+                movelead(lead, status);
+              }}
               sx={{
                 color: statusColors[status],
-                "&:hover": {
-                  backgroundColor: statusColors[status] + "20",
-                },
+                "&:hover": { backgroundColor: statusColors[status] + "20" },
               }}
             >
-              <ChangeStatusIcon fontSize="small" sx={{ mr: 1 }} />
+              <ChangeStatusIcon fontSize="small" style={{ marginRight: 8 }} />
               {status.replace(/_/g, " ")}
             </MenuItem>
           ))}
-        </Menu>
-      )}
+      </Menu>
 
       <PreviewWorkStage
         type={type}
@@ -389,20 +212,6 @@ const WorkStageKanbanCard = ({
         id={lead.id}
         admin={admin}
         setRerenderColumns={setRerenderColumns}
-      />
-
-      <TaskPreviewModal
-        open={taskPreviewOpen}
-        onClose={() => setTaskPreviewOpen(false)}
-        task={selectedTask}
-        isModification={false}
-      />
-
-      <TaskPreviewModal
-        open={modificationPreviewOpen}
-        onClose={() => setModificationPreviewOpen(false)}
-        task={selectedModification}
-        isModification={true}
       />
     </div>
   );
