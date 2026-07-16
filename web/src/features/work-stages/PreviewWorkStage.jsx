@@ -23,7 +23,10 @@ import {
 } from "react-icons/bs";
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 
-import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
+import {
+  checkIfADesigner,
+  checkIfAdmin,
+} from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { GoPaperclip } from "react-icons/go";
@@ -60,6 +63,7 @@ const LeadContent = ({
   type,
   dontCheckIfNotUser,
   setRerenderColumns,
+  initialTabExplicit,
 }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
@@ -119,13 +123,40 @@ const LeadContent = ({
   };
 
   const notUser = isNotUser(user);
-  const modificationProject = lead.projects?.filter(
-    (project) => project.status === "Modification"
-  );
 
   const projectStatuses = lead.projects?.[0]?.type
     ? PROJECT_STATUSES[lead.projects[0].type]
     : [];
+
+  // Key-based tab config — exactly one source of truth for which tabs exist, their
+  // order, and visibility. Replaces the fragile index-4/index-5 coupling.
+  const isDesignerView = checkIfADesigner(user) || user.role === "EXECUTOR";
+  const showModifications =
+    type === "3D_Modification" ||
+    (type === "3D_Designer" && lead.projects[0]?.status === "Modification");
+
+  const tabConfig = [
+    { key: "details", label: "Details", icon: <BsInfoCircle size={20} />, visible: true },
+    { key: "calls", label: "Calls", icon: <BsTelephone size={20} />, visible: true },
+    { key: "notes", label: "Notes", icon: <BsFileText size={20} />, visible: true },
+    { key: "attachments", label: "Attachments", icon: <GoPaperclip size={20} />, visible: true },
+    { key: "work", label: "Work", icon: <MdTask size={20} />, visible: !canManageProjects },
+    { key: "projects", label: "Projects", icon: <MdWork size={20} />, visible: canManageProjects },
+    { key: "modifications", label: "Modifications", icon: <MdModeEdit size={20} />, visible: showModifications },
+  ].filter((t) => t.visible);
+
+  // usedExplicitTab: PreviewLead owns the URL param; this is the signal that the
+  // preview opened with an explicit ?tab= value (page mode) vs. the default.
+  const usedExplicitTab = { current: initialTabExplicit };
+
+  // Per-role opening tab: designers/executors land on their WORK, sales/admin on lead
+  // details. Only runs when the preview opened without an explicit ?tab= value.
+  useEffect(() => {
+    if (isDesignerView && activeTab === "details" && !usedExplicitTab.current) {
+      setActiveTab(canManageProjects ? "projects" : "work");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -185,50 +216,15 @@ const LeadContent = ({
         variant={isMobile ? "scrollable" : "standard"}
         scrollButtons="auto"
       >
-        <Tab
-          icon={<BsInfoCircle size={20} />}
-          label="Details"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<BsTelephone size={20} />}
-          label="Calls"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<BsFileText size={20} />}
-          label="Notes"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<GoPaperclip size={20} />}
-          label="Attatchments"
-          sx={{ textTransform: "none" }}
-        />
-        {!canManageProjects && (
+        {tabConfig.map((t) => (
           <Tab
-            icon={<MdTask size={20} />}
-            label="Tasks"
+            key={t.key}
+            value={t.key}
+            icon={t.icon}
+            label={t.label}
             sx={{ textTransform: "none" }}
           />
-        )}
-        {canManageProjects && (
-          <Tab
-            icon={<MdWork size={20} />}
-            label="Projects"
-            sx={{ textTransform: "none" }}
-          />
-        )}
-
-        {(type === "3D_Modification" ||
-          (type === "3D_Designer" &&
-            lead.projects[0].status === "Modification")) && (
-          <Tab
-            icon={<MdModeEdit size={20} />}
-            label="Modificaions"
-            sx={{ textTransform: "none" }}
-          />
-        )}
+        ))}
       </Tabs>
 
       <Box
@@ -238,10 +234,10 @@ const LeadContent = ({
           maxHeight: { md: "600px" },
         }}
       >
-        <TabPanel value={activeTab} index={0}>
+        <TabPanel value={activeTab} index="details">
           <LeadData lead={lead} admin={isAdmin} />
         </TabPanel>
-        <TabPanel value={activeTab} index={1}>
+        <TabPanel value={activeTab} index="calls">
           <CallReminders
             admin={isAdmin}
             lead={lead}
@@ -249,29 +245,47 @@ const LeadContent = ({
             notUser={isPage && notUser}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel value={activeTab} index="notes">
           <LeadNotes
             admin={isAdmin}
             lead={lead}
             notUser={!dontCheckIfNotUser}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={activeTab} index="attachments">
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
-        {canManageProjects && (
-          <TabPanel value={activeTab} index={4}>
-            <LeadProjects clientLeadId={lead.id} />
-          </TabPanel>
-        )}
         {!canManageProjects && (
-          <TabPanel value={activeTab} index={4}>
+          <TabPanel value={activeTab} index="work">
+            {/* Project-first WORK tab: the consolidated project surface + open tasks */}
+            {lead.projects?.map((project) => (
+              <ProjectDetails
+                key={project.id}
+                project={project}
+                onUpdate={
+                  setLead
+                    ? (updated) =>
+                        setLead((old) => ({
+                          ...old,
+                          projects: old.projects.map((p) =>
+                            p.id === updated.id ? { ...p, ...updated } : p
+                          ),
+                        }))
+                    : undefined
+                }
+                withReleventLinks={false}
+              />
+            ))}
             <TasksList projectId={lead.projects[0].id} type="PROJECT" />
           </TabPanel>
         )}
-        {(type === "3D_Modification" ||
-          (type === "3D_Designer" && modificationProject)) && (
-          <TabPanel value={activeTab} index={5}>
+        {canManageProjects && (
+          <TabPanel value={activeTab} index="projects">
+            <LeadProjects clientLeadId={lead.id} />
+          </TabPanel>
+        )}
+        {showModifications && (
+          <TabPanel value={activeTab} index="modifications">
             <TasksList
               name="Modification"
               type="MODIFICATION"

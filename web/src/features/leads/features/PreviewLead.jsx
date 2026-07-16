@@ -303,6 +303,7 @@ export const PreviewLead = ({
         type={type}
         dontCheckIfNotUser={dontCheckIfNotUser}
         setRerenderColumns={setRerenderColumns}
+        initialTabExplicit={Boolean(initialTab)}
         fullscreen={fullscreen}
         onToggleFullscreen={page ? undefined : () => setFullscreen()}
       />
