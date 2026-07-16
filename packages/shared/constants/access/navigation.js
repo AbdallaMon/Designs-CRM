@@ -242,6 +242,9 @@ export const NAVIGATION = [
       R.THREE_D_DESIGNER,
       R.TWO_D_DESIGNER,
       R.TWO_D_EXECUTOR,
+      // 2026-07-15 additive: accountant collections queue + initiator first-touch queue.
+      R.ACCOUNTANT,
+      R.CONTACT_INITIATOR,
     ],
   },
 

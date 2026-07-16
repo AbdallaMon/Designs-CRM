@@ -270,6 +270,26 @@ class LeadRepository {
     });
   }
 
+  // Accountant collections queue (My Day FINANCE family): leads whose active contract has
+  // any DUE ContractPayment. Same bundle select — the ACCOUNTANT ruleset derives the
+  // DOWNPAYMENT_DUE / PAYMENT_DUE / PAYMENT_OVERDUE signals from it. Oldest-touched first.
+  async findCockpitBundlesWithDuePayments({ take = 50 }) {
+    const rows = await prisma.clientLead.findMany({
+      where: {
+        contracts: {
+          some: {
+            status: { in: ["IN_PROGRESS", "COMPLETED"] },
+            paymentsNew: { some: { status: "DUE" } },
+          },
+        },
+      },
+      orderBy: { updatedAt: "asc" },
+      take,
+      select: { ...COCKPIT_BUNDLE_SELECT, client: { select: { name: true } } },
+    });
+    return rows.map((b) => ({ ...b, versaModel: (b.versaModel ?? []).map(reduceVersaModel) }));
+  }
+
   // ── Calls / meetings lists ────────────────────────────────────────────────────
   async findNextCalls({ where, countWhere, skip, take }) {
     const [items, total] = await Promise.all([

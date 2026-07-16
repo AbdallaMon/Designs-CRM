@@ -29,9 +29,11 @@ const ADMIN = dedupe([
 // Designers/executor (mirror their role codes; the 3D-only MODIFICATION-task
 // visibility stays role-derived via baseRole in the frozen service — see spec §5.1).
 const DESIGNER = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL]);
-const ACCOUNTANT = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL, ...STAFF_GATE]);
+// 2026-07-15 additive: accountant collections queue + initiator first-touch queue in
+// My Day (new surface only — no data widening; see productivity-pass spec §6).
+const ACCOUNTANT = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL, ...STAFF_GATE, ...MY_DAY_PERSONAL]);
 const SUPER_SALES_BASE = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...MY_DAY_PERSONAL, ...MY_DAY_TEAM]);
-const CONTACT_INITIATOR = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED]);
+const CONTACT_INITIATOR = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...MY_DAY_PERSONAL]);
 
 export const PROFILES = {
   ADMIN,

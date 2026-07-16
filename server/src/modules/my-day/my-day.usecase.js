@@ -7,7 +7,7 @@ import { AppError } from "../../shared/errors/AppError.js";
 import { myDayMessagesCodes, messagesNames } from "@dms/shared";
 import { myDayRepository } from "./my-day.repo.js";
 import { leadRepository } from "../leads/lead/lead.repo.js";
-import { computeCockpit } from "../leads/lead/lead.cockpit.js";
+import { computeCockpit, poolTouchSeverity } from "../leads/lead/lead.cockpit.js";
 import { normalizeBundle } from "../leads/lead/lead.cockpit.usecase.js";
 import { computeWorkStageActions, PROJECT_TYPE_TO_LEVEL } from "../leads/lead/lead.workstage-cockpit.js";
 import { MyDayDto } from "./my-day.dto.js";
@@ -27,11 +27,15 @@ const ROLE_TO_FAMILY = {
   THREE_D_DESIGNER: "DESIGNER",
   TWO_D_DESIGNER: "DESIGNER",
   TWO_D_EXECUTOR: "DESIGNER",
+  ACCOUNTANT: "FINANCE",
+  CONTACT_INITIATOR: "INITIATOR",
 };
 
 function familyOf({ profileKey, role }) {
   if (SALES_PROFILE_KEYS.includes(profileKey)) return "SALES";
   if (DESIGNER_PROFILE_KEYS.includes(profileKey)) return "DESIGNER";
+  if (profileKey === "ACCOUNTANT") return "FINANCE";
+  if (profileKey === "CONTACT_INITIATOR") return "INITIATOR";
   return ROLE_TO_FAMILY[role] ?? null;
 }
 
@@ -283,7 +287,87 @@ class MyDayUsecase {
       return MyDayDto.toQueue({ profileKey, family, items, truncated: false, now });
     }
 
-    // Admins/accountants/contact-initiators have no personal queue (spec §3).
+    // FINANCE (accountant) — collections queue: every lead whose active contract carries
+    // a DUE ContractPayment, run through the engine's ACCOUNTANT ruleset (spec §6.1).
+    if (family === "FINANCE") {
+      const bundles = await leadRepository.findCockpitBundlesWithDuePayments({
+        take: MY_DAY_QUEUE_CAP,
+      });
+      const items = bundles
+        .map((b) => {
+          const { health, actions } = computeCockpit(normalizeBundle(b), now, {
+            profileKey: profileKey ?? "ACCOUNTANT",
+          });
+          return {
+            kind: "LEAD",
+            leadId: b.id,
+            clientName: b.client?.name ?? null,
+            status: b.status,
+            sortAt: b.updatedAt ?? null,
+            signals: actions,
+            health: compactHealth(health),
+          };
+        })
+        .filter((i) => i.signals.length > 0);
+      return MyDayDto.toQueue({ profileKey, family, items, truncated: false, now });
+    }
+
+    // INITIATOR (contact-initiator) — first-touch queue: their OWN claimed leads through
+    // the sales engine PLUS the unclaimed NEW pool aging in hours (spec §6.2).
+    if (family === "INITIATOR") {
+      const [bundles, pool] = await Promise.all([
+        leadRepository.findCockpitBundlesForUser({ userId, take: MY_DAY_QUEUE_CAP }),
+        myDayRepository.unclaimedPoolLeads({ take: MY_DAY_QUEUE_CAP }),
+      ]);
+      const own = bundles
+        .map((b) => {
+          const { health, actions } = computeCockpit(normalizeBundle(b), now, { profileKey });
+          return {
+            kind: "LEAD",
+            leadId: b.id,
+            clientName: b.client?.name ?? null,
+            status: b.status,
+            sortAt: b.updatedAt ?? null,
+            signals: actions,
+            health: compactHealth(health),
+          };
+        })
+        .filter((i) => i.signals.length > 0);
+      const poolItems = pool
+        .map((l) => {
+          const severity = poolTouchSeverity(l.createdAt, now);
+          if (!severity) return null; // fresher than the warn threshold — not queue-worthy
+          return {
+            kind: "LEAD",
+            leadId: l.id,
+            clientName: l.client?.name ?? null,
+            status: "NEW",
+            sortAt: l.createdAt ?? null,
+            signals: [
+              {
+                type: "POOL_FIRST_TOUCH",
+                severity,
+                params: {
+                  hoursSincePool: Math.floor(
+                    (now.getTime() - new Date(l.createdAt).getTime()) / 3600_000,
+                  ),
+                },
+                cta: { kind: "GOTO_TAB", capability: null, tabKey: null },
+              },
+            ],
+          };
+        })
+        .filter(Boolean);
+      return MyDayDto.toQueue({
+        profileKey,
+        family,
+        items: [...own, ...poolItems],
+        truncated: false,
+        now,
+      });
+    }
+
+    // Admins have no personal queue (spec §3 — team lens only).
     throw new AppError(myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED, 403, null, {
       translationKey: TK,
       reason: `no My Day queue family for profile "${profileKey}" / role fallback`,

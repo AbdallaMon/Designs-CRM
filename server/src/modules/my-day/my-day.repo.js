@@ -111,6 +111,18 @@ class MyDayRepository {
     return { calls, meetings };
   }
 
+  // ── initiator first-touch pool ─────────────────────────────────────────────────────
+  // ALL unclaimed NEW leads oldest-first (the initiator queue ramps severity by age in
+  // hours via the pure poolTouchSeverity helper — no threshold here).
+  unclaimedPoolLeads({ take = 50 } = {}) {
+    return prisma.clientLead.findMany({
+      where: { userId: null, status: "NEW" },
+      orderBy: { createdAt: "asc" },
+      take,
+      select: { id: true, createdAt: true, client: { select: { name: true } } },
+    });
+  }
+
   // ── drill-down scope lookup ────────────────────────────────────────────────────────
   // Target user's active profile for the supervisor scope check. Reads currentProfile.key
   // (DB-relational truth) + the transitional `profile` column — NEVER the legacy flags.

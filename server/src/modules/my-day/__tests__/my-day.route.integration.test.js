@@ -122,6 +122,26 @@ describe("GET /v2/my-day — personal queue", () => {
     expect(body.message).toBe(authMessagesCodes.PERMISSION_DENIED);
     expect(body.details.requiredPermissions).toContain("my_day.view");
   });
+
+  it("ACCOUNTANT -> 200 FINANCE collections queue (2026-07-15 additive grant)", async () => {
+    const { status, body } = await getJson("/my-day", signFor({ id: 3, role: "ACCOUNTANT" }));
+    expect(status).toBe(200);
+    expect(body.data.family).toBe("FINANCE");
+  });
+
+  it("CONTACT_INITIATOR -> 200 INITIATOR first-touch queue (2026-07-15 additive grant)", async () => {
+    const { status, body } = await getJson("/my-day", signFor({ id: 4, role: "CONTACT_INITIATOR" }));
+    expect(status).toBe(200);
+    expect(body.data.family).toBe("INITIATOR");
+  });
+
+  it("ACCOUNTANT + CONTACT_INITIATOR still 403 on the team lens", async () => {
+    for (const role of ["ACCOUNTANT", "CONTACT_INITIATOR"]) {
+      const { status, body } = await getJson("/my-day/team", signFor({ id: 3, role }));
+      expect(status).toBe(403);
+      expect(body.details.requiredPermissions).toContain("my_day.team.view");
+    }
+  });
 });
 
 describe("GET /v2/my-day/team — supervisor rollup", () => {

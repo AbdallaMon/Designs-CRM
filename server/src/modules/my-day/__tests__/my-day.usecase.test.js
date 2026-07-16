@@ -207,10 +207,83 @@ describe("getMyQueue — designer family", () => {
 });
 
 describe("getMyQueue — unsupported profile", () => {
-  it("throws 403 MY_DAY_PROFILE_UNSUPPORTED (defensive; route gate should prevent)", async () => {
+  it("ADMIN throws 403 MY_DAY_PROFILE_UNSUPPORTED (admins have no personal queue)", async () => {
     await expect(
-      make().getMyQueue({ authUser: { id: 3, currentProfileKey: "ACCOUNTANT", role: "ACCOUNTANT" }, now: NOW }),
+      make().getMyQueue({ authUser: { id: 3, currentProfileKey: "ADMIN", role: "ADMIN" }, now: NOW }),
     ).rejects.toMatchObject({ statusCode: 403, message: "MY_DAY_PROFILE_UNSUPPORTED" });
+  });
+});
+
+describe("getMyQueue — FINANCE family (accountant collections)", () => {
+  const dueBundle = (id, name) => ({
+    id,
+    userId: null,
+    status: "FINALIZED",
+    paymentStatus: "PENDING",
+    updatedAt: daysAgo(2),
+    client: { name },
+    contracts: [
+      {
+        status: "IN_PROGRESS",
+        sessionStatus: "REGISTERED",
+        stages: [{ title: "LEVEL_2", stageStatus: "IN_PROGRESS", order: 2 }],
+        paymentsNew: [
+          { status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: daysAgo(6) },
+        ],
+      },
+    ],
+    salesStages: [],
+    callReminders: [],
+    meetingReminders: [],
+    priceOffers: [],
+    sessionQuestions: [],
+    versaModel: [],
+  });
+
+  it("runs the ACCOUNTANT ruleset over due-payment leads (payment signals only)", async () => {
+    const u = make({
+      lead: makeLeadRepo({
+        findCockpitBundlesWithDuePayments: vi.fn().mockResolvedValue([dueBundle(11, "Contract Co")]),
+      }),
+    });
+    const q = await u.getMyQueue({
+      authUser: { id: 3, currentProfileKey: "ACCOUNTANT", role: "ACCOUNTANT" },
+      now: NOW,
+    });
+    expect(q.family).toBe("FINANCE");
+    expect(q.items).toHaveLength(1);
+    const types = q.items[0].signals.map((s) => s.type);
+    expect(types).toContain("PAYMENT_OVERDUE"); // date-based, 6d past due
+    expect(types).not.toContain("CALL_OVERDUE"); // sales rules never leak into FINANCE
+    expect(q.items[0].health.paymentFlag).toBe("OVERDUE");
+    expect(leadRepository.findCockpitBundlesWithDuePayments).toHaveBeenCalled();
+  });
+});
+
+describe("getMyQueue — INITIATOR family (first-touch pool)", () => {
+  const hoursAgo = (h) => new Date(NOW.getTime() - h * 3600_000);
+
+  it("own leads via the sales engine + pool leads ramped by age (fresh ones dropped)", async () => {
+    const u = make({
+      myDay: makeMyDayRepo({
+        unclaimedPoolLeads: vi.fn().mockResolvedValue([
+          { id: 30, createdAt: hoursAgo(30), client: { name: "Old Pool" } }, // critical
+          { id: 31, createdAt: hoursAgo(5), client: { name: "Warm Pool" } }, // warning
+          { id: 32, createdAt: hoursAgo(1), client: { name: "Fresh" } }, // dropped
+        ]),
+      }),
+    });
+    const q = await u.getMyQueue({
+      authUser: { id: 4, currentProfileKey: "CONTACT_INITIATOR", role: "CONTACT_INITIATOR" },
+      now: NOW,
+    });
+    expect(q.family).toBe("INITIATOR");
+    const poolItems = q.items.filter((i) => i.signals[0]?.type === "POOL_FIRST_TOUCH");
+    expect(poolItems.map((i) => i.leadId).sort()).toEqual([30, 31]);
+    const critical = q.items.find((i) => i.leadId === 30);
+    expect(critical.signals[0]).toMatchObject({ severity: "critical", params: { hoursSincePool: 30 } });
+    // Own claimed leads still flow through the sales engine (lead 5 from the default mock).
+    expect(q.items.some((i) => i.leadId === 5)).toBe(true);
   });
 });
 
