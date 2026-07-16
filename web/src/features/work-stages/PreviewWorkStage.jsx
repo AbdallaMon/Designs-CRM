@@ -145,6 +145,12 @@ const LeadContent = ({
     { key: "modifications", label: "Modifications", icon: <MdModeEdit size={20} />, visible: showModifications },
   ].filter((t) => t.visible);
 
+  const visibleTabKeys = tabConfig.map((t) => t.key);
+  // Clamp: an explicit/stale ?tab= that isn't visible for this viewer falls back to the first visible tab.
+  const effectiveTab = visibleTabKeys.includes(activeTab)
+    ? activeTab
+    : visibleTabKeys[0];
+
   // usedExplicitTab: PreviewLead owns the URL param; this is the signal that the
   // preview opened with an explicit ?tab= value (page mode) vs. the default.
   const usedExplicitTab = { current: initialTabExplicit };
@@ -202,7 +208,7 @@ const LeadContent = ({
         </Menu>
       ))}
       <Tabs
-        value={activeTab}
+        value={effectiveTab}
         onChange={(e, newValue) => setActiveTab(newValue)}
         sx={{
           px: { xs: 0.5, md: 3 },
@@ -234,10 +240,10 @@ const LeadContent = ({
           maxHeight: { md: "600px" },
         }}
       >
-        <TabPanel value={activeTab} index="details">
+        <TabPanel value={effectiveTab} index="details">
           <LeadData lead={lead} admin={isAdmin} />
         </TabPanel>
-        <TabPanel value={activeTab} index="calls">
+        <TabPanel value={effectiveTab} index="calls">
           <CallReminders
             admin={isAdmin}
             lead={lead}
@@ -245,18 +251,18 @@ const LeadContent = ({
             notUser={isPage && notUser}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index="notes">
+        <TabPanel value={effectiveTab} index="notes">
           <LeadNotes
             admin={isAdmin}
             lead={lead}
             notUser={!dontCheckIfNotUser}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index="attachments">
+        <TabPanel value={effectiveTab} index="attachments">
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
         {!canManageProjects && (
-          <TabPanel value={activeTab} index="work">
+          <TabPanel value={effectiveTab} index="work">
             {/* Project-first WORK tab: the consolidated project surface + open tasks */}
             {lead.projects?.map((project) => (
               <ProjectDetails
@@ -276,16 +282,18 @@ const LeadContent = ({
                 withReleventLinks={false}
               />
             ))}
-            <TasksList projectId={lead.projects[0].id} type="PROJECT" />
+            {lead.projects?.[0] && (
+              <TasksList projectId={lead.projects[0].id} type="PROJECT" />
+            )}
           </TabPanel>
         )}
         {canManageProjects && (
-          <TabPanel value={activeTab} index="projects">
+          <TabPanel value={effectiveTab} index="projects">
             <LeadProjects clientLeadId={lead.id} />
           </TabPanel>
         )}
         {showModifications && (
-          <TabPanel value={activeTab} index="modifications">
+          <TabPanel value={effectiveTab} index="modifications">
             <TasksList
               name="Modification"
               type="MODIFICATION"
