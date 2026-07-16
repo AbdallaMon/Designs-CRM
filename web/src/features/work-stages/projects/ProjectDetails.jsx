@@ -68,6 +68,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import dayjs from "dayjs";
 import colors from "@/app/helpers/colors";
 import { RelatedLinks } from "@/shared/components/common/RelatedLinks.jsx";
+import { AgingBadge } from "@/features/Kanban/work-stages/WorkStageCardSignals.jsx";
 import { AiOutlineSwap } from "react-icons/ai";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
@@ -113,6 +114,7 @@ export const ProjectDetails = ({
   isStaff,
   withReleventLinks,
   renderTasks = true,
+  showOpenPage = true,
 }) => {
   const theme = useTheme();
   const [isEditing, setIsEditing] = useState(false);
@@ -675,6 +677,7 @@ export const ProjectDetails = ({
                   color={getPriorityColor(project.priority)}
                   priority={project.priority}
                 />
+                <AgingBadge status={project.status} cardMeta={project.cardMeta} />
               </Box>
 
               {canShowEditActions && (
@@ -690,6 +693,17 @@ export const ProjectDetails = ({
                   >
                     Edit Details
                   </StyledButton>
+                  {showOpenPage && (
+                    <StyledButton
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<MdOpenInNew />}
+                      component="a"
+                      href={`/dashboard/projects/${project.id}`}
+                    >
+                      Open Project Page
+                    </StyledButton>
+                  )}
                   {/* TODO(profiles): no capability for "view all client projects";
                       it's an admin-tier display nuance, left as role check. */}
                   {!isDesigner && (

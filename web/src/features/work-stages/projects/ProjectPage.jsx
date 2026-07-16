@@ -76,6 +76,7 @@ export default function ProjectPage({ id, isStaff }) {
         withReleventLinks={true}
         onUpdate={handleProjectUpdate}
         isStaff={isStaff}
+        showOpenPage={false}
       />
     </Container>
   );

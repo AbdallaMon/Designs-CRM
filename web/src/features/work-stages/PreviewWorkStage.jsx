@@ -348,28 +348,11 @@ function LeadData({ lead }) {
                       border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                   >
-                    <Box
-                      display="flex"
-                      gap={1.5}
-                      alignItems="center"
-                      flexWrap="wrap"
-                      mb={2}
-                    >
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        component="a"
-                        href={`/dashboard/projects/${project.id}`}
-                        sx={{ mb: 0, textTransform: "none", fontWeight: 600, borderRadius: 2 }}
-                      >
-                        See the project #{project.id}
-                      </Button>
-                      <Chip
-                        label={project.type.replace(/_/g, " ")}
-                        variant="outlined"
-                        sx={{ fontWeight: 600, borderRadius: 2 }}
-                      />
-                    </Box>
+                    <Chip
+                      label={project.type.replace(/_/g, " ")}
+                      variant="outlined"
+                      sx={{ fontWeight: 600, borderRadius: 2, mb: 2 }}
+                    />
                     <ProjectDetails
                       project={project}
                       isStaff={
