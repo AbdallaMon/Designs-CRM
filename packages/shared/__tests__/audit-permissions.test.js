@@ -60,13 +60,17 @@ describe("audit.log.view permission wiring", () => {
   });
 });
 
-describe("Audit Log nav tab (admin-only)", () => {
+// ⏸️ 2026-07-16 (user request): the Audit Log nav row is COMMENTED OUT in navigation.js and
+// the page renders blank. The `audit.log.view` grants above stay wired (the backend endpoint
+// + recordAction trail are untouched), so restoring the screen is un-commenting the row +
+// the page body. While disabled, NO role sees the tab.
+describe("Audit Log nav tab (disabled — hidden from every role)", () => {
   const auditHref = "/dashboard/audit-logs";
   const hasAudit = (u) => buildNavigationTabs(u).some((t) => t.href === auditHref);
 
-  it("shows the Audit Log tab for ADMIN + SUPER_ADMIN", () => {
-    expect(hasAudit({ role: USER_ROLES.ADMIN })).toBe(true);
-    expect(hasAudit({ role: USER_ROLES.SUPER_ADMIN })).toBe(true);
+  it("hides the Audit Log tab for admins too while the screen is disabled", () => {
+    expect(hasAudit({ role: USER_ROLES.ADMIN })).toBe(false);
+    expect(hasAudit({ role: USER_ROLES.SUPER_ADMIN })).toBe(false);
   });
 
   it("hides the Audit Log tab for every non-admin role (incl. STAFF+isSuperSales)", () => {

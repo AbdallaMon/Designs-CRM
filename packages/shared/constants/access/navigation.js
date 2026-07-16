@@ -215,38 +215,43 @@ export const NAVIGATION = [
     ],
   },
 
-  // 6b) Audit Log — ADMIN/SUPER_ADMIN only (a NEW admin-cluster screen, no master
-  //     equivalent). Placed right after Reports in the admin sidebar cluster.
-  {
-    key: "audit-logs",
-    label: "Audit Log",
-    href: "/dashboard/audit-logs",
-    icon: "FiActivity",
-    allowedRoles: [...ADMIN_SET],
-  },
-
-  // My Day — profile-scoped work queue (additive screen, 2026-07-12). Sales tiers +
-  // designers get the personal queue; SUPER_SALES + admins additionally get the Team tab
-  // (tab visibility inside the page is permission-gated; this row only lists the roles
-  // that can reach the screen at all).
-  {
-    key: "my-day",
-    label: "My Day",
-    href: "/dashboard/my-day",
-    icon: "FiSunrise",
-    allowedRoles: [
-      R.ADMIN,
-      R.SUPER_ADMIN,
-      R.STAFF,
-      R.SUPER_SALES,
-      R.THREE_D_DESIGNER,
-      R.TWO_D_DESIGNER,
-      R.TWO_D_EXECUTOR,
-      // 2026-07-15 additive: accountant collections queue + initiator first-touch queue.
-      R.ACCOUNTANT,
-      R.CONTACT_INITIATOR,
-    ],
-  },
+  // ⏸️ HIDDEN 2026-07-16 (user request): the Audit Log + My Day nav rows are commented out
+  //    and both pages render blank. Nothing else was removed — the backend modules, their
+  //    permissions/codes, and the frontend features are all intact; restoring the screens
+  //    is un-commenting these two rows + the page bodies (see the pages' own comments).
+  //
+  // // 6b) Audit Log — ADMIN/SUPER_ADMIN only (a NEW admin-cluster screen, no master
+  // //     equivalent). Placed right after Reports in the admin sidebar cluster.
+  // {
+  //   key: "audit-logs",
+  //   label: "Audit Log",
+  //   href: "/dashboard/audit-logs",
+  //   icon: "FiActivity",
+  //   allowedRoles: [...ADMIN_SET],
+  // },
+  //
+  // // My Day — profile-scoped work queue (additive screen, 2026-07-12). Sales tiers +
+  // // designers get the personal queue; SUPER_SALES + admins additionally get the Team tab
+  // // (tab visibility inside the page is permission-gated; this row only lists the roles
+  // // that can reach the screen at all).
+  // {
+  //   key: "my-day",
+  //   label: "My Day",
+  //   href: "/dashboard/my-day",
+  //   icon: "FiSunrise",
+  //   allowedRoles: [
+  //     R.ADMIN,
+  //     R.SUPER_ADMIN,
+  //     R.STAFF,
+  //     R.SUPER_SALES,
+  //     R.THREE_D_DESIGNER,
+  //     R.TWO_D_DESIGNER,
+  //     R.TWO_D_EXECUTOR,
+  //     // 2026-07-15 additive: accountant collections queue + initiator first-touch queue.
+  //     R.ACCOUNTANT,
+  //     R.CONTACT_INITIATOR,
+  //   ],
+  // },
 
   // 7) Images session gallery — ADMIN/SUPER_ADMIN only.
   {

@@ -1,4 +1,15 @@
 "use client";
+// ⏸️ DISABLED 2026-07-16 (user request): this page renders BLANK and its nav row is
+// commented out in packages/shared/constants/access/navigation.js. Nothing was deleted —
+// the whole My Day feature is intact (web/src/features/my-day/*, the backend my-day
+// module, its permissions + message codes, the 08:00 digest cron). To restore the screen:
+// delete the blank return below, un-comment the original body, and un-comment the "my-day"
+// nav row (plus the MyDayStrip usages on the dashboard / deals / work-stages pages).
+export default function MyDayPage() {
+  return null;
+}
+
+/* ── ORIGINAL PAGE (kept verbatim for restore) ─────────────────────────────────────────
 import { alpha, Box, Container, Paper, Stack, Typography, useTheme } from "@mui/material";
 import { FiSunrise } from "react-icons/fi";
 import { usePermission } from "@/app/hooks/usePermission.js";
@@ -72,3 +83,4 @@ export default function MyDayPage() {
     </Container>
   );
 }
+──────────────────────────────────────────────────────────────────────────────────────── */

@@ -20,10 +20,10 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
     expect(h).not.toContain("/dashboard/leads");
     expect(h).not.toContain("/dashboard/users");
   });
-  it("STAFF (sales) sees dashboard/leads/deals/my-day/calendar/payments, NOT users", () => {
+  it("STAFF (sales) sees dashboard/leads/deals/calendar/payments, NOT users", () => {
     const h = hrefs({ role: "STAFF" });
     expect(h).toEqual([
-      "/dashboard", "/dashboard/leads", "/dashboard/deals", "/dashboard/my-day",
+      "/dashboard", "/dashboard/leads", "/dashboard/deals",
       "/dashboard/calendar", "/dashboard/payments",
     ]);
   });
@@ -33,8 +33,8 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
   it("SUPER_SALES (role) sees users by role (master behavior)", () => {
     expect(hrefs({ role: "SUPER_SALES" })).toContain("/dashboard/users");
   });
-  it("CONTACT_INITIATOR sees My Day (2026-07-15 additive) + leads", () => {
-    expect(hrefs({ role: "CONTACT_INITIATOR" })).toEqual(["/dashboard/my-day", "/dashboard"]);
+  it("CONTACT_INITIATOR sees only leads", () => {
+    expect(hrefs({ role: "CONTACT_INITIATOR" })).toEqual(["/dashboard"]);
   });
   it("ADMIN sees users + website utilities + reports", () => {
     const h = hrefs({ role: "ADMIN" });
@@ -134,8 +134,8 @@ const MASTER = {
         { label: "Staff report", href: "/dashboard/report/staff" },
       ],
     },
-    { label: "Audit Log", href: "/dashboard/audit-logs", subLinks: undefined },
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
+    // ⏸️ 2026-07-16: the "Audit Log" + "My Day" rows are commented out in navigation.js
+    //    (user request; pages render blank). Hiding them restores EXACT master nav parity.
     { label: "Images session gallery", href: "/dashboard/image-sessions", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
@@ -145,7 +145,6 @@ const MASTER = {
     { label: "Dashboard", href: "/dashboard", subLinks: undefined },
     { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
     { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
   ],
@@ -153,7 +152,6 @@ const MASTER = {
     { label: "Dashboard", href: "/dashboard", subLinks: undefined },
     { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
     { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
     { label: "Users", href: "/dashboard/users", subLinks: undefined },
@@ -169,7 +167,6 @@ const MASTER = {
         { label: "Archived projects", href: "/dashboard/archived" },
       ],
     },
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
   ],
   TWO_D_DESIGNER: [
     { label: "Dashboard", href: "/dashboard", subLinks: undefined },
@@ -183,27 +180,19 @@ const MASTER = {
         { label: "Archived projects", href: "/dashboard/archived" },
       ],
     },
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
   ],
   TWO_D_EXECUTOR: [
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Leads", href: "/dashboard", subLinks: undefined },
     { label: "Work stage", href: "/dashboard/work-stages", subLinks: undefined },
   ],
-  // ACCOUNTANT + CONTACT_INITIATOR: master's nav PLUS the My Day tab (2026-07-15
-  // documented additive change — collections / first-touch queues; parity addendum).
   ACCOUNTANT: [
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Payments", href: "/dashboard", subLinks: undefined },
     { label: "Operational Expenses", href: "/dashboard/operational-expenses", subLinks: undefined },
     { label: "Rents", href: "/dashboard/rents", subLinks: undefined },
     { label: "Salaries", href: "/dashboard/salaries", subLinks: undefined },
     { label: "Outstanding Payments", href: "/dashboard/outcome", subLinks: undefined },
   ],
-  CONTACT_INITIATOR: [
-    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
-    { label: "Leads", href: "/dashboard", subLinks: undefined },
-  ],
+  CONTACT_INITIATOR: [{ label: "Leads", href: "/dashboard", subLinks: undefined }],
 };
 
 describe("full per-role parity with linksForRole (all 9 roles)", () => {

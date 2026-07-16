@@ -71,18 +71,11 @@ describe("my_day permission wiring", () => {
     expect(ROLE_PERMISSIONS[R.CONTACT_INITIATOR]).toContain(VIEW);
   });
 
-  it("NAVIGATION carries the My Day tab for every personal-queue + team-lens role", () => {
-    const tab = NAVIGATION.find((t) => t.key === "my-day");
-    expect(tab).toBeTruthy();
-    expect(tab.href).toBe("/dashboard/my-day");
-    expect(tab.allowedRoles).toEqual(
-      expect.arrayContaining([
-        R.ADMIN, R.SUPER_ADMIN, R.STAFF, R.SUPER_SALES,
-        R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR,
-        // 2026-07-15 additive: accountant collections + initiator first-touch queues.
-        R.ACCOUNTANT, R.CONTACT_INITIATOR,
-      ]),
-    );
+  // ⏸️ 2026-07-16 (user request): the My Day nav row is COMMENTED OUT in navigation.js and
+  // the page renders blank. The permission codes + grants below stay wired (the backend
+  // endpoints still work), so restoring the screen is un-commenting the row + the page.
+  it("NAVIGATION does NOT carry the My Day tab while the screen is disabled", () => {
+    expect(NAVIGATION.find((t) => t.key === "my-day")).toBeUndefined();
   });
 
   it("registers the my-day message codes + translation bucket", () => {

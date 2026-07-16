@@ -1,4 +1,15 @@
 "use client";
+// ⏸️ DISABLED 2026-07-16 (user request): this page renders BLANK and its nav row is
+// commented out in packages/shared/constants/access/navigation.js. Nothing was deleted —
+// the audit feature is intact (web/src/features/audit/*, the backend audit-logs module,
+// the `audit.log.view` permission, and `recordAction` keeps writing the trail). To restore
+// the screen: delete the blank return below, un-comment the original body, and un-comment
+// the "audit-logs" nav row.
+export default function AuditLogsPage() {
+  return null;
+}
+
+/* ── ORIGINAL PAGE (kept verbatim for restore) ─────────────────────────────────────────
 import { alpha, Box, Container, Paper, Stack, Typography, useTheme } from "@mui/material";
 import { FiActivity } from "react-icons/fi";
 import { usePermission } from "@/app/hooks/usePermission.js";
@@ -81,3 +92,4 @@ export default function AuditLogsPage() {
     </Container>
   );
 }
+──────────────────────────────────────────────────────────────────────────────────────── */

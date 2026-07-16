@@ -2,7 +2,8 @@
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import StaffLeadsKanbanBoard from "@/features/Kanban/staff/StaffLeadsKanbanBoard";
-import MyDayStrip from "@/features/my-day/MyDayStrip.jsx";
+// ⏸️ My Day disabled 2026-07-16 (user request) — un-comment with the My Day page + nav row.
+// import MyDayStrip from "@/features/my-day/MyDayStrip.jsx";
 
 export default function Page() {
   const { user } = useAuth();
@@ -17,10 +18,6 @@ export default function Page() {
       <StaffLeadsKanbanBoard staffId={sp.get("staffId") ?? undefined} />
     );
 
-  return (
-    <>
-      <MyDayStrip />
-      {board}
-    </>
-  );
+  // ⏸️ Disabled 2026-07-16 with the My Day screen: return (<><MyDayStrip />{board}</>);
+  return board;
 }
