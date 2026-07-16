@@ -2,6 +2,7 @@ export const NotificationType = {
   NEW_LEAD: "New Lead",
   LEAD_ASSIGNED: "Lead Assigned",
   LEAD_STATUS_CHANGED: "Lead Status Changed",
+  MY_DAY_DIGEST: "Morning Brief",
   LEAD_TRANSFERRED: "Lead Transferred",
   LEAD_UPDATED: "Lead Updated",
   LEAD_CONTACT: "Lead Contact",

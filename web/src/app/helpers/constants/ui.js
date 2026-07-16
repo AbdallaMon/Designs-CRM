@@ -137,6 +137,7 @@ export const simpleModalStyle = {
 };
 
 export const notificationIcons = {
+  MY_DAY_DIGEST: <AiOutlineFileText size={24} />,
   NEW_LEAD: <AiOutlineUserAdd size={24} />,
   LEAD_ASSIGNED: <AiOutlineUserAdd size={24} />,
   LEAD_STATUS_CHANGED: <AiOutlineFileText size={24} />,

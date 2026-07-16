@@ -8,6 +8,7 @@
 import { startRemindersCron } from "./reminders.cron.js";
 import { startProjectDeliveryCron } from "./project-delivery.cron.js";
 import { startTelegramCron } from "./telegram.cron.js";
+import { startMyDayDigestCron } from "./my-day-digest.cron.js";
 
 let tasks = [];
 let started = false;
@@ -25,6 +26,7 @@ export function startCron() {
     startRemindersCron(),
     startProjectDeliveryCron(),
     startTelegramCron(),
+    startMyDayDigestCron(),
   ].filter(Boolean);
 
   console.log(`✅ Started ${tasks.length} cron schedulers`);

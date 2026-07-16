@@ -78,6 +78,7 @@ export const NotificationColors = {
   NEW_LEAD: "#4caf50",
   LEAD_ASSIGNED: "#2196f3",
   LEAD_STATUS_CHANGED: "#ff9800",
+  MY_DAY_DIGEST: "#0288d1",
   LEAD_TRANSFERRED: "#f44336",
   LEAD_UPDATED: "#03a9f4",
   LEAD_CONTACT: "#009688",

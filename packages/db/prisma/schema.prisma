@@ -2313,6 +2313,7 @@ enum Notification_type {
   LEAD_SUBMITTED
   LEAD_STATUS_CHANGED
   TELEGRAM_REAUTH_NEEDED
+  MY_DAY_DIGEST
 }
 
 enum UserSubRole_subRole {
