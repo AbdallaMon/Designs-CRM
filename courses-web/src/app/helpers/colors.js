@@ -59,21 +59,26 @@ const colors = {
   shadowDark: "rgba(42, 34, 26, 0.16)", // Deeper shadows with warmth
   shadowStrong: "rgba(42, 34, 26, 0.24)", // For elevated components
 };
-export const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+// Chart series + lead-status colors, drawn from the warm brand palette so charts
+// match the rest of the app. Each status is a distinct hue (the old map reused
+// the same yellow for INTERESTED and REJECTED, so a won lead and a lost lead
+// looked identical).
+export const COLORS = ["#d4a574", "#6b8c5a", "#6a85a3", "#c8956a", "#9a8e82"];
 export const STATUS_COLORS = {
-  NEW: "#8884d8",
-  IN_PROGRESS: "#00C49F",
-  INTERESTED: "#FFBB28",
-  NEEDS_IDENTIFIED: "#FF8042",
-  NEGOTIATING: "#0088FE",
-  CONVERTED: "#00C49F",
-  REJECTED: "#FFBB28",
-  ON_HOLD: "#FF8042",
+  NEW: "#6a85a3", // info — blue-gray
+  IN_PROGRESS: "#c7a16a", // primary accent
+  INTERESTED: "#6b8c5a", // success — sage
+  NEEDS_IDENTIFIED: "#e5b36d", // accent — gold
+  NEGOTIATING: "#c8956a", // secondary — cognac
+  CONVERTED: "#556e47", // success dark
+  REJECTED: "#c2695f", // error — coral
+  ON_HOLD: "#9a8e82", // muted taupe
 };
 export const NotificationColors = {
   NEW_LEAD: "#4caf50",
   LEAD_ASSIGNED: "#2196f3",
-  LEAD_STATUS_CHANGE: "#ff9800",
+  LEAD_STATUS_CHANGED: "#ff9800",
+  MY_DAY_DIGEST: "#0288d1",
   LEAD_TRANSFERRED: "#f44336",
   LEAD_UPDATED: "#03a9f4",
   LEAD_CONTACT: "#009688",
@@ -89,13 +94,14 @@ export const NotificationColors = {
   OTHER: "#607d8b",
 };
 
+// Contract payment levels as a warm ramp (light → dark), on-brand.
 export const contractLevelColors = {
-  LEVEL_1: "#EF4444",
-  LEVEL_2: "#F97316",
-  LEVEL_3: "#EAB308",
-  LEVEL_4: "#22C55E",
-  LEVEL_5: "#3B82F6",
-  LEVEL_6: "#8B5CF6",
-  LEVEL_7: "#64748B",
+  LEVEL_1: "#e8c392", // primary light
+  LEVEL_2: "#e5b36d", // accent
+  LEVEL_3: "#d4a574", // primary
+  LEVEL_4: "#c8956a", // secondary
+  LEVEL_5: "#a67c55", // secondary dark
+  LEVEL_6: "#b5925c", // primary dark
+  LEVEL_7: "#9f544c", // error dark
 };
 export default colors;

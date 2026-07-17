@@ -99,6 +99,17 @@ const theme = createTheme({
     gradient: {
       primary: colors.primaryGradient,
     },
+    // Brand-derived semantic status palette (for chips, rails, badges).
+    status: {
+      new: colors.info,
+      active: colors.info,
+      positive: colors.success,
+      attention: colors.accent,
+      negotiating: colors.secondary,
+      rejected: colors.error,
+      done: colors.successDark,
+      neutral: colors.textMuted,
+    },
   },
   zIndex: {
     modal: 1300,
