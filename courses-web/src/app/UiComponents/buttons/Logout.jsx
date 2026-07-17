@@ -25,7 +25,12 @@ export default function Logout({ fit }) {
       setUser({
         role: null,
       });
-      router.push("/login");
+      // Login lives on the lead site (web/); send the user there after logout.
+      if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_WEB_URL) {
+        window.location.href = `${process.env.NEXT_PUBLIC_WEB_URL}/login`;
+      } else {
+        router.push("/login");
+      }
     }
   }
 

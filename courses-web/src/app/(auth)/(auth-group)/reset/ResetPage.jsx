@@ -17,14 +17,24 @@ export default function ResetPage(props) {
 
   async function handleReset(data) {
     try {
-      await handleRequestSubmit(
-        data,
-        setToastLoading,
-        !token ? "auth/reset" : `auth/reset/${token}`,
-        false,
-        !token ? "Email is being reviewed" : "Resetting the password"
-      );
-      if (token) {
+      if (!token) {
+        // POST /v2 auth/request-password-reset — body { email }
+        await handleRequestSubmit(
+          { email: data.email },
+          setToastLoading,
+          "auth/reset",
+          false,
+          "Email is being reviewed"
+        );
+      } else {
+        // POST /v2 auth/reset-password — body { password, confirmPassword, token }
+        await handleRequestSubmit(
+          { password: data.password, confirmPassword: data.confirmPassword, token },
+          setToastLoading,
+          `auth/reset/${token}`,
+          false,
+          "Resetting the password"
+        );
         router.push("/login");
       }
     } catch (e) {

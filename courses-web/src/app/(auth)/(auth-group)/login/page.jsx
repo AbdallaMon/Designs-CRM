@@ -21,7 +21,7 @@ export default function Page() {
     );
     if (response.status === 200) {
       setIsLoggedIn(true);
-      setUser(response.user);
+      setUser(response.data?.user);
     }
   }
 
