@@ -72,6 +72,9 @@ const roleConfig = {
   },
 };
 
+// Phase 1: the legacy `shared/roles` sub-role switcher has no /v2 equivalent — the concept
+// moved to PROFILES (auth/profile/switch). This component is NOT rendered (its mount in
+// Navbar is commented out) until the profile switcher built in web/ is ported here (Phase 2).
 export default function SignInWithDifferentUserRole() {
   const [open, setOpen] = useState(false);
   const { user, setUser } = useAuth();

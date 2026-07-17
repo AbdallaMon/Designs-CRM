@@ -303,7 +303,9 @@ const Navbar = ({ links }) => {
           )}
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <SignInWithDifferentUserRole />
+            {/* Phase 1: legacy shared/roles switcher retired (concept → profiles).
+                Re-enable once web/'s ProfileSwitcher is ported here (Phase 2). */}
+            {/* <SignInWithDifferentUserRole /> */}
             <Logout />
           </Box>
         </Toolbar>
