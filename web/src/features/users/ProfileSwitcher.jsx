@@ -8,7 +8,7 @@ import { FaUserShield, FaUserTie, FaPalette, FaCalculator } from "react-icons/fa
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { activeProfileLabel } from "@/app/helpers/profiles";
+import { activeProfileLabel, legacyRoleLabel } from "@/app/helpers/profiles";
 import colors from "@/app/helpers/colors";
 
 // Icon + color per profile FAMILY (from /auth/me profiles[].family). Caramel identity.
@@ -62,7 +62,7 @@ export default function ProfileSwitcher() {
     <>
       <Chip
         size="small"
-        icon={<Box sx={{ display: "flex", color: activeFamilyConfig.color, ml: 0.5 }}>{activeFamilyConfig.icon}</Box>}
+        icon={<Box sx={{ display: "flex", ml: 0.5 }}>{activeFamilyConfig.icon}</Box>}
         label={
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
             <span>{label}</span>
@@ -128,17 +128,4 @@ export default function ProfileSwitcher() {
       </Menu>
     </>
   );
-}
-
-// Legacy fallback for unmigrated accounts (0 profiles) — mirrors the pre-change
-// roleLabel(user) so those users still see a correct-ish label.
-function legacyRoleLabel(user) {
-  if (!user) return "";
-  if (user.role === "STAFF") return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
-  const map = {
-    ADMIN: "Admin", SUPER_ADMIN: "Admin", THREE_D_DESIGNER: "3D Designer",
-    TWO_D_DESIGNER: "2D Designer", TWO_D_EXECUTOR: "Executor", ACCOUNTANT: "Accountant",
-    CONTACT_INITIATOR: "Contact Initiator", SUPER_SALES: "Super Sales",
-  };
-  return map[user.role] || user.role || "";
 }

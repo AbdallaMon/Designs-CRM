@@ -41,7 +41,7 @@ export function getPermissionsForRole(role) {
  * Pure & unit-testable: no DB, no side effects.
  *
  * @param {object|null|undefined} user
- * @param {string} [user.role]     used only by resolveProfileKey's legacy fallback
+ * @param {string} [user.role]     used by resolveProfileKey's legacy fallback (and navRoleFor)
  * @param {string} [user.profile]  the active profile key (primary input)
  * @returns {{ permissions: string[], permissionsByModule: Record<string, {codes: string[], [flag: string]: boolean|string[]}> }}
  */
@@ -168,7 +168,7 @@ function navRoleFor(user) {
  * filtering, it has NO surviving sub-link. Items are icon-stripped (icons are
  * FE-only). Returns `[{ key, label, href, active?, subLinks? }]` in config order.
  *
- * @param {object} user  { role, activeRole?, isSuperSales?, subRoles?, permissions? }
+ * @param {object} user  { role, activeRole?, subRoles?, permissions? }
  * @returns {Array<{key:string,label:string,href:string,active?:string,subLinks?:Array}>}
  */
 export function buildNavigationTabs(user) {

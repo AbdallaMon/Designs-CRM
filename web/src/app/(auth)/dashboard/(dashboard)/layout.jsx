@@ -47,7 +47,7 @@ import SideNav, {
 import RouteGuard from "@/shared/components/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
 import ProfileSwitcher from "@/features/users/ProfileSwitcher";
-import { activeProfileLabel } from "@/app/helpers/profiles";
+import { activeProfileLabel, legacyRoleLabel } from "@/app/helpers/profiles";
 import ProfileDialogTrigger from "@/features/users/profile/ProfileDialogTrigger";
 import ProfileDialog from "@/features/users/profile/ProfileDialog.jsx";
 import Logout from "@/shared/components/buttons/Logout.jsx";
@@ -538,25 +538,10 @@ function resolveCurrentPage(links, pathname) {
   return fallback;
 }
 
-const ROLE_LABELS = {
-  ADMIN: "Admin",
-  SUPER_ADMIN: "Admin",
-  THREE_D_DESIGNER: "3D Designer",
-  TWO_D_DESIGNER: "2D Designer",
-  TWO_D_EXECUTOR: "Executor",
-  ACCOUNTANT: "Accountant",
-  CONTACT_INITIATOR: "Contact Initiator",
-  SUPER_SALES: "Super Sales",
-};
-
 // Prefer the active profile's own label (from /auth/me profiles[]); fall back to the
 // derived role for unmigrated accounts. Keeps the drawer footer in step with the chip.
 function roleLabel(user, profiles, currentProfileId) {
-  const fromProfile = activeProfileLabel(profiles, currentProfileId);
-  if (fromProfile) return fromProfile;
-  if (user?.role === "STAFF")
-    return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
-  return ROLE_LABELS[user?.role] || user?.role || "";
+  return activeProfileLabel(profiles, currentProfileId) ?? legacyRoleLabel(user);
 }
 
 function userInitials(user) {

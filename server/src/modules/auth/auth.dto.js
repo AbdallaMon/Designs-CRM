@@ -75,17 +75,6 @@ class AuthSchema {
   }
 
   /**
-   * Shape the `/auth/me` payload: the user's display fields PLUS the flattened
-   * effective `permissions[]` + `permissionsByModule{}`. The FE gates on the
-   * permission CODES; role/subRoles/activeRole are DISPLAY-only. `profile` (the
-   * resolved profile key) is the single source of the user's tier — the legacy
-   * `isSuperSales`/`isPrimary` flags are no longer exposed here.
-   * `subRoles` is normalized to a plain string[] for the client.
-   *
-   * @param {object} user  the auth payload on `req.auth` (already has effective
-   *                        permissions attached by `requireAuth`) OR a raw user.
-   */
-  /**
    * The baseRole of the user's EFFECTIVE active profile.
    *
    * "Effective" = the resolved `currentProfileId`, which login/refresh may have
@@ -108,6 +97,17 @@ class AuthSchema {
     return user.baseRole ?? null;
   }
 
+  /**
+   * Shape the `/auth/me` payload: the user's display fields PLUS the flattened
+   * effective `permissions[]` + `permissionsByModule{}`. The FE gates on the
+   * permission CODES; role/subRoles/activeRole are DISPLAY-only. `profile` (the
+   * resolved profile key) is the single source of the user's tier — the legacy
+   * `isSuperSales`/`isPrimary` flags are no longer exposed here.
+   * `subRoles` is normalized to a plain string[] for the client.
+   *
+   * @param {object} user  the auth payload on `req.auth` (already has effective
+   *                        permissions attached by `requireAuth`) OR a raw user.
+   */
   static toMe(user) {
     const subRoles = Array.isArray(user.subRoles)
       ? user.subRoles.map((s) => (typeof s === "string" ? s : s?.subRole)).filter(Boolean)

@@ -103,3 +103,17 @@ export function activeProfileLabel(profiles, currentProfileId) {
   const active = profiles.find((p) => p.id === currentProfileId);
   return active?.label ?? null;
 }
+
+// Legacy role→label fallback for unmigrated accounts that hold no profiles (0 users in
+// prod today). The active-profile label (activeProfileLabel) is always preferred; this is
+// only reached when there is no active profile to read a label from.
+export function legacyRoleLabel(user) {
+  if (!user) return "";
+  if (user.role === "STAFF") return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
+  const map = {
+    ADMIN: "Admin", SUPER_ADMIN: "Admin", THREE_D_DESIGNER: "3D Designer",
+    TWO_D_DESIGNER: "2D Designer", TWO_D_EXECUTOR: "Executor", ACCOUNTANT: "Accountant",
+    CONTACT_INITIATOR: "Contact Initiator", SUPER_SALES: "Super Sales",
+  };
+  return map[user.role] || user.role || "";
+}

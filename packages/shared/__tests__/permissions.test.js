@@ -123,7 +123,7 @@ describe("getEffectivePermissions", () => {
     expect(permissions).toContain(PERMISSIONS.TELEGRAM.MANAGE);
   });
 
-  it("does not double-count when role and sub-role overlap", () => {
+  it("does not emit duplicate codes for a single role", () => {
     const { permissions } = getEffectivePermissions({
       role: USER_ROLES.ADMIN,
       subRoles: [{ subRole: USER_ROLES.ADMIN }],
