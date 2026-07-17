@@ -5,6 +5,15 @@ import {
   MdAttachFile as AttachFile,
   MdPictureAsPdf as PictureAsPdf,
 } from "react-icons/md";
+import { PROFILE_BASE_ROLE_BY_KEY } from "@/app/helpers/profiles";
+
+// Profiles are the source of truth (decision §2.8): the current user's base role is
+// derived from the ACTIVE profile, never from the legacy `user.role` column. Maps the
+// active profile key (from /auth/me `user.profile`) to a CourseRole enum value
+// (ADMIN/STAFF/THREE_D_DESIGNER/TWO_D_DESIGNER/TWO_D_EXECUTOR/ACCOUNTANT/SUPER_ADMIN).
+export function baseRoleOf(user) {
+  return user?.profile ? PROFILE_BASE_ROLE_BY_KEY[user.profile] ?? null : null;
+}
 
 export const handleSearchParamsChange = (
   event,
@@ -161,10 +170,12 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 };
 
 export const checkIfADesigner = (user) => {
-  return user.role === "TWO_D_DESIGNER" || user.role === "THREE_D_DESIGNER";
+  const base = baseRoleOf(user);
+  return base === "TWO_D_DESIGNER" || base === "THREE_D_DESIGNER";
 };
 export const checkIfAdmin = (user) => {
-  return user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const base = baseRoleOf(user);
+  return base === "ADMIN" || base === "SUPER_ADMIN";
 };
 
 export function ensureHttps(url) {

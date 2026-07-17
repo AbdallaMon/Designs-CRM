@@ -23,6 +23,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import PaginationWithLimit from "../../PaginationWithLimit";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { baseRoleOf } from "@/app/helpers/functions/utility";
 
 const getRoleColor = (role) => {
   const colors = {
@@ -46,7 +47,7 @@ export default function StaffCourses() {
 
   async function getCourses() {
     await getDataAndSet({
-      url: `shared/courses?role=${user.role}&`,
+      url: `shared/courses?role=${baseRoleOf(user)}&`,
       setLoading,
       setData: setCourses,
       page,

@@ -9,6 +9,7 @@ import colors from "@/app/helpers/colors";
 import { FiBookOpen, FiGrid } from "react-icons/fi";
 
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
+import { baseRoleOf } from "@/app/helpers/functions/utility";
 import {
   Failed,
   Success,
@@ -98,9 +99,9 @@ export default function Layout({ admin, staff, threeD, twoD, accountant }) {
 
     fetchData();
   }, [validatingAuth]);
-  if (!user || !user.role) return null;
-  const role = user?.role;
-  console.log(role, "role");
+  // Route the dashboard slot on the ACTIVE profile's base role, not the legacy user.role.
+  const role = baseRoleOf(user);
+  if (!user || !role) return null;
   return (
     <Box
       sx={{

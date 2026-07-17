@@ -43,6 +43,7 @@ import TestComponent from "../../test/staff/Test";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { baseRoleOf } from "@/app/helpers/functions/utility";
 import { useSearchParams } from "next/navigation";
 
 const DRAWER_WIDTH = 320;
@@ -226,12 +227,12 @@ const LesssonView = ({ courseId }) => {
 
   async function getCourse() {
     await getDataAndSet({
-      url: `shared/courses/${courseId}?role=${user.role}&`,
+      url: `shared/courses/${courseId}?role=${baseRoleOf(user)}&`,
       setLoading,
       setData: setCourse,
     });
     await getDataAndSet({
-      url: `shared/courses/${courseId}/progress?role=${user.role}&`,
+      url: `shared/courses/${courseId}/progress?role=${baseRoleOf(user)}&`,
       setLoading,
       setData: setUserProgress,
     });
