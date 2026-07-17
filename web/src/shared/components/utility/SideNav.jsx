@@ -20,6 +20,7 @@ import {
   FiChevronsLeft,
   FiChevronsRight,
   FiX,
+  FiBookOpen,
 } from "react-icons/fi";
 import colors from "@/app/helpers/colors";
 
@@ -328,6 +329,40 @@ const SideNav = ({
             </List>
           </Box>
         ))}
+
+        {/* External link to the courses (LMS) app. Session cookie is shared across the
+            apps, so this just navigates there. Hidden unless the origin is configured. */}
+        {process.env.NEXT_PUBLIC_COURSES_URL && (
+          <Box>
+            <Divider sx={{ my: 1, mx: 1.5, borderColor: colors.borderLight }} />
+            <List component="ul" disablePadding>
+              <Box component="li" sx={{ listStyle: "none" }}>
+                <Tooltip
+                  title={railCollapsed ? "Courses" : ""}
+                  placement="right"
+                  arrow
+                >
+                  <ListItemButton
+                    component="a"
+                    href={process.env.NEXT_PUBLIC_COURSES_URL}
+                    sx={{
+                      borderRadius: 2,
+                      mx: 1,
+                      justifyContent: railCollapsed ? "center" : "flex-start",
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{ minWidth: 0, mr: railCollapsed ? 0 : 1.5, color: colors.textMuted }}
+                    >
+                      <FiBookOpen size={20} />
+                    </ListItemIcon>
+                    {!railCollapsed && <ListItemText primary="Courses" />}
+                  </ListItemButton>
+                </Tooltip>
+              </Box>
+            </List>
+          </Box>
+        )}
       </Box>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
