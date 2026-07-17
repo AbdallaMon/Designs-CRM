@@ -10,16 +10,17 @@ import {
   Typography,
   useTheme,
   Stack,
-  Paper,
   alpha,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdClose } from "react-icons/md";
+import { FaFileContract } from "react-icons/fa";
 import CreateContractDialog from "@/features/contracts/CreateContract.jsx";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay.jsx";
 import ViewContract from "@/features/contracts/ViewContract.jsx";
 import CloneContract from "@/features/contracts/CloneContract.jsx";
-import ContractAccordion from "@/features/contracts/ContractAccordion.jsx";
+import ContractCard from "@/features/contracts/ContractCard.jsx";
+import { EmptyState } from "@/features/leads/shared/EmptyState.jsx";
 
 export default function LeadContractList({
   leadId,
@@ -30,23 +31,19 @@ export default function LeadContractList({
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openView, setOpenView] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
   const [id, setId] = useState(null);
   const [cloneOpen, setCloneOpen] = useState(false);
   const [cloneId, setCloneId] = useState(false);
   const theme = useTheme();
+
   function handleCloneOpen(contractId) {
     setCloneOpen(true);
     setCloneId(contractId);
   }
 
-  function handleCloneClose(contractId) {
+  function handleCloneClose() {
     setCloneOpen(false);
     setCloneId(null);
-  }
-  function handleEditOpen(contractId) {
-    setOpenEdit(true);
-    setId(contractId);
   }
 
   function handleViewOpen(contractId) {
@@ -56,7 +53,6 @@ export default function LeadContractList({
 
   function handleClose() {
     setOpenView(false);
-    setOpenEdit(false);
     setId(null);
   }
 
@@ -67,7 +63,6 @@ export default function LeadContractList({
       setData: setContracts,
     });
     if (req && updateOuterContract) {
-      console.log(req, "data");
       updateOuterContract(
         req.data.find((c) => c.status === "IN_PROGRESS" && c.amount > 0)?.id ||
           null
@@ -85,14 +80,14 @@ export default function LeadContractList({
     <Box
       position="relative"
       sx={{
-        minHeight: finalModal ? "100vh" : "100%",
-        pb: 3,
-        px: { xs: 2, sm: 3 },
+        minHeight: finalModal ? "100vh" : undefined,
+        pb: finalModal ? 3 : 0,
+        px: finalModal ? { xs: 2, sm: 3 } : 0,
       }}
     >
       {loading && <LoadingOverlay />}
 
-      <Box mb={4}>
+      <Box mb={2.5}>
         <CreateContractDialog
           clientLeadId={leadId}
           onUpdate={fetchContracts}
@@ -100,36 +95,29 @@ export default function LeadContractList({
         />
       </Box>
 
-      <Stack spacing={2}>
-        {contracts?.length > 0
-          ? contracts.map((contract, index) => (
-              <ContractAccordion
-                contract={contract}
-                setContracts={setContracts}
-                index={index}
-                key={contract.id}
-                handleEditOpen={handleEditOpen}
-                handleViewOpen={handleViewOpen}
-                fetchContracts={fetchContracts}
-                handleCloneOpen={handleCloneOpen}
-              />
-            ))
-          : !loading && (
-              <Paper
-                sx={{
-                  p: 4,
-                  textAlign: "center",
-                  backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                  border: `1px dashed ${theme.palette.divider}`,
-                  borderRadius: 2,
-                }}
-              >
-                <Typography color="textSecondary" variant="body1">
-                  No contracts found. Create one to get started.
-                </Typography>
-              </Paper>
-            )}
-      </Stack>
+      {contracts?.length > 0 ? (
+        <Stack spacing={2}>
+          {contracts.map((contract) => (
+            <ContractCard
+              key={contract.id}
+              contract={contract}
+              setContracts={setContracts}
+              fetchContracts={fetchContracts}
+              handleViewOpen={handleViewOpen}
+              handleCloneOpen={handleCloneOpen}
+            />
+          ))}
+        </Stack>
+      ) : (
+        !loading && (
+          <EmptyState
+            icon={<FaFileContract />}
+            title="No contracts"
+            description="Create a contract to get started."
+          />
+        )
+      )}
+
       <CloneContract
         sourceId={cloneId}
         onCloned={fetchContracts}
@@ -139,7 +127,7 @@ export default function LeadContractList({
         handleCloneOpen={handleCloneOpen}
       />
       <Dialog
-        open={openView || openEdit}
+        open={openView}
         maxWidth="lg"
         fullWidth
         onClose={handleClose}

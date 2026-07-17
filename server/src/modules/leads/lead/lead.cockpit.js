@@ -67,6 +67,23 @@ const PRICE_OFFER_STATUSES = ["INTERESTED", "NEEDS_IDENTIFIED", "NEGOTIATING"];
 
 const SEVERITY_RANK = { critical: 0, warning: 1, info: 2 };
 
+// Intra-band ordering by how fast the deal decays if the row is ignored. Within a
+// severity band, ties break on this priority (lower = more urgent) then emission order.
+// Unlisted types get DEFAULT_PRIORITY, so criticals/infos keep their emission order among
+// themselves. FIRST_TOUCH_SLA (never-contacted, speed-to-lead) is the exception — it is
+// the strongest conversion lever, so it ranks above the ordinary warnings.
+const DEFAULT_PRIORITY = 100;
+const TYPE_PRIORITY = {
+  FIRST_TOUCH_SLA: 5,
+  LEAD_STALE: 10,
+  OFFER_AWAITING_DECISION: 20,
+  NO_UPCOMING_TOUCH: 30,
+  OBJECTION_UNHANDLED: 40,
+  NO_PRICE_OFFER: 50,
+  SIGNING_AWAITED: 60,
+  DISCOVERY_INCOMPLETE: 70,
+};
+
 // My Day staleness threshold (spec §5.3/§6): an ACTIVE deal with no future touch and no
 // activity for this many days is "dying silently". Single source — the my-day team-lens
 // SQL imports this so both lenses breach at the same moment.
@@ -122,14 +139,24 @@ function countUnhandledObjections(versaModels) {
   return count;
 }
 
-// Stable sort: severity (critical > warning > info), ties broken by rule-emission order.
+// Stable sort: severity (critical > warning > info), then intra-band priority, then
+// rule-emission order. ADVANCE_STAGE is special-cased to the very top — it only fires
+// when no critical exists (see computeSalesActions), so a clean-ish deal opens showing
+// "advance the stage" rather than a warning.
+function effectiveRank(a) {
+  return a.type === "ADVANCE_STAGE" ? -1 : SEVERITY_RANK[a.severity];
+}
+
 function sortActions(actions) {
   return actions
     .map((a, i) => ({ a, i }))
     .sort((x, y) => {
-      const bySeverity =
-        SEVERITY_RANK[x.a.severity] - SEVERITY_RANK[y.a.severity];
-      return bySeverity !== 0 ? bySeverity : x.i - y.i;
+      const byRank = effectiveRank(x.a) - effectiveRank(y.a);
+      if (byRank !== 0) return byRank;
+      const byPriority =
+        (TYPE_PRIORITY[x.a.type] ?? DEFAULT_PRIORITY) -
+        (TYPE_PRIORITY[y.a.type] ?? DEFAULT_PRIORITY);
+      return byPriority !== 0 ? byPriority : x.i - y.i;
     })
     .map((x) => x.a);
 }
@@ -419,7 +446,10 @@ function computeSalesActions(bundle, now, health, status) {
       );
     }
 
-    // 7. NO_UPCOMING_TOUCH (warning) — no future call/meeting on an active deal.
+    // 7 / 7b. No-scheduled-touch on an active deal. LEAD_STALE is the strict superset of
+    // NO_UPCOMING_TOUCH (same "no future touch" condition + "quiet for STALE_LEAD_DAYS+"),
+    // so the two are a guaranteed near-duplicate pair. When the deal is stale we emit the
+    // more specific LEAD_STALE (it carries the age) and SUPPRESS NO_UPCOMING_TOUCH.
     const hasFutureCall = callReminders.some(
       (c) =>
         c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now,
@@ -428,11 +458,28 @@ function computeSalesActions(bundle, now, health, status) {
       (m) =>
         m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now,
     );
-    if (
-      !hasFutureCall &&
-      !hasFutureMeeting &&
-      ACTIVE_STATUSES.includes(status)
-    ) {
+    const noScheduledTouch =
+      !hasFutureCall && !hasFutureMeeting && ACTIVE_STATUSES.includes(status);
+    const daysSinceActivity =
+      bundle.updatedAt != null ? daysBetween(toDate(bundle.updatedAt), now) : null;
+    // `updatedAt == null` (older callers) → never stale, keeps legacy bundles signal-identical.
+    const isStale =
+      noScheduledTouch &&
+      daysSinceActivity != null &&
+      daysSinceActivity >= STALE_LEAD_DAYS;
+
+    // 7b. LEAD_STALE (warning) — active deal, nothing scheduled, no activity for STALE_LEAD_DAYS+.
+    if (isStale) {
+      actions.push(
+        action(
+          "LEAD_STALE",
+          "warning",
+          { daysSinceActivity },
+          { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+        ),
+      );
+    } else if (noScheduledTouch) {
+      // 7. NO_UPCOMING_TOUCH (warning) — no future call/meeting, but not yet stale.
       actions.push(
         action(
           "NO_UPCOMING_TOUCH",
@@ -441,29 +488,6 @@ function computeSalesActions(bundle, now, health, status) {
           { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
         ),
       );
-    }
-
-    // 7b. LEAD_STALE (warning) — active deal, nothing scheduled, and no activity for
-    // STALE_LEAD_DAYS+. Complements NO_UPCOMING_TOUCH with the AGE dimension (My Day
-    // ranks on it). Skipped when the bundle has no `updatedAt` (older callers) so
-    // legacy bundles stay signal-identical.
-    if (
-      bundle.updatedAt != null &&
-      !hasFutureCall &&
-      !hasFutureMeeting &&
-      ACTIVE_STATUSES.includes(status)
-    ) {
-      const daysSinceActivity = daysBetween(toDate(bundle.updatedAt), now);
-      if (daysSinceActivity >= STALE_LEAD_DAYS) {
-        actions.push(
-          action(
-            "LEAD_STALE",
-            "warning",
-            { daysSinceActivity },
-            { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
-          ),
-        );
-      }
     }
 
     // 7c. FIRST_TOUCH_SLA — claimed but never contacted (no stage reached, no DONE call).
@@ -516,24 +540,6 @@ function computeSalesActions(bundle, now, health, status) {
       }
     }
 
-    // A critical/warning funnel action above "blocks" the (info) advance suggestion.
-    const hasBlocking = actions.length > 0;
-
-    // 8. ADVANCE_STAGE (info) — a stage is complete, a next stage exists, nothing blocks.
-    if (
-      !hasBlocking &&
-      health.currentStage != null &&
-      health.nextStage != null
-    ) {
-      actions.push(
-        action(
-          "ADVANCE_STAGE",
-          "info",
-          { currentStage: health.currentStage, nextStage: health.nextStage },
-          { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null },
-        ),
-      );
-    }
   }
 
   // ── Contract signals (run whenever a contract exists; survive into FINALIZED) ──
@@ -617,6 +623,26 @@ function computeSalesActions(bundle, now, health, status) {
         );
       }
     }
+  }
+
+  // ADVANCE_STAGE (info) — the "move this deal forward" prompt. Gated on NO critical
+  // anywhere (funnel OR contract), so a deal with an overdue call/payment is never told
+  // to advance; but ordinary warnings no longer bury it. sortActions promotes it to the
+  // top when present, so a clean-ish deal opens on this row instead of a warning.
+  if (
+    !CLOSED_WON.includes(status) &&
+    !actions.some((a) => a.severity === "critical") &&
+    health.currentStage != null &&
+    health.nextStage != null
+  ) {
+    actions.push(
+      action(
+        "ADVANCE_STAGE",
+        "info",
+        { currentStage: health.currentStage, nextStage: health.nextStage },
+        { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null },
+      ),
+    );
   }
 
   return actions;

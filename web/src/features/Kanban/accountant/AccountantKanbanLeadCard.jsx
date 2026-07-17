@@ -43,7 +43,9 @@ const ItemTypes = {
   CARD: "card",
 };
 
-const StyledCard = styled(Card)(({ theme, status }) => ({
+const StyledCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== "status",
+})(({ theme, status }) => ({
   margin: theme.spacing(1),
   borderRadius: theme.spacing(1),
   borderLeft: `5px solid ${statusColors[status]}`,

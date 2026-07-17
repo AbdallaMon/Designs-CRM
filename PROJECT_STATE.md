@@ -3,9 +3,56 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-12** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
+> Last updated: **2026-07-17** · Branch: `feat/workstage-flow-redesign`
 >
-> **LATEST (2026-07-16) — In-app notifications now delivered via BullMQ queue ✅.**
+> **LATEST (2026-07-17) — Work-stage preview bug-fix batch + designer-picker profile fix ✅.**
+> Four reported issues on the work-stage/designer surface. **(1) Silent 500 on designer assign:** the projects
+> flows/task layers still threw raw `new Error()` (8 sites), which skip the `AppError` branch in the global
+> error-handler and collapse to "Internal server error" — so the real reason ("designer already assigned", status
+> guard, not-in-modification, etc.) never reached the FE. Converted all 8 to `AppError(code, status)`; added 4 new
+> message codes (`PROJECT_GROUP_TITLE_REQUIRED/_DUPLICATE`, `CLIENT_LEAD_NOT_FOUND`, `TASK_ACCESS_DENIED`) to
+> `@dms/shared` + the FE `projectsMessages` map (`DESIGNER_ALREADY_ASSIGNED` etc. already existed but were never
+> thrown). **(2) Designer picker missed multi-profile users:** `user.repo.js findDirectory` matched only legacy
+> `role`+`subRoles`; a designer holding DESIGNER_3D **and** DESIGNER_2D whose ACTIVE profile is 3D has
+> `role="THREE_D_DESIGNER"` (write-synced from the active profile) and no subRoles, so he vanished from 2D projects.
+> Fix: new `matchClausesForRole()` also matches `userProfiles.some.profile.baseRole` (held profiles = source of
+> truth) — deduped across role+subRoles+profiles; `exactRole` keeps dropping the loose subRole clause but keeps
+> profile matches; `DIRECTORY_SELECT` now returns `userProfiles`. A 3D-only designer still never appears in a 2D
+> list. 6 regression tests (4 fail on the old code). **⚠ This is the DISCOVERY axis** — held profiles — which the
+> approved `2026-07-17-profile-single-source-of-truth-design.md` (active-profile boundary derivation) explicitly
+> does NOT cover; the two are complementary. **(3) Work-stage preview now matches the deal preview:** built
+> `web/src/features/work-stages/config/workStageSections.jsx` (mirrors `leadSections.jsx`) and rewrote
+> `PreviewWorkStage.jsx` to render through the SHARED `LeadWorkspace` grouped rail + keyed sections (was a
+> hardcoded MUI `<Tabs>` array). Dropped the dead inline status `<Menu>` (never triggered). The
+> `files?.filter is not a function` crash (+ silently-broken Notes/Calls) was a MISROUTED per-tab fetch:
+> `LeadDetailsContext` concatenated sub-resources onto a base url carrying `?type=`, yielding
+> `.../designers/9?type=x/files` → server returned the lead OBJECT. Fixed `subResourcePath()` to splice the
+> segment BEFORE the query (keeping `?type=`, which drives per-user narrowing) + coerce non-array tab payloads to
+> `[]`. Added designer-scoped sub-resource routes `GET /projects/designers/:id/{notes,call-reminders,files}`
+> (same object-scope as the detail; the lead routes can't be reused — they need lead `P.VIEW` designers lack),
+> sliced from the already-scoped detail. **(4) React DOM prop warnings** (`statusColor`/`groupId`/`active`/
+> `button` etc.): added `shouldForwardProp` to the Kanban + projectDetails styled() components and replaced the
+> MUI-v7-removed `<ListItem button>` with `<ListItemButton>` in `RelatedLinks.jsx`. **Verified: full suite
+> 1019/1019 green + `next build` compiled OK.** Remaining: the full ~90-site legacy-role→profile sweep is
+> phased-later (user chose "bugs first"); end-state decision = stop reading AND stop returning `role` to the FE
+> (needs `layout.jsx:703` + 12 page shells de-`role`d first, else the dashboard blanks).
+>
+> **PRIOR (2026-07-17) — Price-offers tab layout + contract-list UI/UX redesign ✅ (frontend-only).**
+> Spec `docs/superpowers/specs/2026-07-17-price-offers-tab-contract-list-redesign-design.md`. The lead-detail
+> **Price offers** tab was two clashing visual systems; contracts (tall, variable) were crammed into a 320px inner
+> scroller with the first auto-expanded. Reordered per user: **price offers on top** in the shared `TabSection`,
+> capped at `maxHeight:300` and scrolling inside themselves (small uniform cards); **contracts below, bare** — no
+> frame, no "Contracts" heading, no height cap (they flow and take the rest of the lead). The accordion is retired:
+> each contract is now a `RecordCard` (`ContractCard.jsx`) matching the price-offer cards, with its stages drawn as a
+> horizontal **pipeline stepper** (`ContractStageStepper.jsx`) instead of a grid of near-empty cards — the raw
+> `LEVEL_N` key no longer leaks, and an off-convention `stage.title` falls back to a neutral node instead of crashing
+> (`ChipWithIcon` palette lookup now guarded). `Decimal?` amounts are `Number()`-coerced before `toLocaleString()`
+> (string `.toLocaleString()` was a silent no-op). Deleted: `ContractAccordion.jsx`, `ContractStage.jsx`, a dead
+> `openEdit`/`handleEditOpen` path, a stray `console.log`. **Decision (user):** contract level names **stay Arabic**
+> (master's retained strings); `nameEn` left unused — do NOT Arabize→English here. `FinalizeModal`/`ViewContract`/
+> backend untouched (`LeadContractList`'s `finalModal` picker path preserved). **Verified: `next build` compiled OK.**
+>
+> **PRIOR (2026-07-16) — In-app notifications now delivered via BullMQ queue ✅.**
 > The module-tier `createNotification` (`modules/notifications/notification.usecase.js` — the choke point all
 > `infra/notifications/senders/*` funnel through) now only **enqueues** to a new `notification-queue`
 > (lazy `getNotificationQueue()` — no Redis connection at import, so tests/boot stay clean); the legacy fan-out

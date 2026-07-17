@@ -1,7 +1,9 @@
 import { Box, Card } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
-export const StyledCard = styled(Card)(({ theme, borderColor }) => ({
+export const StyledCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== "borderColor",
+})(({ theme, borderColor }) => ({
   marginTop: theme.spacing(2.5),
   marginBottom: theme.spacing(0.5),
   borderRadius: "12px",
@@ -32,7 +34,9 @@ export const StyledCard = styled(Card)(({ theme, borderColor }) => ({
   },
 }));
 
-export const CallInfoBox = styled(Box)(({ theme, variant }) => ({
+export const CallInfoBox = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "variant",
+})(({ theme, variant }) => ({
   padding: theme.spacing(1.25),
   borderRadius: "10px",
   backgroundColor: variant === "next" ? "#e8f1fb" : "#f7f0e8",

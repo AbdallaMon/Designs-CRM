@@ -38,7 +38,9 @@ const ItemTypes = {
 // onto one of these asks for confirmation first (FINALIZED keeps its own dedicated modal).
 const TERMINAL_DEAL_STATUSES = new Set(["REJECTED", "ARCHIVED"]);
 
-const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
+const ColumnHeader = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "statusColor",
+})(({ theme, statusColor }) => ({
   position: "sticky",
   top: 0,
   zIndex: 5,
@@ -50,7 +52,9 @@ const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
-export const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
+export const StatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "statuscolor",
+})(({ theme, statuscolor }) => ({
   backgroundColor: `${statuscolor}20`,
   color: statuscolor,
   fontWeight: 700,

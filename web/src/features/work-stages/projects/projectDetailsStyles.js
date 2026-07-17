@@ -43,7 +43,9 @@ export const InfoCard = styled(Box)(({ theme }) => ({
   minWidth: 160,
 }));
 
-export const PriorityChip = styled(Chip)(({ theme, priority }) => ({
+export const PriorityChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "priority",
+})(({ theme, priority }) => ({
   borderRadius: 12,
   height: 32,
   fontWeight: 600,
@@ -59,7 +61,9 @@ export const StyledProgressBar = styled(LinearProgress)(({ theme }) => ({
   },
 }));
 
-export const ProgressDot = styled(Box)(({ theme, active }) => ({
+export const ProgressDot = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "active",
+})(({ theme, active }) => ({
   width: 14,
   height: 14,
   borderRadius: "50%",

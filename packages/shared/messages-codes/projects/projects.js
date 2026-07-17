@@ -50,9 +50,11 @@ export const projectsMessagesCodes = {
 
   // ── errors / scope / guards (the IDOR keystone) ─────────────────────────────────
   PROJECT_NOT_FOUND: "PROJECT_NOT_FOUND",
+  CLIENT_LEAD_NOT_FOUND: "CLIENT_LEAD_NOT_FOUND", // lead-keyed project read: lead row missing
   PROJECT_ACCESS_DENIED: "PROJECT_ACCESS_DENIED", // project outside the user's scope (read IDOR)
   PROJECT_MUTATE_DENIED: "PROJECT_MUTATE_DENIED", // visible but not writable by this user
   TASK_NOT_FOUND: "TASK_NOT_FOUND",
+  TASK_ACCESS_DENIED: "TASK_ACCESS_DENIED", // task's parent project not assigned to this user
   UPDATE_NOT_FOUND: "UPDATE_NOT_FOUND",
   SHARED_UPDATE_NOT_FOUND: "SHARED_UPDATE_NOT_FOUND",
   DELIVERY_NOT_FOUND: "DELIVERY_NOT_FOUND",
@@ -61,6 +63,8 @@ export const projectsMessagesCodes = {
   TASK_STATUS_TRANSITION_FORBIDDEN: "TASK_STATUS_TRANSITION_FORBIDDEN", // non-admin editing a DONE task
   PROJECT_NOT_IN_MODIFICATION: "PROJECT_NOT_IN_MODIFICATION", // 3D_Modification project not yet in modification state
   DESIGNER_ALREADY_ASSIGNED: "DESIGNER_ALREADY_ASSIGNED",
+  PROJECT_GROUP_TITLE_REQUIRED: "PROJECT_GROUP_TITLE_REQUIRED", // createGroupProjects without a title
+  PROJECT_GROUP_TITLE_DUPLICATE: "PROJECT_GROUP_TITLE_DUPLICATE", // a group with the same title exists on this lead
   DELETE_MODEL_REQUIRED: "DELETE_MODEL_REQUIRED", // generic delete missing body.model
   DELETE_NOT_ALLOWED: "DELETE_NOT_ALLOWED", // time-window / role guard on generic delete
 };

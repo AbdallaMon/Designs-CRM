@@ -6,7 +6,9 @@ import { Stack, Typography } from "@mui/material";
 // Stages: responsive -- mobile: show all stages expanded (no Accordion).
 // -----------------------------
 export default function RenderStageBullets({ details }) {
-  const seperateByNewLineIntoBullets = details
+  // `details` is a stage's text blob (textAr/textEn), which can legitimately be null/missing
+  // for a stage that has no clause — render nothing rather than crashing on `.split`.
+  const seperateByNewLineIntoBullets = (details || "")
     .split("\n")
     .filter((line) => line.trim() !== "");
   return (

@@ -17,7 +17,6 @@ import {
   FaMoneyBillWave,
   FaUserAlt,
   FaCalendarAlt,
-  FaFileContract,
 } from "react-icons/fa";
 import { RiExternalLinkLine } from "react-icons/ri";
 import { AddPriceOffers } from "@/features/leads/dialogs/PriceOffersDialog.jsx";
@@ -54,51 +53,8 @@ export function PriceOffersList({ admin, lead, notUser }) {
     : !notUser;
 
   return (
-    <Stack spacing={3}>
-      {/* Contracts */}
-      <Box
-        sx={{
-          borderRadius: 2.5,
-          border: `1px solid ${theme.palette.divider}`,
-          overflow: "hidden",
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={1.5}
-          alignItems="center"
-          sx={{
-            px: 2,
-            py: 1.5,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            bgcolor: alpha(theme.palette.primary.main, 0.04),
-          }}
-        >
-          <Box
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: 2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: alpha(theme.palette.primary.main, 0.12),
-              color: theme.palette.primary.main,
-              fontSize: 17,
-            }}
-          >
-            <FaFileContract />
-          </Box>
-          <Typography variant="subtitle1" fontWeight={700}>
-            Contracts
-          </Typography>
-        </Stack>
-        <Box sx={{ maxHeight: 320, overflowY: "auto", p: 2 }}>
-          <LeadContractList leadId={lead.id} lead={lead} />
-        </Box>
-      </Box>
-
-      {/* Price offers */}
+    <Stack spacing={4}>
+      {/* Price offers — small, uniform cards: capped height, scrolls inside itself. */}
       <TabSection
         icon={<FaMoneyBillWave />}
         title="Price Offers"
@@ -133,72 +89,90 @@ export function PriceOffersList({ admin, lead, notUser }) {
             }
           />
         ) : (
-          <Stack spacing={1.5}>
-            {offers.map((offer) => {
-              const c = offer.isAccepted
-                ? theme.palette.success.main
-                : theme.palette.grey[500];
-              return (
-                <RecordCard
-                  key={offer.id}
-                  accent={c}
-                  title={
-                    offer.minPrice
-                      ? `${offer.minPrice.toLocaleString()} - ${offer.maxPrice.toLocaleString()} AED`
-                      : "Price offer"
-                  }
-                  status={
-                    <StatusPill
-                      label={offer.isAccepted ? "Accepted" : "Pending"}
-                      color={c}
-                    />
-                  }
-                  meta={
-                    <>
-                      <MetaItem
-                        icon={<FaUserAlt size={13} />}
-                        value={offer.user?.name}
+          <Box
+            sx={{
+              maxHeight: 300,
+              overflowY: "auto",
+              pr: 0.5,
+              "&::-webkit-scrollbar": { width: 6 },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: alpha(theme.palette.primary.main, 0.3),
+                borderRadius: 3,
+              },
+            }}
+          >
+            <Stack spacing={1.5}>
+              {offers.map((offer) => {
+                const c = offer.isAccepted
+                  ? theme.palette.success.main
+                  : theme.palette.grey[500];
+                return (
+                  <RecordCard
+                    key={offer.id}
+                    accent={c}
+                    title={
+                      offer.minPrice
+                        ? `${Number(offer.minPrice).toLocaleString()} - ${Number(
+                            offer.maxPrice
+                          ).toLocaleString()} AED`
+                        : "Price offer"
+                    }
+                    status={
+                      <StatusPill
+                        label={offer.isAccepted ? "Accepted" : "Pending"}
+                        color={c}
                       />
-                      <MetaItem
-                        icon={<FaCalendarAlt size={13} />}
-                        value={dayjs(offer.createdAt).format("YYYY-MM-DD HH:mm")}
-                      />
-                    </>
-                  }
-                  actions={
-                    <>
-                      {offer.url && (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          component="a"
-                          href={offer.url}
-                          target="_blank"
-                          startIcon={<RiExternalLinkLine size={15} />}
-                          sx={{ textTransform: "none", fontWeight: 600 }}
-                        >
-                          File
-                        </Button>
-                      )}
-                      <PriceOfferSwitch priceOffer={offer} setPriceOffers={setOffers} />
-                      <DeleteModelButton
-                        item={offer}
-                        model={"PriceOffers"}
-                        contentKey={offer.note ? "note" : "url"}
-                        onDelete={() =>
-                          setOffers((old) => old.filter((o) => o.id !== offer.id))
-                        }
-                      />
-                    </>
-                  }
-                >
-                  {offer.note && <CardBlock label="Note">{offer.note}</CardBlock>}
-                </RecordCard>
-              );
-            })}
-          </Stack>
+                    }
+                    meta={
+                      <>
+                        <MetaItem
+                          icon={<FaUserAlt size={13} />}
+                          value={offer.user?.name}
+                        />
+                        <MetaItem
+                          icon={<FaCalendarAlt size={13} />}
+                          value={dayjs(offer.createdAt).format("YYYY-MM-DD HH:mm")}
+                        />
+                      </>
+                    }
+                    actions={
+                      <>
+                        {offer.url && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            component="a"
+                            href={offer.url}
+                            target="_blank"
+                            startIcon={<RiExternalLinkLine size={15} />}
+                            sx={{ textTransform: "none", fontWeight: 600 }}
+                          >
+                            File
+                          </Button>
+                        )}
+                        <PriceOfferSwitch priceOffer={offer} setPriceOffers={setOffers} />
+                        <DeleteModelButton
+                          item={offer}
+                          model={"PriceOffers"}
+                          contentKey={offer.note ? "note" : "url"}
+                          onDelete={() =>
+                            setOffers((old) => old.filter((o) => o.id !== offer.id))
+                          }
+                        />
+                      </>
+                    }
+                  >
+                    {offer.note && <CardBlock label="Note">{offer.note}</CardBlock>}
+                  </RecordCard>
+                );
+              })}
+            </Stack>
+          </Box>
         )}
       </TabSection>
+
+      {/* Contracts — tall, variable content: bare, uncapped, flows and grows. */}
+      <LeadContractList leadId={lead.id} lead={lead} />
     </Stack>
   );
 }

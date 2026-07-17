@@ -48,16 +48,21 @@ export const projectsMessages = {
 
   // ── errors / scope / guards ────────────────────────────────────────────────────
   PROJECT_NOT_FOUND: "Project not found",
+  CLIENT_LEAD_NOT_FOUND: "Lead not found",
   PROJECT_ACCESS_DENIED: "You do not have access to this project",
   PROJECT_MUTATE_DENIED: "You do not have permission to edit this project",
   TASK_NOT_FOUND: "Task not found",
+  TASK_ACCESS_DENIED: "You do not have access to this task",
   UPDATE_NOT_FOUND: "Update not found",
   SHARED_UPDATE_NOT_FOUND: "Shared update not found",
   DELIVERY_NOT_FOUND: "Delivery schedule not found",
   PROJECT_STATUS_TRANSITION_FORBIDDEN: "Cannot change the status from the current status",
   TASK_STATUS_TRANSITION_FORBIDDEN: "Cannot edit a completed task",
   PROJECT_NOT_IN_MODIFICATION: "The project is not in the modification stage yet",
-  DESIGNER_ALREADY_ASSIGNED: "The designer is already assigned",
+  DESIGNER_ALREADY_ASSIGNED:
+    "This designer is already assigned to this project. Refresh the page if you do not see them.",
+  PROJECT_GROUP_TITLE_REQUIRED: "A group title is required",
+  PROJECT_GROUP_TITLE_DUPLICATE: "A group with the same title already exists",
   DELETE_MODEL_REQUIRED: "The type of item to delete is required",
   DELETE_NOT_ALLOWED: "This item cannot be deleted",
 

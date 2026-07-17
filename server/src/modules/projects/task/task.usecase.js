@@ -67,7 +67,7 @@ async function createNewTask({ data, isAdmin = false, staffId }) {
 export async function updateTask({ data, taskId, isAdmin = false, userId }) {
   const oldTask = await taskRepository.findTaskStatus({ id: taskId });
   if (!isAdmin && oldTask.status === "DONE") {
-    throw new Error("You can't change the task after DONE only admin can");
+    throw new AppError(projectsMessagesCodes.TASK_STATUS_TRANSITION_FORBIDDEN, 403);
   }
 
   if (data.status && data.status === "DONE") {
@@ -131,7 +131,7 @@ async function getTaskDetails({ searchParams, id }) {
     }
   }
 
-  throw new Error("You are not allowed to see this task");
+  throw new AppError(projectsMessagesCodes.TASK_ACCESS_DENIED, 403);
 }
 
 export const legacyDefaults = {

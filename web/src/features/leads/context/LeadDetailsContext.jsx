@@ -41,6 +41,20 @@ const TAB_ENDPOINTS = {
 
 const EMPTY_TAB = { data: undefined, loading: false, loaded: false, error: null };
 
+// Build a sub-resource path from `leadBaseUrl`, which is a PATH PREFIX.
+//
+// Naive concatenation breaks when the base carries a query string: `a/b?x=1` + `/files`
+// yields `a/b?x=1/files`, which the server routes to `a/b` (with a junk query) and
+// answers with the lead OBJECT instead of the tab's list. The query cannot simply be
+// dropped either — the work-stage surface passes `?type=`, which drives the per-user
+// file/note narrowing on the designer detail — so splice the segment BEFORE the query
+// and carry the query through.
+function subResourcePath(baseUrl, endpoint) {
+  const [path, query] = String(baseUrl).split("?");
+  const clean = path.replace(/\/+$/, "");
+  return query ? `${clean}/${endpoint}?${query}` : `${clean}/${endpoint}`;
+}
+
 const LeadDetailsContext = createContext(null);
 
 export function LeadDetailsProvider({
@@ -76,7 +90,7 @@ export function LeadDetailsProvider({
       typeof endpoint === "function"
         ? endpoint(leadIdRef.current)
         : baseUrlRef.current
-        ? `${baseUrlRef.current}/${endpoint}`
+        ? subResourcePath(baseUrlRef.current, endpoint)
         : null;
     if (!path) return;
     // A fetch is already running for this key: record this request as a pending rerun
@@ -103,7 +117,11 @@ export function LeadDetailsProvider({
       }
       const norm = normalizeEnvelope(body, res.status);
       if (res.status >= 200 && res.status < 300) {
-        const data = Array.isArray(norm.data) ? norm.data : norm.data ?? [];
+        // Every tab here is a LIST. Coerce to an array rather than passing an object
+        // through: a misrouted request (e.g. a base url carrying a query string, which
+        // silently resolves to the lead-detail endpoint) returns the lead OBJECT, and
+        // letting that reach a tab throws `x.filter is not a function` deep in a render.
+        const data = Array.isArray(norm.data) ? norm.data : [];
         setTabs((prev) => ({
           ...prev,
           [key]: { data, loading: false, loaded: true, error: null },

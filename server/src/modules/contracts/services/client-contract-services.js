@@ -12,7 +12,6 @@ export async function getDefaultContractUtilityData(lng) {
   }
 }
 export async function getContractSessionByToken({ token }) {
-  console.log(token, " token in service");
   // arToken/enToken are not declared @unique on the (prod-reconciled) schema, so
   // findUnique on them is rejected by Prisma. Tokens are per-contract UUIDs, so
   // findFirst on either token is equivalent — resolve by whichever token matches.

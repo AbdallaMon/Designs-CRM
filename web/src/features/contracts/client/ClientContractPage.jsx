@@ -35,12 +35,15 @@ export default function ClientContractPage({ token }) {
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
   async function getSessionData() {
+    // The v2 backend nests master's flat `{ data: session, contractUtility }` body inside the
+    // envelope's own `data` field, so the normalized result is `req.data = { data, contractUtility }`.
+    // Unwrap both here (a plain `setData: setSession` would store the wrapper, not the session).
     const req = await getDataAndSet({
       url: `client/contracts/session?token=${token}&lng=${lng}&`,
-      setData: setSession,
       setLoading,
     });
-    setContractUtility(req?.contractUtility || null);
+    setSession(req?.data?.data || null);
+    setContractUtility(req?.data?.contractUtility || null);
   }
 
   useEffect(() => {

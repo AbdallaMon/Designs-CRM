@@ -23,6 +23,10 @@ export async function renderStageClauses(
     const data = defaultContractUtilityData?.stageClauses.find(
       (clause) => clause.order === i,
     );
+    // Skip any order whose clause isn't seeded — render what exists instead of crashing on
+    // `data.headingAr`. Fully-seeded data (all 6 orders) is unaffected, so real contracts
+    // produce identical output.
+    if (!data) continue;
 
     const head = lng === "ar" ? data.headingAr : data.headingEn;
     const title = lng === "ar" ? data.titleAr : data.titleEn;

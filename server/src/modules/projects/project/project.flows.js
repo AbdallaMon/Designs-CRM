@@ -8,6 +8,8 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { projectsMessagesCodes } from "@dms/shared";
 import { projectRepository } from "./project.repo.js";
 import { PROJECT_TYPES } from "./project.constants.js";
 import { groupProjects, sortProjectsByTypeOrder } from "./project.dto.js";
@@ -112,14 +114,14 @@ async function getProjectsByClientLeadId({ searchParams }) {
 
 export async function createGroupProjects({ clientleadId, title }) {
   if (!title) {
-    throw new Error("Title is required");
+    throw new AppError(projectsMessagesCodes.PROJECT_GROUP_TITLE_REQUIRED, 400);
   }
   const checkForTitle = await projectRepository.findProjectByIdAndTitle({
     id: clientleadId,
     title,
   });
   if (checkForTitle) {
-    throw new Error("There is a group with the same title");
+    throw new AppError(projectsMessagesCodes.PROJECT_GROUP_TITLE_DUPLICATE, 409);
   }
   const projects = await createProjects(Number(clientleadId), title);
   const groupProjectsResult = {
@@ -142,9 +144,7 @@ export async function assignProjectToUser({
   const checkIfUserIsAlreadyAssigned = async () => {
     const assignment = await projectRepository.findAssignment({ userId, projectId });
     if (assignment) {
-      throw new Error(
-        "This designer is already assigned to this project, refresh page if u didnt find him."
-      );
+      throw new AppError(projectsMessagesCodes.DESIGNER_ALREADY_ASSIGNED, 409);
     }
   };
   await checkIfUserIsAlreadyAssigned();
@@ -217,9 +217,7 @@ async function updateProject({ data, isAdmin }) {
         data.oldStatus === "Canceled" ||
         data.oldStatus === "Rejected")
     ) {
-      throw new Error(
-        "You can't change the status after Completion or Cancellation or Rejection"
-      );
+      throw new AppError(projectsMessagesCodes.PROJECT_STATUS_TRANSITION_FORBIDDEN, 403);
     }
 
     delete rest.oldStatus;
@@ -385,7 +383,7 @@ async function getProjectDetailsById({ id, searchParams }) {
     project.type === "3D_Modification" &&
     !project.isModification
   ) {
-    throw new Error("This project is not in modification state yet");
+    throw new AppError(projectsMessagesCodes.PROJECT_NOT_IN_MODIFICATION, 400);
   }
   return project;
 }
@@ -836,7 +834,9 @@ async function getLeadDetailsByProject(clientLeadId, searchParams) {
   });
 
   if (!clientLead) {
-    throw new Error(`ClientLead with ID ${clientLeadId} not found`);
+    throw new AppError(projectsMessagesCodes.CLIENT_LEAD_NOT_FOUND, 404, null, {
+      reason: `ClientLead with ID ${clientLeadId} not found`,
+    });
   }
   clientLead.callReminders = [
     ...clientLead.callReminders.filter((call) => call.status === "IN_PROGRESS"),

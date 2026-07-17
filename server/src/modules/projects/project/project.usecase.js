@@ -135,6 +135,32 @@ class ProjectUsecase {
     return lead;
   }
 
+  // ── Per-tab readers (lazy, object-scoped) ──────────────────────────────────────
+  // The work-stage preview reuses the lead detail's tab components, which fetch each
+  // tab on demand (and refetch just that tab after a mutation). The designer surface
+  // cannot borrow the LEAD sub-resource routes — those require lead P.VIEW, which
+  // designers do not hold — so it gets its own, keyed off the SAME scoped detail.
+  //
+  // Reusing getDesignerLeadDetail is deliberate: it carries the designer/staff
+  // narrowing (files+notes filtered to the caller for 2D types, calls filtered by
+  // userId) so a slice can never expose more than the full detail already does.
+  async #designerLeadSlice({ id, query, authUser, key }) {
+    const lead = await this.getDesignerLeadDetail({ id, query, authUser });
+    return lead?.[key] ?? [];
+  }
+
+  async getDesignerLeadNotes({ id, query, authUser }) {
+    return this.#designerLeadSlice({ id, query, authUser, key: "notes" });
+  }
+
+  async getDesignerLeadCalls({ id, query, authUser }) {
+    return this.#designerLeadSlice({ id, query, authUser, key: "callReminders" });
+  }
+
+  async getDesignerLeadFiles({ id, query, authUser }) {
+    return this.#designerLeadSlice({ id, query, authUser, key: "files" });
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
   //  PROJECT LIST & DETAIL
   // ════════════════════════════════════════════════════════════════════════════

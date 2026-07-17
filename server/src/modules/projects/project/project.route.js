@@ -47,6 +47,25 @@ router.get(
   asyncHandler(projectController.getDesignerLeadDetail),
 );
 
+// ── per-tab designer-lead sub-resource reads (lazy; same object-scope as the detail) ──
+// Additive reads mirroring the lead module's per-tab routes, so the work-stage preview
+// can reuse the lead tab components (Files/Notes/CallReminders) with a real per-tab
+// data layer. The lead routes cannot be reused: they gate on lead P.VIEW, which
+// designers do not hold. Each returns ONLY that tab's slice of the SAME scoped detail.
+for (const [segment, handler] of [
+  ["notes", projectController.getDesignerLeadNotes],
+  ["call-reminders", projectController.getDesignerLeadCalls],
+  ["files", projectController.getDesignerLeadFiles],
+]) {
+  router.get(
+    `/designers/:id/${segment}`,
+    AuthMiddleware.requirePermissions([P.VIEW]),
+    validate(ProjectValidation.idParams, "params"),
+    AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanAccessDesignerLead),
+    asyncHandler(handler.bind(projectController)),
+  );
+}
+
 // ── other literal list surfaces (before /:id) ─────────────────────────────────────
 router.get("/archived", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(projectController.getArchivedProjects));
 router.get(

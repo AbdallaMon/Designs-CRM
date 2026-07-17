@@ -2,7 +2,7 @@ import {
   Divider,
   Link,
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Paper,
@@ -26,8 +26,7 @@ export const RelatedLinks = ({ projectId, clientLeadId }) => {
 
       <List dense>
         {clientLeadId && (
-          <ListItem
-            button
+          <ListItemButton
             component={Link}
             href={`/dashboard/deals/${clientLeadId}`}
           >
@@ -38,12 +37,11 @@ export const RelatedLinks = ({ projectId, clientLeadId }) => {
               primary="Client Lead"
               secondary={`Lead #${clientLeadId}`}
             />
-          </ListItem>
+          </ListItemButton>
         )}
 
         {projectId && (
-          <ListItem
-            button
+          <ListItemButton
             component={Link}
             href={`/dashboard/projects/${projectId}`}
           >
@@ -54,7 +52,7 @@ export const RelatedLinks = ({ projectId, clientLeadId }) => {
               primary="Project"
               secondary={`Project #${projectId}`}
             />
-          </ListItem>
+          </ListItemButton>
         )}
       </List>
     </Paper>

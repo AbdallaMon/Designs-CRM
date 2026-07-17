@@ -644,8 +644,15 @@ describe("computeCockpit — LEAD_STALE (My Day)", () => {
     expect(types(r)).not.toContain("LEAD_STALE");
   });
 
-  it("still emits NO_UPCOMING_TOUCH alongside (both dimensions kept)", () => {
+  it("SUPPRESSES the duplicate NO_UPCOMING_TOUCH once stale (LEAD_STALE is the superset)", () => {
     const r = computeCockpit(baseBundle({ updatedAt: daysAgo(6) }), NOW);
-    expect(types(r)).toEqual(expect.arrayContaining(["NO_UPCOMING_TOUCH", "LEAD_STALE"]));
+    expect(types(r)).toContain("LEAD_STALE");
+    expect(types(r)).not.toContain("NO_UPCOMING_TOUCH");
+  });
+
+  it("emits NO_UPCOMING_TOUCH (not LEAD_STALE) when no future touch but not yet stale", () => {
+    const r = computeCockpit(baseBundle({ updatedAt: daysAgo(2) }), NOW);
+    expect(types(r)).toContain("NO_UPCOMING_TOUCH");
+    expect(types(r)).not.toContain("LEAD_STALE");
   });
 });

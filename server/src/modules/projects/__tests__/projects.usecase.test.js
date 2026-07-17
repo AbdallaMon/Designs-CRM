@@ -189,6 +189,45 @@ describe("ProjectUsecase.changeDesignerStatus (workflow action)", () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+//  DESIGNER-LEAD PER-TAB SLICES — reuse the scoped detail, return one slice
+// ════════════════════════════════════════════════════════════════════════════
+describe("ProjectUsecase designer-lead sub-resource readers", () => {
+  it("returns ONLY the requested slice of the scoped detail", async () => {
+    projectLegacy.getLeadDetailsByProject.mockResolvedValue({
+      id: 5,
+      files: [{ id: 1 }, { id: 2 }],
+      notes: [{ id: 9 }],
+      callReminders: [{ id: 7 }],
+      projects: [],
+    });
+    const usecase = new ProjectUsecase();
+
+    expect(await usecase.getDesignerLeadFiles({ id: 5, query: { type: "two-d" }, authUser: designer }))
+      .toEqual([{ id: 1 }, { id: 2 }]);
+    expect(await usecase.getDesignerLeadNotes({ id: 5, query: { type: "two-d" }, authUser: designer }))
+      .toEqual([{ id: 9 }]);
+    expect(await usecase.getDesignerLeadCalls({ id: 5, query: { type: "two-d" }, authUser: designer }))
+      .toEqual([{ id: 7 }]);
+  });
+
+  it("forwards the per-user narrowing (designer → searchParams.userId = self)", async () => {
+    projectLegacy.getLeadDetailsByProject.mockResolvedValue({ id: 5, files: [] });
+    const usecase = new ProjectUsecase();
+    await usecase.getDesignerLeadFiles({ id: 5, query: { type: "two-d" }, authUser: designer });
+    // getDesignerLeadDetail narrows a non-admin/non-accountant caller to their own id,
+    // so the slice can never expose more than the full scoped detail already does.
+    const searchParams = projectLegacy.getLeadDetailsByProject.mock.calls[0][1];
+    expect(searchParams.userId).toBe(designer.id);
+  });
+
+  it("returns [] (never a non-array) when the scoped detail is empty", async () => {
+    projectLegacy.getLeadDetailsByProject.mockResolvedValue(null);
+    const usecase = new ProjectUsecase();
+    expect(await usecase.getDesignerLeadFiles({ id: 5, query: {}, authUser: designer })).toEqual([]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 //  ARCHIVED LIST — pagination envelope shape
 // ════════════════════════════════════════════════════════════════════════════
 describe("ProjectUsecase.listArchivedProjects pagination shape", () => {

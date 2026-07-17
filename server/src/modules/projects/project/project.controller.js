@@ -69,6 +69,26 @@ class ProjectController {
     return ok(res, withProjectDetailCapabilities(data, req.auth), projectsMessagesCodes.DESIGNER_LEAD_FETCHED, TK);
   }
 
+  // ── per-tab readers (lazy designer-lead sub-resource reads) ────────────────────
+  // One slice of the designer lead detail each, so the work-stage preview can load a
+  // tab on demand and refetch only that tab after a mutation. Object scope is enforced
+  // by the route (requireSpecialChecker(checkIfUserCanAccessDesignerLead)); `:id` is a
+  // clientLeadId, as on the parent /designers/:id read.
+  async getDesignerLeadNotes(req, res) {
+    const items = await projectUsecase.getDesignerLeadNotes({ id: req.params.id, query: req.query, authUser: req.auth });
+    return ok(res, items, projectsMessagesCodes.DESIGNER_LEAD_FETCHED, TK);
+  }
+
+  async getDesignerLeadCalls(req, res) {
+    const items = await projectUsecase.getDesignerLeadCalls({ id: req.params.id, query: req.query, authUser: req.auth });
+    return ok(res, items, projectsMessagesCodes.DESIGNER_LEAD_FETCHED, TK);
+  }
+
+  async getDesignerLeadFiles(req, res) {
+    const items = await projectUsecase.getDesignerLeadFiles({ id: req.params.id, query: req.query, authUser: req.auth });
+    return ok(res, items, projectsMessagesCodes.DESIGNER_LEAD_FETCHED, TK);
+  }
+
   // ── project list & detail ────────────────────────────────────────────────────
   async listByClientLead(req, res) {
     const items = await projectUsecase.listByClientLead({ query: req.query, authUser: req.auth });

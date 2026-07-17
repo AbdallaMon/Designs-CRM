@@ -24,6 +24,29 @@ import { serializeJsonField, parseJsonField } from "../../../shared/utility/json
 // `where` (never grants by role alone — a permission code is still required at route).
 const ADMIN_ROLES = ["ADMIN", "SUPER_ADMIN"];
 
+// Match every user who HOLDS the requested role, from all three sources of truth.
+//
+// `userProfiles` is the authoritative one: a user may hold several profiles (e.g.
+// DESIGNER_3D + DESIGNER_2D) and each carries its own `baseRole`, so a 2D project
+// finds anyone holding a TWO_D_DESIGNER-based profile — and NOT 3D-only designers.
+// Crucially this is independent of the user's ACTIVE profile: `User.role` is
+// write-synced from whichever profile they are currently using (user.usecase.js
+// updateUserProfiles), so matching on `role` alone made people appear/disappear from
+// pickers merely by switching profile. The legacy `role`/`subRoles` clauses remain
+// until those columns are retired.
+//
+// `exactRole` still drops the loose legacy subRole clause (so a designer carrying a
+// vestigial STAFF subRole is not offered as a sales agent), but profile matches are
+// never dropped: holding a NORMAL_SALES profile IS being a sales agent.
+function matchClausesForRole(role, exactRole) {
+  const clauses = [
+    { role },
+    { userProfiles: { some: { profile: { baseRole: role } } } },
+  ];
+  if (!exactRole) clauses.push({ subRoles: { some: { subRole: role } } });
+  return clauses;
+}
+
 class UserRepository {
   model = prisma.user;
 
@@ -54,38 +77,31 @@ class UserRepository {
 
     let where = {};
     if (params.role !== "all") {
-      where.OR = exactRole
-        ? [{ role: params.role }]
-        : [
-            { role: params.role },
-            { subRoles: { some: { subRole: params.role } } },
-          ];
+      where.OR = matchClausesForRole(params.role, exactRole);
     }
     if (currentUser) {
       const checkIfNotAdmin = !ADMIN_ROLES.includes(currentUser.role);
       if (checkIfNotAdmin) {
         const user = await prisma.user.findUnique({
           where: { id: Number(currentUser.id) },
-          include: { subRoles: true },
+          include: { subRoles: true, userProfiles: { select: { profile: { select: { baseRole: true } } } } },
         });
+        // The requester's own peer group: every role they HOLD — legacy base role,
+        // legacy subRoles, and the baseRole of every profile assigned to them. The
+        // ACTIVE profile is deliberately not used: it only reflects which hat they
+        // happen to be wearing right now, not what they are.
         const groupUserRoleAndSubRoles = [
-          user.role,
-          ...user.subRoles.map((r) => r.subRole),
+          ...new Set(
+            [
+              user.role,
+              ...user.subRoles.map((r) => r.subRole),
+              ...user.userProfiles.map((up) => up.profile?.baseRole),
+            ].filter(Boolean),
+          ),
         ];
-        where.OR = [];
-        for (const role of groupUserRoleAndSubRoles) {
-          // exactRole (lead-assign): match the PRIMARY role column only, so a non-admin
-          // requester (e.g. SUPER_SALES = STAFF + isSuperSales) does not re-widen the pool
-          // back to designers/executors via the subRole OR-clause.
-          if (exactRole) {
-            where.OR.push({ role: role });
-          } else {
-            where.OR.push(
-              { role: role },
-              { subRoles: { some: { subRole: role } } },
-            );
-          }
-        }
+        where.OR = groupUserRoleAndSubRoles.flatMap((role) =>
+          matchClausesForRole(role, exactRole),
+        );
       }
     }
     if (checkIfNotHasRelatedChat) {
@@ -527,6 +543,11 @@ const DIRECTORY_SELECT = {
   isSuperSales: true,
   telegramUsername: true,
   profilePicture: true,
+  // The profiles the user HOLDS — what they actually are, independent of the profile
+  // they are currently signed in as. Pickers render the discipline from this.
+  userProfiles: {
+    select: { profile: { select: { id: true, key: true, label: true, baseRole: true } } },
+  },
 };
 
 const MANAGEMENT_SELECT = {

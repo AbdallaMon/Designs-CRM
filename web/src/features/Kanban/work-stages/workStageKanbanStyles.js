@@ -7,7 +7,13 @@ import {
   taskStatusColors,
 } from "@/app/helpers/constants";
 
-export const StyledCard = styled(Card)(({ theme, status, groupId }) => {
+// Custom style props (status/groupId/priority/task/extra/taskstatus) are consumed by the
+// style factory and must NOT reach the DOM (React warns on unknown attributes in v7).
+const blockStyleProps = (...names) => ({
+  shouldForwardProp: (prop) => !names.includes(prop),
+});
+
+export const StyledCard = styled(Card, blockStyleProps("status", "groupId"))(({ theme, status, groupId }) => {
   const groupColor = groupColors[groupId] || groupColors[0];
 
   return {
@@ -37,7 +43,7 @@ export const StyledCard = styled(Card)(({ theme, status, groupId }) => {
   };
 });
 
-export const PriorityBadge = styled(Chip)(
+export const PriorityBadge = styled(Chip, blockStyleProps("priority", "task", "extra"))(
   ({ theme, priority, task = false, extra }) => ({
     position: "absolute",
     top: 8,
@@ -58,7 +64,7 @@ export const PriorityBadge = styled(Chip)(
   })
 );
 
-export const GroupTitleChip = styled(Chip)(({ theme, groupId, extra }) => {
+export const GroupTitleChip = styled(Chip, blockStyleProps("groupId", "extra"))(({ theme, groupId, extra }) => {
   const groupColor = groupColors[groupId] || groupColors[0];
 
   return {
@@ -93,7 +99,7 @@ export const TaskCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-export const TaskStatusChip = styled(Chip)(({ theme, taskstatus }) => ({
+export const TaskStatusChip = styled(Chip, blockStyleProps("taskstatus"))(({ theme, taskstatus }) => ({
   fontSize: "0.65rem",
   height: "18px",
   backgroundColor: taskStatusColors[taskstatus]?.bg || taskStatusColors.TODO.bg,
