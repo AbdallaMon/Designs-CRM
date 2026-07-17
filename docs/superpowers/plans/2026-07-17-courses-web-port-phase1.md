@@ -85,7 +85,6 @@ cp "$SRC/jsconfig.json" courses-web/jsconfig.json
     "start": "next start -p 4010"
   },
   "dependencies": {
-    "@dms/shared": "*",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -322,7 +321,7 @@ git commit -m "feat(courses-web): delegate auth to lead site, repoint login/rese
 
 ## Task 4: Profile alignment + call-site contract fixes
 
-**Profiles are the sole source of truth — no `user.role`/`subRoles` for the current user's tier.** The original site read `user.role` for (a) dashboard admin/staff routing, (b) `isAdmin`/`isDesigner` helpers, and (c) the `?role=` course content-filter. All three must derive from the **active profile's base role** via `@dms/shared`'s `PROFILE_META`. `/auth/me` returns `user.profile` (the active profile key); `PROFILE_META[profile].baseRole` maps it to a `CourseRole` enum value (ADMIN/STAFF/THREE_D_DESIGNER/TWO_D_DESIGNER/TWO_D_EXECUTOR/ACCOUNTANT/SUPER_ADMIN), which is exactly what the frozen content-filter expects. Display of *other* entities' roles the backend returns (`course.roles` tags, `access.user.role`, `attempt.role`) is left untouched — it's data, not the current user's identity.
+**Profiles are the sole source of truth — no `user.role`/`subRoles` for the current user's tier.** The original site read `user.role` for (a) dashboard admin/staff routing, (b) `isAdmin`/`isDesigner` helpers, and (c) the `?role=` course content-filter. All three must derive from the **active profile's base role**. Following `web/`'s pattern, courses-web does NOT depend on `@dms/shared`; it mirrors the map locally in `courses-web/src/app/helpers/profiles.js` (copied verbatim from `web/`), which exports `PROFILE_BASE_ROLE_BY_KEY`. `/auth/me` returns `user.profile` (the active profile key); `PROFILE_BASE_ROLE_BY_KEY[user.profile]` maps it to a `CourseRole` enum value (ADMIN/STAFF/THREE_D_DESIGNER/TWO_D_DESIGNER/TWO_D_EXECUTOR/ACCOUNTANT/SUPER_ADMIN), which is exactly what the frozen content-filter expects. Display of *other* entities' roles the backend returns (`course.roles` tags, `access.user.role`, `attempt.role`) is left untouched — it's data, not the current user's identity.
 
 **Files:**
 - Modify: `courses-web/src/app/helpers/functions/utility.js` (add `baseRoleOf`; rewrite `isAdmin`/`isDesigner`)
@@ -333,19 +332,19 @@ git commit -m "feat(courses-web): delegate auth to lead site, repoint login/rese
 - `uploadAsChunk.js` already correct (copied from web/ in Task 2)
 
 **Interfaces:**
-- Consumes: `handleRequestSubmit` (Task 2); `PROFILE_META` from `@dms/shared`.
+- Consumes: `handleRequestSubmit` (Task 2); `PROFILE_BASE_ROLE_BY_KEY` from `@/app/helpers/profiles` (local mirror, copied from web/ in Task 1).
 - Produces: `baseRoleOf(user)` → CourseRole string | null; `isAdmin(user)`, `isDesigner(user)` (profile-derived).
 
 - [ ] **Step 1: Add the profile→base-role helper in `utility.js`** and rewrite the two role helpers. Add at the top of `courses-web/src/app/helpers/functions/utility.js`:
 
 ```js
-import { PROFILE_META } from "@dms/shared";
+import { PROFILE_BASE_ROLE_BY_KEY } from "@/app/helpers/profiles";
 
 // Profiles are the source of truth (decision §2.8): the current user's base role is
 // derived from the ACTIVE profile, never from the legacy `user.role` column. Maps the
 // active profile key (from /auth/me `user.profile`) to a CourseRole enum value.
 export function baseRoleOf(user) {
-  return user?.profile ? PROFILE_META[user.profile]?.baseRole ?? null : null;
+  return user?.profile ? PROFILE_BASE_ROLE_BY_KEY[user.profile] ?? null : null;
 }
 ```
 Then replace the two existing helpers (originally `user.role === …`):
