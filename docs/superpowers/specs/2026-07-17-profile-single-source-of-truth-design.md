@@ -86,8 +86,10 @@ AFTER — one source; role is a VIEW of the profile
 
 ### Parity evidence
 
-Deriving `role` from `currentProfile.baseRole` is a **no-op today**. Every user in the
-database already satisfies `User.role == Profile.baseRole` for their active profile:
+Deriving `role` from `currentProfile.baseRole` equals the stored `User.role` **for every user
+who has not self-switched since their last profile assignment** — which is every user in the
+database today. Every row currently satisfies `User.role == Profile.baseRole` for its active
+profile:
 
 | id | email | role | profile key | baseRole | inSync |
 |---|---|---|---|---|---|
@@ -97,9 +99,21 @@ database already satisfies `User.role == Profile.baseRole` for their active prof
 | 5 | abdallamon165@gmail.com | STAFF | SUPER_SALES | STAFF | ✅ |
 | 6 | info@abdallaabdelsabour.com | TWO_D_DESIGNER | DESIGNER_2D | TWO_D_DESIGNER | ✅ |
 
-They stay equal because the user-CRUD legacy write-sync (§2.8-sanctioned) keeps the column
-consistent. The derivation therefore produces identical output for every user **until a
-profile switch**, where it is precisely the fix.
+They are equal because the **admin** user-CRUD write-sync (§2.8-sanctioned,
+`user.usecase.js:445` — `role: currentProfile.baseRole`) sets the column at profile-assignment
+time. Crucially, the **self-service** `switchProfile` does **not** re-sync `role` — it writes
+`currentProfileId` only (`auth.usecase.js:96`). So the two agree only until a user self-
+switches, at which point the stored column goes stale and the derivation gives the correct
+(switched) role. That divergence *is* the bug; the derivation is a no-op for un-switched users
+and the fix for switched ones.
+
+**Consistency with in-flight work (`user.repo.js`, uncommitted).** The same principle was just
+applied to the directory/picker query: `findDirectory` now matches on
+`userProfiles.some.profile.baseRole` instead of the write-synced `role` column alone
+(`user.repo.js`, `matchClausesForRole`), so a 3D+2D designer stops appearing/disappearing from
+pickers by switching profile. That change is **complementary and out of this spec's file set** —
+this spec must not touch `user.repo.js`. Both changes share one thesis: `User.role` reflects the
+*active* profile and is unreliable as an identity; the held profiles are the truth.
 
 ---
 
