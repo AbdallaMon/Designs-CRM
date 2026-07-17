@@ -7,7 +7,6 @@ import {
   Avatar,
   Box,
   ButtonBase,
-  Chip,
   Divider,
   IconButton,
   Toolbar,
@@ -47,7 +46,8 @@ import SideNav, {
 } from "@/shared/components/utility/SideNav.jsx";
 import RouteGuard from "@/shared/components/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
-import SignInWithDifferentUserRole from "@/features/users/UserRoles";
+import ProfileSwitcher from "@/features/users/ProfileSwitcher";
+import { activeProfileLabel } from "@/app/helpers/profiles";
 import ProfileDialogTrigger from "@/features/users/profile/ProfileDialogTrigger";
 import ProfileDialog from "@/features/users/profile/ProfileDialog.jsx";
 import Logout from "@/shared/components/buttons/Logout.jsx";
@@ -549,7 +549,11 @@ const ROLE_LABELS = {
   SUPER_SALES: "Super Sales",
 };
 
-function roleLabel(user) {
+// Prefer the active profile's own label (from /auth/me profiles[]); fall back to the
+// derived role for unmigrated accounts. Keeps the drawer footer in step with the chip.
+function roleLabel(user, profiles, currentProfileId) {
+  const fromProfile = activeProfileLabel(profiles, currentProfileId);
+  if (fromProfile) return fromProfile;
   if (user?.role === "STAFF")
     return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
   return ROLE_LABELS[user?.role] || user?.role || "";
@@ -666,7 +670,7 @@ function DrawerUserFooter({ user, label, collapsed }) {
 export default function Layout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  let { user, isLoggedIn, validatingAuth } = useAuth();
+  let { user, isLoggedIn, validatingAuth, profiles, currentProfileId } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -705,7 +709,7 @@ export default function Layout({ children }) {
   const links = resolveLinks(user);
   const navGroups = groupLinks(links);
   const currentPage = resolveCurrentPage(links, pathname);
-  const userRoleLabel = roleLabel(user);
+  const userRoleLabel = roleLabel(user, profiles, currentProfileId);
   // Desktop content sits next to the permanent drawer; mobile has none.
   const drawerWidth = isMobile
     ? 0
@@ -817,19 +821,7 @@ export default function Layout({ children }) {
                   gap: { xs: 0.5, sm: 1 },
                 }}
               >
-                {userRoleLabel && (
-                  <Chip
-                    size="small"
-                    label={userRoleLabel}
-                    sx={{
-                      fontWeight: 600,
-                      color: colors.textOnPrimary,
-                      backgroundColor: theme.palette.status.neutral,
-                      display: { xs: "none", sm: "inline-flex" },
-                    }}
-                  />
-                )}
-                <SignInWithDifferentUserRole />
+                <ProfileSwitcher />
                 <Divider
                   orientation="vertical"
                   flexItem
