@@ -510,3 +510,15 @@ New `courses-web/` npm workspace: the standalone Design-courses LMS frontend por
 - **Auth model:** login lives on the lead site (`web/`); a "Courses" link in web/'s SideNav (gated on `NEXT_PUBLIC_COURSES_URL`) opens courses-web with the shared session cookie. Unauthenticated loads redirect to `${NEXT_PUBLIC_WEB_URL}/login`.
 - **Verification:** `courses-web` builds clean (Next 16, 14 routes); `web` builds clean with the nav link. Live screen smoke against a running backend + real session is PENDING (needs the user's env).
 - **PENDING (ask the user):** port web/'s in-progress **ProfileSwitcher** into courses-web (replaces the retired role switcher) once it's done. **Phase 2** = reorganize courses-web into features/components (school-system shape) + unify theme (colors/MUIContext) with web/.
+
+---
+
+## Update 2026-07-17 — courses-web Phase 2 (reorg to web/ conventions + theme unification)
+
+courses-web restructured from the flat verbatim port into `web/`'s `features` + `shared/components` layout, and its theme unified with web/. Spec: `docs/superpowers/specs/2026-07-17-courses-web-phase2-reorg-design.md`. Behavior-preserving (moves/renames/import-rewrites only) — no API/route/URL/logic changes; Phase 1 wiring intact.
+
+- **New layout:** `src/features/{courses,lessons,tests,dashboard}/{admin,staff}` (screens) + `src/shared/components/{buttons,common,feedback/loaders/toast,formComponents/{MUIInputs,forms},models,utility}`. `src/app/` keeps routes + `helpers/` + `providers/` + `fonts/` + globals. `UiComponents/` and `app/models/` are gone.
+- **Cleanups folded in:** `taost`→`toast` typo fixed; `test`→`tests`; `TestAttempts;.jsx`→`TestAttempts.jsx`; latent case bugs (`FormComponents` vs `formComponents`, wrong `@/app/UiComponents/models/*` specifiers) normalized — these would have broken on Linux/CI (case-sensitive) though they resolved on Windows.
+- **Theme:** `colors.js` + `MUIContext.jsx` copied byte-identical from web/ (same export surface: default `colors` + `COLORS`/`STATUS_COLORS`/`NotificationColors`/`contractLevelColors`). courses-web now renders in web/'s caramel theme. No new deps (MUIContext uses only createTheme/ThemeProvider; web/'s RTL/stylis wiring lives in web/'s root layout and isn't needed here).
+- **Verification:** 3 grouped commits (shared → features → theme), each gated by `next build`. Final: grep gate clean (no `UiComponents`/`DataViewer`/`taost`/`FormComponents`/`@/app/models` specifiers), `next build` green (14 routes, identical to Phase 1). `web/` untouched. Live screen-smoke against a running backend still pending (needs user env).
+- **NOT done (deliberate, deferred):** component dedup against web/'s shared components (web/ isn't a package; cross-workspace imports painful) and extracting a shared theme package outside web/ — both belong to the eventual courses-web→web/ merge.
