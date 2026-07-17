@@ -85,6 +85,7 @@ cp "$SRC/jsconfig.json" courses-web/jsconfig.json
     "start": "next start -p 4010"
   },
   "dependencies": {
+    "@dms/shared": "*",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -319,24 +320,72 @@ git commit -m "feat(courses-web): delegate auth to lead site, repoint login/rese
 
 ---
 
-## Task 4: Call-site contract fixes (lesson-complete, uploads, raw toasts)
+## Task 4: Profile alignment + call-site contract fixes
+
+**Profiles are the sole source of truth — no `user.role`/`subRoles` for the current user's tier.** The original site read `user.role` for (a) dashboard admin/staff routing, (b) `isAdmin`/`isDesigner` helpers, and (c) the `?role=` course content-filter. All three must derive from the **active profile's base role** via `@dms/shared`'s `PROFILE_META`. `/auth/me` returns `user.profile` (the active profile key); `PROFILE_META[profile].baseRole` maps it to a `CourseRole` enum value (ADMIN/STAFF/THREE_D_DESIGNER/TWO_D_DESIGNER/TWO_D_EXECUTOR/ACCOUNTANT/SUPER_ADMIN), which is exactly what the frozen content-filter expects. Display of *other* entities' roles the backend returns (`course.roles` tags, `access.user.role`, `attempt.role`) is left untouched — it's data, not the current user's identity.
 
 **Files:**
+- Modify: `courses-web/src/app/helpers/functions/utility.js` (add `baseRoleOf`; rewrite `isAdmin`/`isDesigner`)
+- Modify: `courses-web/src/app/(auth)/dashboard/(dashboard)/layout.jsx` (route on base role, not `user.role`)
+- Modify: `courses-web/src/app/UiComponents/DataViewer/courses/staff/Courses.jsx`, `lessons/staff/Lesson.jsx`, `lessons/staff/Lessons.jsx` (`?role=` → base role)
 - Modify: `courses-web/src/app/UiComponents/DataViewer/lessons/staff/Lesson.jsx` (mark-complete)
 - Audit + fix (if raw `response.message` toasted without resolution): any file under `courses-web/src/app/UiComponents/DataViewer` that toasts a message outside `handleRequestSubmit`
 - `uploadAsChunk.js` already correct (copied from web/ in Task 2)
 
 **Interfaces:**
-- Consumes: `handleRequestSubmit` (Task 2).
+- Consumes: `handleRequestSubmit` (Task 2); `PROFILE_META` from `@dms/shared`.
+- Produces: `baseRoleOf(user)` → CourseRole string | null; `isAdmin(user)`, `isDesigner(user)` (profile-derived).
 
-- [ ] **Step 1: Find the mark-complete call**
+- [ ] **Step 1: Add the profile→base-role helper in `utility.js`** and rewrite the two role helpers. Add at the top of `courses-web/src/app/helpers/functions/utility.js`:
+
+```js
+import { PROFILE_META } from "@dms/shared";
+
+// Profiles are the source of truth (decision §2.8): the current user's base role is
+// derived from the ACTIVE profile, never from the legacy `user.role` column. Maps the
+// active profile key (from /auth/me `user.profile`) to a CourseRole enum value.
+export function baseRoleOf(user) {
+  return user?.profile ? PROFILE_META[user.profile]?.baseRole ?? null : null;
+}
+```
+Then replace the two existing helpers (originally `user.role === …`):
+
+```js
+export function isAdmin(user) {
+  const base = baseRoleOf(user);
+  return base === "ADMIN" || base === "SUPER_ADMIN";
+}
+export function isDesigner(user) {
+  const base = baseRoleOf(user);
+  return base === "TWO_D_DESIGNER" || base === "THREE_D_DESIGNER";
+}
+```
+(Keep the original function names/exports so callers are unchanged. If `utility.js` currently reads `user.role` in any other current-user check, switch it to `baseRoleOf(user)` too — grep below.)
+
+- [ ] **Step 2: Route the dashboard on base role.** In `courses-web/src/app/(auth)/dashboard/(dashboard)/layout.jsx`, replace `const role = user?.role;` with `const role = baseRoleOf(user);` and the guard `if (!user || !user.role) return null;` with `if (!user || !baseRoleOf(user)) return null;`. Add `import { baseRoleOf } from "@/app/helpers/functions/utility";`. The `role === "ADMIN" | "STAFF" | …` branch values are CourseRole/base-role strings and stay as-is.
+
+- [ ] **Step 3: Repoint the `?role=` content filters to base role.** In the three staff files, change `?role=${user.role}&` → `?role=${baseRoleOf(user)}&` and import `baseRoleOf`:
+  - `courses/staff/Courses.jsx:49`
+  - `lessons/staff/Lesson.jsx:67`
+  - `lessons/staff/Lessons.jsx:229` and `:234`
+
+- [ ] **Step 4: Verify no current-user role read remains**
+
+```bash
+cd c:/coding/design-managment-system
+grep -rn "user\.role\|user?.role\|localStorage.*role\|\.subRole" courses-web/src/app --include=*.jsx --include=*.js \
+  | grep -viE "access\.user\.role|attempt\.role|course\.roles|option\.role|r\.role|\.roles\.map|UserRoles\.jsx"
+```
+Expected: no hits (all current-user role reads now go through `baseRoleOf`). Any remaining hit that is genuinely the *current* user's identity must be converted; a hit that is another entity's role from backend data is fine (the filter above excludes the known ones).
+
+- [ ] **Step 5: Find the mark-complete call**
 
 ```bash
 cd c:/coding/design-managment-system
 grep -rn "lessons/\${lessonId}\|mark.*complete\|/complete\|PATCH" courses-web/src/app/UiComponents/DataViewer/lessons/staff
 ```
 
-- [ ] **Step 2: Change mark-complete to the v2 action endpoint.** Wherever the staff lesson marks completion via `PATCH shared/courses/${courseId}/lessons/${lessonId}` (or similar), change to:
+- [ ] **Step 6: Change mark-complete to the v2 action endpoint.** Wherever the staff lesson marks completion via `PATCH shared/courses/${courseId}/lessons/${lessonId}` (or similar), change to:
 
 ```jsx
 await handleRequestSubmit(
@@ -347,7 +396,7 @@ await handleRequestSubmit(
 ```
 The path map rewrites `shared/courses` → `staff-courses`, yielding `POST /v2/staff-courses/:courseId/lessons/:lessonId/actions/complete`. Keep whatever `setRender`/refresh the original used.
 
-- [ ] **Step 3: Audit for raw message toasts.** Any `toast.*(response.message)` or `toast.*(res.message)` where `message` is a v2 CODE must be wrapped:
+- [ ] **Step 7: Audit for raw message toasts.** Any `toast.*(response.message)` or `toast.*(res.message)` where `message` is a v2 CODE must be wrapped:
 
 ```bash
 cd c:/coding/design-managment-system
@@ -355,7 +404,7 @@ grep -rn "toast.*\.message\|Success(res\|Failed(res\|Success(response.message\|F
 ```
 For each hit **outside** `handleSubmit.js`, wrap with `resolveMessage(theMessage, { fallback: "…" })` (import from `@/app/helpers/messages/resolveMessage`). Inside `handleRequestSubmit` it's already resolved.
 
-- [ ] **Step 4: Verify no legacy upload paths remain**
+- [ ] **Step 8: Verify no legacy upload paths remain**
 
 ```bash
 cd c:/coding/design-managment-system
@@ -363,11 +412,11 @@ grep -rn "client/upload\|utility/upload-chunk" courses-web/src
 ```
 Expected: none (web/'s `uploadAsChunk` uses `files/chunks` / `files/client/chunks`).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add courses-web/src/app/UiComponents/DataViewer
-git commit -m "feat(courses-web): fix lesson-complete action endpoint + resolve message-code toasts"
+git add courses-web/src/app/helpers/functions/utility.js "courses-web/src/app/(auth)/dashboard" courses-web/src/app/UiComponents/DataViewer
+git commit -m "feat(courses-web): profile-derived base role (no user.role); fix lesson-complete + message-code toasts"
 ```
 
 ---
