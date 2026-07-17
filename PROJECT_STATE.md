@@ -5,7 +5,19 @@
 >
 > Last updated: **2026-07-12** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
-> **LATEST (2026-07-16) — My Day + Deal Preview productivity pass ✅ IMPLEMENTED (all 4 phases).**
+> **LATEST (2026-07-16) — In-app notifications now delivered via BullMQ queue ✅.**
+> The module-tier `createNotification` (`modules/notifications/notification.usecase.js` — the choke point all
+> `infra/notifications/senders/*` funnel through) now only **enqueues** to a new `notification-queue`
+> (lazy `getNotificationQueue()` — no Redis connection at import, so tests/boot stay clean); the legacy fan-out
+> (recipient resolution → DB row → socket emit → deferred email) moved **verbatim** into `deliverNotification`,
+> processed by a new `notification.worker.js` (registered in `start-workers.js`, gated by `RUN_WORKERS` like the rest).
+> Call sites unchanged (28 across senders). The telegram tier's private `createNotification` copy
+> (`infra/telegram/functions/telegram-notification-dispatch.js`) is intentionally untouched. ⚠️ Documented deliberate
+> behavior change vs master: notification side-effects are now async post-response and a delivery failure no longer
+> fails the request (BullMQ retries instead). Cross-instance socket delivery already covered by the ioredis
+> socket pub/sub adapter. **Verified: TDD (7 new tests) + full suite 996/996 green.**
+>
+> **PRIOR (2026-07-16) — My Day + Deal Preview productivity pass ✅ IMPLEMENTED (all 4 phases).**
 > Spec `docs/superpowers/specs/2026-07-15-my-day-preview-productivity-pass-design.md`, plan
 > `docs/superpowers/plans/2026-07-15-my-day-preview-productivity-pass.md`. **(A) Truth fixes:** preview payment
 > chip now renders `ContractPayment`-derived `health.payment` (hidden pre-contract; the inert
@@ -410,3 +422,13 @@ Fixed 7 lead defects (spec/plan: `docs/superpowers/{specs,plans}/2026-07-11-lead
 **LOCKED DECISION (2026-07-11): profiles are the sole source of truth for sales tier.** See `CLAUDE.md` §2.8 / §6. A user is super-sales/primary iff their **active profile** is `SUPER_SALES`/`PRIMARY_SALES`; both search-scoping and display derive from the active profile (`currentProfileKey`/`isAdminTier` backend, `user.profile` frontend). The `isSuperSales`/`isPrimary` columns stay in the schema but are read ONLY by (a) the boot backfill/derivation and (b) the user-CRUD write-sync. Reading them anywhere else is a bug.
 
 **Phase-2 flag purge (✅ COMPLETE 2026-07-11):** every application-logic read of `isSuperSales`/`isPrimary` is gone (backend + frontend). Verified by grep gate: the ONLY residual occurrences are the sanctioned write-sync (`user.repo` `setUserProfile` / `user.usecase` `syncLegacyFlags`, writing the columns from profile meta), the `auth.dto` derivation `select` fragments, and `packages/shared` derivation (`deriveProfilesFromLegacy`/`resolveProfileKey`). Backend authorizes on `authUser.currentProfileKey`/`isAdminTier` (acting user) or `user.currentProfile.key` (DB-loaded user); FE reads `user.profile`. Super-sales is treated as ≥ primary-tier consistently (backend `#isPrimaryScope` + FE gates). Per owner decision the `auth.middleware` transitional `legacyIsAdminTier` fallback was DROPPED (un-migrated sessions → `isAdminTier: false`, waived — they self-heal on next token refresh after the boot backfill). Plan: `docs/superpowers/plans/2026-07-11-flags-to-profiles-purge.md`. Tests green (leads/users/projects/dashboard/calendar/contracts/auth/shared; 2 pre-existing projects FIX-3 validation failures are flag-unrelated); FE builds. Final review (opus): READY TO MERGE, 0 critical.
+
+---
+
+## Update 2026-07-16 — Work-stage flow redesign (implemented, `feat/workstage-flow-redesign`)
+
+Work-stage flow redesign implemented end-to-end (spec: `docs/superpowers/specs/2026-07-16-workstage-flow-redesign-design.md`; plan: `docs/superpowers/plans/2026-07-16-workstage-flow-redesign.md`). Backend adds `Project.statusChangedAt` + a `cardMeta` DTO block (assignee/value/status-age signals) consumed by a redesigned kanban card; frontend adds key-based preview tabs with a role-appropriate default tab (Work tab for designers, Details for admin), project-surface "open project page" shortcuts, and a unified tabbed 2D-designer board on the main work-stages page.
+
+- **Schema change:** one additive migration adding `Project.statusChangedAt` (nullable, backfilled) — see `packages/db/prisma/migrations` + `schema.prisma`. Not yet applied to production; the user applies it via the standard runbook in `docs/db-migrations-workflow.md` (never applied by hand/by the agent).
+- **Verification (Task 7):** full server suite green — 69 files / 820 tests passed (`npx vitest run server`), zero failures, including the pre-existing unrelated notification/worker WIP tests in the working tree. Frontend production build succeeds (`cd web && npx next build`, all 44 routes compiled). E2E smoke skipped — no dev backend available in this environment. Parity re-check: `git diff 1ac4c915..HEAD --stat -- server/src packages/db` touches only `project.flows.js`, `project.repo.js`, `project.dto.js`, two new test files, and the migration+schema under `packages/db/prisma` — no route, permission, or scope-checker files changed.
+- **Known environment limitation:** the repo's Prisma drift-check script cannot cleanly 0-exit against the local MariaDB instance here because it runs with `lower_case_table_names=1`, which the check's comparison isn't tolerant of; this is a local-environment artifact, not real drift. Zero real drift against production was proven separately via a shadow-DB diff during the migration design work (see the reconciliation spec/plan under `docs/superpowers/`).

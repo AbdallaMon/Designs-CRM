@@ -11,7 +11,7 @@ let workers = [];
 let started = false;
 
 /**
- * Starts all BullMQ workers (pdf + the five telegram workers).
+ * Starts all BullMQ workers (pdf + notification + the five telegram workers).
  * Idempotent: calling twice is a no-op.
  *
  * NOTE: the telegram workers require a live GramJS connection. The caller
@@ -27,6 +27,7 @@ export async function startWorkers() {
   const mod = await import("./index.js");
   workers = [
     mod.pdfWorker,
+    mod.notificationWorker,
     mod.telegramMessageWorker,
     mod.telegramCronWorker,
     mod.telegramChannelWorker,

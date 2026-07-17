@@ -20,6 +20,7 @@ import { notificationRepository } from "./notification.repo.js";
 import { NotificationDto } from "./notification.dto.js";
 import { getIo } from "../../infra/socket/index.js";
 import { sendEmail } from "../../infra/mail/send-mail.js";
+import { getNotificationQueue } from "../../infra/queues/notification.queue.js";
 
 class NotificationUsecase {
   // Parse the legacy `filters` JSON string for an optional date range only. Any
@@ -63,9 +64,13 @@ export const notificationUsecase = new NotificationUsecase();
 export { NotificationUsecase };
 
 // ── Notification fan-out (ported VERBATIM from the former utilities/legacy/utility.js) ──
-// Orchestration only: resolves recipients + emits the socket event + sends the email via
-// infra; every Prisma read/write is delegated to notificationRepository. Behavior, HTML,
-// env-vars, and quirks are preserved 1:1. Consumed by infra/notifications helpers.
+// Split into two halves around the BullMQ notification queue:
+//   createNotification  — the choke point every sender calls. Keeps the exact legacy
+//                         positional signature but only ENQUEUES the payload.
+//   deliverNotification — the worker-side processor: resolves recipients + emits the
+//                         socket event + sends the email via infra; every Prisma
+//                         read/write is delegated to notificationRepository. Behavior,
+//                         HTML, env-vars, and quirks are preserved 1:1.
 export async function createNotification(
   userId,
   isAdmin,
@@ -80,6 +85,36 @@ export async function createNotification(
   role = ["STAFF"],
   specifiRole,
 ) {
+  await getNotificationQueue().add("deliver", {
+    userId,
+    isAdmin,
+    content,
+    href,
+    type,
+    emailSubject,
+    withEmail,
+    contentType,
+    clientLeadId,
+    staffId,
+    role,
+    specifiRole,
+  });
+}
+
+export async function deliverNotification({
+  userId,
+  isAdmin,
+  content,
+  href,
+  type,
+  emailSubject,
+  withEmail,
+  contentType = "TEXT",
+  clientLeadId,
+  staffId,
+  role = ["STAFF"],
+  specifiRole,
+}) {
   let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
 
