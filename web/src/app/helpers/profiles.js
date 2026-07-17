@@ -93,3 +93,13 @@ export function designRolesOf(user) {
   }
   return Array.from(roles);
 }
+
+// The label of the user's ACTIVE profile, from the /auth/me `profiles[]` array
+// (each entry: { id, key, label, family, isAdminTier }). Returns null when there is
+// no match — callers supply their own legacy fallback. This is the single source the
+// toolbar chip and the drawer footer both read, so they always agree after a switch.
+export function activeProfileLabel(profiles, currentProfileId) {
+  if (!Array.isArray(profiles) || currentProfileId == null) return null;
+  const active = profiles.find((p) => p.id === currentProfileId);
+  return active?.label ?? null;
+}
