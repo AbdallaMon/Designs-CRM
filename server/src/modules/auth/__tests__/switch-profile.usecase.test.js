@@ -43,6 +43,10 @@ describe("AuthUseCase.switchProfile", () => {
   it("switches to a held profile, persists, audits, re-mints, returns /me", async () => {
     const res = await AuthUseCase.switchProfile({ authUser: { id: 1 }, profileId: 5 });
     expect(AuthRepository.setCurrentProfile).toHaveBeenCalledWith(1, 5);
+    // Regression (reported bug): the returned /me role follows the SWITCHED profile's
+    // baseRole, not the stale legacy column (baseUser.role === "STAFF"). Fails pre-change.
+    expect(res.user.role).toBe("ACCOUNTANT");
+    expect(res.user.activeRole).toBe("ACCOUNTANT");
     expect(authAuditRepository.record).toHaveBeenCalledWith(
       expect.objectContaining({ actorUserId: 1, targetUserId: 1, action: "PROFILE_SWITCH", detail: { from: 2, to: 5 } }),
     );

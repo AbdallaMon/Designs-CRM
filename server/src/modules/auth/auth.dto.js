@@ -12,7 +12,10 @@ const CURRENT_PROFILE_SELECT = {
   select: { id: true, key: true, baseRole: true, isAdminTier: true },
 };
 const USER_PROFILES_SELECT = {
-  select: { profile: { select: { id: true, key: true, label: true, family: true, isAdminTier: true } } },
+  // baseRole is needed so the auth boundary can derive `role` for the EFFECTIVE
+  // active profile even on the login/refresh correction path (where the stored
+  // currentProfileId was corrected but user.currentProfile still points at the old one).
+  select: { profile: { select: { id: true, key: true, label: true, family: true, isAdminTier: true, baseRole: true } } },
 };
 
 class AuthSchema {
@@ -82,6 +85,29 @@ class AuthSchema {
    * @param {object} user  the auth payload on `req.auth` (already has effective
    *                        permissions attached by `requireAuth`) OR a raw user.
    */
+  /**
+   * The baseRole of the user's EFFECTIVE active profile.
+   *
+   * "Effective" = the resolved `currentProfileId`, which login/refresh may have
+   * corrected away from the eagerly-loaded `user.currentProfile` object. We therefore
+   * prefer `currentProfile` ONLY when its id matches, else look the id up in the held
+   * `userProfiles`, else use the cache-resolved `user.baseRole` (the DB-free /auth/me
+   * path). Returns null when the user holds no profile → callers fall back to user.role.
+   */
+  static activeBaseRole(user) {
+    if (!user) return null;
+    const effectiveId = user.currentProfileId ?? user.currentProfile?.id ?? null;
+    if (user.currentProfile && user.currentProfile.id === effectiveId && user.currentProfile.baseRole) {
+      return user.currentProfile.baseRole;
+    }
+    const held = Array.isArray(user.userProfiles)
+      ? user.userProfiles.map((up) => up.profile).filter(Boolean)
+      : [];
+    const match = held.find((p) => p?.id === effectiveId);
+    if (match?.baseRole) return match.baseRole;
+    return user.baseRole ?? null;
+  }
+
   static toMe(user) {
     const subRoles = Array.isArray(user.subRoles)
       ? user.subRoles.map((s) => (typeof s === "string" ? s : s?.subRole)).filter(Boolean)
@@ -134,13 +160,17 @@ class AuthSchema {
       permissions,
     });
 
+    // role is now a VIEW of the active profile's baseRole, not the legacy column.
+    // Fallback to user.role only when the user holds no profile (unmigrated row).
+    const derivedRole = AuthSchema.activeBaseRole(user) ?? user.role;
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
-      activeRole: user.activeRole ?? user.role,
-      subRoles,
+      role: derivedRole,
+      activeRole: derivedRole,
+      subRoles: [],
       profile: currentProfileKey,
       currentProfileId,
       profiles,
@@ -161,17 +191,17 @@ class AuthSchema {
    * NOT carried in the token — profiles only).
    */
   static toTokenPayload(user) {
-    const subRoles = Array.isArray(user.subRoles)
-      ? user.subRoles.map((s) => (typeof s === "string" ? s : s?.subRole)).filter(Boolean)
-      : [];
+    // role/activeRole are a VIEW of the effective active profile's baseRole (see
+    // activeBaseRole) — NOT the stored column, which goes stale after a self-switch.
+    const derivedRole = AuthSchema.activeBaseRole(user) ?? user.role;
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
-      activeRole: user.role,
+      role: derivedRole,
+      activeRole: derivedRole,
       isActive: user.isActive,
-      subRoles,
+      subRoles: [],
       currentProfileId: user.currentProfileId ?? user.currentProfile?.id ?? null,
       // The ids of the profiles the user holds — so /auth/me can build the switcher
       // list from the cache (no DB read). Stale only until the next refresh.
