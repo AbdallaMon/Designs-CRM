@@ -93,3 +93,27 @@ export function designRolesOf(user) {
   }
   return Array.from(roles);
 }
+
+// The label of the user's ACTIVE profile, from the /auth/me `profiles[]` array
+// (each entry: { id, key, label, family, isAdminTier }). Returns null when there is
+// no match — callers supply their own legacy fallback. This is the single source the
+// toolbar chip and the drawer footer both read, so they always agree after a switch.
+export function activeProfileLabel(profiles, currentProfileId) {
+  if (!Array.isArray(profiles) || currentProfileId == null) return null;
+  const active = profiles.find((p) => p.id === currentProfileId);
+  return active?.label ?? null;
+}
+
+// Legacy role→label fallback for unmigrated accounts that hold no profiles (0 users in
+// prod today). The active-profile label (activeProfileLabel) is always preferred; this is
+// only reached when there is no active profile to read a label from.
+export function legacyRoleLabel(user) {
+  if (!user) return "";
+  if (user.role === "STAFF") return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
+  const map = {
+    ADMIN: "Admin", SUPER_ADMIN: "Admin", THREE_D_DESIGNER: "3D Designer",
+    TWO_D_DESIGNER: "2D Designer", TWO_D_EXECUTOR: "Executor", ACCOUNTANT: "Accountant",
+    CONTACT_INITIATOR: "Contact Initiator", SUPER_SALES: "Super Sales",
+  };
+  return map[user.role] || user.role || "";
+}

@@ -23,7 +23,7 @@ import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
 import Link from "next/link";
 import { useAuth } from "@/app/providers/AuthProvider";
-import SignInWithDifferentUserRole from "../buttons/UserRoles";
+import ProfileSwitcher from "../buttons/ProfileSwitcher";
 
 const Navbar = ({ links }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -303,9 +303,9 @@ const Navbar = ({ links }) => {
           )}
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {/* Phase 1: legacy shared/roles switcher retired (concept → profiles).
-                Re-enable once web/'s ProfileSwitcher is ported here (Phase 2). */}
-            {/* <SignInWithDifferentUserRole /> */}
+            {/* Profile-based switcher (ported from web/). Replaces the retired legacy
+                shared/roles sub-role switcher — profiles are the source of truth now. */}
+            <ProfileSwitcher />
             <Logout />
           </Box>
         </Toolbar>
