@@ -1,9 +1,16 @@
+import { toast } from "react-toastify";
 import {
   Failed,
   Success,
 } from "@/app/UiComponents/feedback/loaders/taost/toast/ToastUpdate";
-import { toast } from "react-toastify";
+import { apiRequest } from "./apiClient";
+import { resolveMessage } from "@/app/helpers/messages/resolveMessage";
+import { describeApiError } from "./richError";
 
+// Mutating request against the /v2 backend. The backend returns a language-neutral CODE in
+// `message` (e.g. LOGIN_SUCCESS / INVALID_CREDENTIALS), so the toast text is resolved to an
+// Arabic display string here. The full envelope (incl. `data`) is returned to the caller —
+// callers read the payload under `response.data.*`.
 export async function handleRequestSubmit(
   data,
   setLoading,
@@ -19,32 +26,61 @@ export async function handleRequestSubmit(
   const headers = header
     ? { "Content-Type": header }
     : isFileUpload
-    ? {}
-    : { "Content-Type": "application/json" };
+      ? {}
+      : { "Content-Type": "application/json" };
   setLoading(true);
   const id = toastId;
   try {
-    const request = await fetch(process.env.NEXT_PUBLIC_URL + "/" + path, {
-      method: method,
-      body,
-      headers: headers,
-      credentials: "include",
-    });
+    const request = await apiRequest(path, { method, body, headers });
     const reqStatus = request.status;
-    const response = await request.json();
+    let response;
+    try {
+      response = await request.json();
+    } catch {
+      response = { message: request.statusText };
+    }
     response.status = reqStatus;
-    if (reqStatus === 200) {
-      await toast.update(id, Success(response.message));
+    const ok = request.ok || response?.success === true;
+    if (ok) {
+      await toast.update(
+        id,
+        Success(resolveMessage(response.message, { fallback: "Operation completed" }))
+      );
       if (setRedirect) {
         setRedirect((prev) => !prev);
       }
     } else {
-      toast.update(id, Failed(response.message));
+      if (
+        response?.success === false ||
+        reqStatus === 401 ||
+        reqStatus === 403 ||
+        reqStatus === 419 ||
+        reqStatus === 440 ||
+        reqStatus === 498 ||
+        reqStatus === 400 ||
+        reqStatus === 422
+      ) {
+        const info = describeApiError(response);
+        const error = new Error(info.message);
+        error.status = reqStatus;
+        error.redirectTo = info.redirectTo;
+        error.redirectText = info.redirectText;
+        error.dontRedirect = info.dontRedirect;
+        throw error;
+      }
+      toast.update(id, Failed(resolveMessage(response.message)));
     }
     return response;
   } catch (err) {
+    console.log(err, "err");
     toast.update(id, Failed("Error, " + err.message));
-    return { status: 500, message: "Error, " + err.message };
+    return {
+      status: err.status || 500,
+      message: err.message,
+      redirectTo: err.redirectTo ?? null,
+      redirectText: err.redirectText ?? null,
+      dontRedirect: Boolean(err.dontRedirect),
+    };
   } finally {
     setLoading(false);
   }
