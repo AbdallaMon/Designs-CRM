@@ -45,8 +45,10 @@ beforeEach(() => {
 const PA = PERMISSIONS.ADMIN_RESIDUAL;
 const PS = PERMISSIONS.STAFF;
 
-function makeReq(role, { isSuperSales = false, subRoles = [] } = {}) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales, subRoles });
+function makeReq(role, { isSuperSales = false, subRoles = [], profile } = {}) {
+  const { permissions, permissionsByModule } = getEffectivePermissions({
+    role, isSuperSales, subRoles, ...(profile ? { profile } : {}),
+  });
   return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
 }
 
@@ -66,16 +68,36 @@ describe("admin-residual route permission gate (allow vs deny)", () => {
     expect(next).toHaveBeenCalledWith();
   });
 
-  it("isSuperSales passes the model-archive gate (legacy isAdmin union)", () => {
+  it("isSuperSales alone no longer passes the model-archive gate (legacy isAdmin union removed)", () => {
     const next = vi.fn();
     AuthMiddleware.requirePermissions([PA.MODEL_ARCHIVE])(makeReq(USER_ROLES.SUPER_SALES, { isSuperSales: true }), {}, next);
+    const err = next.mock.calls[0][0];
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.statusCode).toBe(403);
+  });
+
+  it("the ADMIN profile passes the model-archive gate (profile is the sole source)", () => {
+    const next = vi.fn();
+    AuthMiddleware.requirePermissions([PA.MODEL_ARCHIVE])(makeReq(USER_ROLES.SUPER_SALES, { profile: "ADMIN" }), {}, next);
     expect(next).toHaveBeenCalledWith();
   });
 
-  it("an ADMIN/SUPER_ADMIN sub-role passes the lead-delete gate (isAdmin union)", () => {
+  it("an ADMIN/SUPER_ADMIN sub-role no longer passes the lead-delete gate (isAdmin union removed)", () => {
     const next = vi.fn();
     AuthMiddleware.requirePermissions([PA.LEAD_DELETE])(
       makeReq(USER_ROLES.STAFF, { subRoles: [{ subRole: USER_ROLES.ADMIN }] }),
+      {},
+      next,
+    );
+    const err = next.mock.calls[0][0];
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.statusCode).toBe(403);
+  });
+
+  it("the ADMIN profile passes the lead-delete gate (profile is the sole source)", () => {
+    const next = vi.fn();
+    AuthMiddleware.requirePermissions([PA.LEAD_DELETE])(
+      makeReq(USER_ROLES.STAFF, { profile: "ADMIN" }),
       {},
       next,
     );

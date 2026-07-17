@@ -40,13 +40,18 @@ describe("admin-residual permission grants", () => {
     }
   });
 
-  it("layers the admin-residual surface onto isSuperSales (matching the legacy isAdmin union)", () => {
-    // base SUPER_SALES role does NOT hold them; the isSuperSales flag layers them on.
+  it("grants the admin-residual surface via the ADMIN profile (profile is the sole source; isSuperSales no longer unions it)", () => {
+    // base SUPER_SALES role does NOT hold them; the isSuperSales flag does NOT layer them
+    // on anymore (that transitional union was removed — Phase 4). Profiles are the sole
+    // source: a user resolved to the ADMIN profile holds them.
     const baseSuperSales = getPermissionsForRole(USER_ROLES.SUPER_SALES);
     for (const code of ADMIN_RESIDUAL_ALL) expect(baseSuperSales).not.toContain(code);
 
     const withFlag = getEffectivePermissions({ role: USER_ROLES.SUPER_SALES, isSuperSales: true }).permissions;
-    for (const code of ADMIN_RESIDUAL_ALL) expect(withFlag).toContain(code);
+    for (const code of ADMIN_RESIDUAL_ALL) expect(withFlag).not.toContain(code);
+
+    const withAdminProfile = getEffectivePermissions({ role: USER_ROLES.SUPER_SALES, profile: "ADMIN" }).permissions;
+    for (const code of ADMIN_RESIDUAL_ALL) expect(withAdminProfile).toContain(code);
   });
 
   it("does NOT grant ANY admin-residual code to plain STAFF/sales/designer/accountant", () => {
@@ -63,12 +68,18 @@ describe("admin-residual permission grants", () => {
     }
   });
 
-  it("ADMIN/SUPER_ADMIN sub-roles propagate the admin-residual surface (the isAdmin union)", () => {
+  it("a STAFF row resolved to the ADMIN profile carries the admin-residual surface (subRoles no longer union it)", () => {
+    // The legacy `subRoles: [{ subRole: ADMIN }]` union is removed (Phase 4) — it no
+    // longer grants anything on top of the base profile.
     const withSubRole = getEffectivePermissions({
       role: USER_ROLES.STAFF,
+      profile: "NORMAL_SALES",
       subRoles: [{ subRole: USER_ROLES.ADMIN }],
     }).permissions;
-    for (const code of ADMIN_RESIDUAL_ALL) expect(withSubRole).toContain(code);
+    for (const code of ADMIN_RESIDUAL_ALL) expect(withSubRole).not.toContain(code);
+
+    const withAdminProfile = getEffectivePermissions({ role: USER_ROLES.STAFF, profile: "ADMIN" }).permissions;
+    for (const code of ADMIN_RESIDUAL_ALL) expect(withAdminProfile).toContain(code);
   });
 });
 

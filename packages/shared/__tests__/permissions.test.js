@@ -98,20 +98,28 @@ describe("getEffectivePermissions", () => {
     }
   });
 
-  it("unions sub-role codes (Prisma {subRole} row shape)", () => {
-    // a STAFF user who ALSO holds an ADMIN sub-role gains telegram.manage
+  it("no longer unions sub-role codes (Prisma {subRole} row shape) — profile is the sole source", () => {
+    // a STAFF user who ALSO holds an ADMIN sub-role does NOT gain telegram.manage
+    // anymore (the transitional subRoles union was removed — Phase 4).
     const { permissions } = getEffectivePermissions({
       role: USER_ROLES.STAFF,
+      profile: "NORMAL_SALES",
       subRoles: [{ subRole: USER_ROLES.ADMIN }],
     });
-    expect(permissions).toContain(PERMISSIONS.TELEGRAM.MANAGE);
+    expect(permissions).not.toContain(PERMISSIONS.TELEGRAM.MANAGE);
   });
 
-  it("unions sub-role codes (plain string[] shape)", () => {
+  it("no longer unions sub-role codes (plain string[] shape) — profile is the sole source", () => {
     const { permissions } = getEffectivePermissions({
       role: USER_ROLES.STAFF,
+      profile: "NORMAL_SALES",
       subRoles: [USER_ROLES.ADMIN],
     });
+    expect(permissions).not.toContain(PERMISSIONS.TELEGRAM.MANAGE);
+  });
+
+  it("the equivalent grant now comes from the ADMIN profile directly", () => {
+    const { permissions } = getEffectivePermissions({ role: USER_ROLES.STAFF, profile: "ADMIN" });
     expect(permissions).toContain(PERMISSIONS.TELEGRAM.MANAGE);
   });
 

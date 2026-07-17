@@ -8,10 +8,11 @@ import {
   authMessagesCodes,
 } from "@dms/shared";
 
-function makeReq(role, subRoles = []) {
+function makeReq(role, subRoles = [], profile) {
   const { permissions, permissionsByModule } = getEffectivePermissions({
     role,
     subRoles,
+    ...(profile ? { profile } : {}),
   });
   return { auth: { id: 1, role, permissions, permissionsByModule } };
 }
@@ -76,8 +77,21 @@ describe("AuthMiddleware.requirePermissions", () => {
     expect(next).toHaveBeenCalledWith();
   });
 
-  it("a STAFF user with an ADMIN sub-role passes the telegram gate", () => {
+  it("a STAFF user with an ADMIN sub-role no longer passes the telegram gate (subRoles union removed)", () => {
     const req = makeReq(USER_ROLES.STAFF, [{ subRole: USER_ROLES.ADMIN }]);
+    const next = vi.fn();
+    AuthMiddleware.requirePermissions([PERMISSIONS.TELEGRAM.MANAGE])(
+      req,
+      {},
+      next,
+    );
+    const err = next.mock.calls[0][0];
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.statusCode).toBe(403);
+  });
+
+  it("a STAFF user resolved to the ADMIN profile passes the telegram gate (profile is the sole source)", () => {
+    const req = makeReq(USER_ROLES.STAFF, [], "ADMIN");
     const next = vi.fn();
     AuthMiddleware.requirePermissions([PERMISSIONS.TELEGRAM.MANAGE])(
       req,

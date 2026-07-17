@@ -27,8 +27,10 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
       "/dashboard/calendar", "/dashboard/payments",
     ]);
   });
-  it("STAFF + isSuperSales additionally sees users", () => {
-    expect(hrefs({ role: "STAFF", isSuperSales: true })).toContain("/dashboard/users");
+  it("STAFF resolved to the SUPER_SALES nav role (via navRole, as auth.dto.toMe computes it from the active profile) additionally sees users", () => {
+    // navRoleFor no longer reads isSuperSales directly (Phase 4) — the sidebar is
+    // driven by `navRole`, which auth.dto.toMe derives from the active profile.
+    expect(hrefs({ role: "STAFF", navRole: "SUPER_SALES" })).toContain("/dashboard/users");
   });
   it("SUPER_SALES (role) sees users by role (master behavior)", () => {
     expect(hrefs({ role: "SUPER_SALES" })).toContain("/dashboard/users");
@@ -201,8 +203,8 @@ describe("full per-role parity with linksForRole (all 9 roles)", () => {
       expect(expected(role)).toEqual(exp);
     });
   }
-  it("STAFF + isSuperSales === SUPER_SALES nav", () => {
-    expect(expected("STAFF", { isSuperSales: true })).toEqual(MASTER.SUPER_SALES);
+  it("STAFF resolved to the SUPER_SALES nav role (via navRole) === SUPER_SALES nav", () => {
+    expect(expected("STAFF", { navRole: "SUPER_SALES" })).toEqual(MASTER.SUPER_SALES);
   });
   it("SUPER_ADMIN === ADMIN nav", () => {
     expect(expected("SUPER_ADMIN")).toEqual(MASTER.ADMIN);

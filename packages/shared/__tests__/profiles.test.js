@@ -105,10 +105,18 @@ describe("getEffectivePermissions parity (old universe)", () => {
   const combos = [];
   for (const role of roles)
     for (const isPrimary of [false, true])
-      for (const isSuperSales of [false, true])
+      // isSuperSales is only a meaningful axis for STAFF: resolveProfileKey /
+      // deriveProfileFromLegacy only reads it when role === STAFF (mapping to the
+      // SUPER_SALES profile); for every other role it is legacy noise on a row that
+      // could never carry it in practice. Before Phase 4, the old formula's
+      // unconditional `if (user.isSuperSales) union(EXTRA)` was mirrored by an
+      // equally unconditional union in getEffectivePermissions, so those combos
+      // happened to stay in parity by construction. Now that the transitional union
+      // is removed, the profile-based `got` correctly stops granting the extras for
+      // non-STAFF roles — so we stop asserting parity for a combination the profile
+      // model (rightly) no longer treats as meaningful.
+      for (const isSuperSales of role === "STAFF" ? [false, true] : [false])
         combos.push({ role, isPrimary, isSuperSales, profile: null, subRoles: [] });
-  // a couple of subRole cases:
-  combos.push({ role: "STAFF", isPrimary: false, isSuperSales: false, profile: null, subRoles: [{ subRole: "ACCOUNTANT" }] });
 
   it.each(combos)("effective ∩ oldUniverse === old formula for %o", (user) => {
     const got = new Set(getEffectivePermissions(user).permissions);
@@ -143,5 +151,18 @@ describe("deriveProfilesFromLegacy", () => {
     const r = deriveProfilesFromLegacy({ role: "STAFF", subRoles: [{ subRole: "ACCOUNTANT" }] });
     expect(r.current).toBe("NORMAL_SALES");
     expect(new Set(r.profiles)).toEqual(new Set(["NORMAL_SALES", "ACCOUNTANT"]));
+  });
+});
+
+describe("getEffectivePermissions ignores legacy subRoles + isSuperSales", () => {
+  it("does not union subRole codes into the effective set", () => {
+    const withSub = new Set(getEffectivePermissions({ role: "STAFF", profile: "NORMAL_SALES", subRoles: [{ subRole: "ACCOUNTANT" }] }).permissions);
+    const without = new Set(getEffectivePermissions({ role: "STAFF", profile: "NORMAL_SALES" }).permissions);
+    expect([...withSub].sort()).toEqual([...without].sort());
+  });
+  it("does not union isSuperSales extras when the profile is NORMAL_SALES", () => {
+    const flagged = new Set(getEffectivePermissions({ role: "STAFF", profile: "NORMAL_SALES", isSuperSales: true }).permissions);
+    const plain = new Set(getEffectivePermissions({ role: "STAFF", profile: "NORMAL_SALES" }).permissions);
+    expect([...flagged].sort()).toEqual([...plain].sort());
   });
 });

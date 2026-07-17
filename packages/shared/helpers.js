@@ -6,10 +6,9 @@
 //   - This file is the home for domain predicates and capability computations;
 //     module migrations append theirs here.
 
-import { ROLE_PERMISSIONS, SUPER_SALES_EXTRA_PERMISSIONS } from "./constants/access/role-permissions.js";
+import { ROLE_PERMISSIONS } from "./constants/access/role-permissions.js";
 import { splitPermissionCode } from "./constants/access/permissions.constants.js";
 import { NAVIGATION, NAVIGATION_PERMISSION_ACTIONS } from "./constants/access/navigation.js";
-import { USER_ROLES } from "./constants/access/roles.constants.js";
 import { PROFILES, resolveProfileKey } from "./constants/access/profiles.js";
 
 /**
@@ -34,44 +33,29 @@ export function getPermissionsForRole(role) {
 /**
  * Compute a user's EFFECTIVE permissions, resolved via their PROFILE.
  *
- * Effective = the resolved profile's codes (see `resolveProfileKey`/`PROFILES`)
- *           ∪ each sub-role's role codes (user.subRoles[])           [transitional]
- *           ∪ isSuperSales extra codes (if user.isSuperSales).       [transitional]
+ * Effective = the resolved profile's codes (see `resolveProfileKey`/`PROFILES`).
+ * Profiles are the SOLE source; the legacy subRole/isSuperSales unions were removed
+ * (they never fired on the main request path — requireAuth resolves from the profile
+ * cache — and isSuperSales is not carried in the token).
  *
- * The subRole + isSuperSales unions are TRANSITIONAL parity augmentations that
- * guarantee the effective set stays a superset of the legacy role-only formula
- * for every user (removed once profiles are the sole source in Phase 4).
- *
- * Pure & unit-testable: no DB, no side effects. Tolerant of both shapes of
- * `subRoles`:
- *   - Prisma rows:        [{ subRole: "ACCOUNTANT" }, ...]
- *   - plain string array: ["ACCOUNTANT", ...]
+ * Pure & unit-testable: no DB, no side effects.
  *
  * @param {object|null|undefined} user
- * @param {string} [user.role]
- * @param {string} [user.profile]
- * @param {boolean} [user.isSuperSales]
- * @param {Array<string|{subRole:string}>} [user.subRoles]
+ * @param {string} [user.role]     used only by resolveProfileKey's legacy fallback
+ * @param {string} [user.profile]  the active profile key (primary input)
  * @returns {{ permissions: string[], permissionsByModule: Record<string, {codes: string[], [flag: string]: boolean|string[]}> }}
  */
 export function getEffectivePermissions(user) {
   if (!user) return { permissions: [], permissionsByModule: {} };
 
-  // Profile is the primary source (Phase 1). subRole + isSuperSales unions are
-  // TRANSITIONAL parity augmentations — they guarantee the effective set is a
-  // superset of the legacy formula for every user, and are removed in Phase 4.
+  // Profiles are the sole source of effective permissions. The resolved profile's
+  // codes ARE the effective set — the legacy subRole/isSuperSales unions were removed
+  // (Phase 4): they never fire on the main request path (requireAuth resolves from the
+  // profile cache), and isSuperSales is not carried in the token, so the fallback
+  // branches cannot re-add them. isSuperSales still influences WHICH profile
+  // resolveProfileKey picks for an unmigrated row (SUPER_SALES), which already carries
+  // the super-sales codes.
   const set = new Set(PROFILES[resolveProfileKey(user)] ?? []);
-
-  const subRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
-  for (const entry of subRoles) {
-    const subRole = typeof entry === "string" ? entry : entry?.subRole;
-    if (!subRole) continue;
-    for (const code of getPermissionsForRole(subRole)) set.add(code);
-  }
-  if (user.isSuperSales) {
-    for (const code of SUPER_SALES_EXTRA_PERMISSIONS) set.add(code);
-  }
-
   return buildPermissionsByModule(Array.from(set));
 }
 
@@ -161,21 +145,16 @@ export function computeCapabilities(rules, ctx) {
 }
 
 /**
- * Resolve the role used for NAVIGATION filtering. Mirrors master's
- * `linksForRole(user)` special-case: a STAFF user with `isSuperSales` renders the
- * SUPER_SALES sidebar. `user.activeRole` (role-switch) wins when present.
+ * Resolve the role used for NAVIGATION filtering. The active profile drives the
+ * sidebar: `navRole` (computed from currentProfile in auth.dto.toMe — it already maps
+ * the SUPER_SALES profile to the super-sales sidebar) wins when present. Falls back to
+ * the derived `activeRole`/`role` for unmigrated rows with no active profile.
  * @param {object} user
  * @returns {string|undefined}
  */
 function navRoleFor(user) {
-  // The current profile drives the sidebar so switching profiles updates nav.
-  // `navRole` (computed from the active profile in auth.dto.toMe) wins when present;
-  // otherwise fall back to the legacy role rule (STAFF+isSuperSales → SUPER_SALES),
-  // which preserves master behavior for unmigrated users / raw rows.
   if (user?.navRole) return user.navRole;
-  const role = user?.activeRole || user?.role;
-  if (role === USER_ROLES.STAFF && user?.isSuperSales) return USER_ROLES.SUPER_SALES;
-  return role;
+  return user?.activeRole || user?.role;
 }
 
 /**

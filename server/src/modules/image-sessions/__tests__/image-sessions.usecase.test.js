@@ -75,8 +75,10 @@ import { uploadPdfAndApproveSession } from "../services/session-approval.js";
 
 const P = PERMISSIONS.IMAGE_SESSION;
 
-function makeReq(role, isSuperSales = false) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
+function makeReq(role, isSuperSales = false, profile) {
+  const { permissions, permissionsByModule } = getEffectivePermissions({
+    role, isSuperSales, ...(profile ? { profile } : {}),
+  });
   return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
 }
 
@@ -127,12 +129,23 @@ describe("image-sessions ADMIN surface — role parity (legacy `/admin/image-ses
     }
   });
 
-  it("isSuperSales holds the admin reference-data codes (matches legacy `isAdmin` union)", () => {
+  it("isSuperSales alone no longer holds the admin reference-data codes (legacy `isAdmin` union removed)", () => {
     const req = makeReq(USER_ROLES.SUPER_SALES, true);
     for (const code of [P.ADMIN_VIEW, P.ADMIN_MANAGE]) {
       const next = vi.fn();
       AuthMiddleware.requirePermissions([code])(req, {}, next);
-      expect(next, `isSuperSales should hold ${code}`).toHaveBeenCalledWith();
+      const err = next.mock.calls[0][0];
+      expect(err, `isSuperSales should NOT hold ${code}`).toBeInstanceOf(AppError);
+      expect(err.statusCode).toBe(403);
+    }
+  });
+
+  it("the ADMIN profile holds the admin reference-data codes (profile is the sole source)", () => {
+    const req = makeReq(USER_ROLES.SUPER_SALES, false, "ADMIN");
+    for (const code of [P.ADMIN_VIEW, P.ADMIN_MANAGE]) {
+      const next = vi.fn();
+      AuthMiddleware.requirePermissions([code])(req, {}, next);
+      expect(next, `ADMIN profile should hold ${code}`).toHaveBeenCalledWith();
     }
   });
 

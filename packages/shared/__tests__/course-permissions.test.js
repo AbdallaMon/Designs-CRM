@@ -45,20 +45,20 @@ describe("Courses permission grants (preserve legacy access)", () => {
     }
   });
 
-  it("isSuperSales augments a non-admin role with admin-course codes (legacy isAdmin)", () => {
+  it("isSuperSales no longer augments a non-admin role with admin-course codes (union removed)", () => {
     const { permissions } = getEffectivePermissions({
       role: USER_ROLES.SUPER_SALES,
       isSuperSales: true,
     });
     for (const code of ADMIN_CODES) {
-      expect(hasPermission(permissions, code)).toBe(true);
+      expect(hasPermission(permissions, code)).toBe(false);
     }
   });
 
-  it("an ADMIN sub-role grants admin-course codes to a non-admin base role", () => {
+  it("the ADMIN profile grants admin-course codes to a non-admin base role (profile is the sole source)", () => {
     const { permissions } = getEffectivePermissions({
       role: USER_ROLES.STAFF,
-      subRoles: [{ subRole: USER_ROLES.ADMIN }],
+      profile: "ADMIN",
     });
     for (const code of ADMIN_CODES) {
       expect(hasPermission(permissions, code)).toBe(true);
