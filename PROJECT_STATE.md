@@ -5,7 +5,25 @@
 >
 > Last updated: **2026-07-17** · Branch: `feat/workstage-flow-redesign`
 >
-> **LATEST (2026-07-17) — Work-stage preview bug-fix batch + designer-picker profile fix ✅.**
+> **LATEST (2026-07-17) — Profiles as single source of truth (auth boundary) + profile-switcher rebuild ✅.**
+> Spec/plan `docs/superpowers/{specs,plans}/2026-07-17-profile-single-source-of-truth*`. Fixes the reported
+> "the profile-switch tab disappeared" (it correctly hid — the account held 1 profile) AND the real bug behind it:
+> `role` and the active profile were two competing sources that diverged on a self-switch. **Backend:** `role`/
+> `activeRole` are now a DERIVED VIEW of the active profile's `baseRole` via new `AuthSchema.activeBaseRole` (resolves
+> the EFFECTIVE `currentProfileId`, so the login/refresh correction path can't read a stale `currentProfile`);
+> `toMe`/`toTokenPayload` return `subRoles: []`; `+baseRole` in `USER_PROFILES_SELECT`. **`@dms/shared`:** dropped the
+> transitional `subRoles`/`isSuperSales` unions from `getEffectivePermissions` + the `isSuperSales→SUPER_SALES` nav
+> fallback (dead on every live path — main auth resolves from the profile cache, `isSuperSales` isn't in the token);
+> 8 test files migrated from subRole/flag fixtures to profile fixtures. **Frontend:** the toolbar chip IS the switcher
+> now (`ProfileSwitcher.jsx`, caramel identity, MUI Menu; caret+menu only when holding >1 profile, static chip for 1,
+> legacy label for 0) → `POST auth/profile/switch` → `refetchMe()`; `roleLabel` + drawer footer derive from the active
+> profile's label via new `activeProfileLabel` helper; deleted legacy `UserRoles.jsx` (localStorage role-fake).
+> **Verified: full suite 995/995 green + `next build` OK (44 routes).** Schema untouched, `User.role`/`UserSubRole`
+> columns kept (frozen); complementary to the designer-picker DISCOVERY-axis fix below (that = held profiles; this =
+> active-profile boundary). **⚠ Before prod deploy:** user runs `SELECT COUNT(*) FROM UserSubRole` and the
+> profileless-users check — both must be `0` (see spec §5).
+>
+> **PRIOR (2026-07-17) — Work-stage preview bug-fix batch + designer-picker profile fix ✅.**
 > Four reported issues on the work-stage/designer surface. **(1) Silent 500 on designer assign:** the projects
 > flows/task layers still threw raw `new Error()` (8 sites), which skip the `AppError` branch in the global
 > error-handler and collapse to "Internal server error" — so the real reason ("designer already assigned", status
