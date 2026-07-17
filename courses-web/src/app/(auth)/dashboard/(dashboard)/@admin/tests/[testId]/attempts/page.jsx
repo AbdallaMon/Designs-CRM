@@ -1,4 +1,4 @@
-import TestAttempts from "@/app/UiComponents/DataViewer/test/admin/TestAttempts;";
+import TestAttempts from "@/features/tests/admin/TestAttempts";
 import { Suspense } from "react";
 
 export default async function TestAttemptsPage({ params }) {

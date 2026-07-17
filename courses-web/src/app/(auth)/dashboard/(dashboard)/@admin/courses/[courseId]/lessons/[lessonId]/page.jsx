@@ -1,5 +1,5 @@
-import { LessonManagement } from "@/app/UiComponents/DataViewer/lessons/admin/EditLesson";
-import { Lessons } from "@/app/UiComponents/DataViewer/lessons/admin/Lessons";
+import { LessonManagement } from "@/features/lessons/admin/EditLesson";
+import { Lessons } from "@/features/lessons/admin/Lessons";
 import { Suspense } from "react";
 
 export default async function Lesssons({ params }) {

@@ -1,4 +1,4 @@
-import UserDashboard from "@/app/UiComponents/DataViewer/dashboard/UserDashboard";
+import UserDashboard from "@/features/dashboard/UserDashboard";
 
 export default function Page() {
   return <UserDashboard />;

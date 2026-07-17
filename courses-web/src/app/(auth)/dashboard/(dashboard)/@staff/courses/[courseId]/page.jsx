@@ -1,4 +1,4 @@
-import LesssonView from "@/app/UiComponents/DataViewer/lessons/staff/Lessons";
+import LesssonView from "@/features/lessons/staff/Lessons";
 import { Suspense } from "react";
 
 export default async function Course({ params }) {

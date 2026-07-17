@@ -1,4 +1,4 @@
-import CourseAdminPage from "@/app/UiComponents/DataViewer/courses/admin/Courses";
+import CourseAdminPage from "@/features/courses/admin/Courses";
 
 export default function page() {
   return <CourseAdminPage />;

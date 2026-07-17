@@ -1,4 +1,4 @@
-import StaffCourses from "@/app/UiComponents/DataViewer/courses/staff/Courses";
+import StaffCourses from "@/features/courses/staff/Courses";
 
 export default function page() {
   return <StaffCourses />;

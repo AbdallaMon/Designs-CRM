@@ -1,4 +1,4 @@
-import AdminDashboard from "@/app/UiComponents/DataViewer/dashboard/AdminDashboard";
+import AdminDashboard from "@/features/dashboard/AdminDashboard";
 
 export default function Page() {
   return <AdminDashboard />;

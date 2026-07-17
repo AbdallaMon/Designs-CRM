@@ -1,5 +1,5 @@
-import { Lessons } from "@/app/UiComponents/DataViewer/lessons/admin/Lessons";
-import { Tests } from "@/app/UiComponents/DataViewer/test/admin/Tests";
+import { Lessons } from "@/features/lessons/admin/Lessons";
+import { Tests } from "@/features/tests/admin/Tests";
 import { Suspense } from "react";
 
 export default async function TestsPage({ params }) {

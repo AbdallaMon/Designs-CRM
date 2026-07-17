@@ -1,4 +1,4 @@
-import TestQuestionManager from "@/app/UiComponents/DataViewer/test/admin/TestQuestionManager";
+import TestQuestionManager from "@/features/tests/admin/TestQuestionManager";
 import { Suspense } from "react";
 
 export default async function Test({ params }) {

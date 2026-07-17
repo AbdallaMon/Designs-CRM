@@ -39,7 +39,7 @@ import {
   MdWarning as Warning,
 } from "react-icons/md";
 import LessonComponent from "./Lesson";
-import TestComponent from "../../test/staff/Test";
+import TestComponent from "@/features/tests/staff/Test";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";

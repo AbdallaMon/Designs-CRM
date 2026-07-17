@@ -1,4 +1,4 @@
-import { Lessons } from "@/app/UiComponents/DataViewer/lessons/admin/Lessons";
+import { Lessons } from "@/features/lessons/admin/Lessons";
 import { Suspense } from "react";
 
 export default async function Lesssons({ params }) {
