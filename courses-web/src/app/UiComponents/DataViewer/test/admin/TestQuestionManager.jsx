@@ -48,7 +48,7 @@ import {
 } from "react-icons/md";
 import { QuestionTypes } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";

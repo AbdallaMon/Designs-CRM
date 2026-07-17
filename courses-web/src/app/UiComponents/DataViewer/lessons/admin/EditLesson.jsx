@@ -48,9 +48,9 @@ import {
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
-import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
+import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
+import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import LessonVideoPdfManager from "./PdfsForVideo";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";

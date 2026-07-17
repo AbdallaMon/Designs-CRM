@@ -4,7 +4,7 @@ import { loginInputs } from "./data";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import AuthForm from "@/app/UiComponents/formComponents/forms/AuthForm";
+import AuthForm from "@/shared/components/formComponents/forms/AuthForm";
 import { Button, Typography } from "@mui/material";
 
 export default function Page() {

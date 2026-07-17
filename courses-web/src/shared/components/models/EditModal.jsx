@@ -3,7 +3,7 @@ import { Box, Button, Fade, Modal } from "@mui/material";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { simpleModalStyle } from "@/app/helpers/constants";
-import { MainForm } from "@/app/UiComponents/formComponents/forms/MainForm";
+import { MainForm } from "@/shared/components/formComponents/forms/MainForm";
 import { getPropertyValue } from "@/app/helpers/functions/utility";
 
 const EditModal = ({

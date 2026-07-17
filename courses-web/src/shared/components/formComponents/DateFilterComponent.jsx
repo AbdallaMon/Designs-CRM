@@ -2,8 +2,8 @@
 import React, {useState, useEffect} from "react";
 import {IconButton, Box, ButtonGroup, Button} from "@mui/material";
 import {FaTimes} from "react-icons/fa";
-import DateComponent from "@/app/UiComponents/FormComponents/MUIInputs/DateChangerComponent";
-import RangeDateComponent from "@/app/UiComponents/FormComponents/MUIInputs/RangeDateComponent";
+import DateComponent from "@/shared/components/formComponents/MUIInputs/DateChangerComponent";
+import RangeDateComponent from "@/shared/components/formComponents/MUIInputs/RangeDateComponent";
 
 const DateFilterComponent = ({setFilters, filters}) => {
     const [filterType, setFilterType] = useState("day"); // 'day' or 'range'

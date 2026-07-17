@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import AuthForm from "@/app/UiComponents/formComponents/forms/AuthForm";
+import AuthForm from "@/shared/components/formComponents/forms/AuthForm";
 import { Typography } from "@mui/material";
 
 export default function ResetPage(props) {

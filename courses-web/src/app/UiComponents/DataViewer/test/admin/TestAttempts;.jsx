@@ -19,10 +19,10 @@ import {
 } from '@mui/material';
 import { FaEye, FaUser, FaEnvelope, FaHashtag } from 'react-icons/fa';
 import { getDataAndSet } from '@/app/helpers/functions/getDataAndSet';
-import FullScreenLoader from '@/app/UiComponents/feedback/loaders/FullscreenLoader';
+import FullScreenLoader from '@/shared/components/feedback/loaders/FullscreenLoader';
 import ReviewAttempts from './ReviewAttempts';
 import { MdClose } from 'react-icons/md';
-import SearchComponent from '@/app/UiComponents/formComponents/SearchComponent';
+import SearchComponent from '@/shared/components/formComponents/SearchComponent';
 
 const AttemptDetailsComponent = ({ userId, testId }) => {
   return (

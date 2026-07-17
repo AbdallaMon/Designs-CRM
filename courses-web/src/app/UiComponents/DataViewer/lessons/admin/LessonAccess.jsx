@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 
 import { getDataAndSet } from '@/app/helpers/functions/getDataAndSet';
-import DeleteModal from '@/app/models/DeleteModal';
+import DeleteModal from '@/shared/components/models/DeleteModal';
 import dayjs from 'dayjs';
 import { useAlertContext } from '@/app/providers/MuiAlert';
 import { handleRequestSubmit } from '@/app/helpers/functions/handleSubmit';

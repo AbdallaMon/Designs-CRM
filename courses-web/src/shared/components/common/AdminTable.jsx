@@ -14,9 +14,9 @@ import {
   Link,
   useTheme,
 } from "@mui/material";
-import EditModal from "@/app/UiComponents/models/EditModal";
-import DeleteModal from "@/app/UiComponents/models/DeleteModal";
-import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit";
+import EditModal from "@/shared/components/models/EditModal";
+import DeleteModal from "@/shared/components/models/DeleteModal";
+import PaginationWithLimit from "@/shared/components/common/PaginationWithLimit";
 import { getPropertyValue } from "@/app/helpers/functions/utility";
 
 const DocumentRenderer = ({ value }) => {

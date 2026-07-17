@@ -3,14 +3,14 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { useForm } from "react-hook-form";
 import { Box, Button, Typography, Grid } from "@mui/material";
-import MuiTextAreaField from "@/app/UiComponents/formComponents/MUIInputs/MuiTextAreaField";
-import { MuiAutoCompleteSelect } from "@/app/UiComponents/formComponents/MUIInputs/MuiAutoCompleteSelect";
-import { MDatePicker } from "@/app/UiComponents/formComponents/MUIInputs/MDatePicker";
-import MuiSwitch from "@/app/UiComponents/formComponents/MUIInputs/MuiSwitch";
+import MuiTextAreaField from "@/shared/components/formComponents/MUIInputs/MuiTextAreaField";
+import { MuiAutoCompleteSelect } from "@/shared/components/formComponents/MUIInputs/MuiAutoCompleteSelect";
+import { MDatePicker } from "@/shared/components/formComponents/MUIInputs/MDatePicker";
+import MuiSwitch from "@/shared/components/formComponents/MUIInputs/MuiSwitch";
 import { useRef } from "react";
-import SimpleSelect from "@/app/UiComponents/formComponents/MUIInputs/SimpleSelect";
-import MuiInputField from "@/app/UiComponents/formComponents/MUIInputs/MuiInputField";
-import MuiFileField from "@/app/UiComponents/formComponents/MUIInputs/MuiFileField";
+import SimpleSelect from "@/shared/components/formComponents/MUIInputs/SimpleSelect";
+import MuiInputField from "@/shared/components/formComponents/MUIInputs/MuiInputField";
+import MuiFileField from "@/shared/components/formComponents/MUIInputs/MuiFileField";
 
 const locales = ["en-gb"];
 

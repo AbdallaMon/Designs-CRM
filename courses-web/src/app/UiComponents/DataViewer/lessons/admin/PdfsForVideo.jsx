@@ -18,8 +18,8 @@ import {
   IconButton,
 } from "@mui/material";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import DeleteModal from "@/app/models/DeleteModal";
-import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
+import DeleteModal from "@/shared/components/models/DeleteModal";
+import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";

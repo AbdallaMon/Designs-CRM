@@ -8,12 +8,12 @@ import { Box } from "@mui/material";
 import colors from "@/app/helpers/colors";
 import { FiBookOpen, FiGrid } from "react-icons/fi";
 
-import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
+import Navbar from "@/shared/components/utility/Navbar.jsx";
 import { baseRoleOf } from "@/app/helpers/functions/utility";
 import {
   Failed,
   Success,
-} from "@/app/UiComponents/feedback/loaders/taost/toast/ToastUpdate";
+} from "@/shared/components/feedback/loaders/toast/ToastUpdate";
 
 let toastId;
 

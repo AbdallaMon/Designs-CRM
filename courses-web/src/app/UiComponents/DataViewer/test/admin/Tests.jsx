@@ -42,8 +42,8 @@ import {
   MdRefresh,
 } from "react-icons/md";
 import Link from "next/link";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import DeleteModal from "@/app/models/DeleteModal";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
+import DeleteModal from "@/shared/components/models/DeleteModal";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { FaClipboardList, FaQuestion, FaTypo3 } from "react-icons/fa";

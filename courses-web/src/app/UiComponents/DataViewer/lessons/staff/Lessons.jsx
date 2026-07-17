@@ -41,7 +41,7 @@ import {
 import LessonComponent from "./Lesson";
 import TestComponent from "../../test/staff/Test";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { baseRoleOf } from "@/app/helpers/functions/utility";
 import { useSearchParams } from "next/navigation";

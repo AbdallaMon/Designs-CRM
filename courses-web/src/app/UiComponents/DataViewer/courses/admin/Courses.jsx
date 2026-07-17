@@ -43,9 +43,9 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import Link from "next/link";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import PaginationWithLimit from "../../PaginationWithLimit";
-import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
+import PaginationWithLimit from "@/shared/components/common/PaginationWithLimit";
+import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

@@ -41,7 +41,7 @@ import {
   MdTimer,
 } from "react-icons/md";
 
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { baseRoleOf } from "@/app/helpers/functions/utility";

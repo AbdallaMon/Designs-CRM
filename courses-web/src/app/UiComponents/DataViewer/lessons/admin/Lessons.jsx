@@ -40,9 +40,9 @@ import {
   MdDelete,
 } from "react-icons/md";
 import Link from "next/link";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { CreateLesson } from "./CreateNewLesson";
-import DeleteModal from "@/app/models/DeleteModal";
+import DeleteModal from "@/shared/components/models/DeleteModal";
 import LessonAccessDialog from "./LessonAccess";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

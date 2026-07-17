@@ -19,8 +19,8 @@ import {
   Collapse,
 } from "@mui/material";
 import { FiMenu, FiChevronDown, FiChevronRight } from "react-icons/fi";
-import Logout from "@/app/UiComponents/buttons/Logout.jsx";
-import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
+import Logout from "@/shared/components/buttons/Logout.jsx";
+import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
 import Link from "next/link";
 import { useAuth } from "@/app/providers/AuthProvider";
 import ProfileSwitcher from "../buttons/ProfileSwitcher";

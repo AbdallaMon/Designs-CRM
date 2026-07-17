@@ -20,8 +20,8 @@ import { initialPageLimit } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import PaginationWithLimit from "../../PaginationWithLimit";
+import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
+import PaginationWithLimit from "@/shared/components/common/PaginationWithLimit";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { baseRoleOf } from "@/app/helpers/functions/utility";
 

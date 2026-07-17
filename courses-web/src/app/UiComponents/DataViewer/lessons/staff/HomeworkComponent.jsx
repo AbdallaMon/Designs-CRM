@@ -31,10 +31,10 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
+import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

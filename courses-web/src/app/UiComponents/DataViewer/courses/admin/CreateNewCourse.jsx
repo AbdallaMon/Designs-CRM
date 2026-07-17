@@ -24,7 +24,7 @@ import { ROLE_LABELS, USER_ROLES } from "@/app/helpers/constants";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
-import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
+import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
