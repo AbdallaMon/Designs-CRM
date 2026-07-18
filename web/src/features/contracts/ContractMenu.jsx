@@ -9,10 +9,12 @@ import {
 } from "@mui/material";
 import { IoMdEye } from "react-icons/io";
 import DeleteModelButton from "@/shared/components/common/DeleteModelButton.jsx";
-import { FaCopy } from "react-icons/fa";
+import { FaCopy, FaLink } from "react-icons/fa";
 import ConfirmWithActionModel from "@/shared/components/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useState } from "react";
+import ContractGenerateLinkDialog from "@/features/contracts/ContractGenerateLinkDialog.jsx";
 
 export default function ContractMenu({
   contract,
@@ -24,6 +26,7 @@ export default function ContractMenu({
   const theme = useTheme();
   const isCancelled = contract?.status === "CANCELLED"; // if your API returns it
   const { setLoading } = useToastContext();
+  const [linkOpen, setLinkOpen] = useState(false);
   async function cancelContractReq() {
     const req = await handleRequestSubmit(
       {
@@ -70,6 +73,24 @@ export default function ContractMenu({
           <IoMdEye size={18} />
         </IconButton>
       </Tooltip>
+      <Tooltip title="Generate session link" placement="top">
+        <IconButton
+          size="small"
+          onClick={() => setLinkOpen(true)}
+          sx={{
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+            borderRadius: 2,
+          }}
+        >
+          <FaLink size={15} />
+        </IconButton>
+      </Tooltip>
+      <ContractGenerateLinkDialog
+        open={linkOpen}
+        onClose={() => setLinkOpen(false)}
+        contract={contract}
+        onReload={fetchContracts}
+      />
       {isCancelled ? (
         <Chip label="Canceled" sx={{ bgcolor: "error.main", color: "white" }} />
       ) : (

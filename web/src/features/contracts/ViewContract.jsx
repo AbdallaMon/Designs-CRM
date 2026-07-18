@@ -60,6 +60,11 @@ import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import {
+  buildSessionUrl,
+  copyToClipboard,
+  generateContractPdfToken,
+} from "@/features/contracts/contractSessionLink.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import AddPaymentDialog from "@/features/contracts/payments/AddPaymentDialog.jsx";
 import ContractPaymentConditions from "@/features/website-utilities/ContractPaymentConditions.jsx";
@@ -226,26 +231,7 @@ function ContractBasics({ id, contract, onReload }) {
     }
   };
 
-  // Build session URL exactly as requested (don't change it)
-  const buildSessionUrl = (token) => {
-    if (!token) return "";
-
-    if (typeof window === "undefined") return ""; // prevent server-side errors
-
-    const { origin, pathname } = window.location;
-    // Example: http://dreamstudio.com/page → origin=http://dreamstudio.com, pathname=/page
-
-    // Construct full URL preserving current path before /contracts
-    return `${origin}/contracts?token=${encodeURIComponent(token)}`;
-  };
-
-  const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (e) {
-      console.error("Clipboard error", e);
-    }
-  };
+  // buildSessionUrl / copyToClipboard now live in the shared contractSessionLink module.
 
   // Confirmation dialog state
   const [confirm, setConfirm] = useState({ open: false, lang: null });
@@ -254,15 +240,11 @@ function ContractBasics({ id, contract, onReload }) {
 
   const generateSession = async (lang) => {
     closeConfirm();
-    const res = await handleRequestSubmit(
-      { lang },
+    const res = await generateContractPdfToken({
+      contractId: contract.id,
+      lang,
       setLoading,
-      `shared/contracts/${contract.id}/actions/generate-pdf-token`,
-      false,
-      "Generating",
-      false,
-      "POST"
-    );
+    });
     if (res?.status === 200) onReload();
   };
 

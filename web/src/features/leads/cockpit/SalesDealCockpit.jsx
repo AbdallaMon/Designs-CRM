@@ -16,12 +16,25 @@
 // After any mutating CTA succeeds we silently refetch the cockpit + core lead (and the
 // relevant tab) so the strip and header reflect the change without a full reload.
 import { useState } from "react";
-import { Box, Button, Stack, Typography, alpha, useTheme } from "@mui/material";
-import { MdCheckCircleOutline } from "react-icons/md";
+import {
+  Box,
+  Button,
+  Collapse,
+  Stack,
+  Typography,
+  alpha,
+  useTheme,
+} from "@mui/material";
+import {
+  MdCheckCircleOutline,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+} from "react-icons/md";
 import {
   useLeadDetails,
   useLeadTab,
 } from "@/features/leads/context/LeadDetailsContext.jsx";
+import { useLeadViewPreferences } from "@/features/leads/hooks/useLeadViewPreferences.js";
 import { StatusMenu } from "@/features/leads/shared/StatusMenu.jsx";
 import { NewCallDialog } from "@/features/leads/dialogs/CallsDialog.jsx";
 import { NewClientMeetingDialog } from "@/features/leads/dialogs/MeetingsDialog.jsx";
@@ -72,6 +85,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
   const theme = useTheme();
   const details = useLeadDetails();
   const { data, showLoading, error, refetch } = useLeadTab("cockpit");
+  const { cockpitExpanded, setCockpitExpanded } = useLeadViewPreferences();
   const [statusAnchor, setStatusAnchor] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
 
@@ -231,6 +245,70 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
     }
   };
 
+  const renderRow = (action, i) => {
+    const cfg = getActionConfig(action.type);
+    if (!cfg) return null;
+    const paletteKey = SEVERITY_PALETTE[action.severity] || "info";
+    const color = theme.palette[paletteKey].main;
+    // cta.capability === null → view-only nav (always show). Otherwise the CTA
+    // shows only when the backend granted the matching capability.
+    const canDo =
+      action.cta?.capability == null
+        ? true
+        : Boolean(capabilities[action.cta.capability]);
+    return (
+      <Box
+        key={`${action.type}-${i}`}
+        sx={{
+          display: "flex",
+          gap: 1.5,
+          alignItems: "center",
+          p: 1.25,
+          borderRadius: 2,
+          border: `1px solid ${theme.palette.divider}`,
+          borderLeft: `3px solid ${color}`,
+          bgcolor: alpha(color, 0.04),
+        }}
+      >
+        <Box
+          sx={{
+            width: 38,
+            height: 38,
+            borderRadius: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            fontSize: 19,
+            color,
+            bgcolor: alpha(color, 0.14),
+          }}
+        >
+          {cfg.icon}
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" fontWeight={700} color="text.primary" noWrap>
+            {cfg.title(action.params)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {cfg.description(action.params)}
+          </Typography>
+        </Box>
+        {canDo && <Box sx={{ flexShrink: 0 }}>{renderCta(action, color)}</Box>}
+      </Box>
+    );
+  };
+
+  // Always-visible floor = every critical + the single top-ranked non-critical row (the
+  // list is backend-sorted: leading criticals, then the promoted/ranked rest). This floor
+  // can never be hidden by the pref, so an urgent signal is always on screen. Everything
+  // below it collapses behind the remembered "N more suggestions" toggle.
+  const firstNonCritical = actions.findIndex((a) => a.severity !== "critical");
+  const floorCount =
+    firstNonCritical === -1 ? actions.length : firstNonCritical + 1;
+  const visibleActions = actions.slice(0, floorCount);
+  const hiddenActions = actions.slice(floorCount);
+
   return (
     <Box sx={{ px: { xs: 2, md: 3 }, py: 2 }}>
       <Stack spacing={2}>
@@ -260,66 +338,45 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
           </Stack>
         ) : (
           <Stack spacing={1.25}>
-            {actions.map((action, i) => {
-              const cfg = getActionConfig(action.type);
-              if (!cfg) return null;
-              const paletteKey = SEVERITY_PALETTE[action.severity] || "info";
-              const color = theme.palette[paletteKey].main;
-              // cta.capability === null → view-only nav (always show). Otherwise the CTA
-              // shows only when the backend granted the matching capability.
-              const canDo =
-                action.cta?.capability == null
-                  ? true
-                  : Boolean(capabilities[action.cta.capability]);
-              return (
-                <Box
-                  key={`${action.type}-${i}`}
+            {visibleActions.map((action, i) => renderRow(action, i))}
+            {hiddenActions.length > 0 && (
+              <Box>
+                <Collapse in={cockpitExpanded} unmountOnExit>
+                  <Stack spacing={1.25} sx={{ pb: 1.25 }}>
+                    {hiddenActions.map((action, i) =>
+                      renderRow(action, i + visibleActions.length),
+                    )}
+                  </Stack>
+                </Collapse>
+                <Button
+                  fullWidth
+                  size="small"
+                  onClick={() => setCockpitExpanded()}
+                  endIcon={
+                    cockpitExpanded ? (
+                      <MdKeyboardArrowUp />
+                    ) : (
+                      <MdKeyboardArrowDown />
+                    )
+                  }
                   sx={{
-                    display: "flex",
-                    gap: 1.5,
-                    alignItems: "center",
-                    p: 1.25,
+                    textTransform: "none",
+                    fontWeight: 600,
+                    color: "text.secondary",
                     borderRadius: 2,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderLeft: `3px solid ${color}`,
-                    bgcolor: alpha(color, 0.04),
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.text.primary, 0.04),
+                    },
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      fontSize: 19,
-                      color,
-                      bgcolor: alpha(color, 0.14),
-                    }}
-                  >
-                    {cfg.icon}
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={700}
-                      color="text.primary"
-                      noWrap
-                    >
-                      {cfg.title(action.params)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {cfg.description(action.params)}
-                    </Typography>
-                  </Box>
-                  {canDo && (
-                    <Box sx={{ flexShrink: 0 }}>{renderCta(action, color)}</Box>
-                  )}
-                </Box>
-              );
-            })}
+                  {cockpitExpanded
+                    ? "Show less"
+                    : `${hiddenActions.length} more suggestion${
+                        hiddenActions.length > 1 ? "s" : ""
+                      }`}
+                </Button>
+              </Box>
+            )}
           </Stack>
         )}
       </Stack>

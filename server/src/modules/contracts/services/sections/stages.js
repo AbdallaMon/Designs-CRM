@@ -251,6 +251,7 @@ export async function renderStagesTable(
   // ===== Data =====
   const allStages = CONTRACT_LEVELSENUM.map((s, i) => ({
     order: i + 1,
+    key: s.enum,
     label:
       (lng === "ar" ? s.labelAr : s.labelEn) || s.label || `Stage ${i + 1}`,
   })).slice(0, 7);
@@ -562,8 +563,11 @@ export async function renderStagesTable(
           ? `${formatNumber(deliveryDays, "ar")} يوم`
           : `${deliveryDays} days`
         : "—";
+    // Level clauses are keyed by `level` (LEVEL_1..7) in the editor, which writes
+    // `level` correctly but leaves `order` at its DB default of 0 — so matching by
+    // `order` never hits. Match by `level` (like the web StagesTable client).
     const currentDetails = defaultContractUtilityData?.levelClauses?.find(
-      (clause) => clause.order === s.order,
+      (clause) => clause.level === s.key,
     );
     const details =
       (lng === "ar" ? currentDetails?.textAr : currentDetails?.textEn)?.split(

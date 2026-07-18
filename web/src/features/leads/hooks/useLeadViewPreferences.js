@@ -9,6 +9,10 @@ import { useEffect, useState } from "react";
 
 export const LEAD_FULLSCREEN_KEY = "lead-view-fullscreen";
 export const LEAD_RAIL_COLLAPSED_KEY = "lead-tabs-collapsed";
+// Whether the cockpit strip's lower-priority (collapsed) suggestions are expanded.
+// Global like the others — but safe as a default because criticals + the top-ranked row
+// are ALWAYS rendered regardless of this pref, so it can never hide something urgent.
+export const LEAD_COCKPIT_EXPANDED_KEY = "lead-cockpit-expanded";
 
 function readBool(key) {
   if (typeof window === "undefined") return null;
@@ -35,12 +39,15 @@ function makeSetter(key, setState) {
 export function useLeadViewPreferences() {
   const [fullscreen, setFullscreenState] = useState(false);
   const [railCollapsed, setRailCollapsedState] = useState(false);
+  const [cockpitExpanded, setCockpitExpandedState] = useState(false);
 
   useEffect(() => {
     const fs = readBool(LEAD_FULLSCREEN_KEY);
     if (fs != null) setFullscreenState(fs);
     const rc = readBool(LEAD_RAIL_COLLAPSED_KEY);
     if (rc != null) setRailCollapsedState(rc);
+    const ce = readBool(LEAD_COCKPIT_EXPANDED_KEY);
+    if (ce != null) setCockpitExpandedState(ce);
   }, []);
 
   return {
@@ -48,5 +55,7 @@ export function useLeadViewPreferences() {
     setFullscreen: makeSetter(LEAD_FULLSCREEN_KEY, setFullscreenState),
     railCollapsed,
     setRailCollapsed: makeSetter(LEAD_RAIL_COLLAPSED_KEY, setRailCollapsedState),
+    cockpitExpanded,
+    setCockpitExpanded: makeSetter(LEAD_COCKPIT_EXPANDED_KEY, setCockpitExpandedState),
   };
 }

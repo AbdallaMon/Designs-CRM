@@ -7,8 +7,10 @@
 // message-code → English pattern used elsewhere in the app. Nothing in the backend is
 // prose; this file is the single place a signal type becomes words a salesperson reads.
 //
-// Each entry: { icon, severity, title(params), description(params), ctaLabel }.
-//   • `severity` mirrors the backend severity (critical | warning | info) and drives color.
+// Each entry: { icon, title(params), description(params), ctaLabel }.
+//   • Color comes from the severity on the WIRE (SEVERITY_PALETTE[action.severity]); this
+//     config carries copy only — it does not restate severity (that would drift from the
+//     backend, which computes it dynamically for some types, e.g. FIRST_TOUCH_SLA).
 //   • `title` / `description` are functions of the action's `params` (see the plan/spec
 //     for the params carried by each type).
 import { FaMoneyBillWave } from "react-icons/fa";
@@ -56,70 +58,52 @@ export const GOTO_SECTION = {
 //   others                         → {}
 export const COCKPIT_ACTION_CONFIG = {
   CALL_OVERDUE: {
-    icon: <IoMdCall />,
-    severity: "critical",
-    title: () => "Overdue call",
+    icon: <IoMdCall />,    title: () => "Overdue call",
     description: (p = {}) =>
       `${p.count || 0} call(s), most overdue ${p.overdueDays ?? 0}d ago`,
     ctaLabel: "Schedule a call",
   },
   MEETING_OVERDUE: {
-    icon: <MdSchedule />,
-    severity: "critical",
-    title: () => "Overdue meeting",
+    icon: <MdSchedule />,    title: () => "Overdue meeting",
     description: (p = {}) =>
       `${p.count || 0} meeting(s), most overdue ${p.overdueDays ?? 0}d ago`,
     ctaLabel: "Schedule a meeting",
   },
   PAYMENT_OVERDUE: {
-    icon: <FaMoneyBillWave />,
-    severity: "critical",
-    title: () => "Payment overdue",
+    icon: <FaMoneyBillWave />,    title: () => "Payment overdue",
     description: (p = {}) =>
       `${p.count || 1} payment(s) past due — oldest ${p.overdueDays ?? 0}d overdue`,
     ctaLabel: "Record payment",
   },
   DISCOVERY_INCOMPLETE: {
-    icon: <MdAnalytics />,
-    severity: "warning",
-    title: () => "Discovery incomplete",
+    icon: <MdAnalytics />,    title: () => "Discovery incomplete",
     description: (p = {}) =>
       `${p.unansweredCount || 0} SPIN question(s) still unanswered`,
     ctaLabel: "Open client analysis",
   },
   OBJECTION_UNHANDLED: {
-    icon: <MdOutlineQuestionAnswer />,
-    severity: "warning",
-    title: () => "Unhandled objection",
+    icon: <MdOutlineQuestionAnswer />,    title: () => "Unhandled objection",
     description: (p = {}) => `${p.count || 0} objection(s) without a response`,
     ctaLabel: "Open client analysis",
   },
   NO_PRICE_OFFER: {
-    icon: <PiCurrencyDollarSimpleLight />,
-    severity: "warning",
-    title: () => "No price offer sent",
+    icon: <PiCurrencyDollarSimpleLight />,    title: () => "No price offer sent",
     description: () => "This deal has no price offer yet.",
     ctaLabel: "Add price offer",
   },
   NO_UPCOMING_TOUCH: {
-    icon: <RiAlarmLine />,
-    severity: "warning",
-    title: () => "No upcoming touchpoint",
+    icon: <RiAlarmLine />,    title: () => "No upcoming touchpoint",
     description: () => "No future call or meeting is scheduled.",
     ctaLabel: "Schedule a call",
   },
   LEAD_STALE: {
-    icon: <IoMdCall />,
-    severity: "warning",
-    title: () => "Lead going stale",
+    icon: <IoMdCall />,    title: () => "Lead going stale",
     description: (p = {}) =>
       `No activity for ${p.daysSinceActivity ?? 0} days and nothing scheduled — reach out today.`,
     ctaLabel: "Schedule a call",
   },
   ADVANCE_STAGE: {
-    icon: <MdTimeline />,
-    severity: "info",
-    title: () => "Ready to advance",
+    icon: <MdTimeline />,    title: () => "Ready to advance",
     description: (p = {}) =>
       `Stage "${stageLabel(p.currentStage)}" is complete — move to "${stageLabel(
         p.nextStage,
@@ -127,67 +111,51 @@ export const COCKPIT_ACTION_CONFIG = {
     ctaLabel: "Change status",
   },
   SIGNING_AWAITED: {
-    icon: <IoMdContract />,
-    severity: "warning",
-    title: () => "Awaiting signature",
+    icon: <IoMdContract />,    title: () => "Awaiting signature",
     description: () => "The contract is out for signing — follow it up.",
     ctaLabel: "View contract",
   },
   CONTRACT_STAGE_IN_PROGRESS: {
-    icon: <MdTimeline />,
-    severity: "info",
-    title: () => "Contract in production",
+    icon: <MdTimeline />,    title: () => "Contract in production",
     description: (p = {}) =>
       `Stage ${p.level || "—"} (${p.levelsDone ?? 0}/${p.levelsTotal ?? 0}) in progress`,
     ctaLabel: "View contract",
   },
   AFTER_SALES_DUE: {
-    icon: <RiAlarmLine />,
-    severity: "info",
-    title: () => "After-sales follow-up due",
+    icon: <RiAlarmLine />,    title: () => "After-sales follow-up due",
     description: () => "Delivery is complete — do the after-sales follow-up.",
     ctaLabel: "Change status",
   },
   CONTRACT_COMPLETED: {
-    icon: <MdCheckCircle />,
-    severity: "info",
-    title: () => "Delivery complete",
+    icon: <MdCheckCircle />,    title: () => "Delivery complete",
     description: () => "This contract is fully delivered.",
     ctaLabel: "View contract",
   },
   DOWNPAYMENT_DUE: {
-    icon: <FaMoneyBillWave />,
-    severity: "critical",
-    title: () => "Down-payment due",
+    icon: <FaMoneyBillWave />,    title: () => "Down-payment due",
     description: () => "The signature/down-payment hasn't been recorded yet.",
     ctaLabel: "Record payment",
   },
   PAYMENT_DUE: {
-    icon: <PiCurrencyDollarSimpleLight />,
-    severity: "warning",
-    title: () => "Payment due",
+    icon: <PiCurrencyDollarSimpleLight />,    title: () => "Payment due",
     description: (p = {}) => `${p.count || 0} payment(s) awaiting collection`,
     ctaLabel: "Record payment",
   },
   FIRST_TOUCH_SLA: {
     icon: <RiAlarmLine />,
-    severity: "warning", // backend escalates to critical at 48h
     title: () => "No first contact yet",
     description: (p = {}) =>
       `Claimed ${p.hoursSinceAssigned ?? 0}h ago with no contact logged — call now, speed wins deals.`,
     ctaLabel: "Log a call",
   },
   OFFER_AWAITING_DECISION: {
-    icon: <PiCurrencyDollarSimpleLight />,
-    severity: "warning",
-    title: () => "Offer awaiting decision",
+    icon: <PiCurrencyDollarSimpleLight />,    title: () => "Offer awaiting decision",
     description: (p = {}) =>
       `Offer sent ${p.daysSinceOffer ?? 0}d ago with no answer — follow up with the client.`,
     ctaLabel: "View offers",
   },
   POOL_FIRST_TOUCH: {
     icon: <RiAlarmLine />,
-    severity: "warning", // backend escalates to critical at 24h
     title: () => "Unclaimed new lead",
     description: (p = {}) =>
       `Waiting ${p.hoursSincePool ?? 0}h in the pool — claim it and make first contact.`,

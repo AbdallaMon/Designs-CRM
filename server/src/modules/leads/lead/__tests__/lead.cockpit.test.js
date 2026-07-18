@@ -400,17 +400,68 @@ describe("computeCockpit — info rules", () => {
     expect(a.cta).toMatchObject({ kind: "OPEN_STATUS", capability: "canChangeStatus" });
   });
 
-  it("does NOT emit ADVANCE_STAGE while a blocking warning exists", () => {
+  it("emits ADVANCE_STAGE alongside warnings, promoted to the TOP (only criticals block it)", () => {
     const bundle = baseBundle({
       status: "NEGOTIATING",
       salesStages: [{ stage: "HANDLE_OBJECTIONS" }],
-      priceOffers: [], // triggers NO_PRICE_OFFER (blocking)
+      priceOffers: [], // triggers NO_PRICE_OFFER (warning)
     });
     const result = computeCockpit(bundle, NOW);
+    // NO_PRICE_OFFER + NO_UPCOMING_TOUCH (both warnings) fire; ADVANCE_STAGE now coexists
+    // and sorts above them despite being `info`.
     expect(types(result)).toContain("NO_PRICE_OFFER");
+    expect(result.actions[0].type).toBe("ADVANCE_STAGE");
+    expect(result.actions[0].severity).toBe("info");
+  });
+
+  it("does NOT emit ADVANCE_STAGE while a critical exists (overdue call)", () => {
+    const bundle = baseBundle({
+      status: "NEGOTIATING",
+      salesStages: [{ stage: "HANDLE_OBJECTIONS" }],
+      priceOffers: [{ isAccepted: false }],
+      callReminders: [{ time: past(3), status: "IN_PROGRESS" }], // CALL_OVERDUE (critical)
+    });
+    const result = computeCockpit(bundle, NOW);
+    expect(types(result)).toContain("CALL_OVERDUE");
     expect(types(result)).not.toContain("ADVANCE_STAGE");
   });
 
+  it("does NOT emit ADVANCE_STAGE while a CONTRACT critical exists (overdue payment)", () => {
+    const bundle = baseBundle({
+      status: "NEGOTIATING",
+      salesStages: [{ stage: "HANDLE_OBJECTIONS" }],
+      priceOffers: [{ isAccepted: false }],
+      callReminders: [{ time: future(24), status: "IN_PROGRESS" }],
+      contracts: [
+        {
+          status: "IN_PROGRESS",
+          sessionStatus: "REGISTERED",
+          stages: [],
+          paymentsNew: [{ status: "DUE", paymentCondition: "AFTER_STAGE", dueDate: past(72) }],
+        },
+      ],
+    });
+    const result = computeCockpit(bundle, NOW);
+    expect(types(result)).toContain("PAYMENT_OVERDUE");
+    expect(types(result)).not.toContain("ADVANCE_STAGE");
+  });
+});
+
+describe("computeCockpit — warning-band priority", () => {
+  const daysAgo = (d) => new Date(NOW.getTime() - d * 24 * 3600_000);
+
+  it("ranks LEAD_STALE above DISCOVERY_INCOMPLETE regardless of emission order", () => {
+    const bundle = baseBundle({
+      status: "IN_PROGRESS",
+      updatedAt: daysAgo(6), // LEAD_STALE
+      sessionQuestions: [{ answer: null }], // DISCOVERY_INCOMPLETE
+    });
+    const result = computeCockpit(bundle, NOW);
+    const stale = result.actions.findIndex((a) => a.type === "LEAD_STALE");
+    const discovery = result.actions.findIndex((a) => a.type === "DISCOVERY_INCOMPLETE");
+    expect(stale).toBeGreaterThanOrEqual(0);
+    expect(discovery).toBeGreaterThan(stale);
+  });
 });
 
 describe("computeCockpit — contract health + post-finalize (Phase 1)", () => {

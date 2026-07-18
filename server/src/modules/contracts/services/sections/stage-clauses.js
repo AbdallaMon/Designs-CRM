@@ -1,5 +1,4 @@
 import { writeSubhead, writeBolxParagraphOrList, writeParagraphOrList } from "../contract-pdf-context.js";
-import { STAGE_CLAUSES_DEFAULT } from "../witten-blocks-data.js";
 
 export async function renderStageClauses(
   ctx,
@@ -18,16 +17,10 @@ export async function renderStageClauses(
   ctx.y -= 16;
 
   await ctx.writeTitle(lng === "ar" ? "بنود المراحل" : "Stage Clauses");
-  for (const i of [1, 2, 3, 4, 5, 6]) {
-    // const text = STAGE_CLAUSES_DEFAULT?.[i]?.[lng];
-    const data = defaultContractUtilityData?.stageClauses.find(
-      (clause) => clause.order === i,
-    );
-    // Skip any order whose clause isn't seeded — render what exists instead of crashing on
-    // `data.headingAr`. Fully-seeded data (all 6 orders) is unaffected, so real contracts
-    // produce identical output.
-    if (!data) continue;
-
+  // Render every stage clause row as-is (already ordered by `order asc` from the query),
+  // mirroring the web ReadableStageClauses client. The previous `[1..6]` order-match
+  // silently dropped every row because the editor writes 0-indexed `order` values.
+  for (const data of defaultContractUtilityData.stageClauses) {
     const head = lng === "ar" ? data.headingAr : data.headingEn;
     const title = lng === "ar" ? data.titleAr : data.titleEn;
     const text =

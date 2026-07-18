@@ -3,7 +3,8 @@
 // Horizontal pipeline of a contract's stages. Replaces the old ContractStage grid card:
 // the stages are an `order`ed pipeline, so a stepper is the honest, compact shape for them.
 // Each node uses that level's own icon (from the `contractLevel` constants map), coloured by
-// stageStatus. The Arabic level name lives in a tooltip — the raw `LEVEL_N` key is never shown.
+// stageStatus. Every node shows its level name + status underneath (the in-progress node is
+// visually dominant); the raw `LEVEL_N` key is never shown.
 // Crash-safe: `stage.title` is a free-text String column, so an off-convention title falls back
 // to a neutral node instead of throwing (the old ChipWithIcon lookup was unguarded).
 
@@ -31,12 +32,15 @@ function StageNode({ stage, isLast }) {
   const LevelIcon = conf?.icon;
 
   const label = conf?.name || stage?.title || "Stage";
-  const statusLabel =
-    stage?.stageStatus === "COMPLETED"
-      ? "Completed"
-      : stage?.stageStatus === "IN_PROGRESS"
-      ? "In progress"
-      : "Not started";
+  const isCompleted = stage?.stageStatus === "COMPLETED";
+  const statusLabel = isCompleted
+    ? "Completed"
+    : stage?.stageStatus === "IN_PROGRESS"
+    ? "In progress"
+    : "Not started";
+  // Name color: in-progress dominant (primary), completed success-green, not-started a
+  // readable grey (NOT text.disabled — the name must stay legible on every node).
+  const nameColor = active || isCompleted ? main : theme.palette.text.secondary;
 
   return (
     <Stack direction="row" alignItems="center" sx={{ flex: isLast ? "0 0 auto" : 1, minWidth: 0 }}>
@@ -67,13 +71,13 @@ function StageNode({ stage, isLast }) {
               <FaRegCircle />
             )}
           </Box>
-          {active && (
+          <Stack alignItems="center" spacing={0.1} sx={{ maxWidth: 92 }}>
             <Typography
               variant="caption"
               sx={{
                 maxWidth: 92,
-                color: main,
-                fontWeight: 700,
+                color: nameColor,
+                fontWeight: active ? 700 : 600,
                 lineHeight: 1.2,
                 textAlign: "center",
                 overflow: "hidden",
@@ -83,7 +87,19 @@ function StageNode({ stage, isLast }) {
             >
               {label}
             </Typography>
-          )}
+            <Typography
+              sx={{
+                fontSize: "0.65rem",
+                lineHeight: 1.1,
+                color: active ? main : theme.palette.text.disabled,
+                fontWeight: active ? 600 : 400,
+                textAlign: "center",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {statusLabel}
+            </Typography>
+          </Stack>
         </Stack>
       </Tooltip>
       {!isLast && (
