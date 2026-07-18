@@ -228,7 +228,7 @@ const RenderQuestionContent = ({
                   {isApprovalLoading ? (
                     <CircularProgress size={16} />
                   ) : (
-                    "اعتمالد هذه الاجابة؟"
+                    "اعتماد هذه الاجابة؟"
                   )}
                 </Button>
               )}

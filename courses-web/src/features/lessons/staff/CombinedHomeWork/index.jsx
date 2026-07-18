@@ -25,7 +25,8 @@ const CombinedHomeWork = ({ courseId, lessonId, onUpdate }) => {
 
   useEffect(() => {
     fetchHomeworks();
-  }, []);
+    // Refetch when the lesson/course changes (the fetch reads both ids), not only on mount.
+  }, [courseId, lessonId]);
 
   const fetchHomeworks = async () => {
     await getDataAndSet({

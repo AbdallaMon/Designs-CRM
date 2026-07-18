@@ -103,7 +103,6 @@ export default function EditCourseDialog({
             ))}
           </Grid>
         </FormGroup>
-        =
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

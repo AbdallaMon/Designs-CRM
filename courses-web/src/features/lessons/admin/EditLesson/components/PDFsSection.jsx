@@ -125,7 +125,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
     if (type === "CREATE") {
       setNewPdf((old) => ({ ...old, url: fileUpload.url }));
     } else {
-      setEditData({ ...old, url: fileUpload.url });
+      setEditData((old) => ({ ...old, url: fileUpload.url }));
     }
   }
   return (

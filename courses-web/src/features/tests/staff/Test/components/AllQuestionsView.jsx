@@ -148,7 +148,7 @@ const AllQuestionsView = ({
           size="large"
           endIcon={<FaCheck />}
           disabled={savingAnswers?.length > 0}
-          onClick={handleSubmitAttempt}
+          onClick={() => handleSubmitAttempt()}
         >
           احفظ الاختبار
         </Button>

@@ -177,7 +177,9 @@ const TestComponent = ({
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, , currentAttempt]);
+    // timeLeft MUST be a dependency: the body reads it to decide auto-submit, and the
+    // interval recreates each tick via the functional setTimeLeft updater (idempotent).
+  }, [isTimerRunning, timeLeft, currentAttempt]);
   useEffect(() => {}, []);
   const handleStartNewAttempt = async () => {
     try {
