@@ -2,28 +2,15 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Container,
   Typography,
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  ListItemIcon,
   Chip,
-  LinearProgress,
-  Button,
-  Divider,
-  useTheme,
-  useMediaQuery,
   Drawer,
   AppBar,
   Toolbar,
   IconButton,
-  Paper,
-  Alert,
   Fab,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   MdPlayArrow as PlayArrow,
@@ -31,180 +18,21 @@ import {
   MdCheckCircle as CheckCircle,
   MdQuiz as Quiz,
   MdAssignment as Assignment,
-  MdSchool as School,
   MdArrowBack as ArrowBack,
   MdMenu as Menu,
-  MdClose as Close,
   MdList as ListIcon,
-  MdWarning as Warning,
 } from "react-icons/md";
-import LessonComponent from "./Lesson";
-import TestComponent from "@/features/tests/staff/Test";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { baseRoleOf } from "@/app/helpers/functions/utility";
 import { useSearchParams } from "next/navigation";
+import CourseNavigation from "./components/CourseNavigation";
+import CourseOverview from "./components/CourseOverview";
+import LessonView from "./components/LessonView";
+import TestView from "./components/TestView";
 
 const DRAWER_WIDTH = 320;
-
-// Course Navigation Sidebar Component
-const CourseNavigation = ({
-  course,
-  userProgress,
-  courseItems,
-  selectedItem,
-  onItemClick,
-  calculateProgress,
-  lastAvailableIndex,
-  isItemAccessible,
-  getStatusIcon,
-  getStatusChip,
-  getItemStatus,
-}) => {
-  const theme = useTheme();
-
-  return (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Course Header */}
-      <Box
-        sx={{
-          p: 3,
-          borderBottom: 1,
-          borderColor: "divider",
-          pt: { md: "80px" },
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <School sx={{ mr: 2, fontSize: 32, color: "primary.main" }} />
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: "bold", fontSize: "1.1rem" }}
-              noWrap
-            >
-              {course?.title}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {course?.description}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Progress: {Math.round(calculateProgress())}%
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={calculateProgress()}
-            sx={{ height: 6, borderRadius: 3 }}
-          />
-        </Box>
-
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-          <Chip
-            label={`${course?._count.lessons} Lessons`}
-            variant="outlined"
-            size="small"
-            sx={{ fontSize: "0.7rem", height: 24 }}
-          />
-          <Chip
-            label={`${userProgress?.completedLessons.length} Done`}
-            variant="outlined"
-            size="small"
-            color="success"
-            sx={{ fontSize: "0.7rem", height: 24 }}
-          />
-        </Box>
-      </Box>
-
-      {/* Course Content List */}
-      <Box sx={{ flex: 1, overflow: "auto" }}>
-        <List sx={{ p: 0 }}>
-          {courseItems?.map((item, index) => {
-            const isAccessible = isItemAccessible(item, index, courseItems);
-            const isSelected =
-              selectedItem?.id === item.id && selectedItem?.type === item.type;
-
-            return (
-              <React.Fragment key={`${item.type}-${item.id}`}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    onClick={() => isAccessible && onItemClick(item)}
-                    disabled={!isAccessible}
-                    selected={isSelected}
-                    sx={{
-                      py: 1.5,
-                      px: 2,
-                      borderLeft: isSelected ? 3 : 0,
-                      borderColor: "primary.main",
-                      bgcolor: isSelected ? "action.selected" : "transparent",
-                      "&:hover": {
-                        bgcolor: isAccessible ? "action.hover" : "transparent",
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      {getStatusIcon(item, isAccessible)}
-                    </ListItemIcon>
-
-                    <ListItemText
-                      primary={
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 0.5,
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight:
-                                item.type === "lesson" ? "medium" : "normal",
-                              color: !isAccessible
-                                ? "text.disabled"
-                                : "text.primary",
-                              flex: 1,
-                              fontSize: "0.875rem",
-                            }}
-                          >
-                            {item.title}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={
-                        <Box sx={{ mt: 0.5 }}>
-                          {getStatusChip(item, isAccessible)}
-                          {item.duration && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{
-                                display: "block",
-                                mt: 0.5,
-                                fontSize: "0.7rem",
-                              }}
-                            >
-                              {item.duration} min
-                            </Typography>
-                          )}
-                        </Box>
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-                {index < courseItems?.length - 1 && <Divider />}
-              </React.Fragment>
-            );
-          })}
-        </List>
-      </Box>
-    </Box>
-  );
-};
 
 // Main Course View Component
 const LesssonView = ({ courseId }) => {
@@ -509,112 +337,6 @@ const LesssonView = ({ courseId }) => {
     setMobileDrawerOpen(!mobileDrawerOpen);
   };
 
-  // Course Overview Component (when no lesson/test is selected)
-  const CourseOverview = () => (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Paper elevation={2} sx={{ p: 4, borderRadius: 3, textAlign: "center" }}>
-        <School sx={{ fontSize: 80, color: "primary.main", mb: 2 }} />
-        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-          {course?.title}
-        </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
-        >
-          {course?.description}
-        </Typography>
-
-        {lastAvailableIndex === -1 ? (
-          <Alert severity="warning" sx={{ mb: 3, maxWidth: 500, mx: "auto" }}>
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-              No Access Yet
-            </Typography>
-            <Typography variant="body2">
-              You don't have permission to access any lessons in this course.
-              Please contact your instructor.
-            </Typography>
-          </Alert>
-        ) : (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: "medium" }}>
-              Ready to Start Learning?
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<PlayArrow />}
-              onClick={() => {
-                const firstAccessibleItem = courseItems.find((_, index) =>
-                  isItemAccessible(courseItems[index], index, courseItems)
-                );
-                if (firstAccessibleItem) {
-                  handleItemClick(firstAccessibleItem);
-                }
-              }}
-              sx={{ px: 4, py: 1.5, fontSize: "1.1rem" }}
-            >
-              Start First Lesson
-            </Button>
-          </Box>
-        )}
-
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Chip
-            icon={<School />}
-            label={`${course?._count.lessons} Lessons`}
-            variant="outlined"
-            color="primary"
-          />
-          <Chip
-            icon={<CheckCircle />}
-            label={`${userProgress?.completedLessons?.length || 0} Completed`}
-            variant="outlined"
-            color="success"
-          />
-          <Chip
-            icon={<Quiz />}
-            label={`${course?._count.tests} Tests`}
-            variant="outlined"
-          />
-        </Box>
-      </Paper>
-    </Container>
-  );
-
-  // Lesson View with enhanced layout
-  const LessonView = ({ isCompleted, lesson, onComplete, mustAddHomeWork }) => (
-    <Box sx={{ height: "100%" }}>
-      <LessonComponent
-        isCompleted={isCompleted}
-        lessonId={lesson.id}
-        courseId={lesson.courseId}
-        onComplete={onComplete}
-        noTest={lesson?.tests.length === 0}
-        mustAddHomeWork={mustAddHomeWork}
-      />
-    </Box>
-  );
-
-  // Test View with enhanced layout
-  const TestView = ({ test, mustAddHomeWork }) => (
-    <Container maxWidth="md" sx={{ py: 2, px: 0 }}>
-      <TestComponent
-        testId={test.id}
-        courseId={courseId}
-        onComplete={getCourse}
-        mustAddHomeWork={mustAddHomeWork}
-      />
-    </Container>
-  );
-
   // Navigation Drawer
   const drawer = (
     <CourseNavigation
@@ -652,11 +374,22 @@ const LesssonView = ({ courseId }) => {
         <TestView
           test={selectedItem.data}
           mustAddHomeWork={selectedItem.mustAddHomeWork}
+          courseId={courseId}
+          onComplete={getCourse}
         />
       );
     }
 
-    return <CourseOverview />;
+    return (
+      <CourseOverview
+        course={course}
+        userProgress={userProgress}
+        lastAvailableIndex={lastAvailableIndex}
+        courseItems={courseItems}
+        isItemAccessible={isItemAccessible}
+        handleItemClick={handleItemClick}
+      />
+    );
   };
 
   return (
