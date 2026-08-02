@@ -70,7 +70,7 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
     const req = await handleRequestSubmit(
       { status: next },
       setLoading,
-      `shared/contracts/${contractId}/payments/${payment.id}/actions/change-status`,
+      `contracts/${contractId}/payments/${payment.id}/actions/change-status`,
       false,
       "Updating",
       false
@@ -109,7 +109,7 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/${contractId}/payments/${payment.id}`,
+      `contracts/${contractId}/payments/${payment.id}`,
       false,
       "Updating",
       false,
@@ -126,7 +126,7 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/contracts/${contractId}/payments/${payment.id}`,
+      `contracts/${contractId}/payments/${payment.id}`,
       false,
       "Updating",
       false,

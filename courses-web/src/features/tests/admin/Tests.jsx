@@ -73,7 +73,7 @@ export function Tests({ type, id }) {
 
   async function getTests() {
     const key = type === "COURSE" ? "courseId" : "lessonId";
-    const endpoint = `admin/courses/tests?key=${key}&id=${id}&`;
+    const endpoint = `courses/tests?key=${key}&id=${id}&`;
 
     await getDataAndSet({
       url: endpoint,
@@ -93,7 +93,7 @@ export function Tests({ type, id }) {
         published: publish,
       },
       setCreateLoading,
-      `admin/courses/tests?key=${key}&id=${id}&`,
+      `courses/tests?key=${key}&id=${id}&`,
       false,
       "Creating",
       false
@@ -117,7 +117,7 @@ export function Tests({ type, id }) {
         published: editPublish,
       },
       setCreateLoading,
-      `admin/courses/tests/${editTest.id}`,
+      `courses/tests/${editTest.id}`,
       false,
       "Updating",
       false,
@@ -206,7 +206,7 @@ export function Tests({ type, id }) {
                     <DeleteModal
                       buttonType="ICON"
                       item={test}
-                      href={`admin/courses/tests`}
+                      href="courses/tests"
                       handleClose={getTests}
                     />
                   </Box>

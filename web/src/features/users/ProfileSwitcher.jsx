@@ -8,7 +8,7 @@ import { FaUserShield, FaUserTie, FaPalette, FaCalculator } from "react-icons/fa
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { activeProfileLabel, legacyRoleLabel } from "@/app/helpers/profiles";
+import { activeProfileLabel } from "@/app/helpers/profiles";
 import colors from "@/app/helpers/colors";
 
 // Icon + color per profile FAMILY (from /auth/me profiles[].family). Caramel identity.
@@ -26,7 +26,7 @@ const fallbackConfig = { icon: <FaUserTie />, color: colors.textTertiary };
 // server-side switch (POST auth/profile/switch → refetchMe). Holds exactly 1 → a static
 // chip showing the active profile's label. Holds 0 (unmigrated) → legacy roleLabel fallback.
 export default function ProfileSwitcher() {
-  const { profiles = [], currentProfileId, user, refetchMe } = useAuth();
+  const { profiles = [], currentProfileId, refetchMe } = useAuth();
   const { setLoading } = useToastContext();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -36,7 +36,7 @@ export default function ProfileSwitcher() {
   const activeFamilyConfig = (active && familyConfig[active.family]) || fallbackConfig;
 
   // 0 profiles (unmigrated): fall back to the legacy role label so nothing regresses.
-  const label = activeLabel ?? legacyRoleLabel(user);
+  const label = activeLabel;
   if (!label) return null;
 
   const multi = list.length > 1;

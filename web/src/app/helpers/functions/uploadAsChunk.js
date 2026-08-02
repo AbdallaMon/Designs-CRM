@@ -5,68 +5,69 @@ import {
 import { toast } from "react-toastify";
 import { apiRequest } from "./apiClient";
 
-export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
+export async function uploadInChunks(
+  file,
+  setProgress,
+  setOverlay,
+  { publicAccess } = {},
+) {
   const toastId = toast.loading("Uploading");
-  const id = toastId;
   try {
-    const chunkSize = 1 * 1024 * 1024; // 1MB
+    const chunkSize = 1024 * 1024;
     const totalChunks = Math.ceil(file.size / chunkSize);
+    const uploadSessionId =
+      globalThis.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let finalPayload = null;
 
-    if (setOverlay) {
-      setOverlay(true);
-    }
-
-    for (let i = 0; i < totalChunks; i++) {
-      const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
-
+    setOverlay?.(true);
+    for (let index = 0; index < totalChunks; index += 1) {
+      const chunk = file.slice(index * chunkSize, (index + 1) * chunkSize);
       const formData = new FormData();
       formData.append("chunk", chunk);
       formData.append("filename", file.name);
-      formData.append("chunkIndex", i);
+      formData.append("chunkIndex", index);
       formData.append("totalChunks", totalChunks);
+      formData.append("uploadSessionId", uploadSessionId);
 
-      // Frozen chunk-upload mechanism — only the path is repointed to the /v2 files module
-      // (legacy utility/upload-chunk → files/chunks, client/upload-chunk → files/client/chunks).
-      const res = await apiRequest(
-        isClient ? "files/client/chunks" : "files/chunks",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const raw = await res.json();
-      const json = raw?.data ?? raw; // unwrap the /v2 { success, data } envelope
-      if (json.url) {
+      const endpoint = publicAccess
+        ? `files/client/chunks?purpose=${encodeURIComponent(publicAccess.purpose)}`
+        : "files/chunks";
+      const response = await apiRequest(endpoint, {
+        method: "POST",
+        body: formData,
+        ...(publicAccess
+          ? { headers: { "x-upload-token": publicAccess.token } }
+          : {}),
+      });
+      const envelope = await response.json();
+      if (!response.ok) {
+        throw new Error(envelope?.message || "FILE_UPLOAD_ERROR");
+      }
+      const payload = envelope?.data ?? envelope;
+      if (payload.url) {
         finalPayload = {
-          url: json.url,
-          thumbnailUrl: json.thumbnailUrl || null,
-          fileName: json.fileName || file.name,
-          fileSize: json.fileSize || file.size,
-          fileMimeType: json.fileMimeType || file.type || null,
+          url: payload.url,
+          thumbnailUrl: payload.thumbnailUrl || null,
+          fileName: payload.fileName || file.name,
+          fileSize: payload.fileSize || file.size,
+          fileMimeType: payload.fileMimeType || file.type || null,
         };
       }
-
-      // ✅ update progress
-      const percent = Math.round(((i + 1) / totalChunks) * 100);
-      setProgress(percent);
+      setProgress?.(Math.round(((index + 1) / totalChunks) * 100));
     }
-    if (setOverlay) {
-      setOverlay(false);
-    }
-    toast.update(id, Success("Uploaded successfully"));
 
+    setOverlay?.(false);
+    toast.update(toastId, Success("Uploaded successfully"));
     return {
-      thumbnailUrl: finalPayload.thumbnailUrl,
-      url: finalPayload.url,
-      status: finalPayload.url && 200,
-      ...finalPayload,
+      thumbnailUrl: finalPayload?.thumbnailUrl ?? null,
+      url: finalPayload?.url ?? null,
+      status: finalPayload?.url ? 200 : false,
+      ...(finalPayload ?? {}),
     };
-  } catch (e) {
-    if (setOverlay) {
-      setOverlay(false);
-    }
-    toast.update(id, Failed("Upload failed"));
+  } catch {
+    setOverlay?.(false);
+    toast.update(toastId, Failed("Upload failed"));
+    return { status: false, url: null, thumbnailUrl: null };
   }
 }

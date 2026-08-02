@@ -33,7 +33,7 @@ import { ProjectDetails } from "@/features/work-stages/projects/ProjectDetails.j
 function WorkStageOverview({ lead, canManageProjects }) {
   const theme = useTheme();
   const { user } = useAuth();
-  const isStaff = user.role === "STAFF";
+  const isStaff = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile);
   return (
     <Stack spacing={3}>
       {/* Lead info + related projects: hidden for STAFF (sales) viewers, as before. */}
@@ -71,7 +71,7 @@ function WorkStageOverview({ lead, canManageProjects }) {
                   />
                   <ProjectDetails
                     project={project}
-                    isStaff={user.role !== "ADMIN" && user.role !== "SUPER_ADMIN"}
+                    isStaff={user.profile !== "ADMIN" && user.profile !== "SUPER_ADMIN"}
                     withReleventLinks={true}
                   />
                 </Paper>
@@ -81,7 +81,7 @@ function WorkStageOverview({ lead, canManageProjects }) {
         </>
       )}
       {/* Contact info: shown to ADMIN (matches the previous surface's effective behavior). */}
-      {user.role === "ADMIN" && <LeadContactInfo lead={lead} />}
+      {user.profile === "ADMIN" && <LeadContactInfo lead={lead} />}
     </Stack>
   );
 }

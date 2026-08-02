@@ -9,6 +9,8 @@ import timezone from "dayjs/plugin/timezone.js";
 
 import { availabilityRepository } from "./availability.repo.js";
 import { shapeMonthActivity } from "../calendar.dto.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { calendarMessagesCodes } from "@dms/shared";
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -19,8 +21,8 @@ export async function getCalendarDataForMonth(
     month,
     adminId = null,
     userId = null,
-    isSuperSales = false,
-    superSalesId = null,
+    hasSuperSalesScope = false,
+    supervisorId = null,
   },
   repo = availabilityRepository,
 ) {
@@ -69,12 +71,12 @@ export async function getCalendarDataForMonth(
       ];
 
       callWhere.userId = Number(adminId);
-    } else if (isSuperSales) {
+    } else if (hasSuperSalesScope) {
       meetingWhere.OR = [
-        { adminId: Number(superSalesId) },
-        { userId: Number(superSalesId) },
+        { adminId: Number(supervisorId) },
+        { userId: Number(supervisorId) },
       ];
-      callWhere.userId = Number(superSalesId);
+      callWhere.userId = Number(supervisorId);
     }
 
     const [meetings, calls] = await Promise.all([
@@ -132,6 +134,6 @@ export async function getCalendarDataForMonth(
     return calendarData;
   } catch (error) {
     console.error("Error fetching calendar data:", error);
-    throw new Error("Failed to fetch calendar data");
+    throw new AppError({ code: calendarMessagesCodes.CALENDAR_FETCH_FAILED, statusCode: 500 });
   }
 }

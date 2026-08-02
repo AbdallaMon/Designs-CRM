@@ -52,6 +52,28 @@ vi.mock("@dms/db", () => ({
     },
   },
 }));
+vi.mock("../../../../infra/auth/profile-cache.js", async () => {
+  const { getEffectivePermissions } = await import("@dms/shared");
+  const keys = { 1: "NORMAL_SALES", 2: "ADMIN" };
+  const toProfile = (id) => {
+    const key = keys[id];
+    if (!key) return null;
+    return {
+      id,
+      key,
+      label: key,
+      family: key === "ADMIN" ? "ADMIN" : "SALES",
+      isAdminTier: key === "ADMIN",
+      ...getEffectivePermissions({ profile: key }),
+    };
+  };
+  return {
+    profileCache: {
+      resolve: toProfile,
+      resolveMeta: toProfile,
+    },
+  };
+});
 
 // The lead usecase graph imports this BullMQ queue at load time — stub it (no Redis).
 vi.mock("../../../../infra/queues/telegram-channel.queue.js", () => ({
@@ -87,14 +109,12 @@ afterAll(async () => {
 });
 
 function signFor({ id, role }) {
+  const currentProfileId = role === "ADMIN" ? 2 : 1;
   return JwtService.signAccess({
     id,
-    role,
-    activeRole: role,
+    currentProfileId,
+    profileIds: [currentProfileId],
     isActive: true,
-    isPrimary: false,
-    isSuperSales: false,
-    subRoles: [],
   });
 }
 

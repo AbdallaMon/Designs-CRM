@@ -47,7 +47,7 @@ class ImageSessionUsecase {
   // vs mutate (write).
   async #scopeBySession({ sessionId, authUser, mode }) {
     const row = await imageSessionRepository.getSessionClientLeadId({ sessionId });
-    if (!row || row.clientLeadId == null) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, 404);
+    if (!row || row.clientLeadId == null) throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, statusCode: 404 });
     if (mode === "mutate") await this.assertLeadMutate({ clientLeadId: row.clientLeadId, authUser });
     else await this.assertLeadAccess({ clientLeadId: row.clientLeadId, authUser });
     return row;
@@ -63,6 +63,9 @@ class ImageSessionUsecase {
   // The acting userId comes from authUser (req.auth), never the body.
   async createForLead({ clientLeadId, spaces, authUser }) {
     await this.assertLeadMutate({ clientLeadId, authUser });
+    if (!Array.isArray(spaces) || spaces.length === 0) {
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_SPACES_REQUIRED, statusCode: 400 });
+    }
     return createClientImageSession({
       clientLeadId: Number(clientLeadId),
       userId: Number(authUser.id),
@@ -83,7 +86,11 @@ class ImageSessionUsecase {
   // (WRITE scope via session→lead).
   async regenerateToken({ sessionId, authUser }) {
     await this.#scopeBySession({ sessionId, authUser, mode: "mutate" });
-    return regenerateSessionToken(Number(sessionId));
+    const result = await regenerateSessionToken(Number(sessionId));
+    if (!result) {
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, statusCode: 404 });
+    }
+    return result;
   }
 
   // DELETE /:clientLeadId/sessions/:sessionId — delete an in-progress session (WRITE scope
@@ -91,14 +98,21 @@ class ImageSessionUsecase {
   // submit" guard using the passed user — preserved by passing authUser through unchanged.
   async deleteSession({ sessionId, authUser }) {
     await this.#scopeBySession({ sessionId, authUser, mode: "mutate" });
-    return deleteInProgressSession(Number(sessionId), authUser);
+    const result = await deleteInProgressSession(Number(sessionId), authUser);
+    if (result?.notFound) {
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, statusCode: 404 });
+    }
+    if (result?.locked) {
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_SUBMITTED_LOCKED, statusCode: 409 });
+    }
+    return result;
   }
 
   // GET /ids — global pick-list model-id helper. NOT lead-scoped (global config). Hardened:
   // the model must be in the allow-list, and the client `where` JSON is parse-guarded.
   async getModelIds({ model, searchParams }) {
     if (!model || !UTILITY_MODEL_ALLOWLIST.includes(model)) {
-      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, statusCode: 400 });
     }
     // Guard the client-supplied `where` JSON: the legacy service does a bare
     // JSON.parse(searchParams.where) → a malformed string would crash with a 500. Reject it
@@ -108,7 +122,7 @@ class ImageSessionUsecase {
       try {
         JSON.parse(where);
       } catch {
-        throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
+        throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, statusCode: 400 });
       }
     }
     return getModelIds({ model, searchParams });

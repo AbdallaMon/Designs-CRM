@@ -1,4 +1,5 @@
 import rateLimit from "express-rate-limit";
+import { rateLimitResponse } from "../../../../shared/http/rate-limit-response.js";
 
 class BookingLeadRateLimit {
   static createLeadLimiter = rateLimit({
@@ -6,7 +7,7 @@ class BookingLeadRateLimit {
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: "Too many leads created, please try again later" },
+    message: rateLimitResponse(),
   });
 
   static submitLeadLimiter = rateLimit({
@@ -14,7 +15,7 @@ class BookingLeadRateLimit {
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: "Too many submissions, please try again later" },
+    message: rateLimitResponse(),
   });
 
   static generalLeadLimiter = rateLimit({
@@ -22,7 +23,7 @@ class BookingLeadRateLimit {
     max: 60,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { message: "Too many requests, please try again later" },
+    message: rateLimitResponse(),
   });
 }
 

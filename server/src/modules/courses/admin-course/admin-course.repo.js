@@ -12,7 +12,6 @@ export class AdminCourseRepository {
       take,
       include: {
         _count: { select: { lessons: true, tests: true } },
-        roles: true,
       },
     });
   }
@@ -161,16 +160,19 @@ export class AdminCourseRepository {
   }
 
   // ── lesson access / allowed roles ───────────────────────────────────────────────
-  getAllowedRoles({ courseId, client } = {}) {
-    return (client ?? prisma).courseRole.findMany({ where: { courseId } });
-  }
-
   getAllowedLessonUsers({ lessonId, client } = {}) {
     return (client ?? prisma).lessonAccess.findMany({
       where: { lessonId },
       select: {
         id: true,
-        user: { select: { id: true, name: true, email: true, role: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            currentProfile: { select: { key: true, label: true } },
+          },
+        },
       },
     });
   }
@@ -310,7 +312,13 @@ export class AdminCourseRepository {
         score: true,
         passed: true,
         endTime: true,
-        user: { select: { name: true, email: true, role: true } },
+        user: {
+          select: {
+            name: true,
+            email: true,
+            currentProfile: { select: { key: true, label: true } },
+          },
+        },
       },
       orderBy: { createdAt: "asc" },
     });

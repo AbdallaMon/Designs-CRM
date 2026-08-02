@@ -23,35 +23,40 @@ import { useAlertContext } from '@/app/providers/MuiAlert';
 import { handleRequestSubmit } from '@/app/helpers/functions/handleSubmit';
 import { MdAdd, MdManageAccounts, MdPerson } from 'react-icons/md';
 import { useToastContext } from '@/app/providers/ToastLoadingProvider';
+import { apiRequest } from '@/app/helpers/functions/apiClient';
 
 const LessonAccessDialog = ({ lessonId ,courseId }) => {
   const [open, setOpen] = useState(false);
   const [lessonAccess, setLessonAccess] = useState([]);
-  const [_,setAllowedRoles]=useState([])
-  const [loadingAllowed,setLoadingAllowedRoles]=useState(false)
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const {setAlertError}=useAlertContext()
 const {setToastLoading }=useToastContext()
   const fetchLessonAccess = async () => {
-   await getDataAndSet({url:`admin/courses/${courseId}/lessons/${lessonId}/allowed-users`,setData:setLessonAccess,setLoading})
+   await getDataAndSet({url:`courses/${courseId}/lessons/${lessonId}/allowed-users`,setData:setLessonAccess,setLoading})
   };
 
-  async function getAllowedRoles(){
-   const req= await getDataAndSet({url:`admin/courses/${courseId}/allowed-roles`,setLoading:setLoadingAllowedRoles,setData:setAllowedRoles})
-    await fetchAllUsers(req.data)
-  }
-  async function fetchAllUsers(roles)  {
-    const roleOr= roles.map((r)=>({role:r}))
-    await getDataAndSet({url:`utility/search/`,filters:{OR:roleOr},setData:setAllUsers,setLoading})
-
+  async function fetchUsers(query)  {
+    if (!query.trim()) {
+      setAllUsers([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await apiRequest(
+        `utilities/search?${new URLSearchParams({ resource: "users", query })}`,
+      );
+      const body = await response.json();
+      setAllUsers(response.ok && Array.isArray(body.data) ? body.data : []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOpen = () => {
     setOpen(true);
     fetchLessonAccess();
-    getAllowedRoles()
   };
 
   const handleClose = () => {
@@ -68,7 +73,7 @@ const {setToastLoading }=useToastContext()
         setAlertError('User already has access to this lesson');
         return;
       }
-        const req=await handleRequestSubmit({userId:selectedUser.id},setToastLoading,`admin/courses/${courseId}/lessons/${lessonId}/allowed-users`,false,"Allowing")
+        const req=await handleRequestSubmit({userId:selectedUser.id},setToastLoading,`courses/${courseId}/lessons/${lessonId}/allowed-users`,false,"Allowing")
 if(req.status===200){
     await fetchLessonAccess()
         setSelectedUser(null);
@@ -111,8 +116,11 @@ if(req.status===200){
                 options={availableUsers}
                 getOptionLabel={(option) => `${option.name} (${option.email})`}
                 value={selectedUser}
-                loading={loadingAllowed||loading}
+                loading={loading}
                 onChange={(event, newValue) => setSelectedUser(newValue)}
+                onInputChange={(event, value, reason) => {
+                  if (reason === "input") fetchUsers(value);
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -133,7 +141,7 @@ if(req.status===200){
                       </Typography>
                       {" - "}
                                <Typography variant="caption" color="text.secondary">
-                        {option.role}
+                        {option.currentProfile?.label}
                       </Typography>
                     </Box>
                   </Box>
@@ -157,7 +165,7 @@ if(req.status===200){
             Current Access List
           </Typography>
           
-          {(loading||loadingAllowed) ? (
+          {loading ? (
             <Box display="flex" justifyContent="center" py={3}>
               <CircularProgress />
             </Box>
@@ -186,7 +194,7 @@ if(req.status===200){
                             {access.user.email}
                           </Typography>
                               <Typography variant="body2" color="text.secondary">
-                            {access.user.role}
+                            {access.user.currentProfile?.label}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Access granted: {dayjs(access.grantedAt).format("DD/MM/YYYY")}
@@ -195,7 +203,7 @@ if(req.status===200){
                       }
                     />
                     <ListItemSecondaryAction>
-                   <DeleteModal buttonType='ICON' href={`admin/courses/${courseId}/lessons/${lessonId}/allowed-users`} item={access} handleClose={fetchLessonAccess} />
+                   <DeleteModal buttonType='ICON' href={`courses/${courseId}/lessons/${lessonId}/allowed-users`} item={access} handleClose={fetchLessonAccess} />
                     </ListItemSecondaryAction>
                   </ListItem>
                 ))

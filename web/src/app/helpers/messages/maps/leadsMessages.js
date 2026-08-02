@@ -58,6 +58,15 @@ export const leadsMessages = {
   NOTE_CONTENT_EMPTY: "Note content is empty",
   FILE_FIELDS_REQUIRED: "File fields are required",
   BULK_CONVERT_FORBIDDEN: "You do not have permission for bulk conversion",
+  BOOKING_LEAD_CREATED: "Booking request started",
+  BOOKING_LEAD_UPDATED: "Booking request updated",
+  BOOKING_LEAD_SUBMITTED:
+    "Your request was submitted. Our team will contact you shortly",
+  BOOKING_LEAD_NOT_FOUND: "Booking request not found",
+  BOOKING_LEAD_ALREADY_SUBMITTED:
+    "This booking request has already been submitted",
+  BOOKING_LEAD_ALREADY_SUBMITTED_TODAY:
+    "A booking request has already been submitted today",
 
   // ── generic envelope codes (shared) ────────────────────────────────────────────
   OK: "Operation completed successfully",

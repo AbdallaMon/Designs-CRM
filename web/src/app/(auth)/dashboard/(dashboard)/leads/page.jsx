@@ -6,11 +6,10 @@ import NewLeadsPage from "@/features/leads/pages/NewLeadsPage.jsx";
 export default function Page() {
   const { user } = useAuth();
   const sp = useSearchParams();
-  if (!user?.role) return null;
-  const role = user.role;
+  if (!user?.profile) return null;
   const searchParams = Object.fromEntries(sp.entries());
 
-  if (role === "STAFF" || role === "SUPER_SALES") {
+  if (["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) {
     return <NewLeadsPage staff={true} searchParams={searchParams} />;
   }
   return <NewLeadsPage searchParams={searchParams} />;

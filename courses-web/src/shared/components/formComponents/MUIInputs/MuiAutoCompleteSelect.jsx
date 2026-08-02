@@ -79,7 +79,7 @@ function Select({select, variant, control, errors}) {
                                 error={errors?.[selectData.id]}
                                 variant={variant}
                           >
-                              {loading && "جاري تحميل الخيارات"}
+                              {loading && "Loading options"}
                               {options?.map((option) => (
                                     <MenuItem value={option.value} key={option.label}>
                                         {option.label}

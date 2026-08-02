@@ -8,13 +8,32 @@ import {
   authMessagesCodes,
 } from "@dms/shared";
 
-function makeReq(role, subRoles = [], profile) {
+function makeReq(persona, _unused = [], profile) {
+  const currentProfileKey =
+    profile ??
+    {
+      ADMIN: "ADMIN",
+      SUPER_ADMIN: "SUPER_ADMIN",
+      STAFF: "NORMAL_SALES",
+      THREE_D_DESIGNER: "DESIGNER_3D",
+      TWO_D_DESIGNER: "DESIGNER_2D",
+      TWO_D_EXECUTOR: "EXECUTOR_2D",
+      ACCOUNTANT: "ACCOUNTANT",
+      SUPER_SALES: "SUPER_SALES",
+      CONTACT_INITIATOR: "CONTACT_INITIATOR",
+    }[persona];
   const { permissions, permissionsByModule } = getEffectivePermissions({
-    role,
-    subRoles,
-    ...(profile ? { profile } : {}),
+    profile: currentProfileKey,
   });
-  return { auth: { id: 1, role, permissions, permissionsByModule } };
+  return {
+    auth: {
+      id: 1,
+      currentProfileKey,
+      isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
+      permissions,
+      permissionsByModule,
+    },
+  };
 }
 
 describe("AuthMiddleware.requirePermissions", () => {
@@ -137,7 +156,7 @@ describe("AuthMiddleware.requireSpecialChecker", () => {
   it("forwards the thrown AppError to next() (denial path)", async () => {
     const req = {};
     const next = vi.fn();
-    const denial = new AppError(authMessagesCodes.ACCESS_DENIED, 403);
+    const denial = new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
     await AuthMiddleware.requireSpecialChecker(async () => {
       throw denial;
     })(req, {}, next);

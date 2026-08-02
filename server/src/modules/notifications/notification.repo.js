@@ -71,24 +71,24 @@ class NotificationRepository {
   // Prisma I/O ported VERBATIM from the legacy `createNotification`/`sendNotification`
   // (former utilities/legacy/utility.js). The fan-out orchestration lives in the usecase.
   findFirstAdmin() {
-    return prisma.user.findFirst({ where: { role: "ADMIN" }, select: { id: true } });
-  }
-
-  findSubAdmins() {
-    return prisma.user.findMany({
-      where: { role: "SUPER_ADMIN" },
+    return prisma.user.findFirst({
+      where: { currentProfile: { key: "ADMIN" } },
       select: { id: true },
     });
   }
 
-  findActiveUsersByRoles({ roles }) {
+  findSubAdmins() {
+    return prisma.user.findMany({
+      where: { currentProfile: { key: "SUPER_ADMIN" } },
+      select: { id: true },
+    });
+  }
+
+  findActiveUsersByProfiles({ profileKeys }) {
     return prisma.user.findMany({
       where: {
         isActive: true,
-        OR: [
-          { role: { in: roles } },
-          { subRoles: { some: { subRole: { in: roles } } } },
-        ],
+        currentProfile: { key: { in: profileKeys } },
       },
       select: { id: true },
     });
@@ -98,7 +98,17 @@ class NotificationRepository {
     return prisma.user.findMany({
       where: {
         isActive: true,
-        role: { in: ["STAFF", "ADMIN", "SUPER_ADMIN"] },
+        currentProfile: {
+          key: {
+            in: [
+              "NORMAL_SALES",
+              "PRIMARY_SALES",
+              "SUPER_SALES",
+              "ADMIN",
+              "SUPER_ADMIN",
+            ],
+          },
+        },
       },
       select: { id: true },
     });

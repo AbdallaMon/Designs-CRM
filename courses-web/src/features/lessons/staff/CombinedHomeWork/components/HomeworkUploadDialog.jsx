@@ -52,7 +52,7 @@ const HomeworkUploadDialog = ({
             <FiUpload size={20} />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            رفع {uploadType === "VIDEO" ? "فيديو" : "ملخص"}
+            Upload {uploadType === "VIDEO" ? "video" : "summary"}
           </Typography>
         </Box>
       </DialogTitle>
@@ -60,7 +60,7 @@ const HomeworkUploadDialog = ({
       <DialogContent sx={{ pt: "24px !important" }} dir="rtl">
         <TextField
           fullWidth
-          label="عنوان"
+          label="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           sx={{
@@ -70,14 +70,14 @@ const HomeworkUploadDialog = ({
             },
           }}
           required
-          placeholder={`أدخل عنواناً لـ${
-            uploadType === "VIDEO" ? "الفيديو" : "الملخص"
+          placeholder={`Enter a title for the ${
+            uploadType === "VIDEO" ? "video" : "summary"
           }`}
         />
         <SimpleFileInput
           id="file"
           setData={setFile}
-          label={uploadType === "VIDEO" ? "اختر ملف فيديو" : "اختر مستند"}
+          label={uploadType === "VIDEO" ? "Choose a video file" : "Choose a document"}
           input={{
             accept: uploadType === "VIDEO" ? "video/*" : "application/pdf",
           }}
@@ -95,7 +95,7 @@ const HomeworkUploadDialog = ({
             borderRadius: 2,
           }}
         >
-          إلغاء
+          Cancel
         </Button>
         <Button
           onClick={handleSubmit}
@@ -110,7 +110,7 @@ const HomeworkUploadDialog = ({
             borderRadius: 2,
           }}
         >
-          {submitting ? "جاري الرفع..." : "رفع الملف"}
+          {submitting ? "Uploading..." : "Upload file"}
         </Button>
       </DialogActions>
     </Dialog>

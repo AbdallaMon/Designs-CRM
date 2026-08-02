@@ -6,56 +6,27 @@
 //   - This file is the home for domain predicates and capability computations;
 //     module migrations append theirs here.
 
-import { ROLE_PERMISSIONS } from "./constants/access/role-permissions.js";
 import { splitPermissionCode } from "./constants/access/permissions.constants.js";
 import { NAVIGATION, NAVIGATION_PERMISSION_ACTIONS } from "./constants/access/navigation.js";
 import { PROFILES, resolveProfileKey } from "./constants/access/profiles.js";
 
 /**
- * True when `user.role` is one of the given roles.
- * NOTE: role is descriptive only — authorization is by permission code + scope,
- * never by role alone. Use this for display/labeling helpers, not gating.
- */
-export function checkIfUserIs(user, roles = []) {
-  if (!user) return false;
-  return roles.some((role) => user.role === role);
-}
-
-/**
- * Resolve the codes a single role grants (returns [] for an unknown role).
- * @param {string} role  a UserRole value
- * @returns {string[]}
- */
-export function getPermissionsForRole(role) {
-  return ROLE_PERMISSIONS[role] ?? [];
-}
-
-/**
  * Compute a user's EFFECTIVE permissions, resolved via their PROFILE.
  *
  * Effective = the resolved profile's codes (see `resolveProfileKey`/`PROFILES`).
- * Profiles are the SOLE source; the legacy subRole/isSuperSales unions were removed
- * (they never fired on the main request path — requireAuth resolves from the profile
- * cache — and isSuperSales is not carried in the token).
+ * Profiles are the sole source of authorization.
  *
  * Pure & unit-testable: no DB, no side effects.
  *
  * @param {object|null|undefined} user
- * @param {string} [user.role]     used by resolveProfileKey's legacy fallback (and navRoleFor)
  * @param {string} [user.profile]  the active profile key (primary input)
  * @returns {{ permissions: string[], permissionsByModule: Record<string, {codes: string[], [flag: string]: boolean|string[]}> }}
  */
 export function getEffectivePermissions(user) {
   if (!user) return { permissions: [], permissionsByModule: {} };
 
-  // Profiles are the sole source of effective permissions. The resolved profile's
-  // codes ARE the effective set — the legacy subRole/isSuperSales unions were removed
-  // (Phase 4): they never fire on the main request path (requireAuth resolves from the
-  // profile cache), and isSuperSales is not carried in the token, so the fallback
-  // branches cannot re-add them. isSuperSales still influences WHICH profile
-  // resolveProfileKey picks for an unmigrated row (SUPER_SALES), which already carries
-  // the super-sales codes.
-  const set = new Set(PROFILES[resolveProfileKey(user)] ?? []);
+  const profileKey = resolveProfileKey(user);
+  const set = new Set(profileKey ? PROFILES[profileKey] : []);
   return buildPermissionsByModule(Array.from(set));
 }
 
@@ -145,35 +116,26 @@ export function computeCapabilities(rules, ctx) {
 }
 
 /**
- * Resolve the role used for NAVIGATION filtering. The active profile drives the
- * sidebar: `navRole` (computed from currentProfile in auth.dto.toMe — it already maps
- * the SUPER_SALES profile to the super-sales sidebar) wins when present. Falls back to
- * the derived `activeRole`/`role` for unmigrated rows with no active profile.
+ * Resolve the active profile used for navigation filtering.
  * @param {object} user
  * @returns {string|undefined}
  */
-function navRoleFor(user) {
-  if (user?.navRole) return user.navRole;
-  return user?.activeRole || user?.role;
+function navigationProfileFor(user) {
+  return resolveProfileKey(user);
 }
 
 /**
- * Build the ordered per-role sidebar tabs from the NAVIGATION config.
+ * Build the ordered per-profile sidebar tabs from the navigation config.
  *
- * ROLE-DRIVEN (primary rule: `role ∈ item.allowedRoles`), ported 1:1 from
- * master's `linksForRole(user)`. An OPTIONAL `item.requiredPermission` acts as a
- * NON-NARROWING guard (none set today). Sub-links are ALSO role-filtered — each
- * sub-link may carry its own `allowedRoles`, so one row (e.g. "Work stages")
- * renders the correct per-role sub-list; a parent is dropped only if, after
- * filtering, it has NO surviving sub-link. Items are icon-stripped (icons are
- * FE-only). Returns `[{ key, label, href, active?, subLinks? }]` in config order.
+ * Profile membership is the primary rule; an optional required permission can narrow
+ * a tab further. Sub-links are filtered by the same active profile.
  *
- * @param {object} user  { role, activeRole?, subRoles?, permissions? }
+ * @param {object} user  { profile, permissions? }
  * @returns {Array<{key:string,label:string,href:string,active?:string,subLinks?:Array}>}
  */
 export function buildNavigationTabs(user) {
-  const role = navRoleFor(user);
-  if (!role) return [];
+  const profile = navigationProfileFor(user);
+  if (!profile) return [];
 
   const permissions = user?.permissions
     ? user.permissions
@@ -181,15 +143,15 @@ export function buildNavigationTabs(user) {
 
   const out = [];
   for (const item of NAVIGATION) {
-    if (!item.allowedRoles.includes(role)) continue;
+    if (!item.allowedProfiles.includes(profile)) continue;
     if (item.requiredPermission && !permissions.includes(item.requiredPermission)) continue;
 
     let subLinks;
     if (item.subLinks?.length) {
       const filtered = item.subLinks
-        .filter((s) => !s.allowedRoles || s.allowedRoles.includes(role))
+        .filter((s) => !s.allowedProfiles || s.allowedProfiles.includes(profile))
         .map(({ label, href, active }) => ({ label, href, ...(active ? { active } : {}) }));
-      // Drop a parent that has sub-links in config but none for this role.
+      // Drop a parent that has sub-links but none for this profile.
       if (filtered.length === 0) continue;
       subLinks = filtered;
     }

@@ -22,7 +22,7 @@ function isFullScope(authUser) {
   return (
     Boolean(authUser?.isAdminTier) ||
     authUser?.currentProfileKey === "SUPER_SALES" ||
-    ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"].includes(authUser?.role)
+    authUser?.currentProfileKey === "ACCOUNTANT"
   );
 }
 

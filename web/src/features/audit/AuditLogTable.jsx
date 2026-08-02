@@ -63,7 +63,7 @@ function FilterField({ config, value, onChange, resetTrigger }) {
     return (
       <Box sx={{ width: 300 }}>
         <SearchComponent
-          apiEndpoint="search?model=all-users"
+          resource="users"
           setFilters={(updater) => {
             const next = typeof updater === "function" ? updater({}) : updater;
             onChange(config.key, next?.[config.key] ?? "");

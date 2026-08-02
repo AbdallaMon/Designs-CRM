@@ -80,7 +80,7 @@ const RenderQuestionContent = ({
           disabled={isReview}
           dir="rtl"
         >
-          <FormLabel component="legend">اختر جميع الإجابات الصحيحة:</FormLabel>
+          <FormLabel component="legend">Select all correct answers:</FormLabel>
           <FormGroup>
             {question.choices.map((choice) => (
               <FormControlLabel
@@ -129,7 +129,7 @@ const RenderQuestionContent = ({
           disabled={isReview}
           dir="rtl"
         >
-          <FormLabel component="legend">اختر إجابة واحدة:</FormLabel>
+          <FormLabel component="legend">Select one answer:</FormLabel>
           <RadioGroup
             value={currentAnswer?.selectedAnswers?.[0] || ""}
             onChange={(e) =>
@@ -170,7 +170,7 @@ const RenderQuestionContent = ({
           disabled={isReview}
           dir="rtl"
         >
-          <FormLabel component="legend">صح أم خطأ:</FormLabel>
+          <FormLabel component="legend">True or false:</FormLabel>
           <RadioGroup
             value={currentAnswer?.selectedAnswers?.[0] || ""}
             onChange={(e) =>
@@ -185,9 +185,9 @@ const RenderQuestionContent = ({
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {choice.text === "True"
-                      ? "صح"
+                      ? "True"
                       : choice.text === "False"
-                      ? "خطأ"
+                      ? "False"
                       : choice.text}
                     <>
                       {isReview && choice.isCorrect && (
@@ -228,7 +228,7 @@ const RenderQuestionContent = ({
                   {isApprovalLoading ? (
                     <CircularProgress size={16} />
                   ) : (
-                    "اعتماد هذه الاجابة؟"
+                    "Accept this answer?"
                   )}
                 </Button>
               )}
@@ -250,7 +250,7 @@ const RenderQuestionContent = ({
                   {isApprovalLoading ? (
                     <CircularProgress size={16} />
                   ) : (
-                    "رفض هذا السؤال"
+                    "Reject this question"
                   )}
                 </Button>
               )}
@@ -263,7 +263,7 @@ const RenderQuestionContent = ({
             value={localText}
             onChange={handleLocalChange}
             onBlur={() => handleChange({ textAnswer: localText })}
-            placeholder="أدخل إجابتك هنا..."
+            placeholder="Enter your answer here..."
             disabled={isReview}
             dir="rtl"
           />

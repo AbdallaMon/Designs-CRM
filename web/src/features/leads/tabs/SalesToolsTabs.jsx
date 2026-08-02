@@ -87,7 +87,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
     const request = await handleRequestSubmit(
       { personality, field: "personality", inputType: "text" },
       setLoading,
-      `shared/client-leads/update/${lead.id}`,
+      `leads/update/${lead.id}`,
       false,
       "Updating",
       false,
@@ -113,7 +113,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
 
   // Defense-in-depth: the section is hidden via leadSections `visible()` when not allowed,
   // so this branch should not normally render — kept as a guard, now a calm empty state.
-  if (!isAdmin && user.role !== "STAFF") {
+  if (!isAdmin && !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) {
     return (
       <TabSection icon={<MdAnalytics />} title="Client Analysis">
         <EmptyState
@@ -140,7 +140,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
           </ToolCard>
         </Grid>
 
-        {user.role === "STAFF" &&
+        {["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
         user.profile !== "PRIMARY_SALES" &&
         user.profile !== "SUPER_SALES" ? null : (
           <Grid size={{ xs: 12, md: 6 }}>

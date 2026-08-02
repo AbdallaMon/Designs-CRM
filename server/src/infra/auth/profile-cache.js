@@ -19,7 +19,6 @@ export function createProfileCache({ repository = profileCacheRepository } = {})
         label: p.label,
         family: p.family,
         isAdminTier: Boolean(p.isAdminTier),
-        baseRole: p.baseRole,
         permissions,
         permissionsByModule,
       });

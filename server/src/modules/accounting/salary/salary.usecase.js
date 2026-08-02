@@ -14,8 +14,9 @@
 // byte-identical and translated to AppError codes via translateLegacyAccountingError so the
 // FE error map works; unrecognized errors re-throw as-is (still 500).
 import dayjs from "dayjs";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { accountingMessagesCodes } from "@dms/shared";
 import { salaryRepository } from "./salary.repo.js";
-import { translateLegacyAccountingError } from "../accounting.errors.js";
 // Relocated from the former admin-services god-file. Static top import (the users/user module
 // does NOT import back into accounting, so there is no cycle — see pass-2 alignment).
 import { getUserLogs } from "../../users/user/user.usecase.js";
@@ -40,12 +41,12 @@ async function createBaseSalary({ userId, taxAmount, baseSalary, baseWorkHours }
     taxAmount,
   });
 
-  return { data: salary, message: "Created succssfully" };
+  return { data: salary };
 }
 
 async function editBaseSalary({ id, taxAmount, baseSalary, baseWorkHours }) {
   if (!id || !baseSalary || !baseWorkHours || !taxAmount) {
-    throw new Error("Please fill all fiels");
+    throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
   }
   // Force all number fields to be numbers, even if undefined or null
   baseSalary = Number(baseSalary);
@@ -64,7 +65,7 @@ async function editBaseSalary({ id, taxAmount, baseSalary, baseWorkHours }) {
     taxAmount,
   });
 
-  return { data: salary, message: "Updated succssfully" };
+  return { data: salary };
 }
 
 async function generateMonthlySalary({
@@ -78,7 +79,7 @@ async function generateMonthlySalary({
   paymentDate,
 }) {
   if (!baseSalaryId || !totalHoursWorked || !netSalary || !paymentDate) {
-    throw new Error("Fill all the fileds please");
+    throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
   }
   totalHoursWorked = Number(totalHoursWorked);
   overtimeHours = Number(overtimeHours || 0); // Default to 0 if not provided
@@ -104,11 +105,7 @@ async function generateMonthlySalary({
 
   // If monthly salary already exists, throw an error
   if (hasMonthly) {
-    throw new Error(
-      `Monthly salary for ${dayjs().format(
-        "MMMM YYYY"
-      )} already exists for this user`
-    );
+    throw new AppError({ code: accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS, statusCode: 409 });
   }
   if (paymentDate) {
     paymentDate = new Date(paymentDate);
@@ -148,11 +145,11 @@ class SalaryUsecase {
 
   // Legacy route did: req.body.id = id; editBaseSalary(req.body).
   editBase({ id, body }) {
-    return translateLegacyAccountingError(() => editBaseSalary({ ...body, id }));
+    return editBaseSalary({ ...body, id });
   }
 
   payMonthly({ body }) {
-    return translateLegacyAccountingError(() => generateMonthlySalary(body));
+    return generateMonthlySalary(body);
   }
 }
 

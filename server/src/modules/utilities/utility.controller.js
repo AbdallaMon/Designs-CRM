@@ -24,15 +24,11 @@ export class UtilityController {
     return created(res, data, utilitiesMessagesCodes.USER_LOG_SUBMITTED, TK);
   }
 
-  async getUserRole(req, res) {
-    const data = await utilityUsecase.getUserRole({ userId: parseInt(req.params.userId, 10) });
-    return ok(res, data, utilitiesMessagesCodes.USER_ROLE_FETCHED, TK);
-  }
-
-  async getRoles(req, res) {
-    // The token user's own roles (legacy used the decoded token id).
-    const data = await utilityUsecase.getOtherRoles({ userId: req.auth.id });
-    return ok(res, data, utilitiesMessagesCodes.ROLES_FETCHED, TK);
+  async getUserCurrentProfile(req, res) {
+    const data = await utilityUsecase.getUserCurrentProfile({
+      userId: parseInt(req.params.userId, 10),
+    });
+    return ok(res, data, utilitiesMessagesCodes.USER_PROFILE_FETCHED, TK);
   }
 
   async getAdmins(req, res) {

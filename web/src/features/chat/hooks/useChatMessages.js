@@ -66,7 +66,7 @@ export function useChatMessages(roomId, initialPage = 0, clientId, token) {
           ? `client/chat/${roomId}/messages?page=${pageNum}&limit=${
               forceLimit || LIMIT
             }&clientId=${clientId}&token=${token}&`
-          : `shared/chat/rooms/${roomId}/messages?page=${pageNum}&limit=${
+          : `chat/rooms/${roomId}/messages?page=${pageNum}&limit=${
               forceLimit || LIMIT
             }&`,
         setLoading: isLoadMore ? setLoadingMore : setLoading,
@@ -173,7 +173,7 @@ export function useChatMessages(roomId, initialPage = 0, clientId, token) {
       const req = await getData({
         url: clientId
           ? `client/chat/${roomId}/messages/${messageId}/page?clientId=${clientId}&token=${token}&`
-          : `shared/chat/rooms/${roomId}/messages/${messageId}/page`,
+          : `chat/rooms/${roomId}/messages/${messageId}/page`,
         setLoading: () => {},
         limit: LIMIT,
       });
@@ -246,7 +246,6 @@ export function useChatMessages(roomId, initialPage = 0, clientId, token) {
     setMessages,
     initialLoading,
     loadingMore,
-    initialLoading,
     onJumpToMessage,
     loadingJumpToMessage,
     setReplyLoaded,

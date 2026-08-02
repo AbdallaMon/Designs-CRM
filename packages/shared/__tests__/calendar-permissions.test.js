@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -27,7 +27,7 @@ describe("calendar permission grants", () => {
 
   it("grants the full calendar surface to EVERY authed role (legacy SHARED gate parity)", () => {
     for (const role of ALL_USER_ROLES) {
-      const codes = getPermissionsForRole(role);
+      const codes = permissionsForPersona(role);
       for (const code of CALENDAR_ALL) {
         expect(codes, `${role} should hold ${code}`).toContain(code);
       }
@@ -40,14 +40,14 @@ describe("calendar permission grants", () => {
   });
 
   it("effective permissions for any role include calendar VIEW + MANAGE + GOOGLE_*", () => {
-    const staff = getEffectivePermissions({ role: USER_ROLES.STAFF }).permissions;
+    const staff = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF ) }).permissions;
     expect(staff).toContain(P.CALENDAR.VIEW);
     expect(staff).toContain(P.CALENDAR.MANAGE);
     expect(staff).toContain(P.CALENDAR.GOOGLE_VIEW);
     expect(staff).toContain(P.CALENDAR.GOOGLE_MANAGE);
 
     const contactInitiator = getEffectivePermissions({
-      role: USER_ROLES.CONTACT_INITIATOR,
+      profile: profileForPersona(USER_ROLES.CONTACT_INITIATOR),
     }).permissions;
     expect(contactInitiator).toContain(P.CALENDAR.MANAGE);
   });

@@ -48,7 +48,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
 
     const adminUsers = await prisma.user.findMany({
       where: {
-        role: { in: ["ADMIN", "SUPER_ADMIN"] },
+        currentProfile: { isAdminTier: true },
         isActive: true,
       },
       select: { telegramUsername: true },

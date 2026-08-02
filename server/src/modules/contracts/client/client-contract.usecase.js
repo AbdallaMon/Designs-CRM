@@ -21,15 +21,18 @@ import {
   getContractSessionByToken,
   getDefaultContractUtilityData,
   changeContractSessionStatus,
-} from "../services/client-contract-services.js";
+} from "./client-contract.repo.js";
 import { buildAndUploadContractPdf } from "../services/generate-contract-pdf.js";
 
 class ClientContractUsecase {
   // GET /session?token= — resolve the session from the token + the default utility data.
   // Legacy returned { data: session, contractUtility }; we preserve that nested shape.
   async getSession({ token }) {
-    if (!token) throw new AppError(contractsMessagesCodes.CONTRACT_SESSION_INVALID, 400);
+    if (!token) throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 400 });
     const session = await getContractSessionByToken({ token });
+    if (!session) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
+    }
     const contractUtility = await getDefaultContractUtilityData();
     return { data: session, contractUtility };
   }
@@ -37,15 +40,23 @@ class ClientContractUsecase {
   // PUT /session/status — token-keyed status change ONLY (no client id override — the IDOR
   // close vs legacy, which accepted a raw `id`). The token selects the session.
   async changeStatus({ token, sessionStatus }) {
-    if (!token) throw new AppError(contractsMessagesCodes.CONTRACT_SESSION_INVALID, 400);
-    return changeContractSessionStatus({ token, sessionStatus });
+    if (!token) throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 400 });
+    const updated = await changeContractSessionStatus({ token, sessionStatus });
+    if (!updated) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
+    }
+    return updated;
   }
 
   // POST /generate-pdf — the e-sign finalize flow (token authoritative). Ported 1:1:
   //   SIGNING (+ signatureUrl) → 🔒 buildAndUploadContractPdf → REGISTERED (+ writtenAt).
   // The session is the one `sessionData.arToken` resolves to — nothing else.
   async generatePdf({ token, signatureUrl, lng }) {
-    if (!token) throw new AppError(contractsMessagesCodes.CONTRACT_SESSION_INVALID, 400);
+    if (!token) throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 400 });
+    const session = await getContractSessionByToken({ token });
+    if (!session) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
+    }
     try {
       await changeContractSessionStatus({
         token,
@@ -62,7 +73,7 @@ class ClientContractUsecase {
       return {};
     } catch (err) {
       console.error("PDF generation error:", err);
-      throw new AppError(contractsMessagesCodes.CONTRACT_PDF_GENERATION_FAILED, 500);
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_PDF_GENERATION_FAILED, statusCode: 500 });
     }
   }
 }

@@ -52,9 +52,6 @@ function RowActions({
             item={row}
             model={"DeliverySchedule"}
             contentKey=""
-            deleteModelesBeforeMain={[
-              { name: "Note", key: "deliveryScheduleId" },
-            ]}
             onDelete={() => {
               reload();
             }}

@@ -7,17 +7,16 @@ import PreviewWorkStage from "@/features/work-stages/PreviewWorkStage";
 export default function Page() {
   const { user } = useAuth();
   const params = useParams();
-  if (!user?.role) return null;
-  const role = user.role;
+  if (!user?.profile) return null;
   const { id } = params;
 
-  if (role === "THREE_D_DESIGNER") {
+  if (user.profile === "DESIGNER_3D") {
     return <PreviewWorkStage type="three-d" open={true} page={true} id={id} />;
   }
-  if (role === "TWO_D_DESIGNER") {
+  if (user.profile === "DESIGNER_2D") {
     return <PreviewWorkStage type="two-d" open={true} page={true} id={id} />;
   }
-  if (role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPER_SALES") {
+  if (["ADMIN", "SUPER_ADMIN", "SUPER_SALES"].includes(user.profile)) {
     return <PreviewDialog open={true} page={true} id={id} admin={true} />;
   }
   return <PreviewDialog open={true} page={true} id={id} />;

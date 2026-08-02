@@ -82,7 +82,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
 
     const req = await getData({
       setLoading,
-      url: `shared/users/${userId}/profile`,
+      url: `users/${userId}/profile`,
     });
 
     if (req?.status === 200) {
@@ -152,7 +152,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
         allowEmailing,
       },
       setLoading,
-      `shared/users/${userId}/profile`,
+      `users/${userId}/profile`,
       false,
       "Saving profile",
       false,
@@ -187,7 +187,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/calendar/google/connect`,
+      `calendar/google/connect`,
       false,
       "Connecting Google",
       false,
@@ -218,7 +218,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/calendar/google/disconnect`,
+      `calendar/google/disconnect`,
       false,
       "Disconnecting Google",
       false,
@@ -351,7 +351,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
                         {profile?.email || "—"}
                       </Typography>
                       <Chip
-                        label={profile?.role || "—"}
+                        label={profile?.currentProfile?.label || "—"}
                         size="small"
                         color="primary"
                         sx={{ fontWeight: 600 }}

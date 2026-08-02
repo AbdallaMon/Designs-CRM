@@ -1,10 +1,6 @@
-// leads/lead routes — the authenticated lead-management surface (legacy
-// `/shared/client-leads`). Mounted under `/v2/leads` (legacy router stays mounted in
-// parallel during the strangler window). Auth once at the router; each route declares
-// its permission code(s); every object-scoped `/:id/...` route ALSO carries the
-// object-scope checker (requireSpecialChecker) — this is the IDOR fix the legacy
-// routes lacked. The status change moves from `PUT /:id/status` to
-// `POST /:id/actions/change-status` per the workflow convention.
+// Lead-management API mounted under /v2/leads. Every route declares permission codes;
+// object-scoped routes additionally run the lead scope checker. Status changes use
+// POST /:id/actions/change-status.
 //
 // ROUTE ORDER: literal paths are declared BEFORE the `/:id` catch-all so they are not
 // shadowed (Express matches in declaration order).

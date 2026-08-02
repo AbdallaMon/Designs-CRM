@@ -34,7 +34,9 @@ vi.mock("../../utilities/utility.repo.js", () => ({
     findModelPickList: vi.fn(),
     userLogExists: vi.fn(),
     createUserLog: vi.fn(),
-    searchFindMany: vi.fn(),
+    searchUsers: vi.fn(),
+    searchClients: vi.fn(),
+    searchLeads: vi.fn(),
     findUserForSearchScope: vi.fn(),
   },
 }));
@@ -51,9 +53,32 @@ const UC = utilitiesMessagesCodes;
 const PN = PERMISSIONS.NOTIFICATION;
 const PU = PERMISSIONS.UTILITY;
 
-function makeReq(role, id = 1, isSuperSales = false) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
-  return { auth: { id, role, isSuperSales, permissions, permissionsByModule } };
+function makeReq(persona, id = 1, superSales = false) {
+  const currentProfileKey = superSales
+    ? "SUPER_SALES"
+    : {
+        ADMIN: "ADMIN",
+        SUPER_ADMIN: "SUPER_ADMIN",
+        STAFF: "NORMAL_SALES",
+        THREE_D_DESIGNER: "DESIGNER_3D",
+        TWO_D_DESIGNER: "DESIGNER_2D",
+        TWO_D_EXECUTOR: "EXECUTOR_2D",
+        ACCOUNTANT: "ACCOUNTANT",
+        SUPER_SALES: "SUPER_SALES",
+        CONTACT_INITIATOR: "CONTACT_INITIATOR",
+      }[persona];
+  const { permissions, permissionsByModule } = getEffectivePermissions({
+    profile: currentProfileKey,
+  });
+  return {
+    auth: {
+      id,
+      currentProfileKey,
+      isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
+      permissions,
+      permissionsByModule,
+    },
+  };
 }
 
 // Every authed role behind the legacy SHARED gate.
@@ -212,27 +237,24 @@ describe("UtilityUsecase generic-model allow-list + fixed projection (hardening)
     });
   });
 
-  it("getModelData REJECTS a non-whitelisted model (user) — never touches the repo", async () => {
-    await expect(utilityUsecase.getModelData({ query: { model: "user" } })).rejects.toMatchObject({
-      statusCode: 400,
-      message: UC.MODEL_NOT_ALLOWED,
-    });
+  it("getModelData REJECTS a non-whitelisted model (user) — never touches the repo", () => {
+    expect(() => utilityUsecase.getModelData({ query: { model: "user" } })).toThrowError(
+      expect.objectContaining({ statusCode: 400, message: UC.MODEL_NOT_ALLOWED }),
+    );
     expect(utilityRepository.findModelPickList).not.toHaveBeenCalled();
   });
 
-  it("getModelData REJECTS a bogus/non-existent delegate (the old `image`) — guards FIX 3", async () => {
-    await expect(utilityUsecase.getModelData({ query: { model: "image" } })).rejects.toMatchObject({
-      statusCode: 400,
-      message: UC.MODEL_NOT_ALLOWED,
-    });
+  it("getModelData REJECTS a bogus/non-existent delegate", () => {
+    expect(() => utilityUsecase.getModelData({ query: { model: "image" } })).toThrowError(
+      expect.objectContaining({ statusCode: 400, message: UC.MODEL_NOT_ALLOWED }),
+    );
     expect(utilityRepository.findModelPickList).not.toHaveBeenCalled();
   });
 
-  it("getModelIds REJECTS a non-whitelisted model (clientLead) before touching the repo", async () => {
-    await expect(utilityUsecase.getModelIds({ query: { model: "clientLead" } })).rejects.toMatchObject({
-      statusCode: 400,
-      message: UC.MODEL_NOT_ALLOWED,
-    });
+  it("getModelIds REJECTS a non-whitelisted model (clientLead) before touching the repo", () => {
+    expect(() => utilityUsecase.getModelIds({ query: { model: "clientLead" } })).toThrowError(
+      expect.objectContaining({ statusCode: 400, message: UC.MODEL_NOT_ALLOWED }),
+    );
     expect(utilityRepository.findModelPickList).not.toHaveBeenCalled();
   });
 
@@ -261,16 +283,17 @@ describe("UtilityUsecase generic-model allow-list + fixed projection (hardening)
     // Prisma read to `utilityRepository.searchFindMany`. The authUser drives the role-scoped
     // `where`, so asserting the repo call (delegate + fixed user projection) proves the
     // authenticated user reached the search path.
-    utilityRepository.searchFindMany.mockResolvedValue([{ id: 1 }]);
-    const authUser = { id: 3, role: USER_ROLES.STAFF };
-    const out = await utilityUsecase.search({ query: { model: "user", query: "a" }, authUser });
+    utilityRepository.searchUsers.mockResolvedValue([{ id: 1 }]);
+    const authUser = makeReq(USER_ROLES.STAFF, 3).auth;
+    const out = await utilityUsecase.search({
+      query: { resource: "users", query: "a" },
+      authUser,
+    });
     expect(out).toEqual([{ id: 1 }]);
-    expect(utilityRepository.searchFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        delegateKey: "user",
-        select: { id: true, email: true, name: true, role: true },
-      }),
-    );
+    expect(utilityRepository.searchUsers).toHaveBeenCalledWith({
+      query: "a",
+      profileKey: undefined,
+    });
   });
 });
 

@@ -21,19 +21,22 @@ import { getClientLeadsByDateRange } from "../lead.assign-status.usecase.js";
 const uc = new LeadUsecase();
 
 describe("LeadUsecase profile scope signals", () => {
-  it("isAdminUser: true for ADMIN/SUPER_ADMIN base role and admin-tier profiles, false otherwise", () => {
-    expect(uc.isAdminUser({ role: "ADMIN" })).toBe(true);
-    expect(uc.isAdminUser({ role: "SUPER_ADMIN" })).toBe(true);
-    expect(uc.isAdminUser({ role: "STAFF", isAdminTier: true })).toBe(true); // SUPER_SALES profile
-    expect(uc.isAdminUser({ role: "STAFF", currentProfileKey: "NORMAL_SALES" })).toBe(false);
-    expect(uc.isAdminUser({ role: "STAFF", isSuperSales: true })).toBe(false); // flags are NOT read
+  it("isAdminUser reads only the derived admin-tier signal", () => {
+    expect(uc.isAdminUser({ currentProfileKey: "ADMIN", isAdminTier: true })).toBe(true);
+    expect(uc.isAdminUser({ currentProfileKey: "SUPER_ADMIN", isAdminTier: true })).toBe(true);
+    expect(uc.isAdminUser({ currentProfileKey: "SUPER_SALES", isAdminTier: false })).toBe(false);
+    expect(uc.isAdminUser({ currentProfileKey: "NORMAL_SALES", isAdminTier: false })).toBe(false);
+    expect(uc.isAdminUser({ role: "ADMIN", isAdminTier: false })).toBe(false);
   });
 
   it("repo.hasFullScope keys off the profile, not the flags", () => {
-    expect(leadRepository.hasFullScope({ role: "STAFF", currentProfileKey: "SUPER_SALES" })).toBe(true);
-    expect(leadRepository.hasFullScope({ role: "STAFF", isSuperSales: true })).toBe(false);
-    expect(leadRepository.hasFullScope({ role: "ADMIN" })).toBe(true);
-    expect(leadRepository.hasFullScope({ role: "CONTACT_INITIATOR", includeContactInitiator: true })).toBe(true);
+    expect(leadRepository.hasFullScope({ currentProfileKey: "SUPER_SALES" })).toBe(true);
+    expect(leadRepository.hasFullScope({ isSuperSales: true })).toBe(false);
+    expect(leadRepository.hasFullScope({ currentProfileKey: "ADMIN", isAdminTier: true })).toBe(true);
+    expect(leadRepository.hasFullScope({
+      currentProfileKey: "CONTACT_INITIATOR",
+      includeContactInitiator: true,
+    })).toBe(true);
   });
 });
 
@@ -46,7 +49,7 @@ describe("deals() super-sales scope (#6 regression)", () => {
   it("does NOT self-scope a SUPER_SALES profile user", async () => {
     await uc.getDeals({
       query: {},
-      authUser: { id: 5, role: "STAFF", currentProfileKey: "SUPER_SALES", isAdminTier: true },
+      authUser: { id: 5, currentProfileKey: "SUPER_SALES", isAdminTier: false },
     });
     const { searchParams } = getClientLeadsByDateRange.mock.calls[0][0];
     expect(searchParams.userId).toBeUndefined();
@@ -56,7 +59,7 @@ describe("deals() super-sales scope (#6 regression)", () => {
   it("DOES self-scope a NORMAL_SALES profile user", async () => {
     await uc.getDeals({
       query: {},
-      authUser: { id: 7, role: "STAFF", currentProfileKey: "NORMAL_SALES" },
+      authUser: { id: 7, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
     });
     const { searchParams } = getClientLeadsByDateRange.mock.calls[0][0];
     expect(searchParams.userId).toBe(7);

@@ -14,6 +14,7 @@
 // server-side. The ALLOW-LIST + projection enforcement lives in the usecase/repo so it can
 // return the dedicated language-neutral code (the hardening).
 import { z } from "zod";
+import { PROFILE_KEYS } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -46,4 +47,12 @@ export class UtilityValidation {
   // ── generic model reads (allow-list + fixed projection enforced in the usecase/repo) ─
   // `.strict()`: ONLY `model` is accepted; client select/include/where are dropped.
   static modelQuery = z.object({ model: z.string().trim().min(1) }).strict();
+
+  static searchQuery = z
+    .object({
+      resource: z.enum(["users", "clients", "leads"]),
+      query: z.string().trim().min(1).max(100),
+      profile: z.enum(PROFILE_KEYS).optional(),
+    })
+    .strict();
 }

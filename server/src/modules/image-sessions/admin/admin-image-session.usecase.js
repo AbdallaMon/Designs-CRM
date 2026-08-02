@@ -121,7 +121,7 @@ class AdminImageSessionUsecase {
       return await createPageInfoFn({ data });
     } catch (e) {
       if (e?.code === "P2002" && e?.meta?.target?.includes?.("unique_type")) {
-        throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_PAGE_INFO_TYPE_EXISTS, 409);
+        throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_PAGE_INFO_TYPE_EXISTS, statusCode: 409 });
       }
       throw e;
     }

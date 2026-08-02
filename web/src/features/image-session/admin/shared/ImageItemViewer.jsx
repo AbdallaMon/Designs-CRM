@@ -25,7 +25,7 @@ export function ImageItemViewer({
 
   async function fetchData() {
     const req = await getData({
-      url: `admin/image-session/${slug}?${filter}&limit=${limit}&page=${page}&`,
+      url: `image-sessions/admin/${slug}?${filter}&limit=${limit}&page=${page}&`,
       setLoading,
     });
     if (req.status === 200) {

@@ -37,7 +37,7 @@ function MeetingDetailsDialog({ open, onClose, meetingId }) {
     (async () => {
       if (!active) return;
       await getDataAndSet({
-        url: `shared/client-leads/meeting-reminders/${meetingId}`,
+        url: `leads/meeting-reminders/${meetingId}`,
         setLoading,
         setData: setMeeting,
       });

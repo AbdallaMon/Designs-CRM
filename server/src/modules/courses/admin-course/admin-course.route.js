@@ -312,12 +312,6 @@ adminCourseRouter.delete(
 
 // ── allowed roles / lesson access / homeworks ─────────────────────────────────────
 adminCourseRouter.get(
-  "/:courseId/allowed-roles",
-  AuthMiddleware.requirePermissions([P.ACCESS_MANAGE]),
-  validate(AdminCourseValidation.courseParams, "params"),
-  asyncHandler(ctrl.getAllowedRoles),
-);
-adminCourseRouter.get(
   "/:courseId/lessons/:lessonId/allowed-users",
   AuthMiddleware.requirePermissions([P.ACCESS_MANAGE]),
   validate(AdminCourseValidation.accessParams, "params"),

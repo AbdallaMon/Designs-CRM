@@ -113,7 +113,7 @@ const Logs = ({ staff, staffId }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
   const { data: notifications, loading } = useDataFetcher(
-    `admin/users/${staffId}/logs/`,
+    `users/${staffId}/logs/`,
     false
   );
 

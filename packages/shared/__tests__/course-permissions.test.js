@@ -1,3 +1,4 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   PERMISSIONS,
@@ -20,7 +21,7 @@ const STAFF_CODES = [PERMISSIONS.STAFF_COURSE.VIEW, PERMISSIONS.STAFF_COURSE.TAK
 //   - staff-course (legacy `/shared/courses`, "SHARED" gate) → EVERY authenticated role.
 describe("Courses permission grants (preserve legacy access)", () => {
   it("ADMIN holds all four admin-course codes", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.ADMIN });
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.ADMIN ) });
     for (const code of ADMIN_CODES) {
       expect(hasPermission(permissions, code)).toBe(true);
     }
@@ -28,7 +29,7 @@ describe("Courses permission grants (preserve legacy access)", () => {
 
   it("SUPER_ADMIN holds all four admin-course codes", () => {
     const { permissions } = getEffectivePermissions({
-      role: USER_ROLES.SUPER_ADMIN,
+      profile: profileForPersona(USER_ROLES.SUPER_ADMIN),
     });
     for (const code of ADMIN_CODES) {
       expect(hasPermission(permissions, code)).toBe(true);
@@ -36,7 +37,7 @@ describe("Courses permission grants (preserve legacy access)", () => {
   });
 
   it("a plain STAFF user holds staff-course codes but NOT admin-course codes", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.STAFF });
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF ) });
     for (const code of STAFF_CODES) {
       expect(hasPermission(permissions, code)).toBe(true);
     }
@@ -45,13 +46,12 @@ describe("Courses permission grants (preserve legacy access)", () => {
     }
   });
 
-  it("isSuperSales no longer augments a non-admin role with admin-course codes (union removed)", () => {
+  it("SUPER_SALES course access comes from its active profile", () => {
     const { permissions } = getEffectivePermissions({
-      role: USER_ROLES.SUPER_SALES,
-      isSuperSales: true,
+      profile: "SUPER_SALES",
     });
     for (const code of ADMIN_CODES) {
-      expect(hasPermission(permissions, code)).toBe(false);
+      expect(hasPermission(permissions, code)).toBe(true);
     }
   });
 
@@ -67,7 +67,7 @@ describe("Courses permission grants (preserve legacy access)", () => {
 
   it("every role holds the two staff-course consumption codes", () => {
     for (const role of Object.values(USER_ROLES)) {
-      const { permissions } = getEffectivePermissions({ role });
+      const { permissions } = getEffectivePermissions({ profile: profileForPersona(role) });
       for (const code of STAFF_CODES) {
         expect(hasPermission(permissions, code)).toBe(true);
       }

@@ -51,7 +51,7 @@ const SalaryInfoButton = ({ userId }) => {
 
   const fetchSalaryData = async () => {
     const data = await getData({
-      url: `accountant/salaries/data?userId=${userId}&startDate=${startDate.format(
+      url: `accounting/salaries/data?userId=${userId}&startDate=${startDate.format(
         "YYYY-MM-DD"
       )}&endDate=${endDate.format("YYYY-MM-DD")}&`,
       setLoading,
@@ -156,7 +156,7 @@ const SalaryInfoButton = ({ userId }) => {
                         item={salaryData}
                         inputs={inputs}
                         isObject={true}
-                        href={`accountant/salaries`}
+                        href={`accounting/salaries`}
                         handleAfterEdit={(req) => {
                           setSalaryData((old) => ({
                             ...old,

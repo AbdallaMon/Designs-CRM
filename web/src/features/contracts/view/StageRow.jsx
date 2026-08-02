@@ -56,7 +56,7 @@ export default function StageRow({ stage, onReload, contractId }) {
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/${contractId}/stages/${stage.id}`,
+      `contracts/${contractId}/stages/${stage.id}`,
       false,
       "Updating",
       false,
@@ -73,7 +73,7 @@ export default function StageRow({ stage, onReload, contractId }) {
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/contracts/${contractId}/stages/${stage.id}`,
+      `contracts/${contractId}/stages/${stage.id}`,
       false,
       "Updating",
       false,

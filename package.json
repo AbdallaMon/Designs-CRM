@@ -37,7 +37,6 @@
     "db:status": "prisma migrate status --schema packages/db/prisma/schema.prisma",
     "db:diff": "prisma migrate diff --from-schema-datasource packages/db/prisma/schema.prisma --to-schema-datamodel packages/db/prisma/schema.prisma --script",
     "db:seed": "npm run seed -w @dms/db",
-    "db:migrate:users": "npm run migrate:users -w @dms/db",
     "db:studio": "prisma studio --schema packages/db/prisma/schema.prisma",
     "test": "vitest run"
   },

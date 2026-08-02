@@ -19,7 +19,7 @@ export const memberMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
     const members = await chatRepository.getMembers(roomId);
     // Members are not server-paginated (the room member set is small); we still
     // return the normalized list envelope so the FE treats every list endpoint
@@ -38,7 +38,7 @@ export const memberMethods = {
       !requester ||
       (requester.role !== "ADMIN" && requester.role !== "MODERATOR")
     ) {
-      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
 
     const memberData = userIds.map((uid) => ({
@@ -73,14 +73,14 @@ export const memberMethods = {
     const requester = await chatRepository.getMember({ roomId, userId });
     const memberToRemove = await chatRepository.getMemberById(memberId);
 
-    if (!memberToRemove) throw new AppError(chatMessagesCodes.MEMBER_NOT_FOUND, 404);
+    if (!memberToRemove) throw new AppError({ code: chatMessagesCodes.MEMBER_NOT_FOUND, statusCode: 404 });
 
     const isSelf = memberToRemove.userId === Number(userId);
     const isAdmin =
       requester?.role === "ADMIN" || requester?.role === "MODERATOR";
 
     if (!isSelf && !isAdmin) {
-      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
 
     await chatRepository.removeMember(memberId);
@@ -107,7 +107,7 @@ export const memberMethods = {
     // already run, so this membership normally exists; guard defensively with the
     // same "not a member" scope code used across this module.
     const member = await chatRepository.getMember({ roomId, userId });
-    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+    if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     await chatRepository.removeMember(member.id);
 
@@ -133,10 +133,10 @@ export const memberMethods = {
       userId,
     });
     if (!requester)
-      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
 
     const validRoles = ["ADMIN", "MODERATOR", "MEMBER"];
-    if (!validRoles.includes(role)) throw new AppError(chatMessagesCodes.INVALID_MEMBER_ROLE, 400);
+    if (!validRoles.includes(role)) throw new AppError({ code: chatMessagesCodes.INVALID_MEMBER_ROLE, statusCode: 400 });
 
     const updated = await chatRepository.updateMemberRole(memberId, role);
 

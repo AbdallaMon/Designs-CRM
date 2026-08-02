@@ -12,9 +12,9 @@ function AttemptsLimit({ attempts, setAttempts, testId, userId }) {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `admin/courses/tests/${testId}/attempts/increase?userId=${userId}&`,
+      `courses/tests/${testId}/attempts/increase?userId=${userId}&`,
       false,
-      "جاري التحديث",
+      "Updating",
       false
     );
     if (req.status === 200) {
@@ -32,9 +32,9 @@ function AttemptsLimit({ attempts, setAttempts, testId, userId }) {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `admin/courses/tests/${testId}/attempts/decrease?userId=${userId}&`,
+      `courses/tests/${testId}/attempts/decrease?userId=${userId}&`,
       false,
-      "جاري التحديث",
+      "Updating",
       false
     );
     if (req.status === 200) {
@@ -58,14 +58,14 @@ function AttemptsLimit({ attempts, setAttempts, testId, userId }) {
         onClick={increaseAllowedAttempts}
         variant="outlined"
       >
-        زيادة المحاولات المسموحة
+        Increase allowed attempts
       </Button>
       <Button
         startIcon={<FaMinus />}
         onClick={decreaseAllowedAttempts}
         variant="outlined"
       >
-        تقليل المحاولات المسموحة
+        Decrease allowed attempts
       </Button>
     </Box>
   );

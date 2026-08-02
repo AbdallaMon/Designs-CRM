@@ -1,11 +1,12 @@
 import rateLimit from "express-rate-limit";
+import { rateLimitResponse } from "../../../../shared/http/rate-limit-response.js";
 
 export const createLeadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many leads created, please try again later" },
+  message: rateLimitResponse(),
 });
 
 export const submitLeadLimiter = rateLimit({
@@ -13,7 +14,7 @@ export const submitLeadLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many submissions, please try again later" },
+  message: rateLimitResponse(),
 });
 
 export const generalLeadLimiter = rateLimit({
@@ -21,5 +22,5 @@ export const generalLeadLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many requests, please try again later" },
+  message: rateLimitResponse(),
 });

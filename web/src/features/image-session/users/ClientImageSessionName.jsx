@@ -54,7 +54,7 @@ function ClientImageSessionName({
     const req = await handleRequestSubmit(
       { name: trimmed },
       setLoading,
-      `shared/image-session/${clientLeadId}/sessions/${sessionId}`,
+      `image-session/${clientLeadId}/sessions/${sessionId}`,
       false,
       "Updating",
       false,

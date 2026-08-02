@@ -6,18 +6,18 @@ import prisma from "../../../infra/prisma/prisma.js";
 
 export class StaffCourseRepository {
   // ── courses (published + role-gated) ────────────────────────────────────────────
-  listPublishedCoursesForRole({ role, skip, take, client } = {}) {
+  listPublishedCourses({ skip, take, client } = {}) {
     return (client ?? prisma).course.findMany({
       skip,
       take,
       include: { _count: { select: { lessons: true, tests: true } } },
-      where: { isPublished: true, roles: { some: { role } } },
+      where: { isPublished: true },
     });
   }
 
-  getPublishedCourseForRole({ courseId, role, userId, client } = {}) {
+  getPublishedCourse({ courseId, userId, client } = {}) {
     return (client ?? prisma).course.findFirst({
-      where: { id: courseId, isPublished: true, roles: { some: { role } } },
+      where: { id: courseId, isPublished: true },
       include: {
         lessons: {
           where: { isPreviewable: true },
@@ -105,12 +105,11 @@ export class StaffCourseRepository {
   }
 
   // ── lessons (staff view + access gating) ──────────────────────────────────────────
-  getPreviewableLessonForRole({ lessonId, role, client } = {}) {
+  getPreviewableLesson({ lessonId, client } = {}) {
     return (client ?? prisma).lesson.findUnique({
       where: {
         id: lessonId,
         isPreviewable: true,
-        course: { roles: { some: { role } } },
       },
       include: {
         videos: { include: { pdfs: true } },

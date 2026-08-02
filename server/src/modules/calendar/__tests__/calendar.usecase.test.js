@@ -106,9 +106,32 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-function makeReq(role, isSuperSales = false) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
-  return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
+function makeReq(persona, superSales = false) {
+  const currentProfileKey = superSales
+    ? "SUPER_SALES"
+    : {
+        ADMIN: "ADMIN",
+        SUPER_ADMIN: "SUPER_ADMIN",
+        STAFF: "NORMAL_SALES",
+        THREE_D_DESIGNER: "DESIGNER_3D",
+        TWO_D_DESIGNER: "DESIGNER_2D",
+        TWO_D_EXECUTOR: "EXECUTOR_2D",
+        ACCOUNTANT: "ACCOUNTANT",
+        SUPER_SALES: "SUPER_SALES",
+        CONTACT_INITIATOR: "CONTACT_INITIATOR",
+      }[persona];
+  const { permissions, permissionsByModule } = getEffectivePermissions({
+    profile: currentProfileKey,
+  });
+  return {
+    auth: {
+      id: 1,
+      currentProfileKey,
+      isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
+      permissions,
+      permissionsByModule,
+    },
+  };
 }
 
 // Every authed role behind the legacy SHARED gate.
@@ -249,11 +272,11 @@ describe("AvailabilityUsecase delegation + legacy parity", () => {
     expect(availabilityRepository.findAvailableDays.mock.calls[0][0].userId).toBe(9);
   });
 
-  it("month-view: a non-admin sees ONLY their own userId (legacy role filter preserved)", async () => {
+  it("month-view: a non-admin sees ONLY their own userId", async () => {
     getCalendarDataForMonth.mockResolvedValue({});
     await availabilityUsecase.getCalendarMonth({
       query: { year: "2026", month: "6" },
-      authUser: { id: 7, role: "STAFF", isSuperSales: false },
+      authUser: { id: 7, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
     });
     expect(getCalendarDataForMonth.mock.calls[0][0].userId).toBe(7);
   });
@@ -262,7 +285,7 @@ describe("AvailabilityUsecase delegation + legacy parity", () => {
     getCalendarDataForMonth.mockResolvedValue({});
     await availabilityUsecase.getCalendarMonth({
       query: { year: "2026", month: "6" },
-      authUser: { id: 1, role: "ADMIN", isSuperSales: false },
+      authUser: { id: 1, currentProfileKey: "ADMIN", isAdminTier: true },
     });
     expect(getCalendarDataForMonth.mock.calls[0][0].userId).toBe(false);
   });

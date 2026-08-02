@@ -43,17 +43,17 @@ const ReviewView = ({
         }}
       >
         <Button startIcon={<FaArrowLeft />} onClick={onBack}>
-          العودة للمحاولات
+          Back to attempts
         </Button>
         <Typography variant="h5">
-          مراجعة المحاولة {selectedAttempt.attemptCount}
+          Review attempt {selectedAttempt.attemptCount}
         </Typography>
       </Box>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        النتيجة: {selectedAttempt.score}% | الحالة:{" "}
-        {selectedAttempt.passed ? "نجح" : "فشل"} | الوقت المستغرق:{" "}
-        {selectedAttempt.timePassed} دقيقة
+        Score: {selectedAttempt.score}% | Status:{" "}
+        {selectedAttempt.passed ? "Passed" : "Failed"} | Time spent:{" "}
+        {selectedAttempt.timePassed} minutes
       </Alert>
 
       {questions.map((question, index) => (
@@ -62,7 +62,7 @@ const ReviewView = ({
             <Box
               sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
             >
-              <Typography variant="h6">السؤال {index + 1}</Typography>
+              <Typography variant="h6">Question {index + 1}</Typography>
               <Chip
                 label={getQuestionTypeInArabic(question.type)}
                 size="small"

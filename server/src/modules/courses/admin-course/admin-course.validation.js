@@ -94,7 +94,6 @@ export class AdminCourseValidation {
       description: z.string().optional().nullable(),
       imageUrl: z.string().optional().nullable(),
       isPublished: z.boolean().optional(),
-      roles: z.array(z.string()).default([]),
     })
     .passthrough();
 
@@ -107,7 +106,6 @@ export class AdminCourseValidation {
       description: z.string().nullable().optional(),
       imageUrl: z.string().nullable().optional(),
       isPublished: z.boolean().optional(),
-      roles: z.array(z.string()).optional(),
     })
     .strict();
 

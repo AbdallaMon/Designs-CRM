@@ -22,9 +22,7 @@ export default function Logout({ fit }) {
     );
     if (logout?.status === 200) {
       setIsLoggedIn(false);
-      setUser({
-        role: null,
-      });
+      setUser(null);
       // Login lives on the lead site (web/); send the user there after logout.
       if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_WEB_URL) {
         window.location.href = `${process.env.NEXT_PUBLIC_WEB_URL}/login`;

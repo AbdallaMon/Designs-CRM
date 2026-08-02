@@ -37,7 +37,7 @@ export default function UserProfilesPanel({
   onClose,
 }) {
   const { hasPermission } = usePermission();
-  const admin = hasPermission(USER_CODES.MANAGE_ROLES);
+  const admin = hasPermission(USER_CODES.MANAGE_PROFILES);
 
   const [allProfiles, setAllProfiles] = useState([]);
   const [fetching, setFetching] = useState(true);
@@ -58,7 +58,7 @@ export default function UserProfilesPanel({
     let active = true;
     (async () => {
       setFetching(true);
-      const res = await apiRequest("admin/users/assignable-profiles");
+      const res = await apiRequest("users/assignable-profiles");
       if (active && res.ok) {
         const body = await res.json();
         setAllProfiles(body?.data?.items ?? body?.data ?? []);
@@ -95,9 +95,9 @@ export default function UserProfilesPanel({
     const req = await handleRequestSubmit(
       { profileIds: selectedIds, currentProfileId: current },
       setSaving,
-      `admin/users/${userId}/profiles`,
+      `users/${userId}/profiles`,
       false,
-      "Updating roles...",
+      "Updating profiles...",
       null,
       "PUT",
     );
@@ -135,12 +135,12 @@ export default function UserProfilesPanel({
           <FiLayers size={16} />
         </Box>
         <Typography variant="subtitle2" fontWeight={700}>
-          Assign roles
+          Assign profiles
         </Typography>
       </Stack>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-        Select the roles this user holds and mark the active one. Only one sales level
-        (Sales, Primary sales, or Super sales) can be assigned; other roles combine freely.
+        Select the profiles this user holds and mark the active one. Only one sales level
+        (Sales, Primary sales, or Super sales) can be assigned; other profiles combine freely.
       </Typography>
 
       {fetching ? (
@@ -213,7 +213,7 @@ export default function UserProfilesPanel({
           color="error"
           sx={{ mt: 1, display: "block" }}
         >
-          At least one role must be assigned.
+          At least one profile must be assigned.
         </Typography>
       )}
 
@@ -234,7 +234,7 @@ export default function UserProfilesPanel({
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
           sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
         >
-          Save roles
+          Save profiles
         </Button>
       </Stack>
     </Box>

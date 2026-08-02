@@ -57,16 +57,16 @@ export async function createColorPallete({ data }) {
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.colors || data.colors.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_COLORS_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_COLORS_REQUIRED, statusCode: 400 });
   }
   if (!data.templateId) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TEMPLATE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TEMPLATE_REQUIRED, statusCode: 400 });
   }
   if (!data.titles || titles.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TITLE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TITLE_REQUIRED, statusCode: 400 });
   }
   if (!data.background) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_BACKGROUND_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_BACKGROUND_REQUIRED, statusCode: 400 });
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

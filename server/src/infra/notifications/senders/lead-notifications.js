@@ -324,10 +324,10 @@ export async function finalizedLeadCreated(leadId, userId, type = "THREE_D") {
     null,
     null,
     type === "TWO_D"
-      ? ["TWO_D_DESIGNER"]
+      ? ["DESIGNER_2D"]
       : type === "TWO_D_EXACUTER"
-        ? ["TWO_D_EXECUTOR"]
-        : ["THREE_D_DESIGNER", "ACCOUNTANT"],
+        ? ["EXECUTOR_2D"]
+        : ["DESIGNER_3D", "ACCOUNTANT"],
     true,
   );
 }

@@ -32,7 +32,7 @@ export function ObligationsDialog({ open, onClose, onUpdated }) {
   const fetchObligations = async () => {
     if (!open) return;
     const req = await getData({
-      url: "shared/site-utilities/contract-utility/obligations",
+      url: "site-utilities/contract-utility/obligations",
       setLoading,
     });
     if (req && req.data) {
@@ -59,7 +59,7 @@ export function ObligationsDialog({ open, onClose, onUpdated }) {
         obligationsPartyTwoEn: partyTwoEn,
       },
       setToastLoading,
-      `shared/site-utilities/contract-utility/obligations`,
+      `site-utilities/contract-utility/obligations`,
       false,
       "Saving",
       false,

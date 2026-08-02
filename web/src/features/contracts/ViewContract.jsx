@@ -92,7 +92,7 @@ function ProjectGroupSelect({ clientLeadId, value, onChange, disabled }) {
 
   const fetchGroups = async () => {
     const req = await getDataAndSet({
-      url: `shared/projects/${clientLeadId}/groups`,
+      url: `projects/${clientLeadId}/groups`,
       setData: setGroups,
       setLoading,
     });
@@ -219,7 +219,7 @@ function ContractBasics({ id, contract, onReload }) {
     const req = await handleRequestSubmit(
       changedPatch,
       setToastLoading,
-      `shared/contracts/${id}/basics`,
+      `contracts/${id}/basics`,
       false,
       "Updating",
       false,
@@ -566,7 +566,7 @@ function StagesSection({ contract, onReload }) {
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/${contract.id}/stages`,
+      `contracts/${contract.id}/stages`,
       false,
       "Adding",
       false
@@ -674,7 +674,7 @@ function SpecialItemsSection({ contract, onReload }) {
     const req = await handleRequestSubmit(
       data,
       setLoading,
-      `shared/contracts/${contract.id}/special-items`,
+      `contracts/${contract.id}/special-items`,
       false,
       "Updating",
       false,
@@ -732,7 +732,7 @@ function DrawingsSection({ contract, onReload }) {
     const req = await handleRequestSubmit(
       data,
       setLoading,
-      `shared/contracts/${contract.id}/drawings`,
+      `contracts/${contract.id}/drawings`,
       false,
       "Updating",
       false,
@@ -790,7 +790,7 @@ export default function ViewContract({ id, hide, updateOuterContract }) {
 
   async function fetchContractDetails() {
     const req = await getDataAndSet({
-      url: `shared/contracts/${id}`,
+      url: `contracts/${id}`,
       setLoading,
       setData: setContract,
     });

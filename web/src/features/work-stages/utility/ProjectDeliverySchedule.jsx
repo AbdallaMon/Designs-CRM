@@ -61,9 +61,9 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
   const [rows, setRows] = useState([]);
   const { user } = useAuth();
   const canDoActions =
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    user.role === "STAFF";
+    user.profile === "ADMIN" ||
+    user.profile === "SUPER_ADMIN" ||
+    ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile);
   // TODO(profiles): no admin-tier delivery code; FE-only admin gate kept
   const admin = checkIfAdmin(user);
   const { setLoading: setSubmitting } = useToastContext();
@@ -79,7 +79,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
 
   const reload = async () => {
     await getDataAndSet({
-      url: `shared/delivery/${projectId}/schedules`,
+      url: `delivery/${projectId}/schedules`,
       setLoading,
       setData: setRows,
     });
@@ -93,7 +93,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
     const req = await handleRequestSubmit(
       { deliveryId, meetingReminderId },
       setSubmitting,
-      `shared/delivery/${deliveryId}/actions/link-meeting`,
+      `delivery/${deliveryId}/actions/link-meeting`,
       false,
       "Linking meeting..."
     );

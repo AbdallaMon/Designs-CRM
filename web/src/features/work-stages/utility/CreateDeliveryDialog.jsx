@@ -50,7 +50,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
     const req = await handleRequestSubmit(
       { projectId, deliveryAt: deliveryAtUtc, name }, // ← send name too
       setSubmitting,
-      `shared/delivery/`,
+      `delivery/`,
       false,
       "Adding"
     );

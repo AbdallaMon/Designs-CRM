@@ -14,7 +14,7 @@ export default function SelectPaymentCondition({
   useEffect(() => {
     const fetchData = async () => {
       const req = await getDataAndSet({
-        url: "shared/site-utilities/contract-payment-conditions",
+        url: "site-utilities/contract-payment-conditions",
         setData,
         setLoading,
       });

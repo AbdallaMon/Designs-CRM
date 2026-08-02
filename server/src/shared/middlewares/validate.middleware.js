@@ -20,7 +20,7 @@ export function validate(schema, source = "body") {
         path: issue.path.join("."),
         message: issue.message,
       }));
-      next(new AppError(generalMessagesCodes.VALIDATION_ERROR, 422, details));
+      next(new AppError({ code: generalMessagesCodes.VALIDATION_ERROR, statusCode: 422, details: details }));
       return;
     }
 

@@ -1,12 +1,5 @@
-// image-sessions/client usecase — the PUBLIC client image-selection flow. Combines BOTH
-// legacy routers mounted at `/client/image-session`:
-//   - `routes/image-session/client-image-session.js` (page-info, pros-and-cons, session,
-//     session/status, colors/materials/styles/images reads+saves, image delete, generate-pdf)
-//   - `routes/client/image-session.js` (the EXTRAS router: /data model read, /save-patterns,
-//     /save-images) — a second router on the same base, using the `clientImageServices.js`
-//     + `shared/index.js` services.
-// There is NO permission code and NO session here, by design — the per-session TOKEN is the
-// authentication, exactly like the public calendar booking flow and `/files/client/*`.
+// Public client image-selection flow. The signed, purpose-scoped session token is the
+// authentication boundary for reads, writes, uploads, and PDF generation.
 //
 // IDOR SAFETY (the close vs legacy): every legacy save/status/pdf handler keyed the
 // ClientImageSession by a CLIENT-SUPPLIED body id (`session.id` / `changeSessionStatus`'s
@@ -52,9 +45,9 @@ class ClientImageSessionUsecase {
   // Resolve the authoritative session from the token. Throws TOKEN_INVALID on a missing/
   // unknown token so no write ever runs against a session the caller didn't prove they hold.
   async #resolveByToken(token) {
-    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    if (!token) throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, statusCode: 400 });
     const session = await getSessionByToken({ token });
-    if (!session || session.clientLeadId == null) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, 404);
+    if (!session || session.clientLeadId == null) throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, statusCode: 404 });
     return session;
   }
 
@@ -86,7 +79,7 @@ class ClientImageSessionUsecase {
   // PUT /session/status — token-keyed status change ONLY (the IDOR close vs legacy, which
   // accepted a raw body `id`). The token selects the session; the legacy `id` path is dropped.
   async changeStatus({ token, sessionStatus }) {
-    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    if (!token) throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, statusCode: 400 });
     return changeSessionStatus({ token, sessionStatus });
   }
 
@@ -123,7 +116,7 @@ class ClientImageSessionUsecase {
     const resolved = await this.#resolveByToken(token);
     const owner = await clientImageSessionRepository.findSelectedImageOwnerSessionId({ imageId: Number(imageId) });
     if (!owner || owner.imageSessionId !== resolved.id) {
-      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, 404);
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND, statusCode: 404 });
     }
     // 🔒 frozen deleteImage — invoked UNCHANGED, now gated by the token-scope check above.
     return deleteImageFn({ imageId: Number(imageId) });
@@ -150,7 +143,7 @@ class ClientImageSessionUsecase {
       return {};
     } catch (err) {
       console.error("PDF generation error:", err);
-      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_PDF_GENERATION_FAILED, 500);
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_PDF_GENERATION_FAILED, statusCode: 500 });
     }
   }
 
@@ -160,18 +153,18 @@ class ClientImageSessionUsecase {
   // returned shape (full findMany) is preserved 1:1 for the legit reference models.
   async getModelData({ model }) {
     if (!model || !UTILITY_MODEL_ALLOWLIST.includes(model)) {
-      throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, 400);
+      throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_MODEL_NOT_ALLOWED, statusCode: 400 });
     }
     return getImageSesssionModel({ model });
   }
   // POST /save-patterns — already token-keyed in the legacy service (token authoritative).
   savePatterns({ token, patternIds }) {
-    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    if (!token) throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, statusCode: 400 });
     return submitSelectedPatterns({ token, patternIds });
   }
   // POST /save-images (EXTRAS) — already token-keyed in the legacy service (token authoritative).
   saveSelectionByToken({ token, imageIds }) {
-    if (!token) throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, 400);
+    if (!token) throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TOKEN_INVALID, statusCode: 400 });
     return submitSelectedImages({ token, imageIds });
   }
 }

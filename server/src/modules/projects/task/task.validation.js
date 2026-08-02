@@ -1,5 +1,4 @@
-// projects/task Zod schemas. Loose like legacy (arbitrary task fields); coerce only the
-// ids we consume. Every mutating route still gets a schema.
+// Task request schemas. IDs are coerced and every mutating route is validated.
 import { z } from "zod";
 
 const idParam = z.coerce.number().int().positive();
@@ -22,13 +21,8 @@ export class TaskValidation {
     clientLeadId: z.coerce.number().int().positive().nullish(),
   }).passthrough();
 
-  // PUT /:taskId — STRICT whitelist (mass-assignment fix). Legacy updateTask passed the
-  // whole body straight into prisma.task.update with NO denylist, so any client could set
-  // arbitrary Task columns (projectId, userId, clientLeadId, createdById, finishedAt, ...).
-  // We accept only the genuinely user-editable fields the task-edit/board UI sends
-  // (status, priority via TaskActions; title/description/dueDate via the edit form). Any
-  // other key is rejected with 422. status==="DONE" → finishedAt is set server-side in the
-  // legacy updateTask; we never accept it from the client.
+  // PUT /:taskId accepts only user-editable fields. Relationship and system-managed
+  // fields cannot be assigned from the client; finishedAt is derived server-side.
   static updateTask = z.object({
     title: z.string().optional(),
     description: z.string().nullish(),
@@ -45,11 +39,7 @@ export class TaskValidation {
     id: z.coerce.number().int().positive().optional(),
   }).passthrough();
 
-  // DELETE /:id — TASK delete only. This is the tasks surface, so the legacy generic
-  // deleteAModel (which deletes ANY Prisma model named in body.model, and cascade-deletes
-  // client-supplied deleteModelesBeforeMain) is constrained to Task: `model` MUST be the
-  // literal "Task" (anything else → 422) and NO passthrough keys are accepted, so the
-  // client can no longer smuggle a different model or a deleteModelesBeforeMain cascade.
+  // DELETE /:id is task-only. No additional keys or client-defined cascades are accepted.
   static remove = z.object({
     model: z.literal("Task"),
   }).strict();

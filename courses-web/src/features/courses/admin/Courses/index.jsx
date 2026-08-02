@@ -38,11 +38,10 @@ export default function CourseAdminPage() {
     imageUrl: null,
     isPublished: false,
     file: null,
-    roles: null,
   });
   async function getCourses() {
     await getDataAndSet({
-      url: `admin/courses`,
+      url: "courses",
       setLoading,
       setData: setCourses,
       page,
@@ -62,7 +61,6 @@ export default function CourseAdminPage() {
       imageUrl: course.imageUrl,
       isPublished: course.isPublished,
       file: null,
-      roles: course.roles.map((r) => r.role),
     });
     setEditDialog(true);
   };
@@ -80,7 +78,7 @@ export default function CourseAdminPage() {
     const req = await handleRequestSubmit(
       editForm,
       setToastLoading,
-      `admin/courses/${selectedCourse.id}`,
+      `courses/${selectedCourse.id}`,
       false,
       "Updating",
       false,

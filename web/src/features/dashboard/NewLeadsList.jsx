@@ -10,7 +10,7 @@ const NewLeadsList = () => {
     const [loading,setLoading]=useState(true)
     useEffect(()=>{
         async function fetchData(){
-            const request=await getData({url:`shared/dashboard/latest-leads?`,setLoading})
+            const request=await getData({url:`dashboard/latest-leads?`,setLoading})
             if(request)setNewLeads(request.data)
         }
         fetchData()

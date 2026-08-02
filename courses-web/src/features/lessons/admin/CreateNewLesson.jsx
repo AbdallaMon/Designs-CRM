@@ -48,7 +48,7 @@ export const CreateLesson = ({ courseId }) => {
     const req = await handleRequestSubmit(
       formData,
       setToastLoading,
-      `admin/courses/${courseId}/lessons`,
+      `courses/${courseId}/lessons`,
       false,
       "Creating"
     );

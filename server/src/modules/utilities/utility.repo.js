@@ -1,23 +1,10 @@
-// utilities repository — Prisma I/O ONLY (no business rules, no AppError).
-//
-// The simple lookup reads (fixed-data, user logs, user role, admins, images, other-roles)
-// are ported here as clean Prisma. The cross-model `searchData` (role-derived filters)
-// stays in the legacy service (invoked from the usecase via a lazy adapter).
-//
-// SECURITY (FIX 2): the generic pick-list reads (`/` and `/ids`) are now done HERE with a
-// FIXED server-side projection (UTILITY_MODEL_PROJECTIONS), NOT via the legacy
-// `getModelIds`/`getImageSesssionModel` builders which spread client-supplied
-// where/select/include into Prisma. The model name + projection are validated/looked up in
-// the usecase against the allow-list before this method is ever reached.
 import prisma from "../../infra/prisma/prisma.js";
 
 class UtilityRepository {
-  // GET /fixed-data
   listFixedData() {
     return prisma.fixedData.findMany({ orderBy: { createdAt: "desc" } });
   }
 
-  // GET /user-logs — does a log exist for this user in [startTime, endTime]?
   async userLogExists({ userId, startTime, endTime }) {
     const log = await prisma.userLog.findFirst({
       where: {
@@ -25,10 +12,9 @@ class UtilityRepository {
         date: { gte: new Date(startTime), lte: new Date(endTime) },
       },
     });
-    return !!log;
+    return Boolean(log);
   }
 
-  // POST /user-logs
   createUserLog({ userId, date, description, totalMinutes, client }) {
     const db = client ?? prisma;
     return db.userLog.create({
@@ -41,43 +27,27 @@ class UtilityRepository {
     });
   }
 
-  // GET /users/role/:userId
-  getUserRole({ userId }) {
+  getUserCurrentProfile({ userId }) {
     return prisma.user.findUnique({
       where: { id: Number(userId) },
-      select: { role: true },
+      select: {
+        currentProfile: {
+          select: { id: true, key: true, label: true, family: true, isAdminTier: true },
+        },
+      },
     });
   }
 
-  // GET /roles — base role + sub-roles for a user
-  async getOtherRoles({ userId }) {
-    const mainRole = await prisma.user.findUnique({
-      where: { id: Number(userId) },
-      select: { role: true },
-    });
-    let subRoles = await prisma.userSubRole.findMany({
-      where: { userId: Number(userId) },
-      select: { subRole: true },
-    });
-    const subRoleNames = subRoles.map((s) => s.subRole);
-    return [...subRoleNames, ...(mainRole ? [mainRole.role] : [])];
-  }
-
-  // GET /users/admins — active ADMIN/SUPER_ADMIN (base or sub-role)
   getAdmins() {
     return prisma.user.findMany({
       where: {
         isActive: true,
-        OR: [
-          { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
-          { subRoles: { some: { subRole: { in: ["ADMIN", "SUPER_ADMIN"] } } } },
-        ],
+        currentProfile: { isAdminTier: true },
       },
       select: { id: true, name: true, email: true },
     });
   }
 
-  // GET /images — by pattern/space id lists
   listImages({ patternIdList, spaceIdList }) {
     const where = {
       isArchived: false,
@@ -95,38 +65,70 @@ class UtilityRepository {
     });
   }
 
-  // GET / and GET /ids — generic pick-list read with a FIXED server-side projection.
-  // `model` is an allow-listed Prisma delegate name and `select` is the fixed projection
-  // from UTILITY_MODEL_PROJECTIONS — both resolved in the usecase. NO client-supplied
-  // where/select/include reaches Prisma (FIX 2). A small server-side `where` (e.g.
-  // active-only) may be baked here per model if ever needed; today there is none, matching
-  // the legacy default of returning all rows.
   findModelPickList({ model, select }) {
     return prisma[model].findMany({ select });
   }
 
-  // ── cross-model search (Prisma I/O for the ported `searchData`) ─────────────────
-  // Look up a staff user's role facts to decide whether they may search ALL leads
-  // (checkIsAllowedToSearchAll runs in the usecase). Ported VERBATIM from the legacy
-  // `searchData` staff-scope branch.
-  findUserForSearchScope({ staffId }) {
-    return prisma.user.findUnique({
-      where: { id: Number(staffId) },
-      select: { role: true, subRoles: true, currentProfile: { select: { key: true } } },
+  searchUsers({ query, profileKey }) {
+    return prisma.user.findMany({
+      where: {
+        isActive: true,
+        ...(profileKey ? { currentProfile: { key: profileKey } } : {}),
+        OR: [
+          { email: { contains: query } },
+          { name: { contains: query } },
+        ],
+      },
+      take: 20,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        currentProfile: { select: { key: true, label: true, family: true } },
+      },
     });
   }
 
-  // Final search read. `delegateKey` is captured in the usecase from the ORIGINAL model
-  // name (legacy `modelMap[model] || modelMap["user"]`); anything outside the three
-  // supported delegates falls back to `user` — preserving the legacy quirk exactly.
-  searchFindMany({ delegateKey, where, select }) {
-    const modelMap = {
-      user: prisma.user,
-      client: prisma.client,
-      clientLead: prisma.clientLead,
-    };
-    const prismaModel = modelMap[delegateKey] || modelMap["user"];
-    return prismaModel.findMany({ where, select });
+  searchClients({ query, leadScope }) {
+    return prisma.client.findMany({
+      where: {
+        ...(leadScope ? { clientLeads: { some: leadScope } } : {}),
+        OR: [
+          { email: { contains: query } },
+          { name: { contains: query } },
+          { phone: { contains: query } },
+        ],
+      },
+      take: 20,
+      select: { id: true, name: true, email: true, phone: true },
+    });
+  }
+
+  searchLeads({ query, leadScope }) {
+    const search = [
+      {
+        client: {
+          OR: [
+            { email: { contains: query } },
+            { name: { contains: query } },
+            { phone: { contains: query } },
+          ],
+        },
+      },
+      { code: { contains: query } },
+    ];
+    if (/^\d+$/.test(query)) search.push({ id: Number(query) });
+    return prisma.clientLead.findMany({
+      where: { AND: [leadScope, { OR: search }] },
+      take: 20,
+      select: {
+        id: true,
+        code: true,
+        client: {
+          select: { name: true, email: true, phone: true },
+        },
+      },
+    });
   }
 }
 

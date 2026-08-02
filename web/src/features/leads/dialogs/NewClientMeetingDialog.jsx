@@ -51,7 +51,7 @@ export const NewClientMeetingDialog = ({
   // Function to load admin users
   const loadAdminUsers = async () => {
     const response = await getData({
-      url: "shared/utilities/users/admins",
+      url: "utilities/users/admins",
       setLoading: setLoadingAdmins,
     });
 
@@ -84,7 +84,7 @@ export const NewClientMeetingDialog = ({
     const request = await handleRequestSubmit(
       requestData,
       setLoading,
-      `shared/client-leads/${lead.id}/meeting-reminders/token`,
+      `leads/${lead.id}/meeting-reminders/token`,
       false,
       "Creating"
     );

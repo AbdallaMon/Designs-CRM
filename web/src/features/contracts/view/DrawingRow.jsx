@@ -45,7 +45,7 @@ export default function DrawingRow({ row, contractId, onReload }) {
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/${contractId}/drawings/${row.id}`,
+      `contracts/${contractId}/drawings/${row.id}`,
       false,
       "Updating",
       false,
@@ -62,7 +62,7 @@ export default function DrawingRow({ row, contractId, onReload }) {
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/contracts/${contractId}/drawings/${row.id}`,
+      `contracts/${contractId}/drawings/${row.id}`,
       false,
       "Updating",
       false,

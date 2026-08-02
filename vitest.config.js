@@ -24,7 +24,13 @@ export default defineConfig({
   test: {
     // Root smoke runner for the monorepo. Module agents add their own
     // workspace tests later; this just guarantees a working runner exists.
-    include: ["tests/**/*.test.js", "packages/**/*.test.js", "server/**/*.test.js", "web/**/*.test.js"],
+    include: [
+      "tests/**/*.test.js",
+      "packages/**/*.test.js",
+      "server/**/*.test.js",
+      "web/**/*.test.js",
+      "courses-web/**/*.test.js",
+    ],
     environment: "node",
   },
 });

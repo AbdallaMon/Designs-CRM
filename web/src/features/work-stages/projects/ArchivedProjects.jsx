@@ -20,18 +20,17 @@ export default function ArchivedProjects() {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher("shared/archived-projects", false);
+  } = useDataFetcher("projects/archived", false);
   const { user } = useAuth();
   return (
     <Container maxWidth="lg">
       <SearchComponent
-        apiEndpoint="search?model=clientLead"
+        resource="leads"
         setFilters={setFilters}
         inputLabel="Search lead by id ,name or phone"
         renderKeys={["id", "client.name", "client.phone", "client.email"]}
         mainKey="id"
         searchKey={"id"}
-        localFilters={{ staffId: user.id, userRole: user.role }}
         withParamsChange={true}
       />
       {data?.map((lead) => {

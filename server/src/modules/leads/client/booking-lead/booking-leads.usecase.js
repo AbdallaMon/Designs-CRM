@@ -7,6 +7,9 @@ import { bookingLeadsEmails } from "./booking-leads.emails.js";
 import { AppError } from "../../../../shared/errors/AppError.js";
 import { bookingLeadsRepository } from "./booking-leads.repo.js";
 import { sendEmail } from "../../../../infra/mail/send-mail.js";
+import { leadsMessagesCodes, messagesNames } from "@dms/shared";
+
+const TK = messagesNames.leadsMessages;
 
 // master 03ca4d3: after a successful booking submit, send the client a "thanks" email.
 // Routed through src/infra/mail/send-mail.js so the client-facing from-name/address
@@ -95,7 +98,11 @@ class BookingLeadsUsecase {
     const existingLead = await this.#getExistingOrThrow(leadId);
 
     if (existingLead.bookingRequestStatus === "SUBMITTED") {
-      throw new AppError("booking.alreadySubmitted", 409);
+      throw new AppError({
+        code: leadsMessagesCodes.BOOKING_LEAD_ALREADY_SUBMITTED,
+        statusCode: 409,
+        translationKey: TK,
+      });
     }
 
     const leadData = isLeadField(field)
@@ -125,10 +132,11 @@ class BookingLeadsUsecase {
     const existingLead = await this.#getExistingOrThrow(leadId);
 
     if (existingLead.bookingRequestStatus === "SUBMITTED") {
-      throw new AppError(
-        "This lead has already been submitted and cannot be submitted again",
-        409,
-      );
+      throw new AppError({
+        code: leadsMessagesCodes.BOOKING_LEAD_ALREADY_SUBMITTED,
+        statusCode: 409,
+        translationKey: TK,
+      });
     }
 
     const leadData = {};
@@ -178,7 +186,11 @@ class BookingLeadsUsecase {
     const lead = await bookingLeadsRepository.findById(leadId);
 
     if (!lead) {
-      throw new AppError("Booking lead not found", 404);
+      throw new AppError({
+        code: leadsMessagesCodes.BOOKING_LEAD_NOT_FOUND,
+        statusCode: 404,
+        translationKey: TK,
+      });
     }
 
     return lead;

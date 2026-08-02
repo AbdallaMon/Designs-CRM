@@ -19,6 +19,8 @@ import timezone from "dayjs/plugin/timezone.js";
 
 import { availabilityRepository } from "./availability.repo.js";
 import { getCalendarDataForMonth } from "./month-view.usecase.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { calendarMessagesCodes } from "@dms/shared";
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -36,7 +38,7 @@ export async function getAvailableDaysImpl({ month, adminId, type, userId }) {
   if (!adminId) {
     adminId = userId;
     if (!userId) {
-      throw new Error("AdminId is required");
+      throw new AppError({ code: calendarMessagesCodes.ADMIN_ID_REQUIRED, statusCode: 400 });
     }
   }
 
@@ -139,7 +141,7 @@ export async function createAvailableDayImpl({
     const hasBookedSlots = existing.slots.some((slot) => slot.isBooked);
 
     if (hasBookedSlots) {
-      throw new Error("You cannot delete this day. It contains booked slots.");
+      throw new AppError({ code: calendarMessagesCodes.AVAILABLE_DAY_HAS_BOOKINGS, statusCode: 409 });
     } else {
       await availabilityRepository.deleteSlotsByDayId(existing.id);
       await availabilityRepository.deleteDayById(existing.id);
@@ -201,7 +203,7 @@ export async function updateAvailableDayImpl({
   dayId = Number(dayId);
   const existingDay = await availabilityRepository.findDayByIdWithSlots(dayId);
   if (existingDay.slots.some((s) => s.meetingReminderId !== null)) {
-    throw new Error("Cannot update date: related meetings exist");
+    throw new AppError({ code: calendarMessagesCodes.RELATED_MEETINGS_EXIST, statusCode: 409 });
   }
 
   await availabilityRepository.deleteSlotsByDayId(existingDay.id);
@@ -223,14 +225,13 @@ export async function getAvailableSlotsForDayImpl({
   adminId,
   dayId,
   userId,
-  role = true,
   timezone = "Asia/Dubai",
   type,
 }) {
   if (!adminId) {
     adminId = userId;
     if (!userId) {
-      throw new Error("AdminId is required");
+      throw new AppError({ code: calendarMessagesCodes.ADMIN_ID_REQUIRED, statusCode: 400 });
     }
   }
 
@@ -277,10 +278,10 @@ export async function deleteASlotImpl({ slotId }) {
   slotId = Number(slotId);
   const slot = await availabilityRepository.findSlotById(slotId);
 
-  if (!slot) throw new Error("Slot not found");
+  if (!slot) throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
 
   if (slot.isBooked) {
-    throw new Error("Cannot delete a booked slot");
+    throw new AppError({ code: calendarMessagesCodes.SLOT_ALREADY_BOOKED, statusCode: 409 });
   }
 
   return await availabilityRepository.deleteSlotByIdReturning(slotId);
@@ -289,7 +290,7 @@ export async function deleteASlotImpl({ slotId }) {
 export async function deleteADayImpl({ dayId }) {
   const check = await availabilityRepository.findFirstBookedSlot(dayId);
   if (check) {
-    throw new Error("Cant delete the day cause there is a booked slot");
+    throw new AppError({ code: calendarMessagesCodes.AVAILABLE_DAY_HAS_BOOKINGS, statusCode: 409 });
   }
 
   await availabilityRepository.deleteSlotsByDayId(Number(dayId));
@@ -300,12 +301,12 @@ export async function deleteADayImpl({ dayId }) {
 export async function addCutsomDateImpl({ fromHour, toHour, dayId, timeZone }) {
   dayId = Number(dayId);
   if (!fromHour || !toHour || !dayId) {
-    throw new Error("fromHour, toHour, and dayId are required");
+    throw new AppError({ code: calendarMessagesCodes.SLOT_FIELDS_REQUIRED, statusCode: 400 });
   }
 
   const availableDay = await availabilityRepository.findDayDate(dayId);
   if (!availableDay) {
-    throw new Error("Available day not found");
+    throw new AppError({ code: calendarMessagesCodes.AVAILABLE_DAY_NOT_FOUND, statusCode: 404 });
   }
 
   // Format the date to YYYY-MM-DD
@@ -329,7 +330,7 @@ export async function addCutsomDateImpl({ fromHour, toHour, dayId, timeZone }) {
   });
 
   if (overlappingSlots.length > 0) {
-    throw new Error("This time slot conflicts with an existing one.");
+    throw new AppError({ code: calendarMessagesCodes.SLOT_CONFLICT, statusCode: 409 });
   }
 
   await availabilityRepository.createCustomSlot({ dayId, startTimeUtc, endTimeUtc });
@@ -386,10 +387,8 @@ export async function getRemindersForDayImpl({ date, userId, adminId }) {
 //  directly. The create adapters translate fromTime/toTime/dates →
 //  fromHour/toHour/days.
 // ════════════════════════════════════════════════════════════════════════════
-// The former `legacyDefaults` bag, now referenced directly as module-level bindings. Each
-// entry keeps its EXACT implementation: identity adapters to the relocated *Impl functions
-// above (and the month-view function), plus the create adapters that translate
-// fromTime/toTime/dates → fromHour/toHour/days. `getCalendarDataForMonth` is imported.
+// Module-level adapters call the availability implementations directly. Create adapters
+// translate fromTime/toTime/dates to fromHour/toHour/days.
 const getAvailableDays = (a) => getAvailableDaysImpl(a);
 const getAvailableSlotsForDay = (a) => getAvailableSlotsForDayImpl(a);
 const createOrUpdateAvailableDay = ({ fromTime, toTime, ...rest }) =>
@@ -407,10 +406,6 @@ const addCustomDate = (a) => addCutsomDateImpl(a);
 // Reproduce the legacy role gate used inside the month-view route handlers verbatim:
 // userId filter is applied for non-admin / non-superSales users; admins/superSales pass
 // `false` (legacy short-circuit) so the service does not filter by userId.
-function isAdminRole(role) {
-  return role === "ADMIN" || role === "SUPER_ADMIN";
-}
-
 class AvailabilityUsecase {
   // GET available-days — legacy resolved adminId (default → caller id), passed userId +
   // type ("ADMIN" default) + timezone ("Asia/Dubai" default).
@@ -498,22 +493,22 @@ class AvailabilityUsecase {
   // admin/non-superSales; adminId = caller id when query.isAdmin === "true"; isSuperSales
   // + superSalesId passed through.
   getCalendarMonth({ query, authUser }) {
-    const isAdmin = isAdminRole(authUser.role);
-    const isSuperSales = authUser.currentProfileKey === "SUPER_SALES";
+    const isAdmin = Boolean(authUser.isAdminTier);
+    const hasSuperSalesScope = authUser.currentProfileKey === "SUPER_SALES";
     return getCalendarDataForMonth({
       year: query.year,
       month: query.month,
-      userId: !isAdmin && !isSuperSales && authUser.id,
+      userId: !isAdmin && !hasSuperSalesScope && authUser.id,
       adminId: query.isAdmin === "true" ? authUser.id : null,
-      isSuperSales,
-      superSalesId: authUser.id,
+      hasSuperSalesScope,
+      supervisorId: authUser.id,
     });
   }
 
   // GET dates/day — reminders for a day. Legacy: userId filter for non-admin; adminId =
   // caller id when query.isAdmin === "true".
   getRemindersForDay({ query, authUser }) {
-    const isAdmin = isAdminRole(authUser.role);
+    const isAdmin = Boolean(authUser.isAdminTier);
     return getRemindersForDay({
       date: query.date,
       userId: !isAdmin && authUser.id,

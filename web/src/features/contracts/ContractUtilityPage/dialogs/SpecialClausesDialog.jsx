@@ -194,7 +194,7 @@ export function SpecialClausesDialog({ open, onClose, onUpdated }) {
   const fetchSpecialClauses = useCallback(async () => {
     if (!open) return;
     await getDataAndSet({
-      url: "shared/site-utilities/contract-utility/special-clauses",
+      url: "site-utilities/contract-utility/special-clauses",
       setData: setClauses,
       setLoading,
     });
@@ -233,7 +233,7 @@ export function SpecialClausesDialog({ open, onClose, onUpdated }) {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `shared/site-utilities/contract-utility/special-clauses/${clauseId}`,
+      `site-utilities/contract-utility/special-clauses/${clauseId}`,
       false,
       "Deleting",
       false,
@@ -261,8 +261,8 @@ export function SpecialClausesDialog({ open, onClose, onUpdated }) {
       payload,
       setToastLoading,
       isNew
-        ? `shared/site-utilities/contract-utility/special-clauses`
-        : `shared/site-utilities/contract-utility/special-clauses/${updatedClause.id}`,
+        ? `site-utilities/contract-utility/special-clauses`
+        : `site-utilities/contract-utility/special-clauses/${updatedClause.id}`,
       false,
       "Saving",
       false,

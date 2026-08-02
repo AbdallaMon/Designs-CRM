@@ -188,7 +188,7 @@ const KeyMetricsCard = ({ staff, staffId }) => {
         : "";
       const profile = staffId && `profile=true&`;
       const request = await getData({
-        url: `shared/dashboard/key-metrics?${extra}&${profile}`,
+        url: `dashboard/key-metrics?${extra}&${profile}`,
         setLoading,
       });
       if (request) setMetrics(request.data);

@@ -48,7 +48,7 @@ const LeadContent = ({
     type === "3D_Modification" ||
     (type === "3D_Designer" && lead.projects?.[0]?.status === "Modification");
 
-  const isDesignerView = checkIfADesigner(user) || user.role === "TWO_D_EXECUTOR";
+  const isDesignerView = checkIfADesigner(user) || user.profile === "EXECUTOR_2D";
 
   const workStageCtx = {
     lead,
@@ -119,7 +119,7 @@ const PreviewWorkStage = ({
       // Base url carries ?type= — the per-tab data layer splices sub-resources BEFORE
       // the query (LeadDetailsContext.subResourcePath), so notes/calls/files hit
       // shared/projects/designers/:id/{...}?type=... and keep the per-user narrowing.
-      url={`shared/projects/designers/${id}?type=${type}&`}
+      url={`projects/designers/${id}?type=${type}&`}
       type={type}
       dontCheckIfNotUser={true}
       setRerenderColumns={setRerenderColumns}

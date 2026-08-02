@@ -21,7 +21,7 @@ export default function NextMeetings({ staff }) {
 
   const { data, loading, page, setPage, limit, setLimit, total, totalPages } =
     useDataFetcher(
-      "shared/client-leads/meetings" + `?staffId=${staff && user.id}&`,
+      "leads/meetings" + `?staffId=${staff && user.id}&`,
       false
     );
 

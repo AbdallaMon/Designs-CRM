@@ -63,7 +63,7 @@ function ConditionFormDialog({
   onClose,
   initialData, // { id?, conditionType, condition, labelAr, labelEn }
   onSaved, // callback after successful create/update
-  baseUrl = "shared/site-utilities/contract-payment-conditions",
+  baseUrl = "site-utilities/contract-payment-conditions",
 }) {
   const isEdit = !!initialData?.id;
 
@@ -212,8 +212,8 @@ function ConditionFormDialog({
 // Main Manager (list + actions)
 // -----------------------------------------------
 export default function ContractPaymentConditionsManager({
-  baseUrl = "shared/site-utilities/contract-payment-conditions",
-  fetchUrl = "shared/site-utilities/contract-payment-conditions",
+  baseUrl = "site-utilities/contract-payment-conditions",
+  fetchUrl = "site-utilities/contract-payment-conditions",
 }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoadingState] = useState(false);

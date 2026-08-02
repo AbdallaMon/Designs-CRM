@@ -124,7 +124,7 @@ function AddPayments({
         ...extraData,
       },
       setLoading,
-      `shared/client-leads/${lead.id}/payments`,
+      `leads/${lead.id}/payments`,
       false,
       "Submitting"
     );

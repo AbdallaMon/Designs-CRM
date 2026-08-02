@@ -58,7 +58,7 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
 
   const fetchHomeworks = async () => {
     await getDataAndSet({
-      url: `shared/courses/${courseId}/lessons/${lessonId}/home-work`,
+      url: `staff-courses/${courseId}/lessons/${lessonId}/home-work`,
       setData: setHomeworks,
       setLoading,
     });
@@ -84,7 +84,7 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
     const req = await handleRequestSubmit(
       { testId, url, title, type: uploadType },
       setSubmitting,
-      `shared/courses/${courseId}/lessons/${lessonId}/home-work`
+      `staff-courses/${courseId}/lessons/${lessonId}/home-work`
     );
     if (req.status === 200) {
       onUpdate();

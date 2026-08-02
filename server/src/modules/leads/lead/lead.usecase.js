@@ -26,9 +26,8 @@ import {
   remindUserToPay as paymentRemindUserToPay,
   remindUserToCompleteRegister as paymentRemindUserToCompleteRegister,
 } from "../payment/payment.usecase.js";
-// Repo-backed module functions extracted VERBATIM to sibling usecase files (behavior-
-// preserving split). Imported back and wired into the `legacyDefaults` DI seam below —
-// the SAME pattern already used above for the payment sub-entity functions.
+// Repo-backed module functions are organized in sibling usecase files and imported
+// directly by this facade.
 import {
   checkIfUserAllowedToTakeALead,
   assignLeadToAUser,
@@ -60,22 +59,22 @@ dayjs.extend(timezone);
 // the assign/status/convert + STAFF sub-resource module functions and the leads/payment
 // sub-entity functions are imported above; `editPriceOfferStatus` delegates straight to
 // the lead repo; `updateLeadField` reaches admin-residual's own repo (statically imported
-// above). Behavior is unchanged — these are the exact same bindings the former
-// `legacyDefaults` bag wired.
+// above).
 
 // Roles that historically had FULL read scope on the LIST (legacy excluded these from
 // the country narrowing in getClientLeads).
-const LIST_FULL_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPER_SALES", "CONTACT_INITIATOR"];
+const LIST_FULL_PROFILES = [
+  "ADMIN",
+  "SUPER_ADMIN",
+  "SUPER_SALES",
+  "CONTACT_INITIATOR",
+];
 
 class LeadUsecase {
   // Admin-tier lead operator = ADMIN/SUPER_ADMIN base role OR an admin-tier profile
   // (SUPER_SALES). Profile-authoritative — the legacy isSuperSales flag is NOT read.
   isAdminUser(authUser) {
-    return (
-      Boolean(authUser?.isAdminTier) ||
-      authUser?.role === "ADMIN" ||
-      authUser?.role === "SUPER_ADMIN"
-    );
+    return Boolean(authUser?.isAdminTier);
   }
 
   // Profile-key ONLY, by design (spec decision D4): do NOT fall back to isAdminTier or
@@ -112,7 +111,7 @@ class LeadUsecase {
     });
     const lead = await leadRepository.findScopedLead({ where });
     if (!lead) {
-      throw new AppError(leadsMessagesCodes.LEAD_ACCESS_DENIED, 403);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_ACCESS_DENIED, statusCode: 403 });
     }
     return lead;
   }
@@ -126,7 +125,7 @@ class LeadUsecase {
     });
     const lead = await leadRepository.findScopedLead({ where });
     if (!lead) {
-      throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
     }
     return lead;
   }
@@ -175,8 +174,8 @@ class LeadUsecase {
     if (searchParams.noConsulted && searchParams.noConsulted === "true") where = { initialConsult: false };
     if (filters.id && filters.id !== "all") where.id = Number(filters.id);
 
-    const user = await leadRepository.getUserCountryRole({ userId });
-    if (!LIST_FULL_ROLES.includes(user.role)) {
+    const user = await leadRepository.getUserCountryProfile({ userId });
+    if (!LIST_FULL_PROFILES.includes(user?.currentProfile?.key)) {
       where = {
         ...where,
         AND: [
@@ -234,18 +233,16 @@ class LeadUsecase {
   async getDeals({ query, authUser }) {
     const searchParams = { ...query };
     if (
-      authUser.role !== "ADMIN" &&
-      authUser.role !== "SUPER_ADMIN" &&
-      authUser.role !== "ACCOUNTANT" &&
+      !authUser.isAdminTier &&
+      authUser.currentProfileKey !== "ACCOUNTANT" &&
       !this.#isSuperSalesScope(authUser)
     ) {
       searchParams.selfId = authUser.id;
       searchParams.userId = authUser.id;
     }
     const isAdmin =
-      authUser.role === "ADMIN" ||
-      authUser.role === "SUPER_ADMIN" ||
-      authUser.role !== "SUPER_SALES"; // verbatim legacy expression (see /deals)
+      authUser.isAdminTier ||
+      authUser.currentProfileKey !== "SUPER_SALES";
     const items = await getClientLeadsByDateRange({ searchParams, isAdmin, user: authUser });
     return items;
   }
@@ -253,16 +250,15 @@ class LeadUsecase {
   async getColumns({ query, authUser }) {
     const searchParams = { ...query };
     if (
-      authUser.role !== "ADMIN" &&
-      authUser.role !== "SUPER_ADMIN" &&
-      authUser.role !== "ACCOUNTANT" &&
+      !authUser.isAdminTier &&
+      authUser.currentProfileKey !== "ACCOUNTANT" &&
       !this.#isSuperSalesScope(authUser)
     ) {
       searchParams.selfId = authUser.id;
       searchParams.userId = authUser.id;
     }
     const isAdmin =
-      authUser.role === "ADMIN" || authUser.role === "SUPER_ADMIN" || this.#isSuperSalesScope(authUser);
+      authUser.isAdminTier || this.#isSuperSalesScope(authUser);
     return getClientLeadsColumnStatus({ searchParams, isAdmin, user: authUser });
   }
 
@@ -279,21 +275,23 @@ class LeadUsecase {
   // Used by getLead AND the per-tab readers below, so every tab observes the SAME
   // scoped subset / record shapes the full detail returns (no fileWhere divergence).
   async #getDetail({ id, query, authUser }) {
-    const role = authUser.role;
+    const profileKey = authUser.currentProfileKey;
     const searchParams = { ...query };
     const privileged =
-      role === "ADMIN" || role === "SUPER_ADMIN" || this.#isSuperSalesScope(authUser) || role === "CONTACT_INITIATOR";
+      authUser.isAdminTier ||
+      this.#isSuperSalesScope(authUser) ||
+      profileKey === "CONTACT_INITIATOR";
 
-    if (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "ACCOUNTANT" && !this.#isSuperSalesScope(authUser)) {
+    if (!authUser.isAdminTier && profileKey !== "ACCOUNTANT" && !this.#isSuperSalesScope(authUser)) {
       searchParams.userId = authUser.id;
     }
-    if (role !== "ADMIN" && role !== "CONTACT_INITIATOR" && role !== "SUPER_ADMIN" && !this.#isSuperSalesScope(authUser)) {
+    if (!authUser.isAdminTier && profileKey !== "CONTACT_INITIATOR" && !this.#isSuperSalesScope(authUser)) {
       searchParams.checkConsult = true;
     }
 
     return privileged
       ? await this.#getAdminDetail(Number(id), searchParams)
-      : await this.#getStaffDetail(Number(id), searchParams, role, authUser.id, authUser);
+      : await this.#getStaffDetail(Number(id), searchParams, authUser.id, authUser);
   }
 
   // ── Per-tab readers (lazy, object-scoped) ──────────────────────────────────────
@@ -334,15 +332,15 @@ class LeadUsecase {
     return clientLead;
   }
 
-  async #getStaffDetail(clientLeadId, searchParams, role, userId, user) {
+  async #getStaffDetail(clientLeadId, searchParams, userId, user) {
     let where = {};
     let leadWhere = {};
 
-    if (searchParams.userId && role !== "ADMIN" && role !== "SUPER_ADMIN") {
+    if (searchParams.userId && !user.isAdminTier) {
       const assigned = await leadRepository.findFirstByUserId({ userId: Number(searchParams.userId) });
       if (!assigned) where.userId = Number(searchParams.userId);
     }
-    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+    if (!user.isAdminTier) {
       const shuffle = await leadRepository.findOnHoldOwner({ id: Number(clientLeadId) });
       if (shuffle && shuffle.userId !== Number(userId)) {
         where = {};
@@ -361,7 +359,9 @@ class LeadUsecase {
       // carve-out filtered the row out. Turn the misleading 404 into a meaningful,
       // closeable domain error the FE can act on.
       if (isNew) {
-        throw new AppError(leadsMessagesCodes.LEAD_CLAIM_REQUIRED, 409, null, {
+        throw new AppError({
+          code: leadsMessagesCodes.LEAD_CLAIM_REQUIRED,
+          statusCode: 409,
           translationKey: messagesNames.leadsMessages,
           reason: "This lead is new — claim it as a deal to open it.",
           redirectText: leadsMessagesCodes.LEAD_CLAIM_REQUIRED,
@@ -370,9 +370,9 @@ class LeadUsecase {
       }
       const owner = await leadRepository.findLeadOwner({ id: Number(clientLeadId) });
       if (owner && owner.userId != null && Number(owner.userId) !== Number(userId)) {
-        throw new AppError(leadsMessagesCodes.LEAD_ACCESS_DENIED, 403);
+        throw new AppError({ code: leadsMessagesCodes.LEAD_ACCESS_DENIED, statusCode: 403 });
       }
-      throw new AppError(leadsMessagesCodes.LEAD_NOT_FOUND, 404);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
     }
 
     clientLead.callReminders = [
@@ -407,7 +407,7 @@ class LeadUsecase {
   }
 
   async bulkConvert({ body, authUser }) {
-    if (!this.isAdminUser(authUser)) throw new AppError(leadsMessagesCodes.BULK_CONVERT_FORBIDDEN, 403);
+    if (!this.isAdminUser(authUser)) throw new AppError({ code: leadsMessagesCodes.BULK_CONVERT_FORBIDDEN, statusCode: 403 });
     const result = await bulkAssignLeadTsoAUser(body.ids, body.userId, true);
     return result;
   }
@@ -419,8 +419,8 @@ class LeadUsecase {
     // that is null → `null.id` 500. Convert is only meaningful for an assigned lead, so
     // reject the unassigned case with a clean domain error instead of crashing.
     const lead = await leadRepository.findLeadOwner({ id: Number(body.id) });
-    if (!lead) throw new AppError(leadsMessagesCodes.LEAD_NOT_FOUND, 404);
-    if (lead.userId == null) throw new AppError(leadsMessagesCodes.LEAD_CONVERT_REQUIRES_OWNER, 409);
+    if (!lead) throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
+    if (lead.userId == null) throw new AppError({ code: leadsMessagesCodes.LEAD_CONVERT_REQUIRES_OWNER, statusCode: 409 });
     return markClientLeadAsConverted(Number(body.id), body.reasonToConvert, "ON_HOLD");
   }
 
@@ -596,7 +596,7 @@ class LeadUsecase {
   // ── ownership lookups for sub-resource mutate checks ────────────────────────────
   async resolveCallReminderLead({ reminderId }) {
     const row = await leadRepository.findCallReminderOwner({ reminderId });
-    if (!row) throw new AppError(leadsMessagesCodes.CALL_REMINDER_NOT_FOUND, 404);
+    if (!row) throw new AppError({ code: leadsMessagesCodes.CALL_REMINDER_NOT_FOUND, statusCode: 404 });
     return row;
   }
 
@@ -606,13 +606,13 @@ class LeadUsecase {
   async resolveMeetingReminderLead({ reminderId, meetingId }) {
     const id = reminderId ?? meetingId;
     const row = await leadRepository.findMeetingReminderOwner({ reminderId: id });
-    if (!row) throw new AppError(leadsMessagesCodes.MEETING_REMINDER_NOT_FOUND, 404);
+    if (!row) throw new AppError({ code: leadsMessagesCodes.MEETING_REMINDER_NOT_FOUND, statusCode: 404 });
     return row;
   }
 
   async resolvePriceOfferLead({ priceOfferId }) {
     const row = await leadRepository.findPriceOfferLeadId({ priceOfferId });
-    if (!row) throw new AppError(leadsMessagesCodes.PRICE_OFFER_NOT_FOUND, 404);
+    if (!row) throw new AppError({ code: leadsMessagesCodes.PRICE_OFFER_NOT_FOUND, statusCode: 404 });
     return row;
   }
 

@@ -20,7 +20,7 @@ const nextConfig = {
       process.env.UPLOADS_ORIGIN ||
       process.env.NEXT_PUBLIC_API ||
       process.env.NEXT_PUBLIC_URL ||
-      (process.env.local === "true" ? "http://localhost:4001" : "")
+      (process.env.NODE_ENV === "development" ? "http://localhost:4001" : "")
     ).replace(/\/+$/, "");
 
     if (!uploadsOrigin) return [];

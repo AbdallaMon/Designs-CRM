@@ -50,7 +50,7 @@ const LinksSection = ({ courseId, lessonId }) => {
 
   async function getLinks() {
     await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons/${lessonId}/links`,
+      url: `courses/${courseId}/lessons/${lessonId}/links`,
       setLoading,
       setData: setLinkList,
     });
@@ -68,7 +68,7 @@ const LinksSection = ({ courseId, lessonId }) => {
       const req = await handleRequestSubmit(
         newLink,
         setToastLoading,
-        `admin/courses/${courseId}/lessons/${lessonId}/links`,
+        `courses/${courseId}/lessons/${lessonId}/links`,
         false,
         "Creating"
       );
@@ -83,7 +83,7 @@ const LinksSection = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/links/${id}`,
+      `courses/${courseId}/lessons/${lessonId}/links/${id}`,
       false,
       "Deleting",
       false,
@@ -104,7 +104,7 @@ const LinksSection = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       editData,
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/links/${editingId}`,
+      `courses/${courseId}/lessons/${lessonId}/links/${editingId}`,
       false,
       "Updating",
       false,

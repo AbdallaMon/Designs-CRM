@@ -20,6 +20,44 @@ vi.mock("@dms/db", () => ({
     $transaction: vi.fn().mockResolvedValue([[], 0]),
   },
 }));
+vi.mock("../../../infra/auth/profile-cache.js", () => {
+  const profiles = {
+    1: {
+      key: "NORMAL_SALES",
+      family: "SALES",
+      isAdminTier: false,
+      permissions: [],
+      permissionsByModule: {},
+    },
+    2: {
+      key: "ACCOUNTANT",
+      family: "FINANCE",
+      isAdminTier: false,
+      permissions: [],
+      permissionsByModule: {},
+    },
+    3: {
+      key: "ADMIN",
+      family: "ADMIN",
+      isAdminTier: true,
+      permissions: ["audit.log.view"],
+      permissionsByModule: { audit: { codes: ["audit.log.view"] } },
+    },
+    4: {
+      key: "SUPER_ADMIN",
+      family: "ADMIN",
+      isAdminTier: true,
+      permissions: ["audit.log.view"],
+      permissionsByModule: { audit: { codes: ["audit.log.view"] } },
+    },
+  };
+  return {
+    profileCache: {
+      resolve: (id) => profiles[id] ?? null,
+      resolveMeta: () => null,
+    },
+  };
+});
 
 let server;
 let baseUrl;
@@ -54,14 +92,17 @@ afterAll(async () => {
 });
 
 function signFor(role) {
+  const currentProfileId = {
+    STAFF: 1,
+    ACCOUNTANT: 2,
+    ADMIN: 3,
+    SUPER_ADMIN: 4,
+  }[role];
   return JwtService.signAccess({
     id: 1,
-    role,
-    activeRole: role,
+    currentProfileId,
+    profileIds: [currentProfileId],
     isActive: true,
-    isPrimary: false,
-    isSuperSales: false,
-    subRoles: [],
   });
 }
 

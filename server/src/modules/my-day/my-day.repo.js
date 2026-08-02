@@ -28,10 +28,10 @@ export const ACTIVE_DEAL_STATUSES = Object.freeze([
 export const ACTIVE_LEAD_STATUSES = Object.freeze(["NEW", ...ACTIVE_DEAL_STATUSES]);
 
 // Designer/executor roles whose active-project load the team lens surfaces.
-export const DESIGNER_ROLES = Object.freeze([
-  "THREE_D_DESIGNER",
-  "TWO_D_DESIGNER",
-  "TWO_D_EXECUTOR",
+export const DESIGNER_PROFILE_KEYS = Object.freeze([
+  "DESIGNER_3D",
+  "DESIGNER_2D",
+  "EXECUTOR_2D",
 ]);
 
 // Project.status is a FREE-FORM String (not an enum). A project is "active" when its status
@@ -133,8 +133,6 @@ class MyDayRepository {
         id: true,
         name: true,
         isActive: true,
-        role: true,
-        profile: true,
         currentProfile: { select: { key: true } },
       },
     });
@@ -253,8 +251,13 @@ class MyDayRepository {
   // Active-stage count per active designer.
   async designerLoad() {
     const designers = await prisma.user.findMany({
-      where: { role: { in: [...DESIGNER_ROLES] }, isActive: true },
-      select: { id: true, name: true, role: true },
+      where: {
+        isActive: true,
+        userProfiles: {
+          some: { profile: { key: { in: [...DESIGNER_PROFILE_KEYS] } } },
+        },
+      },
+      select: { id: true, name: true },
       orderBy: { name: "asc" },
     });
     const counts = await Promise.all(
@@ -267,7 +270,11 @@ class MyDayRepository {
         }),
       ),
     );
-    return designers.map((d, i) => ({ userId: d.id, name: d.name, role: d.role, activeStages: counts[i] }));
+    return designers.map((d, i) => ({
+      userId: d.id,
+      name: d.name,
+      activeStages: counts[i],
+    }));
   }
 
   // ── drill-down itemization (a single rep) ────────────────────────────────────────────

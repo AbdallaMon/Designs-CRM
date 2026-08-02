@@ -119,7 +119,7 @@ const theme = createTheme({
     drawer: 1200,
   },
   typography: {
-    fontFamily: ["Noto Kufi Arabic", "system-ui", "sans-serif"].join(","),
+    fontFamily: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"].join(","),
     h1: {
       color: colors.heading,
       fontWeight: 700,

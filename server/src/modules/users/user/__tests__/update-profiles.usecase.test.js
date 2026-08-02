@@ -29,11 +29,11 @@ describe("updateUserProfiles", () => {
     userRepository.setUserProfiles.mockImplementation(async (args) => args);
   });
 
-  it("adds new profiles, sets current, syncs legacy columns, audits the add", async () => {
+  it("adds new profiles, sets current, and audits the add", async () => {
     const res = await userUsecase.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 5 });
     const args = userRepository.setUserProfiles.mock.calls[0][0];
     expect(args).toMatchObject({ userId: 1, addIds: [5], removeIds: [], currentProfileId: 5, assignedByUserId: 99 });
-    expect(args.legacySync).toEqual({ role: "ACCOUNTANT", isPrimary: false, isSuperSales: false, profileKey: "ACCOUNTANT" });
+    expect(args).not.toHaveProperty("legacySync");
     expect(authAuditRepository.record).toHaveBeenCalledWith(
       expect.objectContaining({ actorUserId: 99, targetUserId: 1, action: "PROFILE_ASSIGN", detail: { profileId: 5 } }),
     );

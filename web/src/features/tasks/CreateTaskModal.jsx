@@ -93,7 +93,7 @@ export function CreateTaskModal({
     const request = await handleRequestSubmit(
       data,
       setLoading,
-      `shared/tasks`,
+      `tasks`,
       false,
       "Creating",
       false,

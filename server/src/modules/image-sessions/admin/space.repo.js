@@ -34,7 +34,7 @@ export async function getSpaces({ notArchived }) {
 export async function createSpace({ data }) {
   const titles = Object.values(data.titles);
   if (!data.titles || titles.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_FIELDS_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_FIELDS_REQUIRED, statusCode: 400 });
   }
   const titlesToCreate = createTextAndConnect(titles, "text");
   const newSpace = await prisma.space.create({
@@ -51,7 +51,7 @@ export async function updateSpace({ data, spaceId }) {
   const { edits = {}, creates = {} } = data;
   const titles = Object.values(data.titles);
   if (!data.titles || titles.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_FIELDS_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_FIELDS_REQUIRED, statusCode: 400 });
   }
 
   await editAListOftext({ edits, type: "TITLE" });

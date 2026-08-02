@@ -49,7 +49,6 @@ class StaffCourseController {
   async listCourses(req, res) {
     const { page, limit, skip, take } = paginate(req.query);
     const courses = await staffCourseUsecase.listCourses({
-      role: req.query.role,
       skip,
       take,
     });
@@ -76,7 +75,6 @@ class StaffCourseController {
   async getCourse(req, res) {
     const course = await staffCourseUsecase.getCourse({
       courseId: req.params.courseId,
-      role: req.query.role,
       userId: req.auth.id,
     });
     const data = decorateStaffCourseDetail(course, {
@@ -97,7 +95,6 @@ class StaffCourseController {
   async getLesson(req, res) {
     const data = await staffCourseUsecase.getLesson({
       lessonId: req.params.lessonId,
-      role: req.query.role,
       userId: req.auth.id,
     });
     return ok(res, data, coursesMessagesCodes.LESSON_FETCHED, TK);

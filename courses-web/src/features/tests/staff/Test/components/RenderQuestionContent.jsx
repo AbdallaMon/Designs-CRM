@@ -190,7 +190,7 @@ const RenderQuestionContent = ({
     case "TRUE_FALSE":
       return (
         <FormControl component="fieldset" fullWidth disabled={isReview}>
-          <FormLabel component="legend">صح ام خطاء:</FormLabel>
+          <FormLabel component="legend">True or false:</FormLabel>
           <RadioGroup
             value={currentAnswer?.selectedAnswers?.[0] || ""}
             onChange={(e) =>
@@ -204,7 +204,7 @@ const RenderQuestionContent = ({
                 control={<Radio />}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    {choice.text === "True" ? "صح" : "خطاء"}
+                    {choice.text === "True" ? "True" : "False"}
                     {attempts && attempts.find((attempt) => attempt.passed) && (
                       <>
                         {isReview && choice.isCorrect && (
@@ -244,7 +244,7 @@ const RenderQuestionContent = ({
       return (
         <FormControl component="fieldset" fullWidth disabled={isReview}>
           <FormLabel component="legend">
-            استخدم الاسهم لتحريك الاجابات
+            Use the arrows to reorder the answers.
           </FormLabel>
           <Box sx={{ mt: 2 }}>
             {orderedChoices.map((choice, index) => (

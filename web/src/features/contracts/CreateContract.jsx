@@ -136,7 +136,7 @@ export default function CreateContractDialog({
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/`,
+      `contracts/`,
       false,
       "Creating"
     );
@@ -145,7 +145,7 @@ export default function CreateContractDialog({
       onUpdate();
       if (updatedOuterContract) {
         const detailsReq = await getDataAndSet({
-          url: `shared/contracts/${req?.data?.id}`,
+          url: `contracts/${req?.data?.id}`,
           setLoading,
         });
 

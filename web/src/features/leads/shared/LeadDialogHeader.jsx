@@ -83,7 +83,7 @@ export const LeadDialogHeader = ({
     lead.status !== "NEW" &&
     (lead.capabilities
       ? Boolean(lead.capabilities.canChangeStatus)
-      : user.role !== "ACCOUNTANT");
+      : user.profile !== "ACCOUNTANT");
   const showStartDeal = lead.status === "NEW" && !admin;
 
   // Small reusable meta pill for the identity row
@@ -264,7 +264,7 @@ export const LeadDialogHeader = ({
               />
             )}
 
-            {(admin || user.role === "STAFF") && currentContract && (
+            {(admin || ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) && currentContract && (
               <Chip
                 icon={<IoMdContract style={{ fontSize: 14 }} />}
                 label={CONTRACT_LEVELS[currentContract.contractLevel]}
@@ -282,7 +282,7 @@ export const LeadDialogHeader = ({
               />
             )}
 
-            {(admin || user.role === "STAFF") && lead.paymentStatus && (
+            {(admin || ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) && lead.paymentStatus && (
               <Chip
                 label={`Payment: ${PaymentStatus[lead.paymentStatus] || lead.paymentStatus}`}
                 color="primary"

@@ -42,7 +42,7 @@ export function AssignNewStaffModal({
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
-        url: `admin/all-users?role=STAFF&`,
+        url: "users/all-users?profile=NORMAL_SALES&",
         setLoading,
       });
       if (usersRequest && usersRequest.status === 200) {
@@ -66,7 +66,7 @@ export function AssignNewStaffModal({
     const newAssign = await handleRequestSubmit(
       requestData,
       setToastLoading,
-      `shared/client-leads`,
+      `leads`,
       false,
       "Assigning",
       false,

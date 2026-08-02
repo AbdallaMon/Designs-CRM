@@ -331,7 +331,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
       customStyle: customStyles,
       layout: layout,
     };
-    let url = `admin/image-session/templates`;
+    let url = `image-sessions/admin/templates`;
     if (isEdit) {
       url = url + `/${template.id}`;
     }

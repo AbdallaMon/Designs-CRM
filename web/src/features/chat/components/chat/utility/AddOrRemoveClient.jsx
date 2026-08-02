@@ -28,7 +28,7 @@ export function AddOrRemoveClient({
         action: isAdded ? "removeClient" : "addClient",
       },
       setLoading,
-      `shared/chat/rooms/${roomId}/manageClient`,
+      `chat/rooms/${roomId}/manageClient`,
       false,
       isAdded ? "Removing client from chat" : "Adding client to chat",
       false,

@@ -26,7 +26,7 @@
 import {
 sendToAdmins,
 sendToUser,
-sendToRoles,
+sendToProfiles,
 sendToAll,
 builder,
 NOTIFICATION_TYPES,
@@ -64,10 +64,10 @@ link: "/leads/123",
 });
 }
 
-// Example 3: Send to users with specific roles
-export async function exampleSendToRoles() {
-await sendToRoles({
-roles: ["STAFF", "THREE_D_DESIGNER"], // Target these roles
+// Example 3: Send to users with specific profiles
+export async function exampleSendToProfiles() {
+await sendToProfiles({
+profiles: ["NORMAL_SALES", "THREE_D_DESIGNER"],
 content: "New lead available for assignment",
 type: NOTIFICATION_TYPES.LEAD_CREATED,
 options: {
@@ -159,9 +159,9 @@ clientLeadId: bookingLead.id,
 },
 });
 
-// 4. Also notify relevant staff roles
-await sendToRoles({
-roles: ["STAFF", "THREE_D_DESIGNER"],
+// 4. Also notify relevant profiles
+await sendToProfiles({
+profiles: ["NORMAL_SALES", "THREE_D_DESIGNER"],
 content: `New booking lead #${bookingLead.id} from ${bookingLead.location}`,
 type: NOTIFICATION_TYPES.LEAD_CREATED,
 options: {

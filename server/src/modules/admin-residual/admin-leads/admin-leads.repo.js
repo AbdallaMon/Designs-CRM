@@ -62,14 +62,11 @@ export class AdminLeadsRepository {
     } catch (e) {
       console.log(e, "e");
 
-      throw new Error(e);
+      throw e;
     }
   }
 
   async updateClientField({ data, clientId }) {
-    if (data.field === "email") {
-      throw new Error("Cannot update email field");
-    }
     if (data.inputType) {
       delete data.inputType;
     }
@@ -85,7 +82,7 @@ export class AdminLeadsRepository {
       });
       return updatedClient;
     } catch (e) {
-      throw new Error(e);
+      throw e;
     }
   }
 
@@ -104,7 +101,7 @@ export class AdminLeadsRepository {
         });
 
         if (!clientLead) {
-          throw new Error(`Client Lead with ID ${clientLeadId} not found`);
+          return null;
         }
 
         // Step 1: Handle Invoice dependencies first

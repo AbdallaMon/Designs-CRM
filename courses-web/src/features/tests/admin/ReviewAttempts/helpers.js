@@ -1,11 +1,11 @@
 // Helper function to translate question types
 export const getQuestionTypeInArabic = (type) => {
   const translations = {
-    MULTIPLE_CHOICE: "اختيار متعدد",
-    SINGLE_CHOICE: "اختيار واحد",
-    TRUE_FALSE: "صح أم خطأ",
-    TEXT: "إجابة نصية",
-    ORDERING: "ترتيب",
+    MULTIPLE_CHOICE: "Multiple choice",
+    SINGLE_CHOICE: "Single choice",
+    TRUE_FALSE: "True or false",
+    TEXT: "Text answer",
+    ORDERING: "Ordering",
   };
   return translations[type] || type;
 };

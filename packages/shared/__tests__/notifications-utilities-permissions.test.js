@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -31,7 +31,7 @@ describe("notifications + utilities permission grants", () => {
 
   it("grants the full notification + utility surface to EVERY authed role (legacy SHARED/any-authed)", () => {
     for (const role of ALL_USER_ROLES) {
-      const codes = getPermissionsForRole(role);
+      const codes = permissionsForPersona(role);
       for (const code of [...NOTIFICATION_ALL, ...UTILITY_ALL]) {
         expect(codes).toContain(code);
       }
@@ -39,7 +39,7 @@ describe("notifications + utilities permission grants", () => {
   });
 
   it("an authed user holds notification.list/mark_read + utility.search via effective permissions", () => {
-    const eff = getEffectivePermissions({ role: USER_ROLES.STAFF }).permissions;
+    const eff = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF ) }).permissions;
     expect(eff).toContain(P.NOTIFICATION.LIST);
     expect(eff).toContain(P.NOTIFICATION.MARK_READ);
     expect(eff).toContain(P.UTILITY.SEARCH);

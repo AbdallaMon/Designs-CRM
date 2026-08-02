@@ -31,11 +31,11 @@ const BUNDLE = {
 };
 
 const userFindUnique = vi.fn(async ({ where }) => {
-  if (where.id === 9) return { id: 9, name: "Rep", isActive: true, role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } };
-  if (where.id === 42) return { id: 42, name: "Sara", isActive: true, role: "THREE_D_DESIGNER", profile: null, currentProfile: { key: "DESIGNER_3D" } };
+  if (where.id === 9) return { id: 9, name: "Rep", isActive: true, currentProfile: { key: "NORMAL_SALES" } };
+  if (where.id === 42) return { id: 42, name: "Sara", isActive: true, currentProfile: { key: "DESIGNER_3D" } };
   // The reported real-world case: an ADMIN-profiled user surfaced by the team lens via an
   // overdue call THEY own on a lead OWNED BY SOMEONE ELSE (they hold no leads themselves).
-  if (where.id === 1) return { id: 1, name: "admin", isActive: true, role: "ADMIN", profile: null, currentProfile: { key: "ADMIN" } };
+  if (where.id === 1) return { id: 1, name: "admin", isActive: true, currentProfile: { key: "ADMIN" } };
   return null;
 });
 
@@ -68,6 +68,26 @@ vi.mock("@dms/db", () => ({
     project: { count: vi.fn().mockResolvedValue(0) },
   },
 }));
+vi.mock("../../../infra/auth/profile-cache.js", () => {
+  const profiles = {
+    1: { key: "NORMAL_SALES", family: "SALES", isAdminTier: false, permissions: ["my_day.view"] },
+    2: { key: "ADMIN", family: "ADMIN", isAdminTier: true, permissions: ["my_day.view", "my_day.team.view"] },
+    3: { key: "ACCOUNTANT", family: "FINANCE", isAdminTier: false, permissions: ["my_day.view"] },
+    4: { key: "CONTACT_INITIATOR", family: "SALES", isAdminTier: false, permissions: ["my_day.view"] },
+    5: { key: "SUPER_SALES", family: "SALES", isAdminTier: false, permissions: ["my_day.view", "my_day.team.view"] },
+  };
+  return {
+    profileCache: {
+      resolve: (id) => {
+        const profile = profiles[id];
+        return profile
+          ? { ...profile, permissionsByModule: { my_day: { codes: profile.permissions } } }
+          : null;
+      },
+      resolveMeta: () => null,
+    },
+  };
+});
 
 let server;
 let baseUrl;
@@ -99,14 +119,18 @@ afterAll(async () => {
 });
 
 function signFor({ id, role }) {
+  const currentProfileId = {
+    STAFF: 1,
+    ADMIN: 2,
+    ACCOUNTANT: 3,
+    CONTACT_INITIATOR: 4,
+    SUPER_SALES: 5,
+  }[role];
   return JwtService.signAccess({
     id,
-    role,
-    activeRole: role,
+    currentProfileId,
+    profileIds: [currentProfileId],
     isActive: true,
-    isPrimary: false,
-    isSuperSales: false,
-    subRoles: [],
   });
 }
 
@@ -132,11 +156,10 @@ describe("GET /v2/my-day — personal queue", () => {
     expect(body.data.items[0]).toMatchObject({ kind: "LEAD", leadId: 5, clientName: "Aisha" });
   });
 
-  it("ADMIN -> 403 (admins hold no my_day.view — team lens only)", async () => {
+  it("ADMIN profile has route access but no personal queue family", async () => {
     const { status, body } = await getJson("/my-day", signFor({ id: 1, role: "ADMIN" }));
     expect(status).toBe(403);
-    expect(body.message).toBe(authMessagesCodes.PERMISSION_DENIED);
-    expect(body.details.requiredPermissions).toContain("my_day.view");
+    expect(body.message).toBe(myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED);
   });
 
   it("ACCOUNTANT -> 200 FINANCE collections queue (2026-07-15 additive grant)", async () => {

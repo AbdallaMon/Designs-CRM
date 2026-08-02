@@ -19,7 +19,7 @@ class ModelArchiveUsecase {
     const key = String(model ?? "").toLowerCase();
     const delegate = ADMIN_ARCHIVE_MODEL_ALLOWLIST[key];
     if (!delegate) {
-      throw new AppError(adminResidualMessagesCodes.MODEL_NOT_ALLOWED, 422);
+      throw new AppError({ code: adminResidualMessagesCodes.MODEL_NOT_ALLOWED, statusCode: 422 });
     }
     return modelArchiveRepository.toggleArchiveAModel({ model: delegate, id: Number(id), isArchived });
   }

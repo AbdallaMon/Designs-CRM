@@ -25,7 +25,7 @@ export default function Salaries() {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher("accountant/users", false);
+  } = useDataFetcher("accounting/users", false);
 
   return (
     <div>
@@ -59,7 +59,7 @@ export default function Salaries() {
                   <CreateModal
                     label={"Create salary"}
                     inputs={inputs}
-                    href={`accountant/salaries/${item.id}`}
+                    href={`accounting/salaries/${item.id}`}
                     handleSubmit={(data) => {
                       window.location.reload();
                     }}
@@ -94,7 +94,7 @@ export default function Salaries() {
           >
             <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
               <SearchComponent
-                apiEndpoint="search?model=user"
+                resource="users"
                 setFilters={setFilters}
                 inputLabel="Search by name or email"
                 renderKeys={["name", "email"]}

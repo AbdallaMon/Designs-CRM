@@ -131,7 +131,7 @@ export function generatePDF(clientLead, user) {
   }
 
   // Admin-specific
-  if (["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+  if (["ADMIN", "SUPER_ADMIN"].includes(user.profile)) {
     addSectionTitle("Assigned Staff");
     addField("Lead staff", clientLead.assignedTo.name);
 

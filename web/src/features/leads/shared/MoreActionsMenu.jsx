@@ -101,7 +101,7 @@ export const MoreActionsMenu = ({
         <Divider />
         {/* Convert Lead Action - Staff Only */}
         {!admin &&
-          user.role === "STAFF" &&
+          ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
           lead.status !== "FINALIZED" &&
           lead.status !== "NEW" && (
             <MenuItem
@@ -119,7 +119,7 @@ export const MoreActionsMenu = ({
         {isPage &&
           user.id !== lead.userId &&
           !admin &&
-          user.role !== "ACCOUNTANT" && (
+          user.profile !== "ACCOUNTANT" && (
             <MenuItem
               onClick={() => {
                 createADeal(lead);
@@ -204,9 +204,9 @@ export const MoreActionsMenu = ({
 
         {/* Payment Actions - Finalized/Archived Only */}
         {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && [
-          (user.role === "STAFF" ||
-            user.role === "SUPER_ADMIN" ||
-            user.role === "ADMIN") &&
+          (["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) ||
+            user.profile === "SUPER_ADMIN" ||
+            user.profile === "ADMIN") &&
             (!payments || payments?.length < 1) && (
               <MenuItem
                 key="add-payment"

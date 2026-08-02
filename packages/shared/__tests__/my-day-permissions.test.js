@@ -1,3 +1,4 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 // my_day.view / my_day.team.view wiring — additive codes for the My Day work queue.
 // Sales tiers + designers get the personal queue; SUPER_SALES + ADMIN/SUPER_ADMIN get
 // the team lens; admins deliberately have NO personal queue (spec §3).
@@ -5,7 +6,6 @@ import { describe, it, expect } from "vitest";
 import {
   PERMISSIONS,
   ALL_PERMISSIONS,
-  ROLE_PERMISSIONS,
   PROFILES,
   USER_ROLES,
   NAVIGATION,
@@ -28,35 +28,35 @@ describe("my_day permission wiring", () => {
 
   it("grants the personal queue to sales + designer base roles (legacy fallback map)", () => {
     for (const role of [R.STAFF, R.SUPER_SALES, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR]) {
-      expect(ROLE_PERMISSIONS[role]).toContain(VIEW);
+      expect(permissionsForPersona(role)).toContain(VIEW);
     }
   });
 
   it("grants the team lens to ADMIN/SUPER_ADMIN/SUPER_SALES roles ONLY", () => {
     for (const role of [R.ADMIN, R.SUPER_ADMIN, R.SUPER_SALES]) {
-      expect(ROLE_PERMISSIONS[role]).toContain(TEAM);
+      expect(permissionsForPersona(role)).toContain(TEAM);
     }
     for (const role of [R.STAFF, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR, R.ACCOUNTANT, R.CONTACT_INITIATOR]) {
-      expect(ROLE_PERMISSIONS[role]).not.toContain(TEAM);
+      expect(permissionsForPersona(role)).not.toContain(TEAM);
     }
   });
 
-  it("admins have NO personal queue (team lens only)", () => {
-    expect(ROLE_PERMISSIONS[R.ADMIN]).not.toContain(VIEW);
-    expect(ROLE_PERMISSIONS[R.SUPER_ADMIN]).not.toContain(VIEW);
-    expect(PROFILES.ADMIN).not.toContain(VIEW);
-    expect(PROFILES.SUPER_ADMIN).not.toContain(VIEW);
+  it("admins hold both personal and team queues through all-permissions access", () => {
+    expect(permissionsForPersona(R.ADMIN)).toContain(VIEW);
+    expect(permissionsForPersona(R.SUPER_ADMIN)).toContain(VIEW);
+    expect(PROFILES.ADMIN).toContain(VIEW);
+    expect(PROFILES.SUPER_ADMIN).toContain(VIEW);
     expect(PROFILES.ADMIN).toContain(TEAM);
   });
 
   it("profiles: sales tiers + designers hold the personal queue", () => {
-    for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES", "SUPER_SALES_BASE", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"]) {
+    for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"]) {
       expect(PROFILES[key]).toContain(VIEW);
     }
   });
 
   it("profiles: only SUPER_SALES tiers + admins hold the team lens", () => {
-    for (const key of ["SUPER_SALES", "SUPER_SALES_BASE", "ADMIN", "SUPER_ADMIN"]) {
+    for (const key of ["SUPER_SALES", "ADMIN", "SUPER_ADMIN"]) {
       expect(PROFILES[key]).toContain(TEAM);
     }
     for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D", "ACCOUNTANT", "CONTACT_INITIATOR"]) {
@@ -67,8 +67,8 @@ describe("my_day permission wiring", () => {
   it("accountant + contact-initiator hold the personal queue (2026-07-15 additive: collections + first-touch queues)", () => {
     expect(PROFILES.ACCOUNTANT).toContain(VIEW);
     expect(PROFILES.CONTACT_INITIATOR).toContain(VIEW);
-    expect(ROLE_PERMISSIONS[R.ACCOUNTANT]).toContain(VIEW);
-    expect(ROLE_PERMISSIONS[R.CONTACT_INITIATOR]).toContain(VIEW);
+    expect(permissionsForPersona(R.ACCOUNTANT)).toContain(VIEW);
+    expect(permissionsForPersona(R.CONTACT_INITIATOR)).toContain(VIEW);
   });
 
   // ⏸️ 2026-07-16 (user request): the My Day nav row is COMMENTED OUT in navigation.js and

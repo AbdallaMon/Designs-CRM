@@ -5,14 +5,10 @@ import {
   MdAttachFile as AttachFile,
   MdPictureAsPdf as PictureAsPdf,
 } from "react-icons/md";
-import { PROFILE_BASE_ROLE_BY_KEY } from "@/app/helpers/profiles";
 
-// Profiles are the source of truth (decision §2.8): the current user's base role is
-// derived from the ACTIVE profile, never from the legacy `user.role` column. Maps the
-// active profile key (from /auth/me `user.profile`) to a CourseRole enum value
-// (ADMIN/STAFF/THREE_D_DESIGNER/TWO_D_DESIGNER/TWO_D_EXECUTOR/ACCOUNTANT/SUPER_ADMIN).
-export function baseRoleOf(user) {
-  return user?.profile ? PROFILE_BASE_ROLE_BY_KEY[user.profile] ?? null : null;
+// Authorization and display derive from the active profile returned by /auth/me.
+export function activeProfileOf(user) {
+  return user?.profile ?? user?.currentProfile?.key ?? null;
 }
 
 export const handleSearchParamsChange = (
@@ -72,7 +68,7 @@ export const getPropertyValue = (
 };
 
 export const renderFileLink = (url, label, style) => {
-  if (!url) return <Typography>لا يوجد {label}</Typography>;
+  if (!url) return <Typography>No {label}</Typography>;
 
   const isImage = /\.(jpeg|jpg|png|gif)$/i.test(url);
   const isPdf = /\.pdf$/i.test(url);
@@ -96,7 +92,7 @@ export const renderFileLink = (url, label, style) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            عرض ملف PDF
+            View PDF
           </Button>
         ) : (
           <Button
@@ -107,7 +103,7 @@ export const renderFileLink = (url, label, style) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            تحميل الملف
+            Download file
           </Button>
         )}
       </Box>
@@ -170,12 +166,12 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 };
 
 export const checkIfADesigner = (user) => {
-  const base = baseRoleOf(user);
-  return base === "TWO_D_DESIGNER" || base === "THREE_D_DESIGNER";
+  const profile = activeProfileOf(user);
+  return profile === "DESIGNER_2D" || profile === "DESIGNER_3D";
 };
 export const checkIfAdmin = (user) => {
-  const base = baseRoleOf(user);
-  return base === "ADMIN" || base === "SUPER_ADMIN";
+  const profile = activeProfileOf(user);
+  return profile === "ADMIN" || profile === "SUPER_ADMIN";
 };
 
 export function ensureHttps(url) {

@@ -35,7 +35,11 @@ export const actionAuditRepository = {
     if (!ids.length) return Promise.resolve([]);
     return prisma.user.findMany({
       where: { id: { in: ids } },
-      select: { id: true, name: true, role: true },
+      select: {
+        id: true,
+        name: true,
+        currentProfile: { select: { key: true, label: true } },
+      },
     });
   },
 };

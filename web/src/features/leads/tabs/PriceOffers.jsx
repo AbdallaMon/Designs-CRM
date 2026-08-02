@@ -185,7 +185,7 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
     const request = await handleRequestSubmit(
       { priceOfferId: priceOffer.id, isAccepted: event.target.checked },
       setLoading,
-      `shared/client-leads/price-offers/change-status`,
+      `leads/price-offers/change-status`,
       false,
       "Updating"
     );
@@ -218,10 +218,10 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
             onChange={handleChange}
             inputProps={{ "aria-label": "Accept Price Offer" }}
             disabled={
-              user.role !== "STAFF" &&
-              user.role !== "ADMIN" &&
-              user.role !== "SUPER_ADMIN" &&
-              user.role !== "SUPER_SALES"
+              !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
+              user.profile !== "ADMIN" &&
+              user.profile !== "SUPER_ADMIN" &&
+              user.profile !== "SUPER_SALES"
             }
           />
         </Box>

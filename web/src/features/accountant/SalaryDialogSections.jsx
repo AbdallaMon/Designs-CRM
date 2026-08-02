@@ -39,7 +39,7 @@ export const SalaryEmployeeInfoCard = ({ salaryData }) => {
           {salaryData.employee.email}
         </Typography>
         <Chip
-          label={salaryData.employee.role}
+          label={salaryData.employee.currentProfile?.label ?? "No active profile"}
           color="primary"
           size="small"
           sx={{ mt: 1 }}

@@ -13,7 +13,7 @@ export default function ProjectPage({ id, isStaff }) {
     if (!id) return;
     async function fetchProjectData() {
       const res = await getData({
-        url: `shared/projects/${id}`,
+        url: `projects/${id}`,
         setLoading,
       });
       if (res && res.status === 200) {

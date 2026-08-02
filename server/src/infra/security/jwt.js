@@ -68,6 +68,25 @@ class JwtService {
   static verifyReset(token) {
     return jwt.verify(token, env.JWT_RESET_SECRET);
   }
+
+  static signUploadCapability({ purpose, subject }) {
+    return jwt.sign(
+      { purpose, subject },
+      env.JWT_UPLOAD_SECRET,
+      {
+        audience: "public-upload",
+        issuer: "dream-studio-api",
+        expiresIn: env.JWT_UPLOAD_EXPIRES_IN,
+      },
+    );
+  }
+
+  static verifyUploadCapability(token) {
+    return jwt.verify(token, env.JWT_UPLOAD_SECRET, {
+      audience: "public-upload",
+      issuer: "dream-studio-api",
+    });
+  }
 }
 
 export { JwtService };

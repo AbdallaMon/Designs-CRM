@@ -30,7 +30,7 @@ const CombinedHomeWork = ({ courseId, lessonId, onUpdate }) => {
 
   const fetchHomeworks = async () => {
     await getDataAndSet({
-      url: `shared/courses/${courseId}/lessons/${lessonId}/home-work`,
+      url: `staff-courses/${courseId}/lessons/${lessonId}/home-work`,
       setData: setHomeworks,
       setLoading,
     });
@@ -55,7 +55,7 @@ const CombinedHomeWork = ({ courseId, lessonId, onUpdate }) => {
     const req = await handleRequestSubmit(
       { url, title, type: uploadType },
       setSubmitting,
-      `shared/courses/${courseId}/lessons/${lessonId}/home-work`
+      `staff-courses/${courseId}/lessons/${lessonId}/home-work`
     );
     if (req.status === 200) {
       onUpdate();

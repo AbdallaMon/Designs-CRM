@@ -6,21 +6,15 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  FormLabel,
-  FormGroup,
   FormControlLabel,
-  Checkbox,
   Switch,
   Typography,
   Box,
   IconButton,
   Alert,
   CircularProgress,
-  Grid,
 } from "@mui/material";
 import { MdClose, MdAdd, MdImage, MdCheck } from "react-icons/md";
-import { ROLE_LABELS, USER_ROLES } from "@/app/helpers/constants";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
@@ -36,7 +30,6 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
     description: "",
     file: "",
     isPublished: false,
-    roles: [],
   });
   const { setAlertError } = useAlertContext();
   const [errors, setErrors] = useState({});
@@ -51,10 +44,6 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
       return false;
     }
 
-    if (formData.roles.length === 0) {
-      setAlertError("At least one role must be selected");
-      return false;
-    }
     return true;
   };
 
@@ -62,15 +51,6 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }));
-  };
-
-  const handleRoleChange = (role, checked) => {
-    setFormData((prev) => ({
-      ...prev,
-      roles: checked
-        ? [...prev.roles, role]
-        : prev.roles.filter((r) => r !== role),
     }));
   };
 
@@ -89,7 +69,7 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
     const req = await handleRequestSubmit(
       formData,
       setToastLoading,
-      `admin/courses`,
+      "courses",
       false,
       "Creating"
     );
@@ -105,7 +85,6 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
       description: "",
       file: "",
       isPublished: false,
-      roles: [],
     });
     setErrors({});
     onClose();
@@ -167,34 +146,6 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
             label={"Course banner"}
             input={{ accept: "image/*" }}
           />
-
-          <FormControl component="fieldset" error={!!errors.roles}>
-            <FormLabel component="legend">Allowed Roles</FormLabel>
-            <FormGroup>
-              <Grid gap={1} container>
-                {Object.entries(USER_ROLES).map(([key, role]) => (
-                  <Grid size={{ xs: 6, md: 3 }} key={role}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.roles.includes(role)}
-                          onChange={(e) =>
-                            handleRoleChange(role, e.target.checked)
-                          }
-                        />
-                      }
-                      label={ROLE_LABELS[role]}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            </FormGroup>
-            {errors.roles && (
-              <Typography color="error" variant="caption">
-                {errors.roles}
-              </Typography>
-            )}
-          </FormControl>
 
           <FormControlLabel
             control={

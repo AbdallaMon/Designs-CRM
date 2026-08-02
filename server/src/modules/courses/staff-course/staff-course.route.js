@@ -98,7 +98,6 @@ staffCourseRouter.get(
   "/:courseId",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(StaffCourseValidation.courseParams, "params"),
-  validate(StaffCourseValidation.roleQuery, "query"),
   asyncHandler(ctrl.getCourse),
 );
 staffCourseRouter.get(
@@ -111,7 +110,6 @@ staffCourseRouter.get(
   "/:courseId/lessons/:lessonId",
   AuthMiddleware.requirePermissions([P.VIEW]),
   validate(StaffCourseValidation.lessonParams, "params"),
-  validate(StaffCourseValidation.roleQuery, "query"),
   asyncHandler(ctrl.getLesson),
 );
 // Mark lesson complete — legacy `PATCH /:courseId/lessons/:lessonId` converted to the

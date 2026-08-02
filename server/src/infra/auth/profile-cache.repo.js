@@ -11,7 +11,6 @@ export const profileCacheRepository = {
         label: true,
         family: true,
         isAdminTier: true,
-        baseRole: true,
         permissionLinks: { select: { permissionCode: { select: { code: true } } } },
       },
     });
@@ -21,7 +20,6 @@ export const profileCacheRepository = {
       label: p.label,
       family: p.family,
       isAdminTier: p.isAdminTier,
-      baseRole: p.baseRole,
       codes: p.permissionLinks.map((l) => l.permissionCode.code),
     }));
   },

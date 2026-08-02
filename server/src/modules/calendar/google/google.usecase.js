@@ -28,7 +28,7 @@ class GoogleCalendarUsecase {
   async connect({ authUser }) {
     const connected = await isGoogleCalendarConnected(authUser.id);
     if (connected) {
-      throw new AppError(calendarMessagesCodes.GOOGLE_ALREADY_CONNECTED, 400);
+      throw new AppError({ code: calendarMessagesCodes.GOOGLE_ALREADY_CONNECTED, statusCode: 400 });
     }
     const authUrl = await getAuthUrl(authUser.id);
     return { isConnected: false, authUrl };

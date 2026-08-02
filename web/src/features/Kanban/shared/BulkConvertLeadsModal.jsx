@@ -33,7 +33,7 @@ export default function BulkConvertLeadsModal({
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
-        url: `admin/all-users?role=STAFF&`,
+        url: "users/all-users?profile=NORMAL_SALES&",
         setLoading: setLoadingUsers,
       });
       if (usersRequest && usersRequest.status === 200) {
@@ -58,7 +58,7 @@ export default function BulkConvertLeadsModal({
     const bulkConvert = await handleRequestSubmit(
       requestData,
       setToastLoading,
-      `shared/client-leads/bulk-convert`,
+      `leads/bulk-convert`,
       false,
       "Converting",
       false,

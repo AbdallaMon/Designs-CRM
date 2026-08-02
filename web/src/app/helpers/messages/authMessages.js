@@ -28,6 +28,7 @@ export const authMessages = {
   // ── profiles (DB-relational permissions) ──────────────────────────────────────
   PROFILE_NOT_ASSIGNED: "This job profile is not assigned to you",
   PROFILE_NOT_FOUND: "Job profile not found",
+  PROFILE_REQUIRED: "Your account does not have an active job profile",
   PROFILE_SWITCHED: "Job profile switched",
   PROFILES_UPDATED: "Job profiles updated",
 

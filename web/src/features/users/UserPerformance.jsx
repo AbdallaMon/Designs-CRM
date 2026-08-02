@@ -249,7 +249,7 @@ export default function UserPerformance({ user }) {
       if (isSales) {
         tasks.push(
           getData({
-            url: `shared/dashboard/key-metrics?staffId=${staffId}&profile=true&`,
+            url: `dashboard/key-metrics?staffId=${staffId}&profile=true&`,
             setLoading: noop,
           }).then((r) => {
             if (active) setSalesMetrics(r?.data ?? null);
@@ -259,7 +259,7 @@ export default function UserPerformance({ user }) {
       if (isDesign) {
         tasks.push(
           getData({
-            url: `shared/dashboard/designer-metrics?staffId=${staffId}&profile=true&`,
+            url: `dashboard/designer-metrics?staffId=${staffId}&profile=true&`,
             setLoading: noop,
           }).then((r) => {
             if (active) setDesignMetrics(r?.data ?? null);

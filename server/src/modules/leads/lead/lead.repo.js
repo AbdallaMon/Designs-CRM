@@ -24,8 +24,6 @@ dayjs.extend(timezone);
 // reads role facts; the predicates below are the only role usage in the module and
 // they only NARROW a Prisma `where` (never grant by role alone — a permission code is
 // still required at the route).
-const FULL_SCOPE_ROLES = ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
-
 class LeadRepository {
   model = prisma.clientLead;
 
@@ -35,14 +33,13 @@ class LeadRepository {
   // unassigned NEW pool that legacy let anyone view/claim (status NEW, userId null).
   // `mode: "view"` includes the claimable pool; `mode: "mutate"` is owned-only.
   hasFullScope({
-    role,
     currentProfileKey,
     isAdminTier,
     includeContactInitiator = false,
   }) {
     if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
-    if (FULL_SCOPE_ROLES.includes(role)) return true;
-    if (includeContactInitiator && role === "CONTACT_INITIATOR") return true;
+    if (currentProfileKey === "ACCOUNTANT") return true;
+    if (includeContactInitiator && currentProfileKey === "CONTACT_INITIATOR") return true;
     return false;
   }
 
@@ -121,10 +118,13 @@ class LeadRepository {
     return { items, total };
   }
 
-  async getUserCountryRole({ userId }) {
+  async getUserCountryProfile({ userId }) {
     const user = await prisma.user.findUnique({
       where: { id: Number(userId) },
-      select: { notAllowedCountries: true, role: true },
+      select: {
+        notAllowedCountries: true,
+        currentProfile: { select: { key: true } },
+      },
     });
     // notAllowedCountries is now a String? (LongText) JSON column — decode to the array.
     if (user)

@@ -26,7 +26,7 @@ const PerformanceMetricsCard = ({ staff, staffId }) => {
         ? "staffId=" + user.id
         : "";
       const request = await getData({
-        url: `shared/dashboard/week-performance?${extra}&`,
+        url: `dashboard/week-performance?${extra}&`,
         setLoading,
       });
       if (request) setMetrics(request.data);

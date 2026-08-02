@@ -57,7 +57,7 @@ export function MarkAsDoneModel({
   };
 
   const handleMarkAsDone = async () => {
-    const url = `shared/updates/shared-updates/${sharedUpdate.id}/actions/archive`;
+    const url = `updates/shared-updates/${sharedUpdate.id}/actions/archive`;
     const request = await handleRequestSubmit(
       {
         isArchived: !isArchived,

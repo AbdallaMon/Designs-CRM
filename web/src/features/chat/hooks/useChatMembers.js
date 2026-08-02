@@ -9,7 +9,7 @@ export function useChatMembers(roomId, clientId, showAddMembers, token) {
     await getDataAndSet({
       url: clientId
         ? `client/chat/rooms/${roomId}/members?clientId=${clientId}&token=${token}&`
-        : `shared/chat/rooms/${roomId}/members`,
+        : `chat/rooms/${roomId}/members`,
       setLoading,
       setData: setMembers,
     });

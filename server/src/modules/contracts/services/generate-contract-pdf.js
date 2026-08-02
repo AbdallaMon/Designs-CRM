@@ -40,8 +40,8 @@ import {
 } from "./witten-blocks-data.js";
 import { notifyUsersThatAContractWasSigned } from "../../../infra/telegram/telegram-functions.js";
 import { sendSuccessEmailAfterContractSigned } from "./pdf-utilities.js";
-import { updateContractPaymentOnContractSign } from "./contract-services.js";
-import { getDefaultContractUtilityData } from "./client-contract-services.js";
+import { updateContractPaymentOnContractSign } from "../contract/contract.workflow.repo.js";
+import { getDefaultContractUtilityData } from "../client/client-contract.repo.js";
 import { PDF_ASSET_DEFAULTS } from "../../../infra/pdf/pdf-asset-defaults.js";
 import { PDF_COLORS } from "../../../infra/pdf/pdf-theme.js";
 import { drawFullBackgroundImage } from "../../../infra/pdf/pdf-draw.js";

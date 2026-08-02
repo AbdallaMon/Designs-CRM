@@ -4,8 +4,8 @@ import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { SiteUtilityValidation } from "../site-utility.validation.js";
 import {
   PERMISSIONS,
-  ROLE_PERMISSIONS,
-  USER_ROLES,
+  PROFILE_KEYS,
+  getEffectivePermissions,
 } from "@dms/shared";
 
 const P = PERMISSIONS.SITE_UTILITY;
@@ -83,21 +83,23 @@ describe("SiteUtilityValidation", () => {
   });
 });
 
-describe("site-utility role grants (security: ADMIN + SUPER_ADMIN only)", () => {
+describe("site-utility profile grants (security: ADMIN + SUPER_ADMIN only)", () => {
   const codes = Object.values(P);
 
   it("ADMIN and SUPER_ADMIN hold every site-utility code", () => {
-    for (const role of [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]) {
+    for (const profile of ["ADMIN", "SUPER_ADMIN"]) {
+      const { permissions } = getEffectivePermissions({ profile });
       for (const code of codes) {
-        expect(ROLE_PERMISSIONS[role]).toContain(code);
+        expect(permissions).toContain(code);
       }
     }
   });
 
   it("NO other role holds ANY site-utility code", () => {
-    const privileged = new Set([USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]);
-    for (const [role, granted] of Object.entries(ROLE_PERMISSIONS)) {
-      if (privileged.has(role)) continue;
+    const privileged = new Set(["ADMIN", "SUPER_ADMIN"]);
+    for (const profile of PROFILE_KEYS) {
+      if (privileged.has(profile)) continue;
+      const { permissions: granted } = getEffectivePermissions({ profile });
       for (const code of codes) {
         expect(granted).not.toContain(code);
       }

@@ -26,7 +26,7 @@ const OverduePayments = () => {
     totalPages,
     setFilters,
   } = useDataFetcher(
-    `accountant/payments?type=OVERDUE&status=OVERDUE&`,
+    `accounting/payments?type=OVERDUE&status=OVERDUE&`,
     false,
     {
       status: "OVERDUE",
@@ -55,7 +55,7 @@ const OverduePayments = () => {
         alignItems="center"
       >
         <SearchComponent
-          apiEndpoint="search?model=client"
+          resource="clients"
           setFilters={setFilters}
           inputLabel="Search client by name or phone"
           renderKeys={["name", "phone"]}
@@ -84,7 +84,7 @@ const OverduePayments = () => {
                 <CreateModal
                   label={"Pay"}
                   inputs={inputs}
-                  href={`accountant/payments/pay/${item.id}`}
+                  href={`accounting/payments/${item.id}/actions/pay`}
                   handleSubmit={(data) => {
                     handleAfterEdit(data);
                   }}

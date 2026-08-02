@@ -105,7 +105,7 @@ export const LeadProjects = ({
     setError(false);
 
     const projectsReq = await getData({
-      url: `shared/projects?clientLeadId=${clientLeadId}&`,
+      url: `projects?clientLeadId=${clientLeadId}&`,
       setLoading,
     });
     if (projectsReq.status === 200) {

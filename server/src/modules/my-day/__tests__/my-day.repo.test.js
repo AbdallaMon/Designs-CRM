@@ -108,8 +108,6 @@ describe("designer queue inputs + scope lookup", () => {
         id: true,
         name: true,
         isActive: true,
-        role: true,
-        profile: true,
         currentProfile: { select: { key: true } },
       },
     });

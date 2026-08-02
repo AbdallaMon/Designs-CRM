@@ -1,13 +1,5 @@
-// calendar — aggregate router for the AUTHED staff calendar surface (legacy
-// routes/calendar/calendar.js, the SHARED router double-mounted at `/shared/calendar` and
-// `/shared/calendar-management`). This aggregate is mounted TWICE under v2 (at
-// `/v2/calendar` and `/v2/calendar-management`) to mirror the legacy double-mount exactly;
-// legacy routers stay mounted in parallel during the strangler window.
-//
-// Authentication is mounted ONCE here. Each sub-router declares its per-route CALENDAR.*
-// permission code, granted to EVERY authed role via CALENDAR_AUTHED — exactly reproducing
-// the legacy SHARED gate (VERIFIED: the "SHARED" param of verifyTokenAndHandleAuthorization
-// admits all 9 authed roles; the isAdmin early-return fires only for the "ADMIN" param).
+// Authenticated calendar API. Authentication is applied once here and every sub-router
+// declares its action-specific CALENDAR permission.
 //
 // Sub-surface → mount (legacy → v2):
 //   /shared/calendar(-management)/available-days|slots|dates/*|days/:id|slots/:id

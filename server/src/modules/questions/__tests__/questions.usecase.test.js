@@ -47,12 +47,12 @@ beforeEach(() => {
   leadUsecase.checkIfUserCanAccessLead.mockImplementation(async ({ id }) => {
     if (Number(id) === 100) return { id: 100, userId: 5, status: "FOLLOW_UP" };
     if (Number(id) === 200) return { id: 200, userId: null, status: "NEW" };
-    throw new AppError("LEAD_ACCESS_DENIED", 403);
+    throw new AppError({ code: "LEAD_ACCESS_DENIED", statusCode: 403 });
   });
   leadUsecase.checkIfUserCanMutateLead.mockImplementation(async ({ id }) => {
     if (Number(id) === 100) return { id: 100, userId: 5, status: "FOLLOW_UP" };
     // lead 200 is the claimable NEW pool — viewable but NOT writable.
-    throw new AppError("LEAD_MUTATE_DENIED", 403);
+    throw new AppError({ code: "LEAD_MUTATE_DENIED", statusCode: 403 });
   });
 
   questionsRepository.ensureDefaultCategoriesAndQuestions.mockResolvedValue(undefined);

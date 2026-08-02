@@ -1,3 +1,6 @@
+import { chatMessagesCodes } from "@dms/shared";
+import { socketErrorEnvelope } from "./socket-error.js";
+
 /**
  * Room join/leave handlers.
  *
@@ -14,7 +17,13 @@ export function registerRoomHandlers(socket, { ctx, usecase }) {
       userId: ctx.userId,
     });
     if (!member) {
-      socket.emit("error", { message: "Not a member of this room" });
+      socket.emit(
+        "error",
+        socketErrorEnvelope(
+          null,
+          chatMessagesCodes.ROOM_ACCESS_DENIED,
+        ),
+      );
       return;
     }
 
@@ -42,7 +51,13 @@ export function registerRoomHandlers(socket, { ctx, usecase }) {
       clientId: ctx.clientId,
     });
     if (!member) {
-      socket.emit("error", { message: "Not a member of this room" });
+      socket.emit(
+        "error",
+        socketErrorEnvelope(
+          null,
+          chatMessagesCodes.ROOM_ACCESS_DENIED,
+        ),
+      );
       return;
     }
 

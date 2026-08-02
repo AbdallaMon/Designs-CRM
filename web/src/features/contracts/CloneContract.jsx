@@ -77,7 +77,7 @@ export default function CloneContract({
   useEffect(() => {
     async function fetchCurrent() {
       const req = await getDataAndSet({
-        url: `shared/contracts/${sourceId}`,
+        url: `contracts/${sourceId}`,
         setData: (data) => {
           setSrc(data);
         },
@@ -210,7 +210,7 @@ export default function CloneContract({
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/`,
+      `contracts/`,
       false,
       "Creating"
     );

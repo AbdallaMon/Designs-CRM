@@ -150,11 +150,28 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
       return;
     }
     if (formData.file) {
+      let uploadOptions;
+      if (!notClientPage) {
+        const capability = await handleRequestSubmit(
+          { purpose: "PUBLIC_LEAD", subject: email },
+          setLoading,
+          "files/client/capabilities",
+          false,
+          translate("Preparing upload")
+        );
+        if (capability?.status !== 200 || !capability?.data?.token) return;
+        uploadOptions = {
+          publicAccess: {
+            purpose: "PUBLIC_LEAD",
+            token: capability.data.token,
+          },
+        };
+      }
       const fileUpload = await uploadInChunks(
         formData.file,
         setProgress,
         setOverlay,
-        true
+        uploadOptions
       );
 
       if (fileUpload.status === 200) {

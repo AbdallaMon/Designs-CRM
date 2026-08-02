@@ -25,7 +25,7 @@ export async function recordAction(ctx = {}, event = {}) {
 
     await actionAuditRepository.create({
       actorUserId: ctx.actorUserId ?? null,
-      actorRole: ctx.actorRole ?? null,
+      actorRole: ctx.actorProfileKey ?? null,
       ip: ctx.ip ?? null,
       module: rest.module,
       action: rest.action,
@@ -46,7 +46,7 @@ export async function recordAction(ctx = {}, event = {}) {
 export function auditCtxFromReq(req) {
   return {
     actorUserId: req?.auth?.id ?? null,
-    actorRole: req?.auth?.role ?? null,
+    actorProfileKey: req?.auth?.currentProfileKey ?? null,
     ip: req?.ip ?? null,
   };
 }

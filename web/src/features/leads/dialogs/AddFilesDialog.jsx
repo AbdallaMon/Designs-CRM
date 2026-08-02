@@ -90,7 +90,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
       // const fileUpload = await handleRequestSubmit(
       //   formData,
       //   setLoading,
-      //   "utility/upload",
+      //   "utilities/upload",
       //   true,
       //   "Uploading file"
       // );
@@ -109,7 +109,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
         const request = await handleRequestSubmit(
           data,
           setLoading,
-          `shared/client-leads/${lead.id}/files`,
+          `leads/${lead.id}/files`,
           false,
           "Adding Data",
           false,

@@ -9,7 +9,7 @@ export default function Templates({ type }) {
   const [loading, setLoading] = useState(false);
   async function getTemplates() {
     await getDataAndSet({
-      url: `admin/image-session/templates?type=${type}&`,
+      url: `image-sessions/admin/templates?type=${type}&`,
       setLoading,
       setData: setTemplates,
     });

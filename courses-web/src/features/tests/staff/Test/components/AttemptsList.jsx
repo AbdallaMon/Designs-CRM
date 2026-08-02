@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { FaPlay, FaEye, FaEdit } from "react-icons/fa";
 import dayjs from "dayjs";
-import { toArabicNumerals } from "../helpers";
+import { formatNumber } from "../helpers";
 
 const AttemptsList = ({
   attempts,
@@ -33,21 +33,21 @@ const AttemptsList = ({
         mb: 3,
       }}
     >
-      <Typography variant="h5">محاولات الاختبار</Typography>
+      <Typography variant="h5">Test attempts</Typography>
       {canStartNewAttempt() && (
         <Button
           variant="contained"
           startIcon={<FaPlay />}
           onClick={onStartNewAttempt}
         >
-          بدء محاولة جديدة
+          Start a new attempt
         </Button>
       )}
     </Box>
 
     {attempts.length === 0 ? (
       <Alert severity="info">
-        لا توجد محاولات بعد. اضغط على "بدء محاولة جديدة" للبداية.
+        No attempts yet. Select "Start a new attempt" to begin.
       </Alert>
     ) : (
       <List>
@@ -65,16 +65,16 @@ const AttemptsList = ({
                     }}
                   >
                     <Typography variant="h6">
-                      المحاولة {toArabicNumerals(attempt.attemptCount)}
+                      Attempt {formatNumber(attempt.attemptCount)}
                     </Typography>
                     {attempt.endTime ? (
                       <Chip
-                        label={attempt.passed ? "نجح" : "فشل"}
+                        label={attempt.passed ? "Passed" : "Failed"}
                         color={attempt.passed ? "success" : "error"}
                         size="small"
                       />
                     ) : (
-                      <Chip label="قيد التقدم" color="warning" size="small" />
+                      <Chip label="In progress" color="warning" size="small" />
                     )}
                   </Box>
                 }
@@ -82,7 +82,7 @@ const AttemptsList = ({
                   <Box sx={{ mt: 1 }}>
                     <Box sx={{ mt: 1 }}>
                       <Typography variant="body2">
-                        بدأت في:{" "}
+                        Started at:{" "}
                         {dayjs(attempt.startTime).format(
                           "DD/MM/YYYY - HH:mm"
                         )}
@@ -90,13 +90,13 @@ const AttemptsList = ({
                       {attempt.endTime && (
                         <>
                           <Typography variant="body2">
-                            اكتملت في:{" "}
+                            Completed at:{" "}
                             {dayjs(attempt.endTime).format(
                               "DD/MM/YYYY - HH:mm"
                             )}
                           </Typography>
                           <Typography variant="body2">
-                            النتيجة: {toArabicNumerals(attempt.score)}%
+                            Score: {formatNumber(attempt.score)}%
                           </Typography>
                         </>
                       )}
@@ -111,7 +111,7 @@ const AttemptsList = ({
                     startIcon={<FaEye />}
                     onClick={() => onReview(attempt)}
                   >
-                    مراجعة
+                    Review
                   </Button>
                 ) : (
                   <Button
@@ -119,7 +119,7 @@ const AttemptsList = ({
                     startIcon={<FaEdit />}
                     onClick={() => onContinue(attempt)}
                   >
-                    متابعة
+                    Continue
                   </Button>
                 )}
               </Box>

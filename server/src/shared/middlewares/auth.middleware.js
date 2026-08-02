@@ -6,7 +6,6 @@ import {
   AUTH_COOKIE_NAME,
   AUTH_REFRESH_TOKEN_COOKIE_NAME,
   authMessagesCodes,
-  getEffectivePermissions,
   messagesNames,
 } from "@dms/shared";
 
@@ -46,7 +45,7 @@ class AuthMiddleware {
     if (!payload) {
       const refreshToken = req.cookies?.[AUTH_REFRESH_TOKEN_COOKIE_NAME];
       if (!refreshToken) {
-        return next(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
+        return next(new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 }));
       }
       try {
         const { accessToken: newAccess, refreshToken: newRefresh } =
@@ -64,7 +63,7 @@ class AuthMiddleware {
         return next(
           err instanceof AppError
             ? err
-            : new AppError(authMessagesCodes.INVALID_TOKEN, 401),
+            : new AppError({ code: authMessagesCodes.INVALID_TOKEN, statusCode: 401 }),
         );
       }
     }
@@ -75,35 +74,20 @@ class AuthMiddleware {
     // unhandled rejection (this method is async for the silent-refresh path).
     try {
       const resolved = profileCache.resolve(payload.currentProfileId);
-      if (resolved) {
-        // Build the switcher list from the cache (the token carries the ids only).
-        const profiles = Array.isArray(payload.profileIds)
-          ? payload.profileIds.map((id) => profileCache.resolveMeta(id)).filter(Boolean)
-          : [];
-        req.auth = {
-          ...payload,
-          currentProfileKey: resolved.key,
-          baseRole: resolved.baseRole,
-          isAdminTier: Boolean(resolved.isAdminTier),
-          permissions: resolved.permissions,
-          permissionsByModule: resolved.permissionsByModule,
-          profiles,
-        };
-        return next();
+      if (!resolved) {
+        return next(new AppError({ code: authMessagesCodes.PROFILE_REQUIRED, statusCode: 403 }));
       }
-
-      // TRANSITIONAL fallback: a token minted before `currentProfileId` existed, an
-      // unmigrated user, or a deleted profile. Resolve permission CODES from the
-      // legacy code-map so access is never broken during rollout; the next refresh
-      // mints a currentProfile-bearing token. Profiles are the sole source of
-      // admin-tier now — an unresolved profile is waived as non-admin-tier (owner
-      // decision; un-migrated sessions do not get admin-tier access here).
-      const { permissions, permissionsByModule } = getEffectivePermissions(payload);
+      const profiles = Array.isArray(payload.profileIds)
+        ? payload.profileIds.map((id) => profileCache.resolveMeta(id)).filter(Boolean)
+        : [];
       req.auth = {
         ...payload,
-        isAdminTier: false,
-        permissions,
-        permissionsByModule,
+        currentProfileKey: resolved.key,
+        profileFamily: resolved.family,
+        isAdminTier: Boolean(resolved.isAdminTier),
+        permissions: resolved.permissions,
+        permissionsByModule: resolved.permissionsByModule,
+        profiles,
       };
       return next();
     } catch (err) {
@@ -123,7 +107,7 @@ class AuthMiddleware {
   static requirePermissions(required = [], anyOf = []) {
     return (req, res, next) => {
       if (!req.auth) {
-        return next(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
+        return next(new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 }));
       }
       const have = req.auth.permissions || [];
       const ok = required.length
@@ -133,7 +117,10 @@ class AuthMiddleware {
       if (!ok) {
         const requiredPermissions = required.length ? required : anyOf;
         return next(
-          new AppError(authMessagesCodes.PERMISSION_DENIED, 403, { requiredPermissions }, {
+          new AppError({
+            code: authMessagesCodes.PERMISSION_DENIED,
+            statusCode: 403,
+            details: { requiredPermissions },
             translationKey: messagesNames.authMessages,
             reason: `missing permission(s): ${requiredPermissions.join(", ")}`,
           }),
@@ -164,22 +151,6 @@ class AuthMiddleware {
     };
   }
 
-  /**
-   * @deprecated Role-only gating. Kept for any not-yet-migrated importer; new code
-   * MUST use `requirePermissions` (+ `requireSpecialChecker` for object scope).
-   * Never authorize on role alone.
-   */
-  static requireRole(allowedRoles) {
-    return (req, res, next) => {
-      if (!req.auth) {
-        return next(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
-      }
-      if (!allowedRoles.includes(req.auth.activeRole || req.auth.role)) {
-        return next(new AppError(authMessagesCodes.FORBIDDEN, 403));
-      }
-      return next();
-    };
-  }
 }
 
 export { AuthMiddleware };

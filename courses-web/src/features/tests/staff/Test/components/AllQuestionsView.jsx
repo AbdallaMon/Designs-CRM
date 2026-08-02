@@ -17,7 +17,7 @@ import {
   FaQuestionCircle,
 } from "react-icons/fa";
 import { QuestionTypesLabels } from "@/app/helpers/constants";
-import { formatTime, toArabicNumerals } from "../helpers";
+import { formatTime, formatNumber } from "../helpers";
 import RenderQuestionContent from "./RenderQuestionContent";
 
 const AllQuestionsView = ({
@@ -45,7 +45,7 @@ const AllQuestionsView = ({
         }}
       >
         <Button startIcon={<FaArrowLeft />} onClick={onBack}>
-          العودة إلى المحاولات
+          Back to attempts
         </Button>
         {test?.timeLimit && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -62,7 +62,7 @@ const AllQuestionsView = ({
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" sx={{ mb: 1 }}>
-          أجب عن جميع الأسئلة أدناه واضغط حفظ عند الانتهاء
+          Answer every question below, then save when you finish.
         </Typography>
         <LinearProgress variant="determinate" value={100} />
       </Box>
@@ -117,7 +117,7 @@ const AllQuestionsView = ({
               >
                 <FaQuestionCircle />
                 <Typography variant="h6">
-                  السؤال رقم {toArabicNumerals(index + 1)}
+                  Question {formatNumber(index + 1)}
                 </Typography>{" "}
                 <Chip
                   label={QuestionTypesLabels[question.type]}
@@ -150,7 +150,7 @@ const AllQuestionsView = ({
           disabled={savingAnswers?.length > 0}
           onClick={() => handleSubmitAttempt()}
         >
-          احفظ الاختبار
+          Save test
         </Button>
       </Box>
     </Box>

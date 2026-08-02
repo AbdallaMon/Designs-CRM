@@ -20,8 +20,6 @@ export const usersMessages = {
   USER_CREATED: "User created",
   USER_UPDATED: "User updated",
   USER_STATUS_TOGGLED: "User status changed",
-  USER_STAFF_EXTRA_UPDATED: "Staff data updated",
-  USER_ROLES_UPDATED: "Roles updated",
   USER_PROFILE_UPDATED: "Profile updated",
   USER_PROFILES_UPDATED: "User job profiles updated",
   USER_PROFILES_FETCHED: "Job profiles fetched",
@@ -37,7 +35,7 @@ export const usersMessages = {
   USER_PROFILE_MUTATE_DENIED: "You do not have permission to edit this profile",
   EMAIL_ALREADY_REGISTERED: "The email is already registered",
   USER_NO_DATA_SENT: "No data was sent",
-  USER_ROLE_NOT_ALLOWED: "This role is not allowed",
+  USER_PROFILE_NOT_ALLOWED: "This profile is not allowed",
   USER_SALES_TIER_EXCLUSIVE:
     "Only one sales level (Sales, Primary sales, or Super sales) can be assigned to a user.",
 

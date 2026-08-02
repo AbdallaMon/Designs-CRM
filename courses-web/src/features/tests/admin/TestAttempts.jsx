@@ -43,7 +43,7 @@ const [filters,setFilters]=useState({})
 useEffect(()=>{
 async function getAttempts(){
   const extra=filters&&filters.staffId?`?userId=${filters.staffId}&`:""
-  await getDataAndSet({url:`admin/courses/tests/${testId}/attempts${extra}`,setLoading,setData:setAttempts})
+  await getDataAndSet({url:`courses/tests/${testId}/attempts${extra}`,setLoading,setData:setAttempts})
 }
 getAttempts()
 },[testId,filters])
@@ -80,11 +80,11 @@ getAttempts()
     window.history.pushState({}, '', url);
   };
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'STUDENT':
+  const getProfileColor = (profileKey) => {
+    switch (profileKey) {
+      case 'NORMAL_SALES':
         return 'primary';
-      case 'INSTRUCTOR':
+      case 'SUPER_SALES':
         return 'secondary';
       case 'ADMIN':
         return 'error';
@@ -106,10 +106,10 @@ getAttempts()
       <Box>
 
              <SearchComponent
-                apiEndpoint={`search?model=all-users-search`}
+                resource="users"
                 setFilters={setFilters}
                 inputLabel="Search staff by name or email"
-                renderKeys={["name", "email","role"]}
+                renderKeys={["name", "email", "currentProfile.label"]}
                 mainKey="name"
                 searchKey={"staffId"}
                 withParamsChange={true}
@@ -135,7 +135,7 @@ getAttempts()
                 </Box>
               </TableCell>
               <TableCell>
-                <Typography variant="subtitle2">Role</Typography>
+                <Typography variant="subtitle2">Profile</Typography>
               </TableCell>
               <TableCell>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -180,8 +180,8 @@ getAttempts()
                 </TableCell>
                 <TableCell>
                   <Chip 
-                    label={attempt.role} 
-                    color={getRoleColor(attempt.role)}
+                    label={attempt.profile?.label ?? attempt.profile?.key}
+                    color={getProfileColor(attempt.profile?.key)}
                     size="small"
                     variant="outlined"
                   />

@@ -25,12 +25,11 @@ vi.mock("../../leads/lead/lead.usecase.js", () => ({
   },
 }));
 
-vi.mock("../services/contract-services.js", () => ({
+vi.mock("../contract/contract.workflow.repo.js", () => ({
   getLeadContractList: vi.fn(),
   createContract: vi.fn(),
   getContractDetailsById: vi.fn(),
   updateContractBasics: vi.fn(),
-  markContractAsCancelled: vi.fn(),
   generatePdfSessionToken: vi.fn(),
   createContractStage: vi.fn(),
   updateContractStage: vi.fn(),
@@ -49,7 +48,11 @@ vi.mock("../services/contract-services.js", () => ({
   deleteContractSpecialItem: vi.fn(),
 }));
 
-vi.mock("../services/client-contract-services.js", () => ({
+vi.mock("../services/contract-pdf.service.js", () => ({
+  markContractAsCancelled: vi.fn(),
+}));
+
+vi.mock("../client/client-contract.repo.js", () => ({
   getContractSessionByToken: vi.fn(),
   getDefaultContractUtilityData: vi.fn(),
   changeContractSessionStatus: vi.fn(),
@@ -76,15 +79,39 @@ import { clientContractUsecase } from "../client/client-contract.usecase.js";
 import { ClientContractValidation } from "../client/client-contract.validation.js";
 import { contractRepository } from "../contract/contract.repo.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
-import * as contractServices from "../services/contract-services.js";
-import * as clientContractServices from "../services/client-contract-services.js";
+import * as contractServices from "../contract/contract.workflow.repo.js";
+import { markContractAsCancelled } from "../services/contract-pdf.service.js";
+import * as clientContractServices from "../client/client-contract.repo.js";
 import { buildAndUploadContractPdf } from "../services/generate-contract-pdf.js";
 
 const P = PERMISSIONS.CONTRACT;
 
-function makeReq(role, isSuperSales = false) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
-  return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
+function makeReq(persona, superSales = false) {
+  const currentProfileKey = superSales
+    ? "SUPER_SALES"
+    : {
+        ADMIN: "ADMIN",
+        SUPER_ADMIN: "SUPER_ADMIN",
+        STAFF: "NORMAL_SALES",
+        THREE_D_DESIGNER: "DESIGNER_3D",
+        TWO_D_DESIGNER: "DESIGNER_2D",
+        TWO_D_EXECUTOR: "EXECUTOR_2D",
+        ACCOUNTANT: "ACCOUNTANT",
+        SUPER_SALES: "SUPER_SALES",
+        CONTACT_INITIATOR: "CONTACT_INITIATOR",
+      }[persona];
+  const { permissions, permissionsByModule } = getEffectivePermissions({
+    profile: currentProfileKey,
+  });
+  return {
+    auth: {
+      id: 1,
+      currentProfileKey,
+      isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
+      permissions,
+      permissionsByModule,
+    },
+  };
 }
 
 // Fake leads checkers mirroring the keystone scope model:
@@ -95,11 +122,11 @@ function installLeadScope() {
   leadUsecase.checkIfUserCanAccessLead.mockImplementation(async ({ id }) => {
     if (Number(id) === 100) return { id: 100 };
     if (Number(id) === 200) return { id: 200 };
-    throw new AppError("LEAD_ACCESS_DENIED", 403);
+    throw new AppError({ code: "LEAD_ACCESS_DENIED", statusCode: 403 });
   });
   leadUsecase.checkIfUserCanMutateLead.mockImplementation(async ({ id }) => {
     if (Number(id) === 100) return { id: 100 };
-    throw new AppError("LEAD_MUTATE_DENIED", 403);
+    throw new AppError({ code: "LEAD_MUTATE_DENIED", statusCode: 403 });
   });
 }
 
@@ -256,7 +283,7 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
     installRepoScope(200); // contract belongs to lead 200 (read-only scope)
     await expect(contractUsecase.cancelContract({ contractId: 7, authUser: AUTH })).rejects.toMatchObject({ statusCode: 403 });
     expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 200, authUser: AUTH });
-    expect(contractServices.markContractAsCancelled).not.toHaveBeenCalled();
+    expect(markContractAsCancelled).not.toHaveBeenCalled();
   });
 
   it("updatePayment: resolves payment→contract→lead (child-id resolution) and MUTATE-scopes", async () => {
@@ -307,6 +334,7 @@ describe("ClientContractUsecase public signing — token is authoritative", () =
   });
 
   it("generatePdf operates ONLY on the token's session (SIGNING → 🔒 build → REGISTERED)", async () => {
+    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1 });
     clientContractServices.changeContractSessionStatus.mockResolvedValue({});
     buildAndUploadContractPdf.mockResolvedValue({});
     await clientContractUsecase.generatePdf({ token: "tok-xyz", signatureUrl: "s.png", lng: "ar" });
@@ -319,6 +347,7 @@ describe("ClientContractUsecase public signing — token is authoritative", () =
   });
 
   it("generatePdf maps a frozen-builder failure to a language-neutral code (no prose)", async () => {
+    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1 });
     clientContractServices.changeContractSessionStatus.mockResolvedValue({});
     buildAndUploadContractPdf.mockRejectedValue(new Error("boom"));
     await expect(clientContractUsecase.generatePdf({ token: "t", signatureUrl: "s", lng: "ar" })).rejects.toMatchObject({

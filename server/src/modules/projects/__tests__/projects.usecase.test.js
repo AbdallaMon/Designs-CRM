@@ -9,10 +9,9 @@ import { projectsMessagesCodes } from "@dms/shared";
 // where-building; the DB methods are vi.fn() stubs configured per test.
 vi.mock("../project/project.repo.js", () => ({
   projectRepository: {
-    hasFullScope({ role, currentProfileKey, isAdminTier }, mode) {
+    hasFullScope({ currentProfileKey, isAdminTier }, mode) {
       if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
-      const roles = mode === "mutate" ? ["ADMIN", "SUPER_ADMIN"] : ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
-      return roles.includes(role);
+      return mode === "view" && currentProfileKey === "ACCOUNTANT";
     },
     buildAuthUserProjectWhere({ authUser, where = {}, mode = "view" }) {
       if (this.hasFullScope(authUser, mode)) return { ...where };
@@ -36,7 +35,7 @@ vi.mock("../project/project.repo.js", () => ({
 // (createGroupProjects / assignProjectToUser) must exist so the usecase's static
 // `export { ... } from "./project.flows.js"` resolves.
 vi.mock("../project/project.flows.js", () => ({
-  legacyDefaults: {
+  projectOperations: {
     getLeadByPorjects: vi.fn(),
     getLeadByPorjectsColumn: vi.fn(),
     getLeadDetailsByProject: vi.fn(),
@@ -66,18 +65,18 @@ vi.mock("../shared/project-scope.js", () => ({
 }));
 
 import { ProjectUsecase } from "../project/project.usecase.js";
-import { TaskUsecase, legacyDefaults as taskLegacy } from "../task/task.usecase.js";
+import { TaskUsecase, taskOperations } from "../task/task.usecase.js";
 import { UpdateUsecase } from "../update/update.usecase.js";
-import { DeliveryUsecase, legacyDefaults as deliveryLegacy } from "../delivery/delivery.usecase.js";
+import { DeliveryUsecase, deliveryOperations } from "../delivery/delivery.usecase.js";
 import { projectRepository } from "../project/project.repo.js";
-import { legacyDefaults as projectLegacy } from "../project/project.flows.js";
+import { projectOperations } from "../project/project.flows.js";
 import { projectUsecase as projectScope } from "../shared/project-scope.js";
 
 // ── auth-user fixtures (shape carried on req.auth) ───────────────────────────────
-const admin = { id: 1, role: "ADMIN", permissions: [] };
-const superSales = { id: 2, role: "STAFF", currentProfileKey: "SUPER_SALES", isAdminTier: true, permissions: [] };
-const accountant = { id: 3, role: "ACCOUNTANT", permissions: [] };
-const designer = { id: 4, role: "THREE_D_DESIGNER", permissions: [] };
+const admin = { id: 1, currentProfileKey: "ADMIN", isAdminTier: true, permissions: [] };
+const superSales = { id: 2, currentProfileKey: "SUPER_SALES", permissions: [] };
+const accountant = { id: 3, currentProfileKey: "ACCOUNTANT", permissions: [] };
+const designer = { id: 4, currentProfileKey: "DESIGNER_3D", permissions: [] };
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -175,14 +174,14 @@ describe("ProjectUsecase.checkIfUserCanAccessLeadProjects", () => {
 describe("ProjectUsecase.changeDesignerStatus (workflow action)", () => {
   it("overrides any client-supplied oldStatus with the server status (guard-bypass fix)", async () => {
     projectRepository.findProjectStatus.mockResolvedValue({ status: "In Progress" });
-    projectLegacy.updateProject.mockResolvedValue({ id: 20 });
+    projectOperations.updateProject.mockResolvedValue({ id: 20 });
     const usecase = new ProjectUsecase();
     await usecase.changeDesignerStatus({
       body: { id: 20, status: "Completed", oldStatus: "To Do" }, // forged oldStatus
       authUser: designer,
       currentStatus: "In Progress", // from the scope checker (req.scoped)
     });
-    const data = projectLegacy.updateProject.mock.calls[0][0].data;
+    const data = projectOperations.updateProject.mock.calls[0][0].data;
     expect(data.oldStatus).toBe("In Progress"); // server value, NOT the forged "To Do"
     expect(data.isAdmin).toBe(false);
   });
@@ -193,7 +192,7 @@ describe("ProjectUsecase.changeDesignerStatus (workflow action)", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("ProjectUsecase designer-lead sub-resource readers", () => {
   it("returns ONLY the requested slice of the scoped detail", async () => {
-    projectLegacy.getLeadDetailsByProject.mockResolvedValue({
+    projectOperations.getLeadDetailsByProject.mockResolvedValue({
       id: 5,
       files: [{ id: 1 }, { id: 2 }],
       notes: [{ id: 9 }],
@@ -211,17 +210,17 @@ describe("ProjectUsecase designer-lead sub-resource readers", () => {
   });
 
   it("forwards the per-user narrowing (designer → searchParams.userId = self)", async () => {
-    projectLegacy.getLeadDetailsByProject.mockResolvedValue({ id: 5, files: [] });
+    projectOperations.getLeadDetailsByProject.mockResolvedValue({ id: 5, files: [] });
     const usecase = new ProjectUsecase();
     await usecase.getDesignerLeadFiles({ id: 5, query: { type: "two-d" }, authUser: designer });
     // getDesignerLeadDetail narrows a non-admin/non-accountant caller to their own id,
     // so the slice can never expose more than the full scoped detail already does.
-    const searchParams = projectLegacy.getLeadDetailsByProject.mock.calls[0][1];
+    const searchParams = projectOperations.getLeadDetailsByProject.mock.calls[0][1];
     expect(searchParams.userId).toBe(designer.id);
   });
 
   it("returns [] (never a non-array) when the scoped detail is empty", async () => {
-    projectLegacy.getLeadDetailsByProject.mockResolvedValue(null);
+    projectOperations.getLeadDetailsByProject.mockResolvedValue(null);
     const usecase = new ProjectUsecase();
     expect(await usecase.getDesignerLeadFiles({ id: 5, query: {}, authUser: designer })).toEqual([]);
   });
@@ -273,11 +272,11 @@ describe("TaskUsecase scope via parent project", () => {
   it("DELETE: generic delete with model=Task runs the project MUTATE scope", async () => {
     projectScope.resolveTaskProject.mockResolvedValue({ id: 32, projectId: 10 });
     projectScope.checkIfUserCanMutateProject.mockResolvedValue({ id: 10 });
-    vi.spyOn(taskLegacy, "deleteAModel").mockResolvedValue({ data: {} });
+    vi.spyOn(taskOperations, "deleteAllowedModel").mockResolvedValue({ data: {} });
     const usecase = new TaskUsecase();
     await usecase.deleteTask({ id: 32, body: { model: "Task" }, authUser: designer });
     expect(projectScope.checkIfUserCanMutateProject).toHaveBeenCalledWith({ id: 10, authUser: designer });
-    expect(taskLegacy.deleteAModel).toHaveBeenCalled();
+    expect(taskOperations.deleteAllowedModel).toHaveBeenCalled();
   });
 
   it("DELETE: missing body.model → 400 DELETE_MODEL_REQUIRED", async () => {
@@ -289,38 +288,38 @@ describe("TaskUsecase scope via parent project", () => {
 
   // ── dueDate coercion (Prisma DateTime? rejects a bare "2026-06-12" string) ──────
   it("CREATE: coerces a date-only dueDate string to a real Date before the repo", async () => {
-    vi.spyOn(taskLegacy, "createNewTask").mockResolvedValue({ id: 60, type: "NORMAL" });
+    vi.spyOn(taskOperations, "createNewTask").mockResolvedValue({ id: 60, type: "NORMAL" });
     const usecase = new TaskUsecase();
     await usecase.createTask({ body: { title: "t", dueDate: "2026-06-12" }, authUser: designer });
-    const data = taskLegacy.createNewTask.mock.calls[0][0].data;
+    const data = taskOperations.createNewTask.mock.calls[0][0].data;
     expect(data.dueDate).toBeInstanceOf(Date);
     expect(data.dueDate.toISOString()).toBe("2026-06-12T00:00:00.000Z");
   });
 
   it("CREATE: a null/absent dueDate stays null (never new Date(\"\") → Invalid Date)", async () => {
-    vi.spyOn(taskLegacy, "createNewTask").mockResolvedValue({ id: 61, type: "NORMAL" });
+    vi.spyOn(taskOperations, "createNewTask").mockResolvedValue({ id: 61, type: "NORMAL" });
     const usecase = new TaskUsecase();
     await usecase.createTask({ body: { title: "t", dueDate: null }, authUser: designer });
-    expect(taskLegacy.createNewTask.mock.calls[0][0].data.dueDate).toBeNull();
+    expect(taskOperations.createNewTask.mock.calls[0][0].data.dueDate).toBeNull();
 
     await usecase.createTask({ body: { title: "t", dueDate: "" }, authUser: designer });
-    expect(taskLegacy.createNewTask.mock.calls[1][0].data.dueDate).toBeNull();
+    expect(taskOperations.createNewTask.mock.calls[1][0].data.dueDate).toBeNull();
   });
 
   it("UPDATE: coerces a date-only dueDate string the same way", async () => {
-    vi.spyOn(taskLegacy, "updateTask").mockResolvedValue({ id: 62, type: "NORMAL" });
+    vi.spyOn(taskOperations, "updateTask").mockResolvedValue({ id: 62, type: "NORMAL" });
     const usecase = new TaskUsecase();
     await usecase.updateTask({ taskId: 62, body: { dueDate: "2026-06-12" }, authUser: designer });
-    const data = taskLegacy.updateTask.mock.calls[0][0].data;
+    const data = taskOperations.updateTask.mock.calls[0][0].data;
     expect(data.dueDate).toBeInstanceOf(Date);
     expect(data.dueDate.toISOString()).toBe("2026-06-12T00:00:00.000Z");
   });
 
   it("UPDATE: a body without dueDate is left untouched (no spurious null injected)", async () => {
-    vi.spyOn(taskLegacy, "updateTask").mockResolvedValue({ id: 63, type: "NORMAL" });
+    vi.spyOn(taskOperations, "updateTask").mockResolvedValue({ id: 63, type: "NORMAL" });
     const usecase = new TaskUsecase();
     await usecase.updateTask({ taskId: 63, body: { status: "DONE" }, authUser: designer });
-    const data = taskLegacy.updateTask.mock.calls[0][0].data;
+    const data = taskOperations.updateTask.mock.calls[0][0].data;
     expect("dueDate" in data).toBe(false);
   });
 });
@@ -373,9 +372,9 @@ describe("DeliveryUsecase scope via parent project", () => {
   });
 
   it("DELETE calls the legacy service with the correct `id` (legacy {deliveryId} bug fixed)", async () => {
-    vi.spyOn(deliveryLegacy, "deleteDeliverySchedule").mockResolvedValue({ id: 52 });
+    vi.spyOn(deliveryOperations, "deleteDeliverySchedule").mockResolvedValue({ id: 52 });
     const usecase = new DeliveryUsecase();
     await usecase.deleteDeliverySchedule({ deliveryId: 52 });
-    expect(deliveryLegacy.deleteDeliverySchedule).toHaveBeenCalledWith({ id: 52 });
+    expect(deliveryOperations.deleteDeliverySchedule).toHaveBeenCalledWith({ id: 52 });
   });
 });

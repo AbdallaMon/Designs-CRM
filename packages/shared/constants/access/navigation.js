@@ -29,12 +29,25 @@
 //   The array ORDER below is chosen so that, after filtering to any single role,
 //   the surviving rows appear in master's exact order for that role.
 
-import { USER_ROLES } from "./roles.constants.js";
-
-const R = USER_ROLES;
-const ADMIN_SET = [R.ADMIN, R.SUPER_ADMIN];
-// Roles that render master's "Dashboard/Leads/Deals/Calendar/Payments" sales set.
-const SALES_SET = [R.ADMIN, R.SUPER_ADMIN, R.STAFF, R.SUPER_SALES];
+const P = {
+  ADMIN: "ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
+  NORMAL_SALES: "NORMAL_SALES",
+  PRIMARY_SALES: "PRIMARY_SALES",
+  SUPER_SALES: "SUPER_SALES",
+  ACCOUNTANT: "ACCOUNTANT",
+  DESIGNER_3D: "DESIGNER_3D",
+  DESIGNER_2D: "DESIGNER_2D",
+  EXECUTOR_2D: "EXECUTOR_2D",
+  CONTACT_INITIATOR: "CONTACT_INITIATOR",
+};
+const ADMIN_SET = [P.ADMIN, P.SUPER_ADMIN];
+const SALES_SET = [
+  ...ADMIN_SET,
+  P.NORMAL_SALES,
+  P.PRIMARY_SALES,
+  P.SUPER_SALES,
+];
 
 export const NAVIGATION = [
   // 1) Landing "Dashboard" — every role whose master landing is labelled
@@ -44,13 +57,10 @@ export const NAVIGATION = [
     label: "Dashboard",
     href: "/dashboard",
     icon: "FiGrid",
-    allowedRoles: [
-      R.ADMIN,
-      R.SUPER_ADMIN,
-      R.STAFF,
-      R.SUPER_SALES,
-      R.THREE_D_DESIGNER,
-      R.TWO_D_DESIGNER,
+    allowedProfiles: [
+      ...SALES_SET,
+      P.DESIGNER_3D,
+      P.DESIGNER_2D,
     ],
   },
 
@@ -61,7 +71,7 @@ export const NAVIGATION = [
     label: "Users",
     href: "/dashboard/users",
     icon: "FiUsers",
-    allowedRoles: [...ADMIN_SET],
+    allowedProfiles: [...ADMIN_SET],
   },
 
   // 3) Leads (the dedicated `/dashboard/leads` screen) — sales roles only.
@@ -70,7 +80,7 @@ export const NAVIGATION = [
     label: "Leads",
     href: "/dashboard/leads",
     icon: "FiTarget",
-    allowedRoles: [...SALES_SET],
+    allowedProfiles: [...SALES_SET],
   },
 
   // 4) Deals — sales roles. Sub-links are identical across those roles.
@@ -80,25 +90,25 @@ export const NAVIGATION = [
     href: "/dashboard/deals",
     icon: "FiDollarSign",
     active: "deals",
-    allowedRoles: [...SALES_SET],
+    allowedProfiles: [...SALES_SET],
     subLinks: [
       {
         label: "Current Deals",
         href: "/dashboard/deals",
         active: "deals",
-        allowedRoles: [...SALES_SET],
+        allowedProfiles: [...SALES_SET],
       },
       {
         label: "On hold Deals",
         href: "/dashboard/on-hold-deals",
         active: "on-hold",
-        allowedRoles: [...SALES_SET],
+        allowedProfiles: [...SALES_SET],
       },
       {
         label: "All Deals",
         href: "/dashboard/all-deals",
         active: "all-deals",
-        allowedRoles: [...SALES_SET],
+        allowedProfiles: [...SALES_SET],
       },
     ],
   },
@@ -113,80 +123,80 @@ export const NAVIGATION = [
     href: "/dashboard/work-stages",
     icon: "FiDollarSign",
     active: "work",
-    allowedRoles: [...ADMIN_SET, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER],
+    allowedProfiles: [...ADMIN_SET, P.DESIGNER_3D, P.DESIGNER_2D],
     subLinks: [
       // ── ADMIN / SUPER_ADMIN sub-list (master adminLinks "Work stages") ──
       {
         label: "All projects",
         href: "/dashboard/projects",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "Plan study department",
         href: "/dashboard/work-stages/study",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "3D Work stage",
         href: "/dashboard/work-stages",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "Final plan department",
         href: "/dashboard/work-stages/final-plan",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "Quantity calcualtion department",
         href: "/dashboard/work-stages/quantity",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "Archived projects",
         href: "/dashboard/projects/archived",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "3D Modifcation",
         href: "/dashboard/work-stages/modification",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       // ── THREE_D_DESIGNER sub-list (master threeDLinks "Work stages") ──
       {
         label: "3D Work stage",
         href: "/dashboard/work-stages",
-        allowedRoles: [R.THREE_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_3D],
       },
       {
         label: "Modifcation stage",
         href: "/dashboard/modification",
-        allowedRoles: [R.THREE_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_3D],
       },
       {
         label: "Archived projects",
         href: "/dashboard/archived",
-        allowedRoles: [R.THREE_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_3D],
       },
       // ── TWO_D_DESIGNER sub-list (master twoDLinks "Work stages") ──
       {
         label: "Plan study department",
         href: "/dashboard/study",
-        allowedRoles: [R.TWO_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_2D],
       },
       {
         label: "Final plan department",
         href: "/dashboard/final-plan",
-        allowedRoles: [R.TWO_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_2D],
       },
       {
         label: "Quantity calcualtion department",
         href: "/dashboard/quantity",
-        allowedRoles: [R.TWO_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_2D],
       },
       {
         label: "Archived projects",
         href: "/dashboard/archived",
-        allowedRoles: [R.TWO_D_DESIGNER],
+        allowedProfiles: [P.DESIGNER_2D],
       },
     ],
   },
@@ -198,19 +208,19 @@ export const NAVIGATION = [
     href: "/dashboard/report",
     icon: "FiFileText",
     active: "report",
-    allowedRoles: [...ADMIN_SET],
+    allowedProfiles: [...ADMIN_SET],
     subLinks: [
       {
         label: "Leads report",
         href: "/dashboard/report",
         active: "report",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
       {
         label: "Staff report",
         href: "/dashboard/report/staff",
         active: "report/staff",
-        allowedRoles: [...ADMIN_SET],
+        allowedProfiles: [...ADMIN_SET],
       },
     ],
   },
@@ -259,7 +269,7 @@ export const NAVIGATION = [
     label: "Images session gallery",
     href: "/dashboard/image-sessions",
     icon: "FiImage",
-    allowedRoles: [...ADMIN_SET],
+    allowedProfiles: [...ADMIN_SET],
   },
 
   // 8) Calendar — sales roles.
@@ -268,7 +278,7 @@ export const NAVIGATION = [
     label: "Calendar",
     href: "/dashboard/calendar",
     icon: "FiCalendar",
-    allowedRoles: [...SALES_SET],
+    allowedProfiles: [...SALES_SET],
   },
 
   // 9) Payments (the dedicated `/dashboard/payments` screen) — sales roles.
@@ -277,7 +287,7 @@ export const NAVIGATION = [
     label: "Payments",
     href: "/dashboard/payments",
     icon: "FiDollarSign",
-    allowedRoles: [...SALES_SET],
+    allowedProfiles: [...SALES_SET],
   },
 
   // 10) Website utilities — ADMIN/SUPER_ADMIN only.
@@ -286,7 +296,7 @@ export const NAVIGATION = [
     label: "Website utilities",
     href: "/dashboard/website-utilities",
     icon: "FiHome",
-    allowedRoles: [...ADMIN_SET],
+    allowedProfiles: [...ADMIN_SET],
   },
 
   // 11) Users — SUPER_SALES position (LAST). master superSalesLinks appends
@@ -297,7 +307,7 @@ export const NAVIGATION = [
     label: "Users",
     href: "/dashboard/users",
     icon: "FiUsers",
-    allowedRoles: [R.SUPER_SALES],
+    allowedProfiles: [P.SUPER_SALES],
   },
 
   // ── TWO_D_EXECUTOR (master exacuterLinks) ──
@@ -307,7 +317,7 @@ export const NAVIGATION = [
     label: "Leads",
     href: "/dashboard",
     icon: "FiTarget",
-    allowedRoles: [R.TWO_D_EXECUTOR],
+    allowedProfiles: [P.EXECUTOR_2D],
   },
   // 13) "Work stage" — a plain link (NO sub-list), distinct from the
   //     ADMIN/3D/2D "Work stages" row.
@@ -316,7 +326,7 @@ export const NAVIGATION = [
     label: "Work stage",
     href: "/dashboard/work-stages",
     icon: "FiBriefcase",
-    allowedRoles: [R.TWO_D_EXECUTOR],
+    allowedProfiles: [P.EXECUTOR_2D],
   },
 
   // ── ACCOUNTANT (master accountantLinks) ──
@@ -326,35 +336,35 @@ export const NAVIGATION = [
     label: "Payments",
     href: "/dashboard",
     icon: "FiDollarSign",
-    allowedRoles: [R.ACCOUNTANT],
+    allowedProfiles: [P.ACCOUNTANT],
   },
   {
     key: "operational-expenses",
     label: "Operational Expenses",
     href: "/dashboard/operational-expenses",
     icon: "FiShoppingCart",
-    allowedRoles: [R.ACCOUNTANT],
+    allowedProfiles: [P.ACCOUNTANT],
   },
   {
     key: "rents",
     label: "Rents",
     href: "/dashboard/rents",
     icon: "FiHome",
-    allowedRoles: [R.ACCOUNTANT],
+    allowedProfiles: [P.ACCOUNTANT],
   },
   {
     key: "salaries",
     label: "Salaries",
     href: "/dashboard/salaries",
     icon: "FiUsers",
-    allowedRoles: [R.ACCOUNTANT],
+    allowedProfiles: [P.ACCOUNTANT],
   },
   {
     key: "outcome",
     label: "Outstanding Payments",
     href: "/dashboard/outcome",
     icon: "FiTrendingDown",
-    allowedRoles: [R.ACCOUNTANT],
+    allowedProfiles: [P.ACCOUNTANT],
   },
 
   // ── CONTACT_INITIATOR (master contactInitiatorLinks) ──
@@ -364,7 +374,7 @@ export const NAVIGATION = [
     label: "Leads",
     href: "/dashboard",
     icon: "FiTarget",
-    allowedRoles: [R.CONTACT_INITIATOR],
+    allowedProfiles: [P.CONTACT_INITIATOR],
   },
 ];
 

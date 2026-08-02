@@ -35,7 +35,7 @@ vi.mock("../notification.repo.js", async (importActual) => {
       markAllReadForUser: vi.fn(),
       findFirstAdmin: vi.fn(),
       findSubAdmins: vi.fn(),
-      findActiveUsersByRoles: vi.fn(),
+      findActiveUsersByProfiles: vi.fn(),
       findActiveDefaultRecipients: vi.fn(),
       createNotificationRow: vi.fn(),
       findUserEmailById: vi.fn(),
@@ -73,8 +73,8 @@ describe("createNotification — enqueue side", () => {
       contentType: "HTML",
       clientLeadId: 12,
       staffId: 3,
-      role: ["STAFF"],
-      specifiRole: undefined,
+      profileKeys: ["NORMAL_SALES"],
+      specificProfiles: undefined,
     });
 
     // nothing delivered inline — that is the worker's job now
@@ -83,11 +83,11 @@ describe("createNotification — enqueue side", () => {
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
-  it("applies the legacy defaults into the payload (contentType TEXT, role [STAFF])", async () => {
+  it("applies the defaults into the payload (contentType TEXT, NORMAL_SALES profile)", async () => {
     await createNotification(7, false, "c", null, "T", "S", false);
     const [, payload] = addMock.mock.calls[0];
     expect(payload.contentType).toBe("TEXT");
-    expect(payload.role).toEqual(["STAFF"]);
+    expect(payload.profileKeys).toEqual(["NORMAL_SALES"]);
   });
 });
 
@@ -104,7 +104,7 @@ describe("deliverNotification — worker-side fan-out (legacy behavior preserved
       contentType: "TEXT",
       clientLeadId: null,
       staffId: null,
-      role: ["STAFF"],
+      profileKeys: ["NORMAL_SALES"],
     });
 
     expect(notificationRepository.createNotificationRow).toHaveBeenCalledTimes(1);

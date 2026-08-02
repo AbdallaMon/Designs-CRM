@@ -29,14 +29,14 @@ export default function UsersPage() {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher("admin/users", false);
+  } = useDataFetcher("users", false);
   const { setLoading } = useToastContext();
 
   async function banAUser(item) {
     const request = await handleRequestSubmit(
       { user: item },
       setLoading,
-      `admin/users/${item.id}/actions/change-status`,
+      `users/${item.id}/actions/change-status`,
       false,
       "Banning",
       null,
@@ -86,7 +86,7 @@ export default function UsersPage() {
         rowSx={(user) => ({
           backgroundColor: lighten(userColor(user), 0.95),
         })}
-        editHref={"admin/users"}
+        editHref={"users"}
         extraComponent={({ item }) => (
           <UserRowActions item={item} setData={setData} banAUser={banAUser} />
         )}
@@ -107,7 +107,7 @@ export default function UsersPage() {
             }}
           >
             <SearchComponent
-              apiEndpoint="search?model=all-users"
+              resource="users"
               setFilters={setFilters}
               inputLabel="Search by name or email"
               renderKeys={["name", "email"]}
@@ -120,7 +120,7 @@ export default function UsersPage() {
             <CreateModal
               label={"Create new user"}
               inputs={editInputs}
-              href={"admin/users"}
+              href={"users"}
               setData={setData}
               withClose={true}
               handleSubmit={(created) => {

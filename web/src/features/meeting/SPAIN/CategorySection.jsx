@@ -51,7 +51,7 @@ export const CategorySection = ({
 
   const fetchQuestions = useCallback(async () => {
     const response = await getData({
-      url: `shared/questions/session-questions/${clientLeadId}?questionTypeId=${category.id}&`,
+      url: `questions/session-questions/${clientLeadId}?questionTypeId=${category.id}&`,
       setLoading,
     });
     if (response.status === 200) {
@@ -77,7 +77,7 @@ export const CategorySection = ({
     const request = await handleRequestSubmit(
       { response: content },
       () => {},
-      `shared/questions/${sessionQuestionId}/answer`,
+      `questions/${sessionQuestionId}/answer`,
       false,
       "Saving answer"
     );
@@ -102,7 +102,7 @@ export const CategorySection = ({
         isCustom: true,
       },
       () => {},
-      `shared/questions/lead/${clientLeadId}/custom-question`,
+      `questions/lead/${clientLeadId}/custom-question`,
       false,
       "Adding"
     );

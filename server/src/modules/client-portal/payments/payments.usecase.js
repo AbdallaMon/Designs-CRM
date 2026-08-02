@@ -39,7 +39,7 @@ export class PaymentsUsecase {
   async pay({ clientId, clientLeadId, lng }) {
     const lead = await paymentsRepository.getLeadWithClient(clientLeadId);
     if (!lead?.client) {
-      throw new AppError(clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, 404);
+      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, statusCode: 404 });
     }
 
     const session = await createCheckoutSession({
@@ -72,12 +72,12 @@ export class PaymentsUsecase {
     // IDOR close: trust the SESSION, not the caller's clientLeadId.
     const metaLeadId = session.metadata?.clientLeadId;
     if (!metaLeadId || Number(metaLeadId) !== Number(clientLeadId)) {
-      throw new AppError(clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, 403);
+      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, statusCode: 403 });
     }
 
     const lead = await paymentsRepository.getLeadPaymentState(metaLeadId);
     if (!lead) {
-      throw new AppError(clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, 404);
+      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, statusCode: 404 });
     }
 
     if (lead.paymentStatus !== "FULLY_PAID") {
@@ -104,7 +104,7 @@ export class PaymentsUsecase {
     // Fail CLOSED: if the dedicated secret is unset, deny rather than open the gate
     // (the old `pass !== SECRET_KEY` opened when both sides were undefined).
     if (!env.BACKFILL_SECRET || pass !== env.BACKFILL_SECRET) {
-      throw new AppError(clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, 403);
+      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, statusCode: 403 });
     }
     return { ok: true };
   }

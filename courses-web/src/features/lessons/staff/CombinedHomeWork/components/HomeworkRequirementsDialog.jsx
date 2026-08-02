@@ -64,7 +64,7 @@ const HomeworkRequirementsDialog = ({
             <FiBookOpen size={20} />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            الواجبات
+            Homework
           </Typography>
         </Box>
       </DialogTitle>
@@ -76,10 +76,10 @@ const HomeworkRequirementsDialog = ({
         <Box sx={{ mb: 4 }}>
           <Box sx={{ mb: 2 }}>
             <Typography variant="h6" sx={{ mb: 0, fontWeight: 600 }}>
-              قدم عملك
+              Submit your work
             </Typography>
             <Typography variant="caption" sx={{ mb: 2 }}>
-              يجب رفع ملخص واحد على الأقل بصيغة PDF وفيديو واحد
+              Upload at least one PDF summary and one video.
             </Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 2, flexWrap: "no-wrap" }}>
@@ -101,7 +101,7 @@ const HomeworkRequirementsDialog = ({
                 },
               }}
             >
-              رفع فيديو
+              Upload video
             </Button>
             <Button
               variant="outlined"
@@ -122,7 +122,7 @@ const HomeworkRequirementsDialog = ({
                 },
               }}
             >
-              رفع ملخص
+              Upload summary
             </Button>
           </Box>
         </Box>
@@ -161,10 +161,10 @@ const HomeworkRequirementsDialog = ({
                   color="text.secondary"
                   sx={{ mb: 1 }}
                 >
-                  مقاطع الفيديو المقدمة
+                  Submitted videos
                 </Typography>
                 <Chip
-                  label={hasVideo ? "مكتمل" : "مطلوب"}
+                  label={hasVideo ? "Complete" : "Required"}
                   color={hasVideo ? "primary" : "default"}
                   variant={hasVideo ? "filled" : "outlined"}
                   size="small"
@@ -205,10 +205,10 @@ const HomeworkRequirementsDialog = ({
                   color="text.secondary"
                   sx={{ mb: 1 }}
                 >
-                  الملخصات المقدمة
+                  Submitted summaries
                 </Typography>
                 <Chip
-                  label={hasSummary ? "مكتمل" : "مطلوب"}
+                  label={hasSummary ? "Complete" : "Required"}
                   color={hasSummary ? "secondary" : "default"}
                   variant={hasSummary ? "filled" : "outlined"}
                   size="small"
@@ -223,7 +223,7 @@ const HomeworkRequirementsDialog = ({
           sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 3, bgcolor: "grey.50" }}
         >
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-            مقدماتك
+            Your submissions
           </Typography>
 
           {loading ? (
@@ -237,10 +237,10 @@ const HomeworkRequirementsDialog = ({
                 color="text.secondary"
                 sx={{ mb: 2 }}
               >
-                لا توجد مقدمات بعد
+                No submissions yet
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                ارفع ملفات واجباتك للبدء
+                Upload your homework files to get started.
               </Typography>
             </Box>
           ) : (
@@ -290,7 +290,7 @@ const HomeworkRequirementsDialog = ({
                           >
                             <Chip
                               label={
-                                homework.type === "VIDEO" ? "فيديو" : "ملخص"
+                                homework.type === "VIDEO" ? "Video" : "Summary"
                               }
                               size="small"
                               color={
@@ -311,7 +311,7 @@ const HomeworkRequirementsDialog = ({
                                 borderRadius: 1.5,
                               }}
                             >
-                              عرض الملف
+                              View file
                             </Button>
                           </Box>
                         }
@@ -336,7 +336,7 @@ const HomeworkRequirementsDialog = ({
             borderRadius: 2,
           }}
         >
-          إغلاق
+          Close
         </Button>
       </DialogActions>
     </Dialog>

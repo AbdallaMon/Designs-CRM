@@ -32,11 +32,11 @@ class GoogleCalendarController {
     try {
       await googleCalendarUsecase.handleCallback({ code, state });
       return res.redirect(
-        `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard?googleAuthSuccess=1&profileOpen=true`,
+        `${process.env.DASHBOARD_ORIGIN}/dashboard?googleAuthSuccess=1&profileOpen=true`,
       );
     } catch (error) {
       return res.redirect(
-        `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard?googleAuthError=${encodeURIComponent(
+        `${process.env.DASHBOARD_ORIGIN}/dashboard?googleAuthError=${encodeURIComponent(
           error.message,
         )}&profileOpen=true`,
       );

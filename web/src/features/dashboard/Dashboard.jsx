@@ -18,22 +18,22 @@ import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoa
 import { getData } from "@/app/helpers/functions/getData";
 import LeadsMonthlyOverviewSingle from "@/features/dashboard/LeadsMonthlyOverviewSingle.jsx";
 
-const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
-  const [role, setRole] = useState(userRole);
+const Dashboard = ({ staff, staffId, userProfile = "NORMAL_SALES" }) => {
+  const [profile, setProfile] = useState(userProfile);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    async function getUserRole() {
+    async function getUserProfile() {
       const userRequest = await getData({
-        url: `shared/utilities/users/role/${staffId}?`,
+        url: `utilities/users/${staffId}/current-profile`,
         setLoading,
       });
       if (userRequest && userRequest.status === 200) {
-        setRole(userRequest.data.role);
+        setProfile(userRequest.data?.currentProfile?.key ?? null);
       }
     }
 
     if (staffId) {
-      getUserRole();
+      getUserProfile();
     } else {
       setLoading(false);
     }
@@ -57,10 +57,10 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
         </Typography>
       ) : (
         <>
-          <UserProfile id={staffId} role={role} />
+          <UserProfile id={staffId} />
         </>
       )}
-      {role === "THREE_D_DESIGNER" || role === "TWO_D_DESIGNER" ? (
+      {profile === "DESIGNER_3D" || profile === "DESIGNER_2D" ? (
         <DesignerDashboard staff={staff} staffId={staffId} />
       ) : (
         <Grid container spacing={4}>

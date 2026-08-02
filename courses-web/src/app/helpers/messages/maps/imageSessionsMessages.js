@@ -82,6 +82,8 @@ export const imageSessionsMessages = {
   IMAGE_SESSION_TOKEN_INVALID: "Session link is invalid",
   IMAGE_SESSION_MODEL_NOT_ALLOWED: "Data type not allowed",
   IMAGE_SESSION_PDF_GENERATION_FAILED: "Failed to generate file",
+  IMAGE_SESSION_SPACES_REQUIRED: "Select at least one space",
+  IMAGE_SESSION_SUBMITTED_LOCKED: "A submitted image session cannot be deleted",
 
   // ── generic envelope codes (shared) ─────────────────────────────────────────────────
   OK: "Operation completed successfully",

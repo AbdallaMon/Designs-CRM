@@ -27,7 +27,7 @@ const AccountantKanbanBoard = ({
     loading,
     setData: setPayments,
     setFilters,
-  } = useDataFetcher(`accountant/payments?paymentId=${paymentId}&`, false, {
+  } = useDataFetcher(`accounting/payments?paymentId=${paymentId}&`, false, {
     status: status,
   });
   return (
@@ -64,7 +64,7 @@ const AccountantKanbanBoard = ({
             }}
           >
             <SearchComponent
-              apiEndpoint="search?model=client"
+              resource="clients"
               setFilters={setFilters}
               inputLabel="Search client by name or phone"
               renderKeys={["name", "phone"]}

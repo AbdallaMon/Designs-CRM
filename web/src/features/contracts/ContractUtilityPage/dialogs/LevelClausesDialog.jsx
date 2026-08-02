@@ -123,7 +123,7 @@ export function LevelClausesDialog({ open, onClose, onUpdated }) {
   const fetchLevelClauses = async () => {
     if (!open) return;
     await getDataAndSet({
-      url: "shared/site-utilities/contract-utility/level-clauses",
+      url: "site-utilities/contract-utility/level-clauses",
       setData: setClausesByLevel,
       setLoading,
     });
@@ -151,8 +151,8 @@ export function LevelClausesDialog({ open, onClose, onUpdated }) {
       payload,
       setToastLoading,
       isNew
-        ? `shared/site-utilities/contract-utility/level-clauses`
-        : `shared/site-utilities/contract-utility/level-clauses/${clause.id}`,
+        ? `site-utilities/contract-utility/level-clauses`
+        : `site-utilities/contract-utility/level-clauses/${clause.id}`,
       false,
       "Saving",
       false,

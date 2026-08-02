@@ -119,7 +119,7 @@ async function markAnUpdateAsDone({ updateId, clientLeadId, isArchived }) {
   return await updateRepository.findClientLeadUpdateById({ updateId });
 }
 
-export const legacyDefaults = {
+export const updateOperations = {
   getUpdates,
   createAnUpdate,
   authorizeDepartmentToUpdate,
@@ -131,7 +131,7 @@ export const legacyDefaults = {
 
 class UpdateUsecase {
   isAdminUser(authUser) {
-    return authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
+    return Boolean(authUser?.isAdminTier);
   }
 
   // ── object-scope: gate on the parent clientLead's project assignment ─────────────
@@ -157,7 +157,7 @@ class UpdateUsecase {
   listUpdates({ clientLeadId, query, authUser }) {
     const searchParams = { ...query, clientLeadId: Number(clientLeadId) };
     const isAdmin = this.isAdminUser(authUser);
-    return legacyDefaults.getUpdates(searchParams, isAdmin);
+    return updateOperations.getUpdates(searchParams, isAdmin);
   }
 
   // GET /shared-settings/:updateId.
@@ -168,7 +168,7 @@ class UpdateUsecase {
   // POST /:clientLeadId — create an update.
   createUpdate({ clientLeadId, body, query, authUser }) {
     const searchParams = { ...query };
-    return legacyDefaults.createAnUpdate({
+    return updateOperations.createAnUpdate({
       data: { ...body, clientLeadId: Number(clientLeadId) },
       searchParams,
       userId: authUser.id,
@@ -177,23 +177,23 @@ class UpdateUsecase {
 
   // ── workflow actions ───────────────────────────────────────────────────────────
   authorize({ updateId, body }) {
-    return legacyDefaults.authorizeDepartmentToUpdate({ type: body.type, updateId: Number(updateId) });
+    return updateOperations.authorizeDepartmentToUpdate({ type: body.type, updateId: Number(updateId) });
   }
 
   authorizeShared({ updateId, body }) {
-    return legacyDefaults.unAuthorizeDepartmentToUpdate({ updateId: Number(updateId), type: body.type });
+    return updateOperations.unAuthorizeDepartmentToUpdate({ updateId: Number(updateId), type: body.type });
   }
 
   archive({ updateId, body }) {
-    return legacyDefaults.toggleArchieveAnUpdate({ updateId: Number(updateId), isArchived: body.isArchived });
+    return updateOperations.toggleArchieveAnUpdate({ updateId: Number(updateId), isArchived: body.isArchived });
   }
 
   archiveShared({ sharedUpdateId, body }) {
-    return legacyDefaults.toggleArchieveASharedUpdate({ sharedUpdateId: Number(sharedUpdateId), isArchived: body.isArchived });
+    return updateOperations.toggleArchieveASharedUpdate({ sharedUpdateId: Number(sharedUpdateId), isArchived: body.isArchived });
   }
 
   markDone({ updateId, body }) {
-    return legacyDefaults.markAnUpdateAsDone({
+    return updateOperations.markAnUpdateAsDone({
       updateId: Number(updateId),
       clientLeadId: body.clientLeadId,
       isArchived: body.isArchived,

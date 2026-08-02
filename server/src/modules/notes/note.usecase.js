@@ -1,28 +1,120 @@
-// notes usecase — the shared notes home. Module-level `getNotes` / `addNote` / `deleteNote`
-// are relocated 1:1 from the legacy `shared/legacy/note-services.js`. Prisma I/O is delegated
-// to `noteRepository`; the cross-cluster side effects are invoked from their owners:
-//   - the lead/update "touch" bumps go through leadRepository.touchLead /
-//     updateRepository.touchClientLeadUpdate (formerly shared-utility updateALead /
-//     updateAClientLeadUpdate),
-//   - the Telegram mirror stays in its infra location (getChannelEntitiyByTeleRecordAndLeadId
-//     / uploadANote),
-//   - the task refresh stays a LAZY import of the task usecase's `updateTask` (preserving the
-//     original lazy edge — both modules reference each other only lazily, so no import cycle).
-// Behavior, error strings, and the 5-minute delete window are preserved verbatim. These
-// functions replace the former shared/legacy barrel lazy-imports and are wired into the
-// consumers' DI seams (client-portal notes, projects/task).
 import dayjs from "dayjs";
+import {
+  authMessagesCodes,
+  clientPortalMessagesCodes,
+  hasPermission,
+  PERMISSIONS,
+  projectsMessagesCodes,
+} from "@dms/shared";
+import { AppError } from "../../shared/errors/AppError.js";
 import {
   getChannelEntitiyByTeleRecordAndLeadId,
   uploadANote,
 } from "../../infra/telegram/telegram-functions.js";
 import { noteRepository } from "./note.repo.js";
 import { leadRepository } from "../leads/lead/lead.repo.js";
+import { projectRepository } from "../projects/project/project.repo.js";
 import { updateRepository } from "../projects/update/update.repo.js";
-// note ↔ task is a runtime-only mutual reference (task imports getNotes/addNote; we call
-// updateTask). Both sides are hoisted `export async function`s used only at call time, so a
-// static import here is cycle-safe — no lazy edge needed.
 import { updateTask } from "../projects/task/task.usecase.js";
+
+const P = PERMISSIONS;
+const OWNER_KEYS = [
+  "clientLeadId",
+  "baseEmployeeSalaryId",
+  "rentId",
+  "rentPeriodId",
+  "operationalExpensesId",
+  "paymentId",
+  "invoiceId",
+  "taskId",
+  "commissionId",
+  "updateId",
+  "sharedUpdateId",
+  "imageSessionId",
+  "selectedImageId",
+  "contractId",
+  "salesStageId",
+  "deliveryScheduleId",
+  "notedUserId",
+];
+
+function assertPermission(authUser, code) {
+  if (!hasPermission(authUser?.permissions, code)) {
+    throw new AppError({ code: authMessagesCodes.PERMISSION_DENIED, statusCode: 403 });
+  }
+}
+
+async function assertLeadScope({ clientLeadId, authUser, mode }) {
+  if (!clientLeadId) throw new AppError({ code: projectsMessagesCodes.CLIENT_LEAD_NOT_FOUND, statusCode: 404 });
+  const where = leadRepository.buildAuthUserLeadWhere({
+    authUser,
+    where: { id: Number(clientLeadId) },
+    mode,
+    includeContactInitiator: true,
+  });
+  const lead = await leadRepository.findScopedLead({ where });
+  if (!lead) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+  return lead;
+}
+
+async function assertProjectScope({ projectId, authUser, mode }) {
+  if (!projectId) throw new AppError({ code: projectsMessagesCodes.PROJECT_NOT_FOUND, statusCode: 404 });
+  const where = projectRepository.buildAuthUserProjectWhere({
+    authUser,
+    where: { id: Number(projectId) },
+    mode,
+  });
+  const project = await projectRepository.findScopedProject({ where });
+  if (!project) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+  return project;
+}
+
+export async function checkNoteTargetAccess({ idKey, id, authUser, mode = "view" }) {
+  const target = await noteRepository.resolveTarget({ idKey, id });
+  if (!target) throw new AppError({ code: projectsMessagesCodes.NOTE_TARGET_NOT_FOUND, statusCode: 404 });
+
+  if (target.kind === "accounting") {
+    assertPermission(
+      authUser,
+      mode === "view" ? P.ACCOUNTING.NOTE_LIST : P.ACCOUNTING.NOTE_CREATE,
+    );
+    return target;
+  }
+  if (target.kind === "user") {
+    if (!authUser?.isAdminTier && Number(authUser?.id) !== Number(target.userId)) {
+      throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+    }
+    return target;
+  }
+  if (target.kind === "project") {
+    assertPermission(authUser, mode === "view" ? P.TASK.LIST : P.TASK.NOTE_MANAGE);
+    return assertProjectScope({ projectId: target.projectId, authUser, mode });
+  }
+
+  assertPermission(authUser, mode === "view" ? P.LEAD.VIEW : P.LEAD.NOTE_MANAGE);
+  return assertLeadScope({
+    clientLeadId: target.clientLeadId,
+    authUser,
+    mode,
+  });
+}
+
+export async function checkNoteDeletionAccess({ id, authUser }) {
+  const note = await noteRepository.findNoteCreatedAt({ id });
+  if (!note) throw new AppError({ code: projectsMessagesCodes.NOTE_NOT_FOUND, statusCode: 404 });
+  if (!authUser?.isAdminTier && Number(note.userId) !== Number(authUser?.id)) {
+    throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+  }
+  const idKey = OWNER_KEYS.find((key) => note[key] != null);
+  if (!idKey) throw new AppError({ code: projectsMessagesCodes.NOTE_TARGET_NOT_FOUND, statusCode: 404 });
+  await checkNoteTargetAccess({
+    idKey,
+    id: note[idKey],
+    authUser,
+    mode: "mutate",
+  });
+  return note;
+}
 
 export async function getNotes({ idKey, id }) {
   return noteRepository.findNotesByOwner({ idKey, id });
@@ -37,27 +129,20 @@ export async function addNote({
   isAdmin,
   client,
 }) {
-  const data = {
-    content,
-    attachment,
-  };
+  const data = { content, attachment };
   const MAX_LENGTH = 360;
 
   if (client && content && content.length > MAX_LENGTH) {
-    throw new Error(
-      `Note content is too long. Max length is ${MAX_LENGTH} characters current length is ${content.length}.`
-    );
+    throw new AppError({ code: clientPortalMessagesCodes.NOTE_CONTENT_TOO_LONG, statusCode: 422 });
   }
-  if (userId) {
-    data.userId = Number(userId);
-  }
+  if (userId) data.userId = Number(userId);
   if (client) {
     const admin = await noteRepository.findAdminUser();
+    if (!admin) throw new AppError({ code: projectsMessagesCodes.NOTE_AUTHOR_NOT_FOUND, statusCode: 500 });
     data.userId = admin.id;
   }
-  if (idKey && id) {
-    data[idKey] = Number(id);
-  }
+  if (idKey && id) data[idKey] = Number(id);
+
   const note = await noteRepository.createNote({ data });
   const actualNote = await noteRepository.findNoteWithUser({ id: note.id });
   if (actualNote.clientLeadId) {
@@ -65,9 +150,7 @@ export async function addNote({
     const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
       clientLeadId: Number(actualNote.clientLeadId),
     });
-    if (teleChannel) {
-      await uploadANote(note, teleChannel);
-    }
+    if (teleChannel) await uploadANote(note, teleChannel);
   }
   if (actualNote.updateId) {
     await updateRepository.touchClientLeadUpdate({ id: actualNote.updateId });
@@ -79,24 +162,18 @@ export async function addNote({
   if (actualNote.taskId) {
     await updateTask({ data: {}, taskId: actualNote.taskId, isAdmin, userId });
   }
-
-  return { data: note, message: "Note created successfully" };
+  return note;
 }
 
-export async function deleteNote({ id, isAdmin }) {
-  const note = await noteRepository.findNoteCreatedAt({ id });
-  if (!note) {
-    throw new Error("Note not found");
-  }
+export async function deleteNote({ id, isAdmin, scopedNote }) {
+  const note = scopedNote ?? (await noteRepository.findNoteCreatedAt({ id }));
+  if (!note) throw new AppError({ code: projectsMessagesCodes.NOTE_NOT_FOUND, statusCode: 404 });
   if (!isAdmin) {
-    const now = dayjs();
-    const createdAt = dayjs(note.createdAt);
-    const diffInMinutes = now.diff(createdAt, "minute");
-
+    const diffInMinutes = dayjs().diff(dayjs(note.createdAt), "minute");
     if (diffInMinutes > 5) {
-      throw new Error("Cannot delete note older than 5 minutes");
+      throw new AppError({ code: projectsMessagesCodes.NOTE_DELETE_WINDOW_EXPIRED, statusCode: 409 });
     }
   }
   await noteRepository.deleteNote({ id });
-  return { data: note, message: "Note deleted successfully" };
+  return note;
 }

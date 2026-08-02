@@ -8,8 +8,7 @@ export const utilitiesMessages = {
   // ── reads ──────────────────────────────────────────────────────────────────────
   FIXED_DATA_FETCHED: "Fixed data fetched",
   USER_LOG_FETCHED: "Work log fetched",
-  USER_ROLE_FETCHED: "User role fetched",
-  ROLES_FETCHED: "Roles fetched",
+  USER_PROFILE_FETCHED: "User profile fetched",
   ADMINS_FETCHED: "Admins fetched",
   IMAGES_FETCHED: "Images fetched",
   MODEL_FETCHED: "Data fetched",

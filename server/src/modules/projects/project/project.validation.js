@@ -52,7 +52,6 @@ export class ProjectValidation {
     deliveryTime: z.union([z.string(), z.date()]).nullish(),
     oldStatus: z.string().optional(),
     type: z.string().optional(),
-    role: z.string().optional(),
     area: z.union([z.number(), z.string()]).nullish(),
     groupId: z.coerce.number().int().positive().optional(),
     groupTitle: z.string().optional(),

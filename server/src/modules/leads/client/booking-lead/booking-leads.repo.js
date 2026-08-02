@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 import prisma from "../../../../infra/prisma/prisma.js";
 import { AppError } from "../../../../shared/errors/AppError.js";
+import { leadsMessagesCodes, messagesNames } from "@dms/shared";
+
+const TK = messagesNames.leadsMessages;
 
 const bookingLeadSelect = {
   id: true,
@@ -153,7 +156,11 @@ export class BookingLeadsRepository {
         clientData.email,
       );
       if (hasSubmittedToday) {
-        throw new AppError("booking.alreadySubmittedToday", 409);
+        throw new AppError({
+          code: leadsMessagesCodes.BOOKING_LEAD_ALREADY_SUBMITTED_TODAY,
+          statusCode: 409,
+          translationKey: TK,
+        });
       }
 
       const existingClient = await findExistingClientForSubmit(tx, {

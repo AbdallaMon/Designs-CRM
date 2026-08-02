@@ -27,10 +27,8 @@ export default function LanguageProvider({
       ".cloned-location-title"
     );
     const locationDic = {
-      "Inside UAE": "داخل الامارات",
-      "Out side UAE": "خارج الامارات",
-      "داخل الامارات": "Inside UAE",
-      "خارج الامارات": "Out side UAE",
+      "Inside UAE": "Inside UAE",
+      "Out side UAE": "Outside UAE",
     };
     if (clonedLocationTitle) {
       clonedLocationTitle.textContent =

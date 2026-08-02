@@ -41,7 +41,7 @@ class NoteRepository {
       data,
     });
 
-    return { data: note, message: "Note created successfully" };
+    return { data: note };
   }
 }
 

@@ -40,7 +40,7 @@ export const CategoriesDialog = ({
 
   const fetchCategories = async () => {
     const request = await getData({
-      url: `shared/questions/versa/${clientLeadId}?`,
+      url: `questions/versa/${clientLeadId}?`,
       setLoading,
     });
     if (request.status === 200) {

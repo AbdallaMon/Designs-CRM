@@ -53,13 +53,13 @@ export async function getDesignImages({ notArchived, skip, limit }) {
 
 export async function createDesignImage({ data }) {
   if (!data.styleId) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_STYLE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_STYLE_REQUIRED, statusCode: 400 });
   }
   if (!data.spaceIds || data.spaceIds.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_SPACE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_SPACE_REQUIRED, statusCode: 400 });
   }
   if (!data.imageUrl) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_IMAGE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_IMAGE_REQUIRED, statusCode: 400 });
   }
   await prisma.designImage.create({
     data: {
@@ -79,14 +79,14 @@ export async function createDesignImage({ data }) {
 
 export async function createBulkDesignImage({ data }) {
   if (!data.styleId) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_STYLE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_STYLE_REQUIRED, statusCode: 400 });
   }
   if (!data.spaceIds || data.spaceIds.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_SPACE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_SPACE_REQUIRED, statusCode: 400 });
   }
   const images = data.imagesUrls;
   if (!images || images.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_IMAGE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_IMAGE_REQUIRED, statusCode: 400 });
   }
   images.forEach(async (image) => {
     await createDesignImage({

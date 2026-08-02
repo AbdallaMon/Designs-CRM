@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -39,7 +39,7 @@ describe("leaf-domains role parity (SHARED gate = all 9 authed roles)", () => {
   it("grants every leaf code to ALL 9 authed roles", () => {
     expect(ALL_USER_ROLES.length).toBe(9);
     for (const role of ALL_USER_ROLES) {
-      const codes = getPermissionsForRole(role);
+      const codes = permissionsForPersona(role);
       for (const code of LEAF_ALL) {
         expect(codes, `${role} should hold ${code}`).toContain(code);
       }
@@ -50,8 +50,7 @@ describe("leaf-domains role parity (SHARED gate = all 9 authed roles)", () => {
     // A scoped role with NO isSuperSales flag still holds every leaf code (the legacy
     // SHARED gate did not depend on isSuperSales).
     const staff = getEffectivePermissions({
-      role: USER_ROLES.STAFF,
-      isSuperSales: false,
+      profile: profileForPersona(USER_ROLES.STAFF),
     }).permissions;
     for (const code of LEAF_ALL) {
       expect(staff).toContain(code);
@@ -59,7 +58,7 @@ describe("leaf-domains role parity (SHARED gate = all 9 authed roles)", () => {
   });
 
   it("does not WIDEN — leaf codes are not admin-tier-only (every role, incl. CONTACT_INITIATOR)", () => {
-    const ci = getPermissionsForRole(USER_ROLES.CONTACT_INITIATOR);
+    const ci = permissionsForPersona(USER_ROLES.CONTACT_INITIATOR);
     for (const code of LEAF_ALL) {
       expect(ci).toContain(code);
     }

@@ -3,6 +3,12 @@ import { TelegramClient, Api } from "telegram";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { env } from "../../../config/env.js";
 import { StringSession } from "telegram/sessions/StringSession.js";
+import {
+  adminResidualMessagesCodes,
+  messagesNames,
+} from "@dms/shared";
+
+const TK = messagesNames.adminResidualMessages;
 
 class TelegramManager {
   constructor() {
@@ -28,7 +34,11 @@ class TelegramManager {
   }
   async connect() {
     if (!this.client) {
-      throw new AppError("Telegram config is not set", 500);
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CONFIG_MISSING,
+        statusCode: 500,
+        translationKey: TK,
+      });
     }
     if (this.client.connected) return this.client;
     if (!this.connectingPromise) {
@@ -41,7 +51,11 @@ class TelegramManager {
   }
   async checkHealth() {
     if (!this.client) {
-      throw new AppError("Telegram config is not set", 500);
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CONFIG_MISSING,
+        statusCode: 500,
+        translationKey: TK,
+      });
     }
 
     try {
@@ -82,13 +96,23 @@ class TelegramManager {
     }
   }
   getClient() {
-    if (!this.client) throw new Error("Telegram client not initialized");
+    if (!this.client) {
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CLIENT_NOT_INITIALIZED,
+        statusCode: 500,
+        translationKey: TK,
+      });
+    }
     return this.client;
   }
 
   getSessionString() {
     if (!this.client) {
-      throw new AppError("Telegram client not initialized", 500);
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CLIENT_NOT_INITIALIZED,
+        statusCode: 500,
+        translationKey: TK,
+      });
     }
     const sessionString = this.client.session.save();
     return sessionString;

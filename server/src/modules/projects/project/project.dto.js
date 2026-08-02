@@ -48,7 +48,7 @@ export function sortProjectsByTypeOrder(projects, order = PROJECT_TYPES) {
 function isFullScope(authUser) {
   return (
     authUser?.currentProfileKey === "SUPER_SALES" ||
-    ["ADMIN", "SUPER_ADMIN"].includes(authUser?.role)
+    Boolean(authUser?.isAdminTier)
   );
 }
 

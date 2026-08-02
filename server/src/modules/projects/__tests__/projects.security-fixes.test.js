@@ -9,10 +9,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // user-profile checker); the DB methods are unused here.
 vi.mock("../project/project.repo.js", () => ({
   projectRepository: {
-    hasFullScope({ role, currentProfileKey, isAdminTier }, mode) {
+    hasFullScope({ currentProfileKey, isAdminTier }, mode) {
       if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
-      const roles = mode === "mutate" ? ["ADMIN", "SUPER_ADMIN"] : ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
-      return roles.includes(role);
+      return mode === "view" && currentProfileKey === "ACCOUNTANT";
     },
     findScopedProject: vi.fn(),
     findProjectStatus: vi.fn(),
@@ -20,7 +19,7 @@ vi.mock("../project/project.repo.js", () => ({
 }));
 
 vi.mock("../project/project.flows.js", () => ({
-  legacyDefaults: {
+  projectOperations: {
     getLeadByPorjects: vi.fn(),
     getLeadByPorjectsColumn: vi.fn(),
     getLeadDetailsByProject: vi.fn(),
@@ -44,17 +43,17 @@ vi.mock("../shared/project-scope.js", () => ({
 }));
 
 import { ProjectUsecase } from "../project/project.usecase.js";
-import { TaskUsecase, legacyDefaults as taskLegacy } from "../task/task.usecase.js";
+import { TaskUsecase, taskOperations } from "../task/task.usecase.js";
 import { ProjectValidation } from "../project/project.validation.js";
 import { TaskValidation } from "../task/task.validation.js";
 import { projectUsecase as projectScope } from "../shared/project-scope.js";
 import { projectsMessagesCodes } from "@dms/shared";
 
 
-const admin = { id: 1, role: "ADMIN", permissions: [] };
-const superSales = { id: 2, role: "STAFF", currentProfileKey: "SUPER_SALES", isAdminTier: true, permissions: [] };
-const accountant = { id: 3, role: "ACCOUNTANT", permissions: [] };
-const designer = { id: 4, role: "THREE_D_DESIGNER", permissions: [] };
+const admin = { id: 1, currentProfileKey: "ADMIN", isAdminTier: true, permissions: [] };
+const superSales = { id: 2, currentProfileKey: "SUPER_SALES", permissions: [] };
+const accountant = { id: 3, currentProfileKey: "ACCOUNTANT", permissions: [] };
+const designer = { id: 4, currentProfileKey: "DESIGNER_3D", permissions: [] };
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -70,7 +69,7 @@ describe("FIX 1 — TaskUsecase.deleteTask (broad-delete IDOR)", () => {
   it("ALWAYS enforces the project mutate scope before deleting a Task", async () => {
     projectScope.resolveTaskProject.mockResolvedValue({ id: 60, projectId: 10 });
     projectScope.checkIfUserCanMutateProject.mockResolvedValue({ id: 10 });
-    vi.spyOn(taskLegacy, "deleteAModel").mockResolvedValue({ data: {} });
+    vi.spyOn(taskOperations, "deleteAllowedModel").mockResolvedValue({ data: {} });
     const usecase = new TaskUsecase();
     await usecase.deleteTask({ id: 60, body: { model: "Task" }, authUser: designer });
     expect(projectScope.checkIfUserCanMutateProject).toHaveBeenCalledWith({ id: 10, authUser: designer });
@@ -80,18 +79,18 @@ describe("FIX 1 — TaskUsecase.deleteTask (broad-delete IDOR)", () => {
     const denied = Object.assign(new Error(projectsMessagesCodes.PROJECT_MUTATE_DENIED), { statusCode: 403 });
     projectScope.resolveTaskProject.mockResolvedValue({ id: 61, projectId: 99 });
     projectScope.checkIfUserCanMutateProject.mockRejectedValue(denied);
-    const deleteAModel = vi.spyOn(taskLegacy, "deleteAModel");
+    const deleteAllowedModel = vi.spyOn(taskOperations, "deleteAllowedModel");
     const usecase = new TaskUsecase();
     await expect(
       usecase.deleteTask({ id: 61, body: { model: "Task" }, authUser: designer }),
     ).rejects.toMatchObject({ statusCode: 403, message: projectsMessagesCodes.PROJECT_MUTATE_DENIED });
-    expect(deleteAModel).not.toHaveBeenCalled(); // scope BEFORE delete
+    expect(deleteAllowedModel).not.toHaveBeenCalled(); // scope BEFORE delete
   });
 
   it("delegates with a SERVER-FIXED model:'Task' and NEVER forwards a client cascade", async () => {
     projectScope.resolveTaskProject.mockResolvedValue({ id: 62, projectId: 10 });
     projectScope.checkIfUserCanMutateProject.mockResolvedValue({ id: 10 });
-    vi.spyOn(taskLegacy, "deleteAModel").mockResolvedValue({ data: {} });
+    vi.spyOn(taskOperations, "deleteAllowedModel").mockResolvedValue({ data: {} });
     const usecase = new TaskUsecase();
     // a malicious body would carry a different model + a deleteModelesBeforeMain cascade;
     // the usecase must ignore both (validation also blocks them — see schema test below).
@@ -100,7 +99,7 @@ describe("FIX 1 — TaskUsecase.deleteTask (broad-delete IDOR)", () => {
       body: { model: "Task", deleteModelesBeforeMain: [{ name: "Note", key: "taskId" }] },
       authUser: designer,
     });
-    const arg = taskLegacy.deleteAModel.mock.calls[0][0];
+    const arg = taskOperations.deleteAllowedModel.mock.calls[0][0];
     expect(arg.data).toEqual({ model: "Task" });
     expect(arg.data.deleteModelesBeforeMain).toBeUndefined();
   });

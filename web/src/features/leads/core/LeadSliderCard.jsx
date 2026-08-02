@@ -46,16 +46,16 @@ export function LeadSliderCard({ lead, setData }) {
   const idLabel = `#${lead?.id.toString().padStart(7, "0")}`;
 
   const showContact =
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    user.role === "CONTACT_INITIATOR" ||
+    user.profile === "ADMIN" ||
+    user.profile === "SUPER_ADMIN" ||
+    user.profile === "CONTACT_INITIATOR" ||
     user.profile === "SUPER_SALES";
 
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       { id: lead.id },
       setLoading,
-      `shared/client-leads`,
+      `leads`,
       false,
       "Assigning",
       false,
@@ -129,7 +129,7 @@ export function LeadSliderCard({ lead, setData }) {
               />
             )}
             {/* Claimant path: a STAFF whose ACTIVE profile is not super-sales (profile-based, no isSuperSales flag). */}
-            {user.role === "STAFF" && user.profile !== "SUPER_SALES" && (
+            {["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) && user.profile !== "SUPER_SALES" && (
               <ConfirmWithActionModel
                 title="Are you sure you want to get this lead and assign it to you as a new deal?"
                 handleConfirm={() => createADeal(lead)}
@@ -146,7 +146,7 @@ export function LeadSliderCard({ lead, setData }) {
                 setData((data) => data.filter((l) => l.id !== lead.id))
               }
             />
-            {user.role !== "CONTACT_INITIATOR" && (
+            {user.profile !== "CONTACT_INITIATOR" && (
               <Button
                 fullWidth
                 onClick={() => setPreviewDialogOpen(true)}

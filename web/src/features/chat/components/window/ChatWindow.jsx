@@ -103,7 +103,7 @@ export function ChatWindow({
     const response = await getData({
       url: clientId
         ? `client/chat/${roomId}/pinned-messages?clientId=${clientId}&token=${token}&`
-        : `shared/chat/rooms/${roomId}/pinned-messages`,
+        : `chat/rooms/${roomId}/pinned-messages`,
       setLoading: setLoadingPinnedMessages,
     });
 
@@ -342,7 +342,7 @@ export function ChatWindow({
     const response = await handleRequestSubmit(
       { userIds: memberIds },
       setToastLoading,
-      `shared/chat/rooms/${roomId}/members`,
+      `chat/rooms/${roomId}/members`,
       false,
       "Adding members",
       false,
@@ -359,7 +359,7 @@ export function ChatWindow({
     const response = await handleRequestSubmit(
       { memberId: memberId },
       setToastLoading,
-      `shared/chat/rooms/${roomId}/members/${memberId}`,
+      `chat/rooms/${roomId}/members/${memberId}`,
       false,
       "Removing member",
       false,
@@ -464,8 +464,8 @@ export function ChatWindow({
 
     try {
       let url = isAdminUser
-        ? `admin/all-users?`
-        : `shared/all-related-chat-users?`;
+        ? `users/all-users?`
+        : `users/related-chat-directory?`;
       if (projectId) {
         url += `projectId=${projectId}&`;
       }

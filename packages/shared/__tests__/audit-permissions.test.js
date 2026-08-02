@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   buildNavigationTabs,
   PERMISSIONS,
   USER_ROLES,
@@ -33,20 +33,20 @@ describe("audit.log.view permission wiring", () => {
 
   it("grants audit.log.view to ADMIN + SUPER_ADMIN base roles", () => {
     for (const role of [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]) {
-      expect(getPermissionsForRole(role)).toContain(VIEW);
-      expect(getEffectivePermissions({ role }).permissions).toContain(VIEW);
+      expect(permissionsForPersona(role)).toContain(VIEW);
+      expect(getEffectivePermissions({ profile: profileForPersona(role) }).permissions).toContain(VIEW);
     }
   });
 
   it("does NOT grant audit.log.view to any non-admin role", () => {
     for (const role of NON_ADMIN_ROLES) {
-      expect(getPermissionsForRole(role)).not.toContain(VIEW);
-      expect(getEffectivePermissions({ role }).permissions).not.toContain(VIEW);
+      expect(permissionsForPersona(role)).not.toContain(VIEW);
+      expect(getEffectivePermissions({ profile: profileForPersona(role) }).permissions).not.toContain(VIEW);
     }
   });
 
   it("does NOT layer audit.log.view onto isSuperSales (admin-only, not an isSuperSales surface)", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.SUPER_SALES, isSuperSales: true });
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.SUPER_SALES, { superSales: true }) });
     expect(permissions).not.toContain(VIEW);
   });
 

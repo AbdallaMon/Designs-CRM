@@ -52,7 +52,7 @@ const TestQuestionManager = ({ testId }) => {
   // Memoize the getQuestions function to prevent unnecessary re-renders
   const getQuestions = useCallback(async () => {
     await getDataAndSet({
-      url: `admin/courses/tests/${testId}`,
+      url: `courses/tests/${testId}`,
       setLoading,
       setData: setQuestions,
     });
@@ -192,7 +192,7 @@ const TestQuestionManager = ({ testId }) => {
     const req = await handleRequestSubmit(
       newQuestion,
       setToastLoading,
-      `admin/courses/tests/${testId}/test-questions`,
+      `courses/tests/${testId}/test-questions`,
       false,
       "Creating",
       false,
@@ -218,7 +218,7 @@ const TestQuestionManager = ({ testId }) => {
       const req = await handleRequestSubmit(
         {},
         setToastLoading,
-        `admin/courses/tests/${testId}/test-questions/${questionId}`,
+        `courses/tests/${testId}/test-questions/${questionId}`,
         false,
         "Deleting",
         false,
@@ -255,7 +255,7 @@ const TestQuestionManager = ({ testId }) => {
     const req = await handleRequestSubmit(
       questions,
       setToastLoading,
-      `admin/courses/tests/${testId}/test-questions/re-order`,
+      `courses/tests/${testId}/test-questions/re-order`,
       false,
       "Saving"
     );

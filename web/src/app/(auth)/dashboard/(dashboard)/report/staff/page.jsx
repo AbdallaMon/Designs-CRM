@@ -20,6 +20,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { MdDownload, MdSearch, MdRefresh } from 'react-icons/md';
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 
 const StaffReportFilters = () => {
     const [filters, setFilters] = useState({
@@ -59,7 +60,7 @@ const StaffReportFilters = () => {
     const fetchReportData = async () => {
         setLoading(true);
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_URL+'/admin/reports/staff-report', {
+            const response = await apiRequest('admin/reports/staff-report', {
                 method: 'POST',
                 credentials: "include",
                 headers: {
@@ -67,10 +68,11 @@ const StaffReportFilters = () => {
                 },
                 body: JSON.stringify(filters),
             });
-            const data = await response.json();
-            // Only render a real report payload; an error body (no summary/staffStats)
+            const envelope = await response.json();
+            const data = envelope?.data;
+            // Only render a real report payload; an error envelope
             // must not reach the table renderer or it crashes on `summary.totalStaff`.
-            if (response.ok && data?.summary) {
+            if (response.ok && envelope?.success && data?.summary) {
                 setReportData(data);
             } else {
                 console.error('Staff report request failed:', response.status, data);
@@ -85,7 +87,7 @@ const StaffReportFilters = () => {
 
     const downloadExcel = async () => {
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_URL+'/admin/reports/staff-report/excel', {
+            const response = await apiRequest('admin/reports/staff-report/excel', {
                 method: 'POST',
                 credentials: "include",
                 headers: {
@@ -108,7 +110,7 @@ const StaffReportFilters = () => {
 
     const downloadPDF = async () => {
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_URL+'/admin/reports/staff-report/pdf', {
+            const response = await apiRequest('admin/reports/staff-report/pdf', {
                 method: 'POST',
                 credentials: "include",
                 headers: {

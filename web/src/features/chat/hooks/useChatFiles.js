@@ -59,7 +59,7 @@ export function useChatFiles(
           ? `client/chat/rooms/${roomId}/files?clientId=${clientId}&token=${token}&${queryParams}&uniqueMonths=${JSON.stringify(
               uniqueMonths
             )}&`
-          : `shared/chat/rooms/${roomId}/files?${queryParams}&uniqueMonths=${JSON.stringify(
+          : `chat/rooms/${roomId}/files?${queryParams}&uniqueMonths=${JSON.stringify(
               uniqueMonths
             )}&`,
         setLoading: () => {},
@@ -160,7 +160,6 @@ export function useChatFiles(
     filesEndRef,
     scrollContainerRef,
     pageRef,
-    files,
     uniqueMonths,
   };
 }

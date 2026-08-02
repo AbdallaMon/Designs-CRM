@@ -16,7 +16,6 @@ export const PROFILE_OPTIONS = [
   { value: "NORMAL_SALES", label: "Sales" },
   { value: "PRIMARY_SALES", label: "Primary sales" },
   { value: "SUPER_SALES", label: "Super sales" },
-  { value: "SUPER_SALES_BASE", label: "Super sales (legacy role)" },
   { value: "ADMIN", label: "Admin" },
   { value: "SUPER_ADMIN", label: "Super admin" },
   { value: "ACCOUNTANT", label: "Accountant" },
@@ -36,16 +35,18 @@ export function assignedProfiles(item) {
 
 // The label of the user's ACTIVE profile (falls back to the legacy profile string).
 export function currentProfileName(item) {
-  const current = assignedProfiles(item).find((p) => p?.id === item.currentProfileId);
+  const current =
+    item.currentProfile ??
+    assignedProfiles(item).find((p) => p?.id === item.currentProfileId);
   if (current) return current.label || PROFILE_LABEL[current.key] || current.key;
-  return PROFILE_LABEL[item.profile] || item.profile || "—";
+  return "—";
 }
 
 // A stable color for a user row, keyed off the (legacy) base role which the backend
 // keeps in sync with the current profile. No more isPrimary/isSuperSales branching.
 export function userColor(item) {
   if (!item.isActive) return usersHexColors.banned;
-  return usersHexColors[item.role] || usersHexColors.default || "#6b7280";
+  return usersHexColors[item.currentProfile?.key] || usersHexColors.default;
 }
 
 export const columns = [
@@ -114,7 +115,7 @@ export const columns = [
 
   {
     name: "profile",
-    label: "Roles",
+    label: "Profiles",
     type: "function",
     render: (item) => {
       const safeColor = userColor(item);

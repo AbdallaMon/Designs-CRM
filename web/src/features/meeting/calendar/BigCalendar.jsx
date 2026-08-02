@@ -68,7 +68,7 @@ export default function BigCalendar({
       setLoading(true);
 
       const req = await getData({
-        url: `shared/calendar-management/dates/month?year=${displayMonth.year()}&month=${
+        url: `calendar-management/dates/month?year=${displayMonth.year()}&month=${
           displayMonth.month() + 1
         }&isAdmin=${isAdmin}&`,
         setLoading,
@@ -482,7 +482,7 @@ export default function BigCalendar({
         </Box>
 
         {/* Admin Controls */}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+        {(user.profile === "ADMIN" || user.profile === "SUPER_ADMIN") && (
           <Box
             sx={{
               px: 3,

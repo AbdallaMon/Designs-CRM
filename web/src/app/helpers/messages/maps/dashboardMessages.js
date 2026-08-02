@@ -15,6 +15,7 @@ export const dashboardMessages = {
   LATEST_LEADS_FETCHED: "Latest leads fetched",
   RECENT_ACTIVITIES_FETCHED: "Recent activities fetched",
   DESIGNER_METRICS_FETCHED: "Designer metrics fetched",
+  DASHBOARD_FETCH_FAILED: "Dashboard data could not be loaded",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
   OK: "Operation completed successfully",

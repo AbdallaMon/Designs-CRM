@@ -149,7 +149,7 @@ const AccountantKanbanLeadCard = ({
     const request = await handleRequestSubmit(
       {},
       setLoading,
-      `accountant/payments/overdue/${id}`,
+      `accounting/payments/${id}/actions/mark-overdue`,
       false,
       "Marking as over due"
     );
@@ -288,7 +288,7 @@ const AccountantKanbanLeadCard = ({
               </Stack>
             }
             inputs={inputs}
-            href={`accountant/payments/pay/${payment.id}`}
+            href={`accounting/payments/${payment.id}/actions/pay`}
             handleSubmit={(data) => {
               handleAfterEdit(data);
             }}

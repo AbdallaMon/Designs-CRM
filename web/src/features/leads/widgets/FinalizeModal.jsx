@@ -56,7 +56,7 @@ export function FinalizeModal({
     } else if (type === "ID") {
       if (current) {
         const req = await getData({
-          url: `shared/contracts/${current}`,
+          url: `contracts/${current}`,
           setLoading: setLoadingContract,
         });
         if (req.status === 200) {
@@ -83,11 +83,11 @@ export function FinalizeModal({
         discount: discount,
         priceWithOutDiscount: price,
         oldStatus: lead.status,
-        isAdmin: user.role === "ADMIN",
+        isAdmin: user.profile === "ADMIN",
         priceNote,
       },
       setLoading,
-      `shared/client-leads/${id}/actions/change-status`,
+      `leads/${id}/actions/change-status`,
       false,
       "Finalizing the lead",
       false,

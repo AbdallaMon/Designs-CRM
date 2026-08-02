@@ -13,7 +13,6 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes } from "@dms/shared";
 import { paymentRepository } from "./payment.repo.js";
-import { translateLegacyAccountingError } from "../accounting.errors.js";
 
 class PaymentUsecase {
   // ── relocated money orchestration (guards preserved byte-identical) ──────────────
@@ -21,36 +20,30 @@ class PaymentUsecase {
   // accounting.errors.js); the three writes are delegated to the repo.
   async _processPayment(paymentId, amount, issuedDate, file, userId) {
     if (!amount || !issuedDate) {
-      throw new Error("Please fill all data");
+      throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
     }
     if (issuedDate === "1970-01-01T00:00:00.000Z") {
-      throw new Error("Please enter a date");
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_DATE_REQUIRED, statusCode: 400 });
     }
     const payment = await paymentRepository.findPayment({ id: paymentId });
 
     if (!payment) {
-      throw new Error("Payment not found");
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_NOT_FOUND, statusCode: 404 });
     }
     if (
       payment.status === "FULLY_PAID" &&
       payment.amountPaid === payment.amount
     ) {
-      throw new Error(
-        "Invalid Payment: The payment has already been fully paid."
-      );
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID, statusCode: 409 });
     }
     const pendingAmount = payment.amount - (payment.amountPaid || 0);
 
     if (amount > pendingAmount) {
-      throw new Error(
-        `Invalid Payment: The pending amount is ${pendingAmount}. The amount provided (${amount}) exceeds the pending balance.`
-      );
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING, statusCode: 400 });
     }
 
     if (amount <= 0) {
-      throw new Error(
-        `Invalid Payment: The payment amount must be greater than zero. You provided ${amount}.`
-      );
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_AMOUNT_INVALID, statusCode: 400 });
     }
 
     const newAmountPaid = Number(payment.amountPaid || 0) + Number(amount);
@@ -93,13 +86,11 @@ class PaymentUsecase {
     const payment = await paymentRepository.findPayment({ id: Number(paymentId) });
 
     if (!payment) {
-      throw new Error("Payment not found");
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_NOT_FOUND, statusCode: 404 });
     }
 
     if (payment.status === "FULLY_PAID") {
-      throw new Error(
-        "Invalid Payment: The payment has already been fully paid."
-      );
+      throw new AppError({ code: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID, statusCode: 409 });
     }
 
     const newPayment = await paymentRepository.updatePaymentOverdue({ id: payment.id });
@@ -113,7 +104,7 @@ class PaymentUsecase {
   // runs against a non-existent payment, and stashes the true server state on req.scoped.
   async checkPaymentExists({ paymentId }) {
     const payment = await paymentRepository.findPaymentState({ paymentId });
-    if (!payment) throw new AppError(accountingMessagesCodes.PAYMENT_NOT_FOUND, 404);
+    if (!payment) throw new AppError({ code: accountingMessagesCodes.PAYMENT_NOT_FOUND, statusCode: 404 });
     return payment;
   }
 
@@ -160,21 +151,19 @@ class PaymentUsecase {
     // Translate the money-guard throws (not-found / already-paid / amount-exceeds /
     // amount-invalid / date-required / required-fields) to AppError codes; unknown errors
     // re-throw as-is. Arithmetic/rounding inside _processPayment is untouched.
-    return translateLegacyAccountingError(() =>
-      this._processPayment(
-        Number(paymentId),
-        Number(amount),
-        new Date(issuedDate),
-        file,
-        authUser.id,
-      ),
+    return this._processPayment(
+      Number(paymentId),
+      Number(amount),
+      new Date(issuedDate),
+      file,
+      authUser.id,
     );
   }
 
   // POST /payments/:paymentId/actions/mark-overdue — Known throws: "Payment not found" /
   // "already fully paid" → AppError codes.
   async markOverdue({ paymentId }) {
-    return translateLegacyAccountingError(() => this._markPaymentAsOverdue(paymentId));
+    return this._markPaymentAsOverdue(paymentId);
   }
 
   // POST /payments/:paymentId/actions/change-status — the new level is enum-validated at

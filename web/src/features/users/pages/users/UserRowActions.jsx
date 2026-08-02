@@ -29,7 +29,7 @@ export default function UserRowActions({ item, setData, banAUser }) {
   const ViewButton = (
     <Button
       component={Link}
-      href={`/dashboard/users/${item.id}?role=${item.role}&`}
+      href={`/dashboard/users/${item.id}`}
       size="small"
       variant="outlined"
       startIcon={<MdVisibility />}

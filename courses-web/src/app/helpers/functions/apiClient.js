@@ -5,19 +5,20 @@
 // helpers (a) point at the `/v2` base, (b) transparently refresh the access token on 401,
 // and (c) normalize the envelope back into the flat shape master's consumers expect.
 
-import { mapLegacyPathToV2 } from "./apiPathMap";
-
 // `NEXT_PUBLIC_API` = the backend origin, e.g. http://localhost:4001 (no version prefix —
 // the API is mounted at the root). `NEXT_PUBLIC_URL` is the same bare origin, also used for
 // sockets / file links. Falls back to NEXT_PUBLIC_URL if API is unset.
 // Strip any trailing slash so we never build `https://host//files/chunks` — a double slash
 // makes some proxies (Coolify/Traefik) issue a normalizing 30x redirect, which downgrades a
 // chunk POST to GET and 404s ("Route not found: GET /files/chunks").
-export const API_BASE = (
+const API_ORIGIN = (
   process.env.NEXT_PUBLIC_API ||
   process.env.NEXT_PUBLIC_URL ||
   ""
 ).replace(/\/+$/, "");
+export const API_BASE = API_ORIGIN.endsWith("/v2")
+  ? API_ORIGIN
+  : `${API_ORIGIN}/v2`;
 
 // Single in-flight refresh shared across all callers (prevents a refresh storm when many
 // requests 401 at once).
@@ -40,8 +41,8 @@ async function refreshAccessToken() {
 // always sends cookies, retries ONCE after a successful token refresh on 401. `path` is
 // relative (no leading /v2), query already built.
 export async function apiRequest(path, opts = {}, _retry = true) {
-  const mapped = mapLegacyPathToV2(String(path));
-  const url = `${API_BASE}/${mapped.replace(/^\//, "")}`;
+  const canonicalPath = String(path).replace(/^\/?(?:v2\/)?/, "");
+  const url = `${API_BASE}/${canonicalPath}`;
   const response = await fetch(url, { credentials: "include", ...opts });
   if (response.status === 401 && _retry && !opts._skipRefresh) {
     const ok = await refreshAccessToken();

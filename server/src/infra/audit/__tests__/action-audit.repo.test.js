@@ -44,11 +44,17 @@ describe("actionAuditRepository", () => {
     expect(await actionAuditRepository.findUsersByIds([])).toEqual([]);
     expect(prisma.user.findMany).not.toHaveBeenCalled();
 
-    prisma.user.findMany.mockResolvedValue([{ id: 1, name: "A", role: "ADMIN" }]);
+    prisma.user.findMany.mockResolvedValue([
+      { id: 1, name: "A", currentProfile: { key: "ADMIN", label: "Admin" } },
+    ]);
     await actionAuditRepository.findUsersByIds([1, 2]);
     expect(prisma.user.findMany).toHaveBeenCalledWith({
       where: { id: { in: [1, 2] } },
-      select: { id: true, name: true, role: true },
+      select: {
+        id: true,
+        name: true,
+        currentProfile: { select: { key: true, label: true } },
+      },
     });
   });
 });

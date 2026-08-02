@@ -23,11 +23,10 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 export default function DeleteModelButton({
   item,
   model,
-  endpoint = "shared/delete",
+  endpoint = "delete",
   contentKey = "content",
   onDelete,
   timeLimit = 5,
-  deleteModelesBeforeMain,
 }) {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
@@ -37,7 +36,7 @@ export default function DeleteModelButton({
 
   const isOlderThanTimeLimit =
     dayjs().diff(dayjs(item.createdAt), "minute") > timeLimit;
-  const isSuperSalesAndTimeNotExceedTwoDays =
+  const hasExtendedDeleteWindow =
     user.profile === "SUPER_SALES" &&
     dayjs().diff(dayjs(item.createdAt), "day") < 2;
   const isAdmin = checkIfAdmin(user);
@@ -45,7 +44,7 @@ export default function DeleteModelButton({
   const canDelete =
     isAdmin ||
     !isOlderThanTimeLimit ||
-    isSuperSalesAndTimeNotExceedTwoDays ||
+    hasExtendedDeleteWindow ||
     (isMeeting && user.profile === "SUPER_SALES");
 
   if (!canDelete) return null;
@@ -57,9 +56,6 @@ export default function DeleteModelButton({
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     const data = { model };
-    if (deleteModelesBeforeMain) {
-      data.deleteModelesBeforeMain = deleteModelesBeforeMain;
-    }
     const deleteResponse = await handleRequestSubmit(
       data,
       setLoading,

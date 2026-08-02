@@ -63,8 +63,7 @@ class BookingLeadSchemas {
       phone: body.phone || "+0123456789",
     }));
 
-  // PATCH accepts exactly one field at a time — validated imperatively in the usecase.
-  // Here we just ensure the body is a plain object with at least one known key.
+  // PATCH accepts exactly one allow-listed field at a time.
   patchBookingLead = z
     .object({
       location: z.string().trim().optional(),
@@ -80,8 +79,10 @@ class BookingLeadSchemas {
       contactAgreement: z.boolean().optional(),
       contactInitialPriceAgreement: z.boolean().optional(),
     })
+    .strict()
     .refine(
-      (data) => Object.values(data).some((v) => v !== undefined),
+      (data) =>
+        Object.values(data).filter((value) => value !== undefined).length === 1,
       "PATCH requires exactly one supported field per request",
     );
 

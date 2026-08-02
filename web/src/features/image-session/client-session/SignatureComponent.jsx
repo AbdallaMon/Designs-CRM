@@ -74,7 +74,10 @@ const SignatureComponent = ({
       const uploadResponse = await uploadInChunks(
         file,
         setProgress,
-        setOverlay
+        setOverlay,
+        {
+          publicAccess: { purpose: "IMAGE_SESSION", token },
+        }
       );
 
       const url = uploadResponse.url;

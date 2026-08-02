@@ -10,19 +10,14 @@ export const env = {
   ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m",
   REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
   SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
+  SMTP_SECURE: process.env.SMTP_SECURE === "true",
   EMAIL_USERNAME: process.env.EMAIL_USERNAME,
   EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
-  AHMED_EMAIL: process.env.AHMED_EMAIL,
-  FTP_HOST: process.env.FTP_HOST,
-  FTP_USER: process.env.FTP_USER,
-  FTP_PASSWORD: process.env.FTP_PASSWORD,
-  FTP_PORT: Number(process.env.FTP_PORT),
-  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  CLIENT_EMAIL_FROM: process.env.CLIENT_EMAIL_FROM,
   TELE_API_ID: Number(process.env.TELE_API_ID),
   TELE_API_HASH: process.env.TELE_API_HASH,
-  TELEGRAM_PHONE_NUMBER: process.env.TELEGRAM_PHONE_NUMBER,
   TELEGRAM_SESSION: process.env.TELEGRAM_SESSION,
-  SECRET_KEY: process.env.SECRET_KEY,
   BACKFILL_SECRET: process.env.BACKFILL_SECRET,
   ALLOWED_DOMAINS: process.env.ALLOWED_DOMAINS,
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
@@ -34,20 +29,31 @@ export const env = {
   // Per-frontend public domains (link/asset building).
   CRM_DOMAIN: process.env.CRM_DOMAIN,
   PORTFOLIO_DOMAIN: process.env.PORTFOLIO_DOMAIN,
-  COURSES_DOMAIN: process.env.COURSES_DOMAIN,
+  CRM_ORIGIN: process.env.CRM_ORIGIN,
+  DASHBOARD_ORIGIN: process.env.DASHBOARD_ORIGIN,
+  COURSES_ORIGIN: process.env.COURSES_ORIGIN,
+  PORTFOLIO_ORIGIN: process.env.PORTFOLIO_ORIGIN,
+  CONTACT_ORIGIN: process.env.CONTACT_ORIGIN,
+  BOOKING_ORIGIN: process.env.BOOKING_ORIGIN,
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
   UPLOADS_PATH: process.env.UPLOADS_PATH || "uploads",
   JWT_RESET_SECRET: process.env.JWT_RESET_SECRET,
   JWT_RESET_EXPIRES_IN: process.env.JWT_RESET_EXPIRES_IN || "1h",
+  JWT_UPLOAD_SECRET:
+    process.env.JWT_UPLOAD_SECRET ||
+    process.env.JWT_RESET_SECRET ||
+    process.env.JWT_ACCESS_SECRET,
+  JWT_UPLOAD_EXPIRES_IN: process.env.JWT_UPLOAD_EXPIRES_IN || "10m",
   REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
   REDIS_PORT: Number(process.env.REDIS_PORT) || 6379,
   REDIS_USERNAME: process.env.REDIS_USERNAME || undefined,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
-  UPLOAD_DIR: process.env.UPLOAD_DIR,
-  TEMP_UPLOAD_DIR: process.env.TEMP_UPLOAD_DIR,
-  THUMBNAIL_DIR: process.env.THUMBNAIL_DIR,
-  MAX_FILE_SIZE: Number(process.env.MAX_FILE_SIZE), // default 1GB
-  MAX_FILE_SIZE_FOR_CLIENT: Number(process.env.MAX_FILE_SIZE_FOR_CLIENT), // default 100MB
+  UPLOAD_DIR: process.env.UPLOAD_DIR || "uploads",
+  TEMP_UPLOAD_DIR: process.env.TEMP_UPLOAD_DIR || "uploads/temp",
+  THUMBNAIL_DIR: process.env.THUMBNAIL_DIR || "uploads/thumb",
+  MAX_FILE_SIZE: Number(process.env.MAX_FILE_SIZE) || 1024 * 1024 * 1024,
+  MAX_FILE_SIZE_FOR_CLIENT:
+    Number(process.env.MAX_FILE_SIZE_FOR_CLIENT) || 100 * 1024 * 1024,
   // Runtime ownership flags for the server bootstrap. Default ON (single-instance).
   // On a multi-instance deploy set these to "false" on every instance except the one
   // designated to own BullMQ workers / cron, so jobs are not run / fired more than once.
@@ -56,10 +62,10 @@ export const env = {
 };
 // Per-frontend CORS origins (fallback when ALLOW_ORIGIN is unset). One per site.
 export const allowedOrigins = [
-  process.env.CRM_ORIGIN,
-  process.env.LEGACY_DASHBOARD_ORIGIN,
-  process.env.COURSES_ORIGIN,
-  process.env.PORTFOLIO_ORIGIN,
-  process.env.CONTACT_ORIGIN,
-  process.env.BOOKING_ORIGIN,
+  env.CRM_ORIGIN,
+  env.DASHBOARD_ORIGIN,
+  env.COURSES_ORIGIN,
+  env.PORTFOLIO_ORIGIN,
+  env.CONTACT_ORIGIN,
+  env.BOOKING_ORIGIN,
 ];

@@ -53,7 +53,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
 
   async function getPdfs() {
     await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons/${lessonId}/pdfs`,
+      url: `courses/${courseId}/lessons/${lessonId}/pdfs`,
       setLoading,
       setData: setPdfList,
     });
@@ -71,7 +71,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
       const req = await handleRequestSubmit(
         newPdf,
         setToastLoading,
-        `admin/courses/${courseId}/lessons/${lessonId}/pdfs`,
+        `courses/${courseId}/lessons/${lessonId}/pdfs`,
         false,
         "Creating"
       );
@@ -86,7 +86,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/pdfs/${id}`,
+      `courses/${courseId}/lessons/${lessonId}/pdfs/${id}`,
       false,
       "Deleting",
       false,
@@ -107,7 +107,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       editData,
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/pdfs/${editingId}`,
+      `courses/${courseId}/lessons/${lessonId}/pdfs/${editingId}`,
       false,
       "Updating",
       false,

@@ -23,11 +23,11 @@ const AttemptsList = ({ attempts, onReview }) => (
         mb: 3,
       }}
     >
-      <Typography variant="h5">محاولات الاختبار</Typography>
+      <Typography variant="h5">Test attempts</Typography>
     </Box>
 
     {attempts.length === 0 ? (
-      <Alert severity="info">لا توجد محاولات بعد.</Alert>
+      <Alert severity="info">No attempts yet.</Alert>
     ) : (
       <List>
         {attempts.map((attempt, index) => (
@@ -37,17 +37,17 @@ const AttemptsList = ({ attempts, onReview }) => (
                 primary={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Typography variant="h6">
-                      المحاولة {attempt.attemptCount}
+                      Attempt {attempt.attemptCount}
                     </Typography>
                     {attempt.endTime ? (
                       <Chip
-                        label={attempt.passed ? "نجح" : "فشل"}
+                        label={attempt.passed ? "Passed" : "Failed"}
                         color={attempt.passed ? "success" : "error"}
                         size="small"
                       />
                     ) : (
                       <Chip
-                        label="قيد التقييم"
+                        label="Pending review"
                         color="warning"
                         size="small"
                       />
@@ -57,19 +57,19 @@ const AttemptsList = ({ attempts, onReview }) => (
                 secondary={
                   <Box sx={{ mt: 1 }}>
                     <Typography variant="body2">
-                      بدأ في:{" "}
+                      Started at:{" "}
                       {dayjs(attempt.startTime).format("DD/MM/YYYY - HH:mm")}
                     </Typography>
                     {attempt.endTime && (
                       <>
                         <Typography variant="body2">
-                          انتهى في:{" "}
+                          Finished at:{" "}
                           {dayjs(attempt.endTime).format(
                             "DD/MM/YYYY - HH:mm"
                           )}
                         </Typography>
                         <Typography variant="body2">
-                          النتيجة: {attempt.score}%
+                          Score: {attempt.score}%
                         </Typography>
                       </>
                     )}
@@ -82,7 +82,7 @@ const AttemptsList = ({ attempts, onReview }) => (
                   startIcon={<FaEye />}
                   onClick={() => onReview(attempt)}
                 >
-                  مراجعة
+                  Review
                 </Button>
               </Box>
             </ListItem>

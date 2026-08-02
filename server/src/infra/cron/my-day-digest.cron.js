@@ -19,12 +19,13 @@ export const DIGEST_TOP_N = 5;
 // Roles that can hold a personal queue — mirrors the my_day.view grants. This only
 // pre-filters the candidate list; the per-user PROFILE dispatch inside getMyQueue is the
 // real gate (an admin-profiled user throws MY_DAY_PROFILE_UNSUPPORTED and is skipped).
-const DIGEST_ROLES = [
-  "STAFF",
+const DIGEST_PROFILE_KEYS = [
+  "NORMAL_SALES",
+  "PRIMARY_SALES",
   "SUPER_SALES",
-  "THREE_D_DESIGNER",
-  "TWO_D_DESIGNER",
-  "TWO_D_EXECUTOR",
+  "DESIGNER_3D",
+  "DESIGNER_2D",
+  "EXECUTOR_2D",
   "ACCOUNTANT",
   "CONTACT_INITIATOR",
 ];
@@ -44,12 +45,13 @@ function itemLine(item) {
  */
 export async function runMyDayDigest({ now = new Date() } = {}) {
   const users = await prisma.user.findMany({
-    where: { isActive: true, role: { in: DIGEST_ROLES } },
+    where: {
+      isActive: true,
+      currentProfile: { key: { in: DIGEST_PROFILE_KEYS } },
+    },
     select: {
       id: true,
       name: true,
-      role: true,
-      profile: true,
       currentProfile: { select: { key: true } },
     },
   });
@@ -61,8 +63,8 @@ export async function runMyDayDigest({ now = new Date() } = {}) {
       queue = await myDayUsecase.getMyQueue({
         authUser: {
           id: u.id,
-          role: u.role,
-          currentProfileKey: u.currentProfile?.key ?? u.profile ?? null,
+          currentProfileKey: u.currentProfile?.key ?? null,
+          isAdminTier: false,
         },
         now,
       });

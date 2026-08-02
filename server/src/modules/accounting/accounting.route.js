@@ -1,19 +1,6 @@
-// accounting — aggregate router for the MONEY-sensitive accountant surface (legacy
-// `/accountant/*`, kept mounted in parallel during the strangler window). Mounted under
-// `/v2/accounting`. Authentication is mounted ONCE here; each sub-router declares its
-// per-route permission codes (ACCOUNTING.*), granted to the ACCOUNTANT role only — exactly
-// reproducing the legacy `verifyTokenAndHandleAuthorization(..., "ACCOUNTANT")` gate
-// (VERIFIED: that gate admits ONLY the ACCOUNTANT base role; ADMIN/SUPER_ADMIN/isSuperSales
-// are NOT admitted by the accountant router today).
-//
-// Sub-surface → mount (legacy → v2):
-//   /accountant/payments*              → /v2/accounting/payments
-//   /accountant/notes                  → /v2/accounting/notes
-//   /accountant/operational-expenses   → /v2/accounting/operational-expenses
-//   /accountant/rents*                 → /v2/accounting/rents
-//   /accountant/outcome                → /v2/accounting/outcome
-//   /accountant/summary                → /v2/accounting/summary
-//   /accountant/users*                 → /v2/accounting/users
+// Money-sensitive accounting API mounted under /v2/accounting. Authentication is
+// applied once here; each sub-router declares its action-specific permission code.
+// ACCOUNTANT profiles receive the accounting set, while ADMIN/SUPER_ADMIN receive all.
 //   /accountant/salaries*              → /v2/accounting/salaries
 import { Router } from "express";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";

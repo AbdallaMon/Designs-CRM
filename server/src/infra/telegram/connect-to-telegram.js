@@ -47,7 +47,7 @@ export async function connectToTelegram(withio) {
         cors: {
           origin: [
             process.env.CRM_ORIGIN,
-            process.env.LEGACY_DASHBOARD_ORIGIN,
+            process.env.DASHBOARD_ORIGIN,
             process.env.COURSES_ORIGIN,
           ],
           credentials: true,

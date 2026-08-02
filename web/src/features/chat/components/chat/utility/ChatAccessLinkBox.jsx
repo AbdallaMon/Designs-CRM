@@ -64,7 +64,7 @@ export default function ChatAccessLinkBox({
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/chat/rooms/${roomId}/regenerateToken`,
+      `chat/rooms/${roomId}/regenerateToken`,
       false,
       "Regenerating chat token",
       false,

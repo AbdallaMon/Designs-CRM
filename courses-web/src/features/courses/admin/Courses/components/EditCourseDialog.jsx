@@ -2,9 +2,7 @@
 import React from "react";
 import {
   Box,
-  Typography,
   Button,
-  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -13,11 +11,8 @@ import {
   Switch,
   FormControlLabel,
   CircularProgress,
-  FormGroup,
-  Checkbox,
 } from "@mui/material";
 import { MdEdit } from "react-icons/md";
-import { ROLE_LABELS, USER_ROLES } from "@/app/helpers/constants";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 
 // Edit-course dialog. Controlled by the container: it owns `editForm`/`setEditForm`
@@ -80,29 +75,6 @@ export default function EditCourseDialog({
             <img src={editForm.imageUrl} height={200} width={200} />
           </Box>
         )}
-        <FormGroup sx={{ mt: 2 }}>
-          <Typography variant="subtitle1">Roles</Typography>
-          <Grid container spacing={2}>
-            {Object.keys(USER_ROLES).map((role) => (
-              <Grid key={role} size={{ xs: 6, md: 3 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={editForm?.roles?.includes(role)}
-                      onChange={(e) => {
-                        const updatedRoles = e.target.checked
-                          ? [...editForm.roles, role]
-                          : editForm.roles.filter((r) => r !== role);
-                        setEditForm({ ...editForm, roles: updatedRoles });
-                      }}
-                    />
-                  }
-                  label={ROLE_LABELS[role]}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        </FormGroup>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

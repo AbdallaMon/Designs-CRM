@@ -47,7 +47,7 @@ import SideNav, {
 import RouteGuard from "@/shared/components/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
 import ProfileSwitcher from "@/features/users/ProfileSwitcher";
-import { activeProfileLabel, legacyRoleLabel } from "@/app/helpers/profiles";
+import { activeProfileLabel, currentProfileLabel } from "@/app/helpers/profiles";
 import ProfileDialogTrigger from "@/features/users/profile/ProfileDialogTrigger";
 import ProfileDialog from "@/features/users/profile/ProfileDialog.jsx";
 import Logout from "@/shared/components/buttons/Logout.jsx";
@@ -55,276 +55,6 @@ import SocketProvider from "@/app/providers/SocketProvider";
 import ChatWidget from "@/features/chat/components/chat/ChatWidget";
 
 const SIDENAV_COLLAPSED_KEY = "sidenav-collapsed";
-
-export const adminLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
-  { name: "Users", href: "/dashboard/users", icon: <FiUsers size={20} /> },
-  { name: "Leads", href: "/dashboard/leads", icon: <FiTarget size={20} /> },
-  {
-    name: "Deals",
-    href: "/dashboard/deals",
-    active: "deals",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "Current Deals",
-        href: "/dashboard/deals",
-        active: "deals",
-        icon: <FiDollarSign size={20} />,
-      },
-      {
-        name: "On hold Deals",
-        href: "/dashboard/on-hold-deals",
-        icon: <FiClock size={18} />,
-        active: "on-hold",
-      },
-      {
-        name: "All Deals",
-        href: "/dashboard/all-deals",
-        icon: <FiList size={18} />,
-        active: "all-deals",
-      },
-    ],
-  },
-  {
-    name: "Work stages",
-    href: "/dashboard/work-stages",
-    active: "work",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "All projects",
-        href: "/dashboard/projects",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Plan study department",
-        href: "/dashboard/work-stages/study",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "3D Work stage",
-        href: "/dashboard/work-stages",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Final plan department",
-        href: "/dashboard/work-stages/final-plan",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Quantity calcualtion department",
-        href: "/dashboard/work-stages/quantity",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Archived projects",
-        href: "/dashboard/projects/archived",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "3D Modifcation",
-        href: "/dashboard/work-stages/modification",
-        icon: <FiBriefcase size={20} />,
-      },
-    ],
-  },
-
-  {
-    name: "Reports",
-    href: "/dashboard/report",
-    active: "report",
-    icon: <FiFileText size={20} />, // General report icon
-    subLinks: [
-      {
-        name: "Leads report",
-        href: "/dashboard/report",
-        active: "report",
-        icon: <FiTrendingUp size={20} />, // Icon representing trends or growth for leads
-      },
-      {
-        name: "Staff report",
-        href: "/dashboard/report/staff",
-        icon: <FiUsers size={18} />, // Icon representing a group of people for staff
-        active: "report/staff",
-      },
-    ],
-  },
-  {
-    name: "Images session gallery",
-    href: "/dashboard/image-sessions",
-    icon: <FiImage size={20} />,
-  },
-  {
-    name: "Calendar",
-    href: "/dashboard/calendar",
-    icon: <FiCalendar size={20} />,
-  },
-  {
-    name: "Payments",
-    href: "/dashboard/payments",
-    icon: <FiDollarSign size={20} />,
-  },
-  {
-    name: "Website utilities",
-    href: "/dashboard/website-utilities",
-    icon: <FiHome size={20} />,
-  },
-];
-
-export const superAdminLinks = adminLinks;
-// Regular user navigation links
-export const staffLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
-  { name: "Leads", href: "/dashboard/leads", icon: <FiTarget size={20} /> },
-  {
-    name: "Deals",
-    href: "/dashboard/deals",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "Current Deals",
-        href: "/dashboard/deals",
-        icon: <FiDollarSign size={20} />,
-        active: "deals",
-      },
-      {
-        name: "On hold Deals",
-        href: "/dashboard/on-hold-deals",
-        icon: <FiClock size={18} />,
-        active: "on-hold",
-      },
-      {
-        name: "All Deals",
-        href: "/dashboard/all-deals",
-        icon: <FiList size={18} />,
-        active: "all-deals",
-      },
-    ],
-  },
-  {
-    name: "Calendar",
-    href: "/dashboard/calendar",
-    icon: <FiCalendar size={20} />,
-  },
-  {
-    name: "Payments",
-    href: "/dashboard/payments",
-    icon: <FiDollarSign size={20} />,
-  },
-];
-export const contactInitiatorLinks = [
-  { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
-];
-export const superSalesLinks = [
-  ...staffLinks,
-  { name: "Users", href: "/dashboard/users", icon: <FiUsers size={20} /> },
-];
-export const threeDLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },
-  {
-    name: "Work stages",
-    href: "/dashboard/work-stages",
-    active: "work",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "3D Work stage",
-        href: "/dashboard/work-stages",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Modifcation stage",
-        href: "/dashboard/modification",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Archived projects",
-        href: "/dashboard/archived",
-        icon: <FiBriefcase size={20} />,
-      },
-    ],
-  },
-];
-export const twoDLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },
-  {
-    name: "Work stages",
-    href: "/dashboard/work-stages",
-    active: "work",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "Plan study department",
-        href: "/dashboard/study",
-        icon: <FiBriefcase size={20} />,
-      },
-
-      {
-        name: "Final plan department",
-        href: "/dashboard/final-plan",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Quantity calcualtion department",
-        href: "/dashboard/quantity",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Archived projects",
-        href: "/dashboard/archived",
-        icon: <FiBriefcase size={20} />,
-      },
-    ],
-  },
-];
-export const exacuterLinks = [
-  { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
-  {
-    name: "Work stage",
-    href: "/dashboard/work-stages",
-    icon: <FiBriefcase size={20} />,
-  },
-];
-
-export const accountantLinks = [
-  { name: "Payments", href: "/dashboard", icon: <FiDollarSign size={20} /> }, // Dollar sign for payments
-
-  {
-    name: "Operational Expenses",
-    href: "/dashboard/operational-expenses",
-    icon: <FiShoppingCart size={20} />, // Shopping cart for expenses
-  },
-  {
-    name: "Rents",
-    href: "/dashboard/rents",
-    icon: <FiHome size={20} />, // Home icon for rents
-  },
-  {
-    name: "Salaries",
-    href: "/dashboard/salaries",
-    icon: <FiUsers size={20} />, // Users for salaries (employees)
-  },
-  {
-    name: "Outstanding Payments",
-    href: "/dashboard/outcome",
-    icon: <FiTrendingDown size={20} />, // Trending down for outstanding payments
-  },
-];
-
-export function linksForRole(user) {
-  const role = user?.role;
-  if (role === "ADMIN") return adminLinks;
-  if (role === "STAFF")
-    return user.profile === "SUPER_SALES" ? superSalesLinks : staffLinks;
-  if (role === "THREE_D_DESIGNER") return threeDLinks;
-  if (role === "TWO_D_DESIGNER") return twoDLinks;
-  if (role === "ACCOUNTANT") return accountantLinks;
-  if (role === "TWO_D_EXECUTOR") return exacuterLinks;
-  if (role === "CONTACT_INITIATOR") return contactInitiatorLinks;
-  if (role === "SUPER_SALES") return superSalesLinks;
-  return adminLinks;
-}
 
 // Client-side icon lookup for the backend-driven nav (`navigationTabs` carries
 // no icons — see packages/shared/constants/access/navigation.js). Keyed by the
@@ -428,13 +158,13 @@ function groupLinks(links) {
 
 // Roles whose legacy "Dashboard" top-level link renders FiTarget instead of
 // FiGrid (threeDLinks / twoDLinks in the pre-change arrays above).
-const DASHBOARD_TARGET_ROLES = new Set(["THREE_D_DESIGNER", "TWO_D_DESIGNER"]);
+const DASHBOARD_TARGET_PROFILES = new Set(["DESIGNER_3D", "DESIGNER_2D"]);
 
 // Resolve the client-only icon for a top-level nav tab by `key`, honoring the
 // one role-dependent exception: the "dashboard" key renders FiTarget for
 // 3D/2D designers (matching threeDLinks/twoDLinks) and FiGrid otherwise.
-function resolveTopIcon(key, role) {
-  if (key === "dashboard" && DASHBOARD_TARGET_ROLES.has(role)) {
+function resolveTopIcon(key, profile) {
+  if (key === "dashboard" && DASHBOARD_TARGET_PROFILES.has(profile)) {
     return <FiTarget size={20} />;
   }
   return ICON_BY_KEY[key];
@@ -455,64 +185,24 @@ function mapSubLink(s) {
 // navigationTabs) to the { key, name, href, icon, active, subLinks } shape
 // SideNav expects, attaching the client-only icon by `key` (role-aware for
 // "dashboard"). `key` is kept for section grouping (groupLinks).
-function mapNavigationTab(tab, role) {
+function mapNavigationTab(tab, profile) {
   return {
     key: tab.key,
     name: tab.label,
     href: tab.href,
-    icon: resolveTopIcon(tab.key, role),
+    icon: resolveTopIcon(tab.key, profile),
     ...(tab.active ? { active: tab.active } : {}),
     ...(tab.subLinks?.length ? { subLinks: tab.subLinks.map(mapSubLink) } : {}),
   };
 }
 
-// Same target shape, but from the legacy client-side link arrays (used only
-// for the dev role-override fallback below, since navigationTabs reflects the
-// REAL backend role and won't match an overridden one). The legacy arrays
-// already carry the correct (role-specific) icon directly, so no lookup is
-// needed here for either top-level or sub-link icons.
-function mapLegacyLink(link) {
-  return {
-    name: link.name,
-    href: link.href,
-    icon: link.icon,
-    ...(link.active ? { active: link.active } : {}),
-    ...(link.subLinks?.length
-      ? {
-          subLinks: link.subLinks.map((s) => ({
-            name: s.name,
-            href: s.href,
-            icon: s.icon,
-            ...(s.active ? { active: s.active } : {}),
-          })),
-        }
-      : {}),
-  };
-}
-
-// Is the dev role-switcher override active for this user? Mirrors the exact
-// condition AuthProvider uses to patch `user.role` from localStorage — when
-// active, `navigationTabs` (computed server-side from the REAL role) no
-// longer matches what should render, so we fall back to the client-side
-// `linksForRole` arrays (which honor the overridden role).
-function isRoleOverrideActive(user) {
-  if (typeof window === "undefined") return false;
-  const overrideRole = window.localStorage.getItem("role");
-  const overrideUserId = window.localStorage.getItem("userId");
-  return Boolean(
-    overrideRole &&
-      overrideUserId &&
-      user?.id === parseInt(overrideUserId)
-  );
-}
-
 // Derive the rendered sidebar links from the backend-owned `navigationTabs`,
 // which now follow the ACTIVE PROFILE (auth.dto.toMe → navRole). This is the
 // SINGLE source for both the sidebar and RouteGuard, so they never diverge. The
-// old client-side `linksForRole(user.role)` override is gone — it desynced the
+// old client-side `linksForRole(user.profile)` override is gone — it desynced the
 // sidebar from RouteGuard and pinned nav to a stale role.
 function resolveLinks(user) {
-  return (user?.navigationTabs ?? []).map((tab) => mapNavigationTab(tab, user?.role));
+  return (user?.navigationTabs ?? []).map((tab) => mapNavigationTab(tab, user?.profile));
 }
 
 // Mirror SideNav's matching so the AppBar title agrees with the active nav item.
@@ -540,8 +230,8 @@ function resolveCurrentPage(links, pathname) {
 
 // Prefer the active profile's own label (from /auth/me profiles[]); fall back to the
 // derived role for unmigrated accounts. Keeps the drawer footer in step with the chip.
-function roleLabel(user, profiles, currentProfileId) {
-  return activeProfileLabel(profiles, currentProfileId) ?? legacyRoleLabel(user);
+function profileLabel(user, profiles, currentProfileId) {
+  return activeProfileLabel(profiles, currentProfileId) ?? currentProfileLabel(user);
 }
 
 function userInitials(user) {
@@ -689,12 +379,12 @@ export default function Layout({ children }) {
       router.push("/login");
     }
   }, [validatingAuth]);
-  if (!user || !user.role) return null;
+  if (!user || !user.profile) return null;
 
   const links = resolveLinks(user);
   const navGroups = groupLinks(links);
   const currentPage = resolveCurrentPage(links, pathname);
-  const userRoleLabel = roleLabel(user, profiles, currentProfileId);
+  const userRoleLabel = profileLabel(user, profiles, currentProfileId);
   // Desktop content sits next to the permanent drawer; mobile has none.
   const drawerWidth = isMobile
     ? 0

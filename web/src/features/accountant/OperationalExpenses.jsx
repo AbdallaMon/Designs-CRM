@@ -19,7 +19,7 @@ const OperationalExpenses = () => {
     total,
     setTotal,
     totalPages,
-  } = useDataFetcher(`accountant/operational-expenses?`);
+  } = useDataFetcher(`accounting/operational-expenses?`);
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
       <Box
@@ -30,7 +30,7 @@ const OperationalExpenses = () => {
       >
         <Box sx={{ display: "flex", gap: 2 }}>
           <CreateModal
-            href={"accountant/operational-expenses"}
+            href={"accounting/operational-expenses"}
             inputs={inputs}
             label={"Add operational expense"}
             setData={setData}

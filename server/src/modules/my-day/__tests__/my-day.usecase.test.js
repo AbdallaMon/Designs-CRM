@@ -150,9 +150,10 @@ describe("getMyQueue — sales family", () => {
     expect(q.truncated).toBe(true);
   });
 
-  it("role fallback: un-migrated session (no currentProfileKey) with STAFF role → SALES", async () => {
-    const q = await make().getMyQueue({ authUser: { id: 7, role: "STAFF" }, now: NOW });
-    expect(q.family).toBe("SALES");
+  it("rejects a session without an active profile instead of falling back to role", async () => {
+    await expect(
+      make().getMyQueue({ authUser: { id: 7, role: "STAFF" }, now: NOW }),
+    ).rejects.toMatchObject({ statusCode: 403, message: "MY_DAY_PROFILE_UNSUPPORTED" });
   });
 });
 

@@ -10,7 +10,7 @@
 import prisma from "../prisma.client.js";
 import { ALL_PERMISSIONS, PROFILE_META, PROFILES, splitPermissionCode } from "@dms/shared";
 
-export const ADMIN_TIER_PROFILE_KEYS = ["ADMIN", "SUPER_ADMIN", "SUPER_SALES"];
+export const ADMIN_TIER_PROFILE_KEYS = ["ADMIN", "SUPER_ADMIN"];
 
 // ── Bootstrap admin ────────────────────────────────────────────────────────────
 // Default credentials for the first-run admin. Only used when the DB has NO admin-tier
@@ -25,12 +25,16 @@ const DEFAULT_ADMIN_PASSWORD_HASH =
   "$2b$08$Y9Ijxmfx2dsc9t.Eto.fn.JQ8FcKE9S4mHUNphYtaxWwdnEMZl7cm";
 
 // Idempotent: create a bootstrap ADMIN user ONLY when no admin-tier user exists yet. Safe to
-// re-run (no-op once any ADMIN/SUPER_ADMIN is present). Wires role + legacy `profile` string +
-// currentProfileId + a UserProfile link to the ADMIN profile so permission resolution works on
+// re-run (no-op once any admin-tier profile is assigned). Wires currentProfileId +
+// a UserProfile link to the ADMIN profile so permission resolution works on
 // every path. Assumes seedCatalog ran first (so the ADMIN profile row exists).
 export async function seedAdminUser({ prisma: db }) {
   const existingAdmin = await db.user.findFirst({
-    where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+    where: {
+      userProfiles: {
+        some: { profile: { isAdminTier: true } },
+      },
+    },
     select: { id: true },
   });
   if (existingAdmin) return { created: false, reason: "admin-exists" };
@@ -49,10 +53,7 @@ export async function seedAdminUser({ prisma: db }) {
       email,
       name: process.env.SEED_ADMIN_NAME || DEFAULT_ADMIN_NAME,
       password: process.env.SEED_ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_PASSWORD_HASH,
-      role: "ADMIN",
       isActive: true,
-      isPrimary: true,
-      profile: "ADMIN",
       ...(adminProfile ? { currentProfileId: adminProfile.id } : {}),
     },
     select: { id: true, email: true },
@@ -76,7 +77,6 @@ export function buildCatalog() {
     key,
     label: m.label,
     family: m.family ?? null,
-    baseRole: m.baseRole ?? null,
     isAdminTier: ADMIN_TIER_PROFILE_KEYS.includes(key),
     isAssignable: m.isAssignable ?? true,
   }));
@@ -97,7 +97,6 @@ export async function seedCatalog({ prisma: db }) {
       update: {
         label: p.label,
         family: p.family,
-        baseRole: p.baseRole,
         isAdminTier: p.isAdminTier,
         isAssignable: p.isAssignable,
       },

@@ -49,8 +49,8 @@ export function TaskActions({ name, task, setTasks, setTask }) {
       // Check permissions for priority changes
       if (
         type === MENU_TYPES.PRIORITY &&
-        user.role !== "ADMIN" &&
-        user.role !== "SUPER_ADMIN" &&
+        user.profile !== "ADMIN" &&
+        user.profile !== "SUPER_ADMIN" &&
         user.id !== task.createdById
       ) {
         setAlertError(
@@ -64,7 +64,7 @@ export function TaskActions({ name, task, setTasks, setTask }) {
       const request = await handleRequestSubmit(
         { [type]: value },
         setLoading,
-        `shared/tasks/${task.id}`,
+        `tasks/${task.id}`,
         false,
         "Updating",
         false,
@@ -99,8 +99,8 @@ export function TaskActions({ name, task, setTasks, setTask }) {
   );
 
   const canChangePriority =
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
+    user.profile === "ADMIN" ||
+    user.profile === "SUPER_ADMIN" ||
     user.id === task.createdById;
 
   return (

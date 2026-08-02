@@ -7,6 +7,8 @@
 // The `legacy` constructor param remains a dependency-injection seam; its defaults now point
 // at the relocated repo/usecase code instead of the deleted accountant service.
 import { expenseRepository } from "./expense.repo.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { accountingMessagesCodes } from "@dms/shared";
 
 async function createOperationalExpense({
   category,
@@ -15,7 +17,7 @@ async function createOperationalExpense({
   paymentDate,
 }) {
   if (!category || !amount || !paymentDate) {
-    throw new Error("Fill all the fields please");
+    throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
   }
 
   amount = Number(amount);
@@ -28,7 +30,6 @@ async function createOperationalExpense({
 
   return {
     data: newExpense,
-    message: "Operational Expense created successfully",
   };
 }
 

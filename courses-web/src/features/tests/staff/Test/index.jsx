@@ -12,8 +12,9 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 import CombinedHomeWork from "../../../lessons/staff/CombinedHomeWork";
-import { toArabicNumerals } from "./helpers";
+import { formatNumber } from "./helpers";
 import AttemptsList from "./components/AttemptsList";
 import AllQuestionsView from "./components/AllQuestionsView";
 import ReviewView from "./components/ReviewView";
@@ -47,7 +48,7 @@ const TestComponent = ({
   const { toastLoading, setToastLoading } = useToastContext();
   async function getTest() {
     const req = await getDataAndSet({
-      url: `shared/courses/tests/${testId}`,
+      url: `staff-courses/tests/${testId}`,
       setLoading,
       setData: setTest,
     });
@@ -55,7 +56,7 @@ const TestComponent = ({
   }
   async function getTestQuestions() {
     const req = await getDataAndSet({
-      url: `shared/courses/tests/${testId}/test-questions`,
+      url: `staff-courses/tests/${testId}/test-questions`,
       setData: setQuestions,
       setLoading,
     });
@@ -63,7 +64,7 @@ const TestComponent = ({
   }
   async function getUserAttempts() {
     const req = await getDataAndSet({
-      url: `shared/courses/tests/${testId}/attampts`,
+      url: `staff-courses/tests/${testId}/attampts`,
       setLoading,
       setData: setAttempts,
     });
@@ -73,9 +74,9 @@ const TestComponent = ({
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `shared/courses/tests/${testId}/attampts`,
+      `staff-courses/tests/${testId}/attampts`,
       false,
-      "جاري الإنشاء"
+      "Creating"
     );
     if (req.status === 200) {
       await getUserAttempts();
@@ -84,10 +85,8 @@ const TestComponent = ({
   }
   async function saveAnswer(attemptId, questionId, answer) {
     setSavingAnswers((prev) => [...prev, questionId]);
-    const request = await fetch(
-      process.env.NEXT_PUBLIC_URL +
-        "/" +
-        `shared/courses/tests/${testId}/attampts/${attemptId}/questions/${questionId}`,
+    const request = await apiRequest(
+      `staff-courses/tests/${testId}/attampts/${attemptId}/questions/${questionId}`,
       {
         method: "POST",
         body: JSON.stringify({ answer }),
@@ -122,7 +121,7 @@ const TestComponent = ({
         startTimer(ongoingAttempt, test);
       }
     } catch (error) {
-      console.error("خطأ في تحميل بيانات الاختبار:", error);
+      console.error("Failed to load test data:", error);
     } finally {
       setLoading(false);
     }
@@ -195,7 +194,7 @@ const TestComponent = ({
         setIsTimerRunning(true);
       }
     } catch (error) {
-      console.error("خطأ في بدء محاولة جديدة:", error);
+      console.error("Failed to start a new attempt:", error);
     }
   };
   const handleAnswerChange = async (questionId, answer) => {
@@ -206,7 +205,7 @@ const TestComponent = ({
       try {
         await saveAnswer(currentAttempt.id, questionId, answer);
       } catch (error) {
-        console.error("خطأ في حفظ الإجابة:", error);
+        console.error("Failed to save answer:", error);
       }
     }
   };
@@ -258,11 +257,11 @@ const TestComponent = ({
       const req = await handleRequestSubmit(
         {},
         setToastLoading,
-        `shared/courses/tests/${testId}/attampts/${
+        `staff-courses/tests/${testId}/attampts/${
           !currentAttempt ? attempt.id : currentAttempt.id
         }`,
         false,
-        "جاري الحفظ",
+        "Saving",
         false,
         "PUT"
       );
@@ -282,7 +281,7 @@ const TestComponent = ({
         setTimeLeft(0);
       }
     } catch (error) {
-      console.error("خطأ في إرسال المحاولة:", error);
+      console.error("Failed to submit attempt:", error);
     }
   };
   const lastAttempt = attempts?.length ? attempts[attempts.length - 1] : null;
@@ -330,7 +329,7 @@ const TestComponent = ({
   if (!test && !loading && !attempts) {
     return (
       <Alert severity="error">
-        الاختبار غير موجود أو ليس لديك صلاحية للوصول إليه.
+        The test was not found or you do not have permission to access it.
       </Alert>
     );
   }
@@ -346,20 +345,20 @@ const TestComponent = ({
           <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
             <Chip label={test.type} variant="outlined" />
             <Chip
-              label={`${toArabicNumerals(attemptLimit)} محاولات مسموحة`}
+              label={`${formatNumber(attemptLimit)} attempts allowed`}
               variant="outlined"
             />
             {test.timeLimit && (
               <Chip
-                label={`${toArabicNumerals(test.timeLimit)} دقيقة`}
+                label={`${formatNumber(test.timeLimit)} minutes`}
                 variant="outlined"
               />
             )}
           </Box>
           <Typography variant="body1" color="text.secondary">
             {test.course
-              ? `الكورس: ${test.course?.title}`
-              : `الدرس: ${test.lesson?.title}`}
+              ? `Course: ${test.course?.title}`
+              : `Lesson: ${test.lesson?.title}`}
           </Typography>
           {!test.course &&
             test.lessonId &&

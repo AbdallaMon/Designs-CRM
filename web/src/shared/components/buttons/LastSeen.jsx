@@ -51,8 +51,8 @@ export default function LastSeen({ userId, initialLastSeen, accountant }) {
     try {
       const res = await getData({
         url: accountant
-          ? `accountant/users/${userId}/last-seen?month=${month}&year=${year}`
-          : `admin/users/${userId}/last-seen?month=${month}&year=${year}`,
+          ? `accounting/users/${userId}/last-seen?month=${month}&year=${year}`
+          : `users/${userId}/last-seen?month=${month}&year=${year}`,
         setLoading,
       });
       setUserLog(res);

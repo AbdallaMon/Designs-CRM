@@ -46,16 +46,12 @@ function todayRange() {
 // Roles that historically saw EVERY project regardless of assignment. ACCOUNTANT is
 // included for READ scope only (legacy `/designers/:id` allowed ACCOUNTANT to read
 // without the userId narrowing); it is NOT in the mutate set.
-const FULL_READ_ROLES = ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
-const FULL_MUTATE_ROLES = ["ADMIN", "SUPER_ADMIN"];
-
 class ProjectRepository {
   model = prisma.project;
 
-  hasFullScope({ role, currentProfileKey, isAdminTier }, mode) {
+  hasFullScope({ currentProfileKey, isAdminTier }, mode) {
     if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
-    const roles = mode === "mutate" ? FULL_MUTATE_ROLES : FULL_READ_ROLES;
-    return roles.includes(role);
+    return mode !== "mutate" && currentProfileKey === "ACCOUNTANT";
   }
 
   // Translate the auth user → a Prisma `where` fragment for the Project model.
@@ -479,7 +475,6 @@ class ProjectRepository {
             id: true,
             type: true,
             status: true,
-            role: true,
             area: true,
             deliveryTime: true,
             priority: true,
@@ -589,7 +584,6 @@ class ProjectRepository {
             id: true,
             type: true,
             status: true,
-            role: true,
             area: true,
             deliveryTime: true,
             priority: true,
@@ -732,7 +726,6 @@ class ProjectRepository {
             startedAt: true,
             endedAt: true,
             clientLeadId: true,
-            role: true,
             groupTitle: true,
             groupId: true,
             statusChangedAt: true,

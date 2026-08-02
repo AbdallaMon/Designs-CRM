@@ -32,7 +32,7 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
   async function getInitialData() {
     setError(false);
     const clientLeadUpdates = await getData({
-      url: `shared/updates/${clientLeadId}?type=${currentUserDepartment}&department=${departmentFilter}&`,
+      url: `updates/${clientLeadId}?type=${currentUserDepartment}&department=${departmentFilter}&`,
       setLoading,
     });
     if (clientLeadUpdates && clientLeadUpdates.status === 200) {

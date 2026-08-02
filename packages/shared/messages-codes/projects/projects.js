@@ -31,6 +31,7 @@ export const projectsMessagesCodes = {
   TASK_DELETED: "TASK_DELETED", // DELETE /:id
   NOTES_FETCHED: "NOTES_FETCHED", // GET /notes
   NOTE_ADDED: "NOTE_ADDED", // POST /notes
+  NOTE_DELETED: "NOTE_DELETED",
 
   // ── updates ──────────────────────────────────────────────────────────────────────
   UPDATES_FETCHED: "UPDATES_FETCHED", // GET /:clientLeadId
@@ -58,6 +59,10 @@ export const projectsMessagesCodes = {
   UPDATE_NOT_FOUND: "UPDATE_NOT_FOUND",
   SHARED_UPDATE_NOT_FOUND: "SHARED_UPDATE_NOT_FOUND",
   DELIVERY_NOT_FOUND: "DELIVERY_NOT_FOUND",
+  NOTE_NOT_FOUND: "NOTE_NOT_FOUND",
+  NOTE_TARGET_NOT_FOUND: "NOTE_TARGET_NOT_FOUND",
+  NOTE_AUTHOR_NOT_FOUND: "NOTE_AUTHOR_NOT_FOUND",
+  NOTE_DELETE_WINDOW_EXPIRED: "NOTE_DELETE_WINDOW_EXPIRED",
   // Domain-rule failures preserved from legacy (same observable meaning).
   PROJECT_STATUS_TRANSITION_FORBIDDEN: "PROJECT_STATUS_TRANSITION_FORBIDDEN", // non-admin from Completed/Canceled/Rejected
   TASK_STATUS_TRANSITION_FORBIDDEN: "TASK_STATUS_TRANSITION_FORBIDDEN", // non-admin editing a DONE task

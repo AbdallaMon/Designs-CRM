@@ -3,8 +3,8 @@ import { createProfileCache } from "../profile-cache.js";
 
 const fakeRepo = {
   loadProfilesWithCodes: async () => [
-    { id: 1, key: "ADMIN", label: "مدير", family: "ADMIN", isAdminTier: true, baseRole: "ADMIN", codes: ["lead.list", "lead.view"] },
-    { id: 2, key: "NORMAL_SALES", label: "مبيعات", family: "SALES", isAdminTier: false, baseRole: "STAFF", codes: ["lead.list"] },
+    { id: 1, key: "ADMIN", label: "Admin", family: "ADMIN", isAdminTier: true, codes: ["lead.list", "lead.view"] },
+    { id: 2, key: "NORMAL_SALES", label: "Sales", family: "SALES", isAdminTier: false, codes: ["lead.list"] },
   ],
 };
 
@@ -15,7 +15,7 @@ describe("profile cache", () => {
 
     const admin = cache.resolve(1);
     expect(admin.key).toBe("ADMIN");
-    expect(admin.baseRole).toBe("ADMIN");
+    expect(admin).not.toHaveProperty("baseRole");
     expect(admin.isAdminTier).toBe(true);
     expect(new Set(admin.permissions)).toEqual(new Set(["lead.list", "lead.view"]));
     expect(admin.permissionsByModule.lead.codes).toContain("lead.view");
@@ -42,7 +42,7 @@ describe("profile cache", () => {
   it("resolveMeta returns light profile meta (no permission arrays)", async () => {
     const cache = createProfileCache({ repository: fakeRepo });
     await cache.load();
-    expect(cache.resolveMeta(1)).toEqual({ id: 1, key: "ADMIN", label: "مدير", family: "ADMIN", isAdminTier: true });
+    expect(cache.resolveMeta(1)).toEqual({ id: 1, key: "ADMIN", label: "Admin", family: "ADMIN", isAdminTier: true });
     expect(cache.resolveMeta(999)).toBeNull();
   });
 });

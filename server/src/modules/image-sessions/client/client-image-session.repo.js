@@ -14,6 +14,25 @@ import prisma from "../../../infra/prisma/prisma.js";
 import { deserializeTemplatesDeep } from "../image-sessions.helpers.js";
 import { serializeJsonField } from "../../../shared/utility/json-field.js";
 
+export function getClientSessionByToken(token) {
+  return prisma.clientImageSession.findUnique({
+    where: { token },
+    include: {
+      preferredPatterns: true,
+      selectedSpaces: { include: { space: true } },
+      selectedImages: {
+        include: {
+          image: {
+            include: {
+              spaces: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 class ClientImageSessionRepository {
   // Resolve a ClientSelectedImage → its owning imageSessionId (the scope key). Selects ONLY
   // that field. Returns null if the image does not exist (the usecase maps that to NOT_FOUND).
@@ -342,7 +361,7 @@ export async function submitSelectedPatterns({ token, patternIds }) {
     },
   });
 
-  return await getSessionByToken(token);
+  return getClientSessionByToken(token);
 }
 
 export async function submitSelectedImages({ token, imageIds }) {
@@ -359,7 +378,7 @@ export async function submitSelectedImages({ token, imageIds }) {
     },
   });
 
-  return await getSessionByToken(token);
+  return getClientSessionByToken(token);
 }
 
 // ── EXTRAS generic-model reads (moved verbatim from legacy `shared/legacy/shared-utility-
@@ -430,5 +449,5 @@ export async function changeSessionStatus({ token, status, extra }) {
     data,
   });
 
-  return await getSessionByToken(token);
+  return getClientSessionByToken(token);
 }

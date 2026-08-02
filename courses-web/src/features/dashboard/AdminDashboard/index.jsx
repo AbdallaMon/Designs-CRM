@@ -31,7 +31,7 @@ const AdminDashboard = () => {
     // Simulate API call
     async function getDashboardData() {
       await getDataAndSet({
-        url: `admin/courses/dashboard`,
+        url: "courses/dashboard",
         setLoading,
         setData: setDashboardData,
       });

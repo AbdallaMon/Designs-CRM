@@ -1,14 +1,13 @@
 import nodemailer from "nodemailer";
-import dotenv from "dotenv";
 import { companyName, engName } from "../config/brand.constants.js";
-dotenv.config();
+import { env } from "../../config/env.js";
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST, // Your iRedMail server's hostname or IP
-  port: 587, // Port for STARTTLS
-  secure: false, // Use STARTTLS instead of SSL
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  secure: env.SMTP_SECURE,
   auth: {
-    user: process.env.EMAIL_USERNAME, // Full email address (e.g., admin@example.com)
-    pass: process.env.EMAIL_PASSWORD, // Email account's password
+    user: env.EMAIL_USERNAME,
+    pass: env.EMAIL_PASSWORD,
   },
   tls: {
     rejectUnauthorized: false, // Accept self-signed certificates if applicable
@@ -16,9 +15,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (to, subject, html, isClient = false) => {
-  const fromUser = isClient
-    ? process.env.AHMED_EMAIL
-    : process.env.EMAIL_USERNAME;
+  const fromUser = isClient ? env.CLIENT_EMAIL_FROM : env.EMAIL_USERNAME;
   const fromName = isClient ? engName : companyName;
 
   const mailOptions = {

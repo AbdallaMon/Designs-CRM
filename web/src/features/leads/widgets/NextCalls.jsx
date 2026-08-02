@@ -22,8 +22,8 @@ export default function NextCalls({ staff, designer = false }) {
   const { data, loading, page, setPage, limit, setLimit, total, totalPages } =
     useDataFetcher(
       designer
-        ? "shared/work-stages/calls"
-        : "shared/client-leads/calls" + `?staffId=${staff && user.id}&`,
+        ? "leads/calls"
+        : "leads/calls" + `?staffId=${staff && user.id}&`,
       false
     );
 

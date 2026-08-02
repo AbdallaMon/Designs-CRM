@@ -1,29 +1,4 @@
-// utilities routes — the lookup/pick-list helper surface. Mounted under `/v2/utilities`.
-// Authentication is mounted ONCE here; each route declares its UTILITY.* permission code
-// (granted to EVERY authed role via SHARED_AUTHED — exactly reproducing the legacy gates:
-// `/shared/utilities/*` = the SHARED router gate = all 9 authed roles; `/utility/search` =
-// verifyTokenUsingReq = any logged-in user).
-//
-// These are generic reads with no per-record owner to scope-check (legacy applied no
-// object scope), so the permission CODE is the gate — matching legacy. The generic-model
-// reads (`/` and `/ids`) ADD a model allow-list + fixed server-side projection in the
-// usecase/repo (the mass-read + select/include hardening). The user-log routes are
-// self-scoped to the authenticated user in the usecase (the IDOR hardening) — no client
-// `userId` is accepted.
-//
-// Endpoint map (legacy → v2), all paths preserved 1:1 except the prefix:
-//   GET  /shared/utilities/fixed-data       → GET  /v2/utilities/fixed-data
-//   GET  /shared/utilities/user-logs        → GET  /v2/utilities/user-logs
-//   POST /shared/utilities/user-logs        → POST /v2/utilities/user-logs
-//   GET  /shared/utilities/users/role/:userId → GET /v2/utilities/users/role/:userId
-//   GET  /shared/utilities/users/admins     → GET  /v2/utilities/users/admins
-//   GET  /shared/utilities/roles            → GET  /v2/utilities/roles
-//   GET  /shared/utilities/images           → GET  /v2/utilities/images
-//   GET  /shared/utilities/ids              → GET  /v2/utilities/ids
-//   GET  /shared/utilities/                 → GET  /v2/utilities/        (generic model read)
-//   GET  /utility/search                    → GET  /v2/utilities/search
-// NOTE: notifications (legacy `/shared/utilities/notifications`) move to the dedicated
-// `/v2/notifications` module (self-scoped); they are NOT served here.
+// Authenticated lookup, upload-adjacent metadata, and scoped search endpoints.
 import { Router } from "express";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { asyncHandler } from "../../shared/middlewares/async-handler.js";
@@ -59,24 +34,18 @@ router.post(
   asyncHandler(utilityController.submitUserLog),
 );
 
-// ── users / admins / roles ────────────────────────────────────────────────────────────
+// ── users / admins / profiles ─────────────────────────────────────────────────────────
 router.get(
-  "/users/role/:userId",
-  AuthMiddleware.requirePermissions([P.USER_ROLE_VIEW]),
+  "/users/:userId/current-profile",
+  AuthMiddleware.requirePermissions([P.USER_PROFILE_VIEW]),
   validate(UtilityValidation.userIdParams, "params"),
-  asyncHandler(utilityController.getUserRole),
+  asyncHandler(utilityController.getUserCurrentProfile),
 );
 router.get(
   "/users/admins",
   AuthMiddleware.requirePermissions([P.ADMIN_LIST]),
   asyncHandler(utilityController.getAdmins),
 );
-router.get(
-  "/roles",
-  AuthMiddleware.requirePermissions([P.USER_ROLE_VIEW]),
-  asyncHandler(utilityController.getRoles),
-);
-
 // ── images ────────────────────────────────────────────────────────────────────────────
 router.get(
   "/images",
@@ -85,10 +54,11 @@ router.get(
   asyncHandler(utilityController.getImages),
 );
 
-// ── cross-model search (legacy `/utility/search`) ──────────────────────────────────────
+// ── scoped cross-resource search ────────────────────────────────────────────────────────
 router.get(
   "/search",
   AuthMiddleware.requirePermissions([P.SEARCH]),
+  validate(UtilityValidation.searchQuery, "query"),
   asyncHandler(utilityController.search),
 );
 

@@ -7,7 +7,7 @@ vi.mock("../../../../infra/audit/record-action.js", () => ({
 }));
 
 // DI removed: the usecase calls the imported `userRepository` singleton directly (and the
-// module-level createStaffUser/editStaffUser helpers delegate their Prisma writes to it).
+// module-level create/update record helpers delegate their Prisma writes to it).
 // Mock the singleton so the usecase can be asserted without a DB.
 vi.mock("../user.repo.js", () => ({
   userRepository: {
@@ -17,9 +17,8 @@ vi.mock("../user.repo.js", () => ({
     findUserProfileById: vi.fn(),
     updateUserProfile: vi.fn(),
     toggleStatus: vi.fn(),
-    toggleStaffExtra: vi.fn(),
-    createStaffUser: vi.fn(),
-    editStaffUser: vi.fn(),
+    createUserRecord: vi.fn(),
+    updateUserRecord: vi.fn(),
   },
 }));
 
@@ -34,12 +33,31 @@ beforeEach(() => {
   userRepository.findManagementList.mockResolvedValue({ users: [], total: 0 });
 });
 
-const admin = { id: 1, role: "ADMIN", permissions: [] };
-const superSales = { id: 2, role: "STAFF", currentProfileKey: "SUPER_SALES", permissions: [] };
-const staff = { id: 3, role: "STAFF", permissions: [] };
-// A user whose BASE role is non-admin but who holds an ADMIN sub-role (string[] shape,
-// as carried on req.auth from the token payload).
-const subRoleAdmin = { id: 4, role: "STAFF", subRoles: ["ADMIN"], permissions: [] };
+const admin = {
+  id: 1,
+  currentProfileKey: "ADMIN",
+  isAdminTier: true,
+  permissions: [],
+};
+const superSales = {
+  id: 2,
+  currentProfileKey: "SUPER_SALES",
+  isAdminTier: false,
+  permissions: [],
+};
+const staff = {
+  id: 3,
+  currentProfileKey: "NORMAL_SALES",
+  isAdminTier: false,
+  permissions: [],
+};
+const retainedAdminFields = {
+  id: 4,
+  role: "ADMIN",
+  subRoles: ["SUPER_ADMIN"],
+  isAdminTier: false,
+  permissions: [],
+};
 
 // ════════════════════════════════════════════════════════════════════════════
 //  PROFILE SCOPE — the IDOR fix (allow vs deny)
@@ -65,16 +83,22 @@ describe("UserUsecase profile scope checkers (IDOR fix)", () => {
     expect(scope).toMatchObject({ id: 99, isSelf: false, adminTier: true });
   });
 
-  it("ACCESS: isSuperSales is treated as admin-tier (legacy isAdmin union)", async () => {
-    userRepository.findUserIdById.mockResolvedValue({ id: 50 });
-    const scope = await userUsecase.checkIfUserCanAccessProfile({ userId: 50, authUser: superSales });
-    expect(scope).toMatchObject({ id: 50, adminTier: true });
+  it("ACCESS: SUPER_SALES does not become an admin profile", async () => {
+    await expect(
+      userUsecase.checkIfUserCanAccessProfile({
+        userId: 50,
+        authUser: superSales,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
   });
 
-  it("ACCESS: a sub-role-ADMIN user is admin-tier and may view ANY profile (FIX 3)", async () => {
-    userRepository.findUserIdById.mockResolvedValue({ id: 77 });
-    const scope = await userUsecase.checkIfUserCanAccessProfile({ userId: 77, authUser: subRoleAdmin });
-    expect(scope).toMatchObject({ id: 77, isSelf: false, adminTier: true });
+  it("ACCESS: retained role fields do not grant admin-tier access", async () => {
+    await expect(
+      userUsecase.checkIfUserCanAccessProfile({
+        userId: 77,
+        authUser: retainedAdminFields,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
   });
 
   it("MUTATE: a non-admin is DENIED mutating another user's profile (403)", async () => {
@@ -103,7 +127,7 @@ describe("UserUsecase.getProfile output safety", () => {
     expect(out.capabilities).toBeDefined();
   });
 
-  it("passes subRoles through (admin profile controls) while stripping password (FIX 4)", async () => {
+  it("strips retained authorization fields from profile output", async () => {
     userRepository.findUserProfileById.mockResolvedValue({
       id: 9,
       name: "A",
@@ -113,7 +137,8 @@ describe("UserUsecase.getProfile output safety", () => {
     });
     const out = await userUsecase.getProfile({ userId: 9, authUser: admin });
     expect(out.password).toBeUndefined();
-    expect(out.subRoles).toEqual([{ id: 1, subRole: "ACCOUNTANT", userId: 9 }]);
+    expect(out.subRoles).toBeUndefined();
+    expect(out.role).toBeUndefined();
   });
 });
 
@@ -141,7 +166,7 @@ describe("UserUsecase.updateProfile self-edit whitelist (privilege-escalation fi
       scoped: { isSelf: false, adminTier: true },
     });
     const passed = userRepository.updateUserProfile.mock.calls[0][0].data;
-    expect(passed).toEqual({ name: "X", role: "STAFF" });
+    expect(passed).toEqual({ name: "X" });
     expect(passed.bogus).toBeUndefined();
     expect(passed.id).toBeUndefined();
   });
@@ -158,24 +183,6 @@ describe("UserUsecase.updateProfile self-edit whitelist (privilege-escalation fi
     expect(passed.password).not.toBe("plaintext");
     // bcrypt hash with cost 8 ("$2b$08$...").
     expect(passed.password).toMatch(/^\$2[aby]\$08\$/);
-  });
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  STAFF-EXTRA — whitelist (mass-assignment / privilege-escalation fix)
-// ════════════════════════════════════════════════════════════════════════════
-describe("UserUsecase.toggleStaffExtra whitelist (FIX 1)", () => {
-  it("passes ONLY the staff flags and never password/role/isActive to the repo", async () => {
-    userRepository.toggleStaffExtra.mockResolvedValue({ id: 5 });
-    await userUsecase.toggleStaffExtra({
-      userId: 5,
-      body: { isSuperSales: true, password: "x", role: "ADMIN", isActive: false, isPrimary: true },
-    });
-    const passed = userRepository.toggleStaffExtra.mock.calls[0][0].data;
-    expect(passed).toEqual({ isSuperSales: true, isPrimary: true });
-    expect(passed.password).toBeUndefined();
-    expect(passed.role).toBeUndefined();
-    expect(passed.isActive).toBeUndefined();
   });
 });
 
@@ -217,24 +224,37 @@ describe("UserUsecase.list", () => {
 //  ADMIN CREATE / UPDATE — legacy role-constraint + P2002 mapping
 // ════════════════════════════════════════════════════════════════════════════
 describe("UserUsecase.create", () => {
-  it("rejects an isSuperSales (non-admin) creating a non-STAFF user (legacy rule)", async () => {
-    await expect(
-      userUsecase.createUser({ body: { role: "ADMIN", email: "a", password: "p", name: "n" }, authUser: superSales }),
-    ).rejects.toMatchObject({ statusCode: 403, message: userMessagesCodes.USER_ROLE_NOT_ALLOWED });
+  it("ignores retained authorization fields on direct usecase calls", async () => {
+    userRepository.createUserRecord.mockResolvedValue({ id: 11 });
+    await userUsecase.createUser({
+      body: {
+        role: "ADMIN",
+        isSuperSales: true,
+        email: "a",
+        password: "p",
+        name: "n",
+      },
+      authUser: superSales,
+    });
+    expect(userRepository.createUserRecord.mock.calls[0][0].user).toEqual({
+      email: "a",
+      password: "p",
+      name: "n",
+    });
   });
 
   it("maps a Prisma P2002-on-email to EMAIL_ALREADY_REGISTERED (legacy 400)", async () => {
     const err = Object.assign(new Error("dup"), { code: "P2002", meta: { target: ["email"] } });
-    userRepository.createStaffUser.mockRejectedValue(err);
+    userRepository.createUserRecord.mockRejectedValue(err);
     await expect(
-      userUsecase.createUser({ body: { role: "STAFF", email: "a", password: "p", name: "n" }, authUser: admin }),
+      userUsecase.createUser({ body: { email: "a", password: "p", name: "n" }, authUser: admin }),
     ).rejects.toMatchObject({ statusCode: 400, message: userMessagesCodes.EMAIL_ALREADY_REGISTERED });
   });
 
   it("creates a valid user via the legacy adapter", async () => {
-    const created = { id: 11, role: "STAFF" };
-    userRepository.createStaffUser.mockResolvedValue(created);
-    const out = await userUsecase.createUser({ body: { role: "STAFF", email: "a", password: "p", name: "n" }, authUser: admin });
+    const created = { id: 11 };
+    userRepository.createUserRecord.mockResolvedValue(created);
+    const out = await userUsecase.createUser({ body: { email: "a", password: "p", name: "n" }, authUser: admin });
     expect(out).toEqual(created);
   });
 });
@@ -254,18 +274,18 @@ describe("UserUsecase.changeStatus", () => {
 //  legacy adapters (a new user defaults to STAFF).
 // ════════════════════════════════════════════════════════════════════════════
 describe("UserUsecase.update (identity only)", () => {
-  it("passes the body straight to the legacy editStaffUser adapter", async () => {
-    // The editStaffUser adapter (module-level) forwards the identity body to the repo with a
+  it("passes the identity body to the update record repository method", async () => {
+    // The module-level helper forwards the identity body to the repo with a
     // hashedPassword only when a password is present. No password here → hashedPassword undefined.
-    userRepository.editStaffUser.mockImplementation(async ({ user, userId }) => ({ id: userId, ...user }));
-    await userUsecase.updateUser({ userId: 7, body: { name: "New" }, authUser: { role: "ADMIN" } });
-    expect(userRepository.editStaffUser).toHaveBeenCalledWith({ user: { name: "New" }, userId: 7, hashedPassword: undefined });
+    userRepository.updateUserRecord.mockImplementation(async ({ user, userId }) => ({ id: userId, ...user }));
+    await userUsecase.updateUser({ userId: 7, body: { name: "New" }, authUser: admin });
+    expect(userRepository.updateUserRecord).toHaveBeenCalledWith({ user: { name: "New" }, userId: 7, hashedPassword: undefined });
   });
 
-  it("rejects an isSuperSales (non-admin) editor setting a non-STAFF role", async () => {
+  it("rejects an update containing only retained authorization fields", async () => {
     await expect(
       userUsecase.updateUser({ userId: 7, body: { role: "ADMIN" }, authUser: superSales }),
-    ).rejects.toMatchObject({ statusCode: 403, message: userMessagesCodes.USER_ROLE_NOT_ALLOWED });
+    ).rejects.toMatchObject({ statusCode: 400, message: userMessagesCodes.USER_NO_DATA_SENT });
   });
 });
 
@@ -275,7 +295,7 @@ describe("UserUsecase.update (identity only)", () => {
 describe("UserUsecase semantic audit events", () => {
   it("update: records USER_UPDATED once with before/after (secrets auto-redacted by the helper)", async () => {
     userRepository.findUserProfileById.mockResolvedValue({ id: 7, name: "Old", password: "HASH" });
-    userRepository.editStaffUser.mockResolvedValue({ id: 7, name: "New", password: "NEWHASH" });
+    userRepository.updateUserRecord.mockResolvedValue({ id: 7, name: "New", password: "NEWHASH" });
 
     await userUsecase.updateUser({ userId: 7, body: { name: "New", password: "x" }, authUser: { role: "ADMIN" }, auditCtx: {} });
 
@@ -287,16 +307,16 @@ describe("UserUsecase semantic audit events", () => {
         action: "USER_UPDATED",
         entityType: "User",
         entityId: 7,
-        allowedKeys: ["name", "password"],
+        allowedKeys: ["password", "name"],
       }),
     );
   });
 
   it("create: records USER_CREATED once with the new user id", async () => {
-    const created = { id: 11, name: "N", email: "a@b.com", role: "STAFF" };
-    userRepository.createStaffUser.mockResolvedValue(created);
+    const created = { id: 11, name: "N", email: "a@b.com" };
+    userRepository.createUserRecord.mockResolvedValue(created);
 
-    await userUsecase.createUser({ body: { role: "STAFF", email: "a@b.com", password: "p", name: "N" }, authUser: admin, auditCtx: {} });
+    await userUsecase.createUser({ body: { email: "a@b.com", password: "p", name: "N" }, authUser: admin, auditCtx: {} });
 
     expect(recordAction).toHaveBeenCalledTimes(1);
     expect(recordAction).toHaveBeenCalledWith(

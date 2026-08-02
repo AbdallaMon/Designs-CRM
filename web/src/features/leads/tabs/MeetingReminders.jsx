@@ -89,10 +89,10 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
 
   const visibleMeetings = meetingReminders?.filter((call) => {
     if (
-      user.role !== "ADMIN" &&
-      user.role !== "SUPER_ADMIN" &&
-      user.role !== "STAFF" &&
-      user.role !== "SUPER_SALES" &&
+      user.profile !== "ADMIN" &&
+      user.profile !== "SUPER_ADMIN" &&
+      !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
+      user.profile !== "SUPER_SALES" &&
       call.userId !== user.id
     ) {
       return false;
@@ -190,7 +190,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                 }
                 actions={
                   <>
-                    {user.role !== "ACCOUNTANT" &&
+                    {user.profile !== "ACCOUNTANT" &&
                       call.status === "IN_PROGRESS" && (
                         <CallResultDialog
                           lead={lead}

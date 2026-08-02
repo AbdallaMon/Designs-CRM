@@ -59,7 +59,7 @@ export default function TaskDetails({ id, showBackButton = true }) {
 
     async function fetchTaskData() {
       const res = await getData({
-        url: `shared/tasks/${id}`,
+        url: `tasks/${id}`,
         setLoading,
       });
       if (cancelled) return;

@@ -121,7 +121,7 @@ export default function PdfUtilityFieldCard({
     const res = await handleRequestSubmit(
       { [itemKey]: url },
       setSaving,
-      `shared/site-utilities/pdf-utility`,
+      `site-utilities/pdf-utility`,
       false,
       "Updating utility..."
     );

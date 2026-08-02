@@ -5,6 +5,8 @@
 // operations are also exported as module functions so the DASHBOARD module can reuse
 // `getCommissionByUserId` / `reverseCommissions` (it imported them from the god-file before).
 import { commissionsRepository } from "./commissions.repo.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { adminResidualMessagesCodes } from "@dms/shared";
 
 export async function getCommissionByUserId(userId) {
   const userIdNumber = parseInt(userId, 10);
@@ -44,15 +46,18 @@ export async function updateCommission({ commissionId, amount }) {
   const commissionIdNumber = parseInt(commissionId, 10);
   const paymentAmount = parseFloat(amount);
   if (isNaN(commissionIdNumber) || isNaN(paymentAmount) || paymentAmount <= 0) {
-    throw new Error("Invalid commission ID or payment amount");
+    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_AMOUNT_INVALID, statusCode: 400 });
   }
 
   const commission = await commissionsRepository.findCommissionById(commissionIdNumber);
+  if (!commission) {
+    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_NOT_FOUND, statusCode: 404 });
+  }
   const remainingAmount =
     parseFloat(commission.amount) - parseFloat(commission.amountPaid);
 
   if (paymentAmount > remainingAmount) {
-    throw new Error("Payment amount exceeds remaining balance");
+    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_PAYMENT_EXCEEDS_REMAINING, statusCode: 400 });
   }
   const newAmountPaid = parseFloat(commission.amountPaid) + paymentAmount;
 
@@ -82,7 +87,7 @@ export async function createCommissionByAdmin({
     !commissionReason ||
     commissionReason.trim() === ""
   ) {
-    throw new Error("Invalid user ID, lead ID, or commission amount");
+    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_AMOUNT_INVALID, statusCode: 400 });
   }
   const clientLead = await commissionsRepository.findClientLeadForUser({
     id: clientLeadIdNumber,
@@ -90,7 +95,7 @@ export async function createCommissionByAdmin({
   });
 
   if (!clientLead) {
-    throw new Error("Client lead not found or does not belong to the user");
+    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_LEAD_MISMATCH, statusCode: 404 });
   }
   return await commissionsRepository.createCommission({
     data: {

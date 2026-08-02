@@ -19,8 +19,26 @@ export const adminResidualMessages = {
   // ── telegram (lead-scoped) ───────────────────────────────────────────────────────
   TELEGRAM_CHANNEL_CREATED: "Telegram channel created",
   TELEGRAM_USERS_QUEUED: "Adding users to Telegram scheduled",
-  // telegram profile auth (2FA password step)
+  TELEGRAM_AUTH_FETCHED: "Telegram authentication status loaded",
+  TELEGRAM_AUTH_INITIATED: "Telegram authentication started",
+  TELEGRAM_CODE_VERIFIED: "Telegram code verified",
+  TELEGRAM_PASSWORD_VERIFIED: "Telegram authentication completed",
+  TELEGRAM_PASSWORD_REQUIRED: "Enter your Telegram two-factor password",
+  TELEGRAM_SESSION_UNAUTHORIZED: "The Telegram session is not authorized",
+  TELEGRAM_CONNECTION_FAILED: "Telegram connection failed",
+  TELEGRAM_AUTH_RATE_LIMITED:
+    "Too many Telegram authentication attempts. Please try again later",
+  TELEGRAM_CODE_INCORRECT: "The Telegram verification code is incorrect",
+  TELEGRAM_CODE_EXPIRED:
+    "The Telegram verification code expired. Request a new code",
   TELEGRAM_PASSWORD_INCORRECT: "Incorrect Telegram password. Please try again.",
+  TELEGRAM_AUTH_INIT_FAILED: "Telegram authentication could not be started",
+  TELEGRAM_CODE_VERIFICATION_FAILED:
+    "Telegram code verification failed",
+  TELEGRAM_PASSWORD_VERIFICATION_FAILED:
+    "Telegram password verification failed",
+  TELEGRAM_CONFIG_MISSING: "Telegram configuration is incomplete",
+  TELEGRAM_CLIENT_NOT_INITIALIZED: "Telegram client is not initialized",
 
   // ── fixed-data writes ────────────────────────────────────────────────────────────
   FIXED_DATA_CREATED: "Fixed data added",
@@ -46,6 +64,11 @@ export const adminResidualMessages = {
   MODEL_NOT_ALLOWED: "This model is not allowed to be archived",
   COMMISSION_AMOUNT_INVALID: "Invalid commission amount",
   COMMISSION_REASON_REQUIRED: "Commission reason is required",
+  COMMISSION_NOT_FOUND: "Commission not found",
+  COMMISSION_PAYMENT_EXCEEDS_REMAINING: "The payment exceeds the remaining commission balance",
+  COMMISSION_LEAD_MISMATCH: "The lead was not found for this user",
+  TELEGRAM_CHANNEL_NOT_FOUND: "No Telegram channel is linked to this lead",
+  CLIENT_EMAIL_IMMUTABLE: "A client email cannot be changed from this field",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
   OK: "Operation completed successfully",

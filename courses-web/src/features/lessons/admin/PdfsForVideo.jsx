@@ -43,7 +43,7 @@ const LessonVideoPdfManager = ({ lessonId, courseId, lessonVideoId }) => {
   // Mock API functions - replace with your actual API calls
   const fetchPdfs = async () => {
     await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`,
+      url: `courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`,
       setLoading,
       setData: setPdfs,
     });
@@ -87,7 +87,7 @@ const LessonVideoPdfManager = ({ lessonId, courseId, lessonVideoId }) => {
         lessonVideoId,
       },
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`
+      `courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`
     );
     if (req.status === 200) {
       fetchPdfs();
@@ -214,7 +214,7 @@ const LessonVideoPdfManager = ({ lessonId, courseId, lessonVideoId }) => {
                       }
                     />
                     <DeleteModal
-                      href={`admin/courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`}
+                      href={`courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`}
                       item={pdf}
                       handleClose={fetchPdfs}
                     />

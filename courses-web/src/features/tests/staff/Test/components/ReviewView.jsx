@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { FaArrowLeft } from "react-icons/fa";
 import { QuestionTypesLabels } from "@/app/helpers/constants";
-import { toArabicNumerals } from "../helpers";
+import { formatNumber } from "../helpers";
 import RenderQuestionContent from "./RenderQuestionContent";
 
 const ReviewView = ({
@@ -43,17 +43,17 @@ const ReviewView = ({
         }}
       >
         <Button startIcon={<FaArrowLeft />} onClick={onBack}>
-          العودة إلى المحاولات
+          Back to attempts
         </Button>
         <Typography variant="h5">
-          مراجعة المحاولة{" "}
-          {toArabicNumerals(selectedAttemptForReview.attemptCount)}
+          Review attempt{" "}
+          {formatNumber(selectedAttemptForReview.attemptCount)}
         </Typography>
       </Box>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        النتيجة: {toArabicNumerals(selectedAttemptForReview.score)}% | الحالة:{" "}
-        {selectedAttemptForReview.passed ? "نجح" : "فشل"}
+        Score: {formatNumber(selectedAttemptForReview.score)}% | Status:{" "}
+        {selectedAttemptForReview.passed ? "Passed" : "Failed"}
       </Alert>
 
       {questions.map((question, index) => (
@@ -63,7 +63,7 @@ const ReviewView = ({
               sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
             >
               <Typography variant="h6">
-                السؤال {toArabicNumerals(index + 1)}
+                Question {formatNumber(index + 1)}
               </Typography>
               <Chip
                 label={QuestionTypesLabels[question.type]}

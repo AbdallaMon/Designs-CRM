@@ -70,7 +70,7 @@ const LessonCard = ({
             <DeleteModal
               buttonType="ICON"
               item={lesson}
-              href={`admin/courses/${courseId}/lessons`}
+              href={`courses/${courseId}/lessons`}
               handleClose={getLessons}
             />
           </Box>

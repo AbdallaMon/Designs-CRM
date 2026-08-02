@@ -30,7 +30,7 @@ export class ReviewsUsecase {
   // (the legacy token-exposure fix). NEVER log code/tokens.
   async handleOAuthCallback({ code }) {
     if (!code) {
-      throw new AppError(reviewsMessagesCodes.REVIEW_OAUTH_MISSING_CODE, 400);
+      throw new AppError({ code: reviewsMessagesCodes.REVIEW_OAUTH_MISSING_CODE, statusCode: 400 });
     }
     await handleOAuthCallback(code);
     return { connected: true };

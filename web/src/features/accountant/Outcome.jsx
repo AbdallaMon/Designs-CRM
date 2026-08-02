@@ -29,7 +29,7 @@ const OutCome = () => {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher(`accountant/outcome?`);
+  } = useDataFetcher(`accounting/outcome?`);
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
       <IncomeOutcomeSummary />

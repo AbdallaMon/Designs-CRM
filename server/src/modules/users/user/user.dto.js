@@ -1,17 +1,20 @@
 // users/user DTO — output shaping + per-record `capabilities.*` (FE rendering hints;
 // the server checkers remain the source of truth). Pure: no Prisma, no side effects.
 //
-// SECURITY: the legacy self-profile read returned the FULL user row (including the
-// bcrypt `password` hash and other internals) straight to the client. `toSafeProfile`
-// strips sensitive fields. The admin management lists already used narrow Prisma
-// `select`s (no password), so they are passed through unchanged.
+// Profile reads use narrow repository selects; the password strip is defence-in-depth.
 import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
 import dayjs from "dayjs";
 
 const P = PERMISSIONS.USER;
 
 // Fields never exposed by a profile read (defence-in-depth on top of any select).
-const SENSITIVE_PROFILE_FIELDS = ["password"];
+const SENSITIVE_PROFILE_FIELDS = [
+  "password",
+  "role",
+  "subRoles",
+  "isPrimary",
+  "isSuperSales",
+];
 
 /** Strip sensitive fields from a single user/profile record. */
 export function toSafeProfile(record) {
@@ -21,37 +24,18 @@ export function toSafeProfile(record) {
   return safe;
 }
 
-const ADMIN_TIER_ROLES = ["ADMIN", "SUPER_ADMIN"];
-
 /**
- * Admin-tier (full user-management) check, mirroring the legacy `isAdmin` union in
- * verifyTokenAndHandleAuthorization (utility.js): base role ADMIN/SUPER_ADMIN OR
- * isSuperSales OR a sub-role of ADMIN/SUPER_ADMIN. The previous version omitted the
- * sub-role branch, so a sub-role-ADMIN user (who DOES hold every management permission
- * code via the sub-role union) was wrongly 403'd on others' profiles.
- *
- * `subRoles` is tolerated in either shape: the token/req.auth carries a plain string[]
- * (auth.dto.js toTokenPayload), while a raw Prisma row carries [{ subRole }].
+ * Admin-tier check derived by the authentication middleware from the active profile.
  */
 export function isAdminTier(authUser) {
   if (!authUser) return false;
-  // Authoritative: the resolved current profile's flag (attached to req.auth by
-  // requireAuth). This is what makes admin-tier follow the ACTIVE profile — an
-  // admin who switched to a sales profile is no longer admin-tier.
-  if (typeof authUser.isAdminTier === "boolean") return authUser.isAdminTier;
-  // Legacy fallback for raw user rows / callers without a resolved profile.
-  if (authUser.currentProfileKey === "SUPER_SALES") return true;
-  if (ADMIN_TIER_ROLES.includes(authUser.role)) return true;
-  const subRoles = Array.isArray(authUser.subRoles) ? authUser.subRoles : [];
-  return subRoles.some((entry) =>
-    ADMIN_TIER_ROLES.includes(typeof entry === "string" ? entry : entry?.subRole),
-  );
+  return Boolean(authUser.isAdminTier);
 }
 
 /**
  * Capabilities for a single managed user row (admin list / detail). Combines the
  * permission CODE the caller holds with object facts (you cannot manage yourself the
- * same way, and isSuperSales is constrained to STAFF in the usecase).
+ * same way.
  */
 export function computeUserCapabilities(record, authUser) {
   const permissions = authUser?.permissions ?? [];
@@ -59,16 +43,15 @@ export function computeUserCapabilities(record, authUser) {
   return computeCapabilities(
     {
       canEditUser: () => hasPermission(permissions, P.UPDATE),
-      canChangeRoles: () => hasPermission(permissions, P.MANAGE_ROLES),
+      canManageProfiles: () => hasPermission(permissions, P.MANAGE_PROFILES),
       canSetMaxLeads: () => hasPermission(permissions, P.SET_MAX_LEADS),
       canManageRestrictedCountries: () =>
         hasPermission(permissions, P.MANAGE_RESTRICTED_COUNTRIES),
       canManageAutoAssignments: () =>
         hasPermission(permissions, P.MANAGE_AUTO_ASSIGNMENTS),
-      canManageStaffExtra: () => hasPermission(permissions, P.MANAGE_STAFF_EXTRA),
       canViewLogs: () => hasPermission(permissions, P.VIEW_LOGS),
       canViewLastSeen: () => hasPermission(permissions, P.VIEW_LAST_SEEN),
-      // A user cannot toggle their OWN active status off (legacy let the FE hide it).
+      // A user cannot deactivate their own account.
       canToggleStatus: () => hasPermission(permissions, P.UPDATE) && !isSelf,
     },
     {},
@@ -85,9 +68,7 @@ export function withListCapabilities(items, authUser) {
 }
 
 /**
- * Shape the monthly user-logs payload from the raw repo reads. Pure: no Prisma, no side
- * effects. The grouping / totals / final object are ported VERBATIM from the legacy
- * `getUserLogs` (only the Prisma reads were extracted into user.repo.js).
+ * Shape the monthly user-logs payload from the raw repository reads.
  */
 export function formatUserLogs({ user, logs, todayLog, requestedMonth, requestedYear }) {
   // Calculate total month hours

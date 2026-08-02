@@ -13,7 +13,7 @@ class SalaryRepository {
       ? { userId: Number(searchParams.staffId) }
       : {};
     let where = {
-      role: { not: "ADMIN" },
+      currentProfile: { isAdminTier: false },
       ...staffFilter,
     };
     if (filters.status !== undefined) {
@@ -33,7 +33,9 @@ class SalaryRepository {
         email: true,
         isActive: true,
         lastSeenAt: true,
-        role: true,
+        currentProfile: {
+          select: { key: true, label: true, family: true },
+        },
         baseSalary: {
           select: {
             baseSalary: true,
@@ -164,7 +166,7 @@ class SalaryRepository {
         },
       });
 
-      return { data: updatedMonthlySalary, message: "Paid succesffully" };
+      return { data: updatedMonthlySalary };
     });
   }
 
@@ -187,7 +189,9 @@ class SalaryRepository {
             id: true,
             name: true,
             email: true,
-            role: true,
+            currentProfile: {
+              select: { key: true, label: true, family: true },
+            },
           },
         },
         monthlySalaries: {

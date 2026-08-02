@@ -1,7 +1,7 @@
 import { uploadANote } from "./telegram-uploads.js";
 
 export async function notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId }) {
-  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
+  const link = `${process.env.DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
   const note = {
     id: `style-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -11,7 +11,7 @@ export async function notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId }) {
 }
 
 export async function notifyUsersThatAContractWasSigned({ clientLeadId }) {
-  const dashboardLink = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
+  const dashboardLink = `${process.env.DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
   const note = {
     id: `contract-signed-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -28,7 +28,7 @@ export async function notifyUsersAddedToProject({
   type,
   username,
 }) {
-  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
+  const link = `${process.env.DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
   const note = {
     id: `${projectId}-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -42,7 +42,7 @@ export async function notifyUsersWithTheNewProjectStatus({
   clientLeadId,
   type,
 }) {
-  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
+  const link = `${process.env.DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
   const note = {
     id: `${projectId}-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),

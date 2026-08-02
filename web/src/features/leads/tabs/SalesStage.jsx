@@ -61,7 +61,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
     const req = await handleRequestSubmit(
       data,
       setActionLoading,
-      `shared/sales-stages/${clientLeadId}/actions/set-stage`,
+      `sales-stages/${clientLeadId}/actions/set-stage`,
       false,
       "Updating"
     );

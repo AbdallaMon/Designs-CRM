@@ -101,7 +101,7 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
       params.set("endDate", endDate);
 
       const res = await getData({
-        url: `shared/dashboard/leads-monthly-overview?${params.toString()}&`,
+        url: `dashboard/leads-monthly-overview?${params.toString()}&`,
         setLoading,
       });
       if (res) setPayload(res.data || DEFAULT_PAYLOAD);

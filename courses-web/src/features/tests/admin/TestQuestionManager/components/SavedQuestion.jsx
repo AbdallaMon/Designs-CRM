@@ -44,7 +44,7 @@ const SavedQuestion = React.memo(
 
     const getQuestion = useCallback(async () => {
       await getDataAndSet({
-        url: `admin/courses/tests/${testId}/test-questions/${questionId}`,
+        url: `courses/tests/${testId}/test-questions/${questionId}`,
         setLoading,
         setData: setQuestion,
       });
@@ -179,7 +179,7 @@ const SavedQuestion = React.memo(
       const req = await handleRequestSubmit(
         editedQuestion,
         setToastLoading,
-        `admin/courses/tests/${testId}/test-questions/${questionId}`,
+        `courses/tests/${testId}/test-questions/${questionId}`,
         false,
         "Updating",
         false,

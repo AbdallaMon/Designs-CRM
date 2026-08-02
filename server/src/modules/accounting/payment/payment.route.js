@@ -1,11 +1,7 @@
-// accounting/payment routes — the accountant payments surface (legacy
-// `/accountant/payments*`). Mounted under `/v2/accounting/payments` (legacy router stays
-// mounted in parallel during the strangler window). Auth once at the parent router; each
-// route declares its permission code; the money WORKFLOW actions also carry an existence
-// guard (requireSpecialChecker → checkPaymentExists) so a forged id 404s before any
-// money mutation, and strict Zod money validation.
+// Payment routes mounted under /v2/accounting/payments. Every workflow action declares
+// a permission code, verifies the payment exists, and validates money input strictly.
 //
-// WORKFLOW-ACTION RENAMES (old legacy → new v2) — for the FE:
+// Canonical workflow actions:
 //   POST /payments/pay/:paymentId       → POST /payments/:paymentId/actions/pay
 //   POST /payments/overdue/:paymentId   → POST /payments/:paymentId/actions/mark-overdue
 //   PUT  /payments/status/:paymentId    → POST /payments/:paymentId/actions/change-status

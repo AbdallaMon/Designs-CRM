@@ -1,4 +1,3 @@
-import { userRolesEnum } from "@/app/helpers/constants";
 
 export const inputs = [
   {
@@ -47,7 +46,12 @@ export const inputs = [
 export const columns = [
   { name: "name", label: "User Name" },
   { name: "email", label: "Email" },
-  { name: "role", label: "Main role", type: "enum", enum: userRolesEnum },
+  {
+    name: "currentProfile",
+    label: "Profile",
+    type: "function",
+    render: (item) => item.currentProfile?.label || "—",
+  },
   {
     name: "isActive",
     label: "Account status",

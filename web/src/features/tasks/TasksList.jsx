@@ -37,7 +37,7 @@ export const TasksList = ({
   const loadTasks = useCallback(async () => {
     setError(false);
     const tasksData = await getData({
-      url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&clientLeadId=${clientLeadId}&`,
+      url: `tasks?projectId=${projectId}&type=${type}&userId=${userId}&clientLeadId=${clientLeadId}&`,
       setLoading,
     });
 

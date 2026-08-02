@@ -12,7 +12,7 @@ describe("buildCatalog", () => {
     }
   });
 
-  it("marks ADMIN/SUPER_ADMIN/SUPER_SALES as admin-tier, others not", () => {
+  it("marks ADMIN and SUPER_ADMIN as admin-tier, others not", () => {
     const byKey = Object.fromEntries(cat.profiles.map((p) => [p.key, p]));
     for (const k of ADMIN_TIER_PROFILE_KEYS) expect(byKey[k].isAdminTier).toBe(true);
     expect(byKey.NORMAL_SALES.isAdminTier).toBe(false);
@@ -61,7 +61,7 @@ describe("seedAdminUser (idempotent bootstrap admin)", () => {
     const r = await seedAdminUser({ prisma: db });
     expect(r.created).toBe(true);
     const data = db.user.create.mock.calls[0][0].data;
-    expect(data.role).toBe("ADMIN");
+    expect(data).not.toHaveProperty("role");
     expect(data.isActive).toBe(true);
     expect(data.currentProfileId).toBe(7);
     expect(data.password).toMatch(/^\$2[aby]\$/); // a bcrypt hash, never plaintext

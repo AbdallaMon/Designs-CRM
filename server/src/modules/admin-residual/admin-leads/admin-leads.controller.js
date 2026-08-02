@@ -25,18 +25,13 @@ class AdminLeadsController {
   // ── bulk excel import (controller owns req/res; ported VERBATIM from the legacy
   //    createLeadFromExcelData handler's responses) ─────────────────────────────────
   async importLeads(req, res) {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-      await adminLeadsUsecase.importLeadsFromExcel({ file: req.file });
-      return res.status(200).json({ message: "Data processed successfully" });
-    } catch (error) {
-      console.error(error);
-      return res
-        .status(500)
-        .json({ error: "An error occurred while processing the data" });
-    }
+    await adminLeadsUsecase.importLeadsFromExcel({ file: req.file });
+    return ok(
+      res,
+      null,
+      adminResidualMessagesCodes.LEADS_IMPORTED,
+      TK,
+    );
   }
 
   // ── admin lead field update (lead-scoped) ────────────────────────────────────────

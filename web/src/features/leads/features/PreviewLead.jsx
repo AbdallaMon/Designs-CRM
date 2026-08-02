@@ -86,7 +86,7 @@ export const PreviewLead = ({
       const leadDetails = await getData({
         url,
 
-        // url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
+        // url: `leads/projects/designers/${id}?type=${type}&`,
         setLoading,
       });
       if (leadDetails && leadDetails.status === 200) {
@@ -110,7 +110,7 @@ export const PreviewLead = ({
     const res = await handleRequestSubmit(
       { id },
       setToastLoading || setLoading,
-      `shared/client-leads`,
+      `leads`,
       false,
       "Assigning",
       false,

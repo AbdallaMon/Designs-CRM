@@ -1,26 +1,73 @@
-import { describe, it, expect, vi } from "vitest";
-import { AppError } from "../AppError.js";
-import { errorHandler } from "../error-handler.js";
+import { describe, expect, it, vi } from "vitest";
+import multer from "multer";
+import { generalMessagesCodes } from "@dms/shared";
+import { errorHandler, notFoundHandler } from "../error-handler.js";
 
-function mockRes() {
-  return { statusCode: 0, body: null,
-    status(c){ this.statusCode = c; return this; },
-    json(b){ this.body = b; return this; } };
+function response() {
+  const res = {
+    status: vi.fn(() => res),
+    json: vi.fn(() => res),
+  };
+  return res;
 }
 
-describe("errorHandler", () => {
-  it("serializes the full envelope for an AppError", () => {
-    const res = mockRes();
-    const err = new AppError("LEAD_ACCESS_DENIED", 403, { requiredPermissions: ["lead.view"] }, {
-      translationKey: "leadsMessages", redirectTo: "/dashboard/leads", redirectText: "BACK_TO_LEADS",
+describe("error handler contract", () => {
+  it("uses a language-neutral code for unknown routes", () => {
+    const next = vi.fn();
+    notFoundHandler(
+      { method: "GET", originalUrl: "/missing" },
+      {},
+      next,
+    );
+
+    expect(next.mock.calls[0][0]).toMatchObject({
+      statusCode: 404,
+      message: generalMessagesCodes.NOT_FOUND,
+      code: generalMessagesCodes.NOT_FOUND,
     });
-    errorHandler(err, { method: "GET", originalUrl: "/leads/9" }, res, () => {});
-    expect(res.statusCode).toBe(403);
-    expect(res.body).toMatchObject({
-      success: false, message: "LEAD_ACCESS_DENIED", code: "LEAD_ACCESS_DENIED",
-      translationKey: "leadsMessages", redirectTo: "/dashboard/leads",
-      redirectText: "BACK_TO_LEADS", dontRedirect: false,
-      details: { requiredPermissions: ["lead.view"] }, route: "GET /leads/9",
-    });
+  });
+
+  it("maps Multer failures into the standard error envelope", () => {
+    const res = response();
+    errorHandler(
+      new multer.MulterError("LIMIT_FILE_SIZE"),
+      { method: "POST", originalUrl: "/files" },
+      res,
+      vi.fn(),
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: generalMessagesCodes.FILE_TOO_LARGE,
+        code: generalMessagesCodes.FILE_TOO_LARGE,
+        data: null,
+        translationKey: "generalMessages",
+      }),
+    );
+  });
+
+  it("never exposes raw unexpected error text", () => {
+    const res = response();
+    errorHandler(
+      new Error("database password leaked"),
+      { method: "GET", originalUrl: "/x" },
+      res,
+      vi.fn(),
+    );
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: generalMessagesCodes.INTERNAL_SERVER_ERROR,
+        code: generalMessagesCodes.INTERNAL_SERVER_ERROR,
+        data: null,
+      }),
+    );
+    expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain(
+      "database password leaked",
+    );
   });
 });

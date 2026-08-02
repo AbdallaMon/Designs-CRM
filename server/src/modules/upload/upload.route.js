@@ -6,6 +6,10 @@ import { uploadController } from "./upload.controller.js";
 import { UploadMiddleware } from "./upload.middleware.js";
 import { uploadSchemas } from "./upload.validation.js";
 import { PERMISSIONS } from "@dms/shared";
+import {
+  publicUploadCapabilityLimiter,
+  publicUploadLimiter,
+} from "./upload.rate-limiter.js";
 
 const uploadRouter = Router();
 
@@ -26,12 +30,22 @@ uploadRouter.post(
   AuthMiddleware.requirePermissions([PERMISSIONS.UPLOAD.FILE_UPLOAD]),
   // Frontend (frozen uploadInChunks) posts the part under field name "chunk" — must match.
   UploadMiddleware.chunkFile("chunk"),
-  //   validate(uploadSchemas.chunkUpload),
+  validate(uploadSchemas.chunkUpload),
   asyncHandler(uploadController.uploadAsChunks),
 );
 
 uploadRouter.post(
+  "/client/capabilities",
+  publicUploadCapabilityLimiter,
+  validate(uploadSchemas.publicCapability),
+  asyncHandler(uploadController.issuePublicCapability),
+);
+
+uploadRouter.post(
   "/client/single",
+  publicUploadLimiter,
+  validate(uploadSchemas.publicAccessQuery, "query"),
+  AuthMiddleware.requireSpecialChecker(uploadController.authorizePublicUpload),
   UploadMiddleware.singleFile("file", true),
   validate(uploadSchemas.singleFile),
   asyncHandler(uploadController.uploadSingleFile),
@@ -39,6 +53,9 @@ uploadRouter.post(
 
 uploadRouter.post(
   "/client/chunks",
+  publicUploadLimiter,
+  validate(uploadSchemas.publicAccessQuery, "query"),
+  AuthMiddleware.requireSpecialChecker(uploadController.authorizePublicUpload),
   UploadMiddleware.chunkFile("chunk", undefined, true),
   validate(uploadSchemas.chunkUpload),
   asyncHandler(uploadController.uploadAsChunks),

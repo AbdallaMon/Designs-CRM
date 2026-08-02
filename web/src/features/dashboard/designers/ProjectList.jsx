@@ -41,7 +41,7 @@ export const ProjectsList = ({ userId }) => {
     filters,
     setFilters,
     setRender,
-  } = useDataFetcher(`shared/projects/user-profile/${userId}?&`, false);
+  } = useDataFetcher(`projects/user-profile/${userId}?&`, false);
   const handleProjectUpdate = (updatedProject) => {
     setRender((prev) => !prev);
   };
@@ -195,7 +195,7 @@ function ProjectFilters({ filters, setFilters }) {
   return (
     <Box display="flex" gap={2} alignItems="center">
       <SearchComponent
-        apiEndpoint="search?model=clientLead"
+        resource="leads"
         setFilters={setFilters}
         inputLabel="Search lead by id, name or phone"
         renderKeys={["id", "client.name", "client.phone", "client.email"]}

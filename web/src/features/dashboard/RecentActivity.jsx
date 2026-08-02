@@ -17,7 +17,7 @@ const {user}=useAuth()
             try {
                 const extra=staffId?"staffId="+staffId:"userId="+user.id
                 const response = await getData({
-                    url: `shared/dashboard/recent-activities?${extra}&`,
+                    url: `dashboard/recent-activities?${extra}&`,
                     setLoading,
                 });
 

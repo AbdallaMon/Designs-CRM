@@ -19,12 +19,12 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { NotificationType } from "@/app/helpers/constants";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import "dayjs/locale/ar";
 import parse from "html-react-parser";
 import { NotificationColors } from "@/app/helpers/colors.js";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 
 dayjs.extend(relativeTime);
-dayjs.locale("ar");
+dayjs.locale("en");
 
 const url = process.env.NEXT_PUBLIC_URL;
 
@@ -39,16 +39,12 @@ const NotificationsIcon = () => {
   useEffect(() => {
     const fetchUnreadNotifications = async () => {
       try {
-        const response = await fetch(
-          `${url}/shared/notifications?userId=${user.id}&`,
-          {
-            credentials: "include",
-          }
-        );
+        const response = await apiRequest("notifications?page=1&limit=50");
         const res = await response.json();
-        setNotifications(res.data);
+        const items = res.data?.items ?? [];
+        setNotifications(items);
         setUnreadCount(
-          res.data.filter((notification) => !notification.isRead).length
+          items.filter((notification) => !notification.isRead).length
         );
       } catch (error) {
         console.error("Error fetching unread notifications:", error);
@@ -61,6 +57,7 @@ const NotificationsIcon = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!user?.id) return;
     const socket = io(url, {
       transports: ["websocket", "polling"],
       query: { userId: user.id },
@@ -91,8 +88,10 @@ const NotificationsIcon = () => {
     if (open) {
       const handleOpenNotificationPaper = async () => {
         try {
-          await fetch(`${url}/utility/notification/users/${user.id}`, {
+          await apiRequest("notifications/actions/mark-read", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
           });
           handleMarkAsRead();
         } catch (error) {
@@ -101,7 +100,7 @@ const NotificationsIcon = () => {
       };
       handleOpenNotificationPaper();
     }
-  }, [open]);
+  }, [open, user?.id]);
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);

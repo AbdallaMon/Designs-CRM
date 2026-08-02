@@ -31,9 +31,9 @@ const item = (leadId, type = "CALL_OVERDUE") => ({
 beforeEach(() => {
   vi.clearAllMocks();
   userFindMany.mockResolvedValue([
-    { id: 7, name: "Rep", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } },
-    { id: 8, name: "Quiet", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } },
-    { id: 9, name: "AdminProfiled", role: "STAFF", profile: null, currentProfile: { key: "ADMIN" } },
+    { id: 7, name: "Rep", currentProfile: { key: "NORMAL_SALES" } },
+    { id: 8, name: "Quiet", currentProfile: { key: "NORMAL_SALES" } },
+    { id: 9, name: "AdminProfiled", currentProfile: { key: "ADMIN" } },
   ]);
   myDayUsecase.getMyQueue.mockImplementation(async ({ authUser }) => {
     if (authUser.id === 7) {
@@ -73,20 +73,20 @@ describe("runMyDayDigest", () => {
     expect(content).toContain("+2 more");
   });
 
-  it("queries only active users in personal-queue roles", async () => {
+  it("queries only active users holding a personal-queue profile", async () => {
     await runMyDayDigest({ now: NOW });
     const where = userFindMany.mock.calls[0][0].where;
     expect(where.isActive).toBe(true);
-    expect(where.role.in).toEqual(
-      expect.arrayContaining(["STAFF", "ACCOUNTANT", "CONTACT_INITIATOR"]),
+    expect(where.currentProfile.key.in).toEqual(
+      expect.arrayContaining(["NORMAL_SALES", "ACCOUNTANT", "CONTACT_INITIATOR"]),
     );
-    expect(where.role.in).not.toContain("ADMIN");
+    expect(where.currentProfile.key.in).not.toContain("ADMIN");
   });
 
   it("one failed send doesn't abort the run", async () => {
     userFindMany.mockResolvedValue([
-      { id: 7, name: "A", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } },
-      { id: 10, name: "B", role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } },
+      { id: 7, name: "A", currentProfile: { key: "NORMAL_SALES" } },
+      { id: 10, name: "B", currentProfile: { key: "NORMAL_SALES" } },
     ]);
     myDayUsecase.getMyQueue.mockResolvedValue({ items: [item(1)] });
     sendToUser.mockRejectedValueOnce(new Error("smtp down"));

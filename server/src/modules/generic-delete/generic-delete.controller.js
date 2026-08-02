@@ -2,6 +2,14 @@ import { deleted } from "../../shared/http/response.js";
 import { genericDeleteUsecase } from "./generic-delete.usecase.js";
 
 class GenericDeleteController {
+  checkIfUserCanDeleteModel(req) {
+    return genericDeleteUsecase.checkIfUserCanDeleteModel({
+      id: req.params.id,
+      body: req.body,
+      authUser: req.auth,
+    });
+  }
+
   async deleteModel(req, res) {
     await genericDeleteUsecase.deleteModel({
       id: req.params.id,

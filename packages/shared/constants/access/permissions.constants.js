@@ -70,6 +70,12 @@ export const UPLOAD_PERMISSIONS = {
   FILE_UPLOAD: "upload.file.upload",
 };
 
+export const NOTE_PERMISSIONS = {
+  LIST: "note.list",
+  CREATE: "note.create",
+  DELETE: "note.delete",
+};
+
 // ── site-utility (PDF config + contract payment conditions) ────────────────────
 // SECURITY FIX (migration): the legacy `/site-utilities` routes were only behind
 // the SHARED authentication middleware — ANY authenticated role could read/mutate
@@ -194,12 +200,11 @@ export const USER_PERMISSIONS = {
   VIEW_LAST_SEEN: "user.view_last_seen", // GET /:userId/last-seen (monthly activity)
   // admin user-management (writes)
   CREATE: "user.create", // POST /users
-  UPDATE: "user.update", // PUT /:userId , PATCH /:userId (status), staff-extra
-  MANAGE_ROLES: "user.manage_roles", // PUT /:userId/roles
+  UPDATE: "user.update", // PUT /:userId and PATCH /:userId (status)
+  MANAGE_PROFILES: "user.manage_profiles",
   MANAGE_RESTRICTED_COUNTRIES: "user.manage_restricted_countries", // GET|POST /:userId/restricted-countries
   MANAGE_AUTO_ASSIGNMENTS: "user.manage_auto_assignments", // GET|PUT /:userId/auto-assignments
   SET_MAX_LEADS: "user.set_max_leads", // PUT /max-leads/:userId , /max-leads-per-day/:userId
-  MANAGE_STAFF_EXTRA: "user.manage_staff_extra", // PATCH /:userId/staff-extra
 };
 
 // ── projects domain (project / task / update / delivery) ────────────────────────
@@ -375,7 +380,7 @@ export const UTILITY_PERMISSIONS = {
   FIXED_DATA_LIST: "utility.fixed_data.list", // GET /fixed-data
   USER_LOG_VIEW: "utility.user_log.view", // GET /user-logs
   USER_LOG_SUBMIT: "utility.user_log.submit", // POST /user-logs
-  USER_ROLE_VIEW: "utility.user_role.view", // GET /users/role/:userId , GET /roles
+  USER_PROFILE_VIEW: "utility.user_profile.view",
   ADMIN_LIST: "utility.admin.list", // GET /users/admins
   IMAGE_LIST: "utility.image.list", // GET /images
   MODEL_READ: "utility.model.read", // GET / (image-session model) , GET /ids (model ids)
@@ -722,6 +727,7 @@ export const PERMISSIONS = {
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,
   UPLOAD: UPLOAD_PERMISSIONS,
+  NOTE: NOTE_PERMISSIONS,
   SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
   COURSE: COURSE_PERMISSIONS,
   STAFF_COURSE: STAFF_COURSE_PERMISSIONS,

@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -29,17 +29,21 @@ describe("projects-domain permission grants", () => {
 
   it("grants the broad project-domain surface to EVERY authed role (legacy SHARED gate)", () => {
     for (const role of ALL_USER_ROLES) {
-      const codes = getPermissionsForRole(role);
+      const codes = permissionsForPersona(role);
       for (const code of PROJECT_AUTHED) {
         expect(codes).toContain(code);
       }
     }
   });
 
-  it("grants project.manage ONLY to ADMIN/SUPER_ADMIN base (legacy isAdmin)", () => {
+  it("grants project.manage to admin and super-sales profiles", () => {
     for (const role of ALL_USER_ROLES) {
-      const has = getPermissionsForRole(role).includes(P.PROJECT.MANAGE);
-      if (role === USER_ROLES.ADMIN || role === USER_ROLES.SUPER_ADMIN) {
+      const has = permissionsForPersona(role).includes(P.PROJECT.MANAGE);
+      if (
+        [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.SUPER_SALES].includes(
+          role,
+        )
+      ) {
         expect(has).toBe(true);
       } else {
         expect(has).toBe(false);
@@ -48,13 +52,13 @@ describe("projects-domain permission grants", () => {
   });
 
   it("a non-admin designer does NOT get project.manage", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.THREE_D_DESIGNER });
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.THREE_D_DESIGNER ) });
     expect(permissions).toContain(P.PROJECT.VIEW);
     expect(permissions).not.toContain(P.PROJECT.MANAGE);
   });
 
   it("isSuperSales layers project.manage on top (legacy isAdmin admits isSuperSales)", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.STAFF, isSuperSales: true });
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF, { superSales: true }) });
     expect(permissions).toContain(P.PROJECT.MANAGE);
   });
 });

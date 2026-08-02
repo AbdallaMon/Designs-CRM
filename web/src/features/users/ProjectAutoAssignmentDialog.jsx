@@ -58,7 +58,7 @@ export const ProjectAutoAssignmentDialog = ({ userId }) => {
     const fetchAssignments = async () => {
       setIsFetching(true);
       const req = await getData({
-        url: `admin/users/${userId}/auto-assignments`,
+        url: `users/${userId}/auto-assignments`,
         setLoading: setIsFetching,
       });
 
@@ -97,7 +97,7 @@ export const ProjectAutoAssignmentDialog = ({ userId }) => {
     const request = await handleRequestSubmit(
       payload,
       setLoading,
-      `admin/users/${userId}/auto-assignments`,
+      `users/${userId}/auto-assignments`,
       false,
       "Updating auto assignments",
       null,

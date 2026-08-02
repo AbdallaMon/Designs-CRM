@@ -5,15 +5,12 @@ import StaffCalendarPanel from "@/features/meeting/calendar/StaffCalendar";
 
 export default function Page() {
   const { user } = useAuth();
-  if (!user?.role) return null;
-  const role = user.role;
-
-  if (role === "ADMIN" || role === "SUPER_ADMIN") {
+  if (!user?.profile) return null;
+  if (user.profile === "ADMIN" || user.profile === "SUPER_ADMIN") {
     return <CalendarBookingSystem />;
   }
   if (
-    role === "SUPER_SALES" ||
-    (role === "STAFF" && user.profile === "SUPER_SALES")
+    user.profile === "SUPER_SALES"
   ) {
     return <StaffCalendarPanel isAdmin={true} />;
   }

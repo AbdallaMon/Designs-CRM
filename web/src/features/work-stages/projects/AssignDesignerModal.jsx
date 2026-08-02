@@ -37,11 +37,15 @@ export function AssignDesignerModal({
   const [loading, setLoading] = useState(true);
 
   const isThreeDDesigner = project.type === "3D_Designer";
+  const requiredProfileKey =
+    project.type === "3D_Designer" || project.type === "3D_Modification"
+      ? "DESIGNER_3D"
+      : "DESIGNER_2D";
 
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
-        url: `admin/all-users?role=${project.role}&`,
+        url: `users/all-users?profile=${requiredProfileKey}&`,
         setLoading,
       });
       if (usersRequest.status === 200) {
@@ -51,7 +55,7 @@ export function AssignDesignerModal({
     if (open) {
       getUsers();
     }
-  }, [open, project.role]);
+  }, [open, requiredProfileKey]);
 
   useEffect(() => {
     if (open) {
@@ -89,7 +93,7 @@ export function AssignDesignerModal({
     const updatedProject = await handleRequestSubmit(
       requestData,
       setToastLoading,
-      `shared/projects/${project.id}/actions/assign-designer`,
+      `projects/${project.id}/actions/assign-designer`,
       false,
       deleteDesigner ? "Removing Designer" : "Assigning Designer",
       false,

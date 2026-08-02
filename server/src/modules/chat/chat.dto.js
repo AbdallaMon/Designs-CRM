@@ -55,7 +55,9 @@ export const userSelect = {
   id: true,
   name: true,
   email: true,
-  role: true,
+  currentProfile: {
+    select: { key: true, label: true, family: true, isAdminTier: true },
+  },
   lastSeenAt: true,
   profilePicture: true,
 };
@@ -124,7 +126,16 @@ export const bookingLeadSelect = {
  */
 export function buildRoomInclude(userId) {
   return {
-    createdBy: { select: { id: true, name: true, email: true, role: true } },
+    createdBy: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        currentProfile: {
+          select: { key: true, label: true, family: true, isAdminTier: true },
+        },
+      },
+    },
     project: { select: { id: true, groupTitle: true, groupId: true } },
     clientLead: {
       select: {

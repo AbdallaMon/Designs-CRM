@@ -39,7 +39,7 @@ class SiteUtilityUsecase {
         input.pdfSignaturePart,
       );
       if (validationCode) {
-        throw new AppError(siteUtilityMessagesCodes[validationCode], 422);
+        throw new AppError({ code: siteUtilityMessagesCodes[validationCode], statusCode: 422 });
       }
     }
     const existing = await siteUtilityRepository.getPdfConfig();
@@ -93,10 +93,7 @@ class SiteUtilityUsecase {
   // the reserved "To Do" condition value may not be created.
   async createPaymentCondition({ input }) {
     if (input.condition === "To Do") {
-      throw new AppError(
-        siteUtilityMessagesCodes.PAYMENT_CONDITION_RESERVED_VALUE,
-        400,
-      );
+      throw new AppError({ code: siteUtilityMessagesCodes.PAYMENT_CONDITION_RESERVED_VALUE, statusCode: 400 });
     }
     const created = await siteUtilityRepository.createPaymentCondition({
       data: input,
@@ -108,10 +105,7 @@ class SiteUtilityUsecase {
   async updatePaymentCondition({ id, input }) {
     const existing = await siteUtilityRepository.getPaymentConditionById({ id });
     if (!existing) {
-      throw new AppError(
-        siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND,
-        404,
-      );
+      throw new AppError({ code: siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND, statusCode: 404 });
     }
     const updated = await siteUtilityRepository.updatePaymentCondition({
       id,
@@ -125,19 +119,13 @@ class SiteUtilityUsecase {
   async deletePaymentCondition({ id }) {
     const existing = await siteUtilityRepository.getPaymentConditionById({ id });
     if (!existing) {
-      throw new AppError(
-        siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND,
-        404,
-      );
+      throw new AppError({ code: siteUtilityMessagesCodes.PAYMENT_CONDITION_NOT_FOUND, statusCode: 404 });
     }
     const linked = await siteUtilityRepository.findFirstPaymentByConditionId({
       conditionId: id,
     });
     if (linked) {
-      throw new AppError(
-        siteUtilityMessagesCodes.PAYMENT_CONDITION_IN_USE,
-        409,
-      );
+      throw new AppError({ code: siteUtilityMessagesCodes.PAYMENT_CONDITION_IN_USE, statusCode: 409 });
     }
     await siteUtilityRepository.deletePaymentCondition({ id });
     return { id };

@@ -3,7 +3,7 @@
 // stays language-neutral (packages/shared/messages-codes/contracts/contracts.js); this is the
 // FE lookup. Every code the contracts surface (authed + public e-sign) can emit has an entry
 // here; unknown codes fall back to a generic string. Mirrors features/calendar/config/
-// calendarMessages.js. The BE REPLACED the legacy Arabic prose ("تم حفظ الاستجابة بنجاح" etc.)
+// The backend emits language-neutral message codes.
 // with these codes — resolved back to Arabic here.
 
 export const contractsMessages = {
@@ -49,6 +49,17 @@ export const contractsMessages = {
   CONTRACT_NOT_FOUND: "Contract not found",
   CONTRACT_SESSION_INVALID: "Invalid signing link",
   CONTRACT_PDF_GENERATION_FAILED: "Failed to generate contract file",
+  CONTRACT_PAYMENTS_REQUIRED: "Add at least one payment",
+  CONTRACT_PAYMENT_AMOUNT_INVALID: "Every payment must have an amount greater than zero",
+  CONTRACT_PAYMENT_CONDITION_INVALID: "Choose a valid payment condition",
+  CONTRACT_STAGES_REQUIRED: "Add at least one contract stage",
+  CONTRACT_STAGE_DAYS_INVALID: "Enter client and department delivery days for every stage",
+  CONTRACT_STAGE_COMPLETED: "A completed stage cannot be deleted",
+  CONTRACT_PAYMENT_NOT_DUE: "This payment is not due yet",
+  CONTRACT_SIGNATURE_PAYMENT_REQUIRED: "The signature payment cannot be deleted",
+  CONTRACT_PAYMENT_NOT_FOUND: "Contract payment not found",
+  CONTRACT_PAYMENT_AMOUNTS_INVALID: "Enter valid received and lost amounts",
+  CONTRACT_PAYMENT_AMOUNTS_EXCEED_TOTAL: "Received and lost amounts cannot exceed the payment total",
 
   // ── generic envelope codes (shared) ────────────────────────────────────────────────
   OK: "Operation completed successfully",

@@ -17,7 +17,11 @@
 //      envelope carries a language-neutral CODE instead (sanctioned contract change).
 import XLSX from "xlsx";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { authMessagesCodes } from "@dms/shared";
+import {
+  adminResidualMessagesCodes,
+  authMessagesCodes,
+  leadsMessagesCodes,
+} from "@dms/shared";
 import { adminLeadsRepository } from "./admin-leads.repo.js";
 import { leadRepository } from "../../leads/lead/lead.repo.js";
 import { newLeadNotification } from "../../../infra/notifications/index.js";
@@ -104,7 +108,7 @@ export async function addAllProjectUsersToChannel({ clientLeadId }) {
   }
 
   if (!clientLead.telegramChannel) {
-    throw new Error("?? No Telegram channel linked to this lead");
+    throw new AppError({ code: adminResidualMessagesCodes.TELEGRAM_CHANNEL_NOT_FOUND, statusCode: 404 });
   }
 
   return await addUsersToATeleChannelUsingQueue({
@@ -210,8 +214,8 @@ class AdminLeadsUsecase {
   // mutate-scope checker stay (defense in depth); this is the extra narrowing so that
   // SUPER_ADMIN / isSuperSales / an ADMIN-sub-role user is 403'd from deleting leads.
   assertCanDeleteLead({ authUser }) {
-    if (authUser?.role !== "ADMIN") {
-      throw new AppError(authMessagesCodes.FORBIDDEN, 403);
+    if (!authUser?.isAdminTier) {
+      throw new AppError({ code: authMessagesCodes.FORBIDDEN, statusCode: 403 });
     }
   }
 
@@ -222,7 +226,7 @@ class AdminLeadsUsecase {
   #buildSingleFieldUpdate(body) {
     const { field, inputType } = body;
     if (PROTECTED_FIELD_UPDATE_KEYS.has(field)) {
-      throw new AppError(authMessagesCodes.FORBIDDEN, 403);
+      throw new AppError({ code: authMessagesCodes.FORBIDDEN, statusCode: 403 });
     }
     const data = { field, inputType };
     // carry only the value keyed by the named field (the frozen updater applies date
@@ -238,14 +242,19 @@ class AdminLeadsUsecase {
 
   // ── admin client field update (client-keyed; no single lead to scope) ────────────
   updateClientField({ clientId, body }) {
+    if (body.field === "email") {
+      throw new AppError({ code: adminResidualMessagesCodes.CLIENT_EMAIL_IMMUTABLE, statusCode: 400 });
+    }
     return adminLeadsRepository.updateClientField({ data: this.#buildSingleFieldUpdate(body), clientId });
   }
 
   // ── admin delete lead (base-role-ADMIN only — FIX 1; lead-scope checker ran at the
   //    route too). The guard runs before the destructive cascading delete. ──────────
-  deleteLead({ id, authUser }) {
+  async deleteLead({ id, authUser }) {
     this.assertCanDeleteLead({ authUser });
-    return adminLeadsRepository.deleteALead(id);
+    const deleted = await adminLeadsRepository.deleteALead(id);
+    if (!deleted) throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
+    return deleted;
   }
 
   // ── telegram (lead-scoped; checker ran at the route) ─────────────────────────────

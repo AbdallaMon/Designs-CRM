@@ -80,7 +80,7 @@ const EmiratesAnalytics = ({ staff, staffId }) => {
         ? "staffId=" + user.id
         : "";
       const request = await getData({
-        url: `shared/dashboard/emirates-analytics?${extra}&`,
+        url: `dashboard/emirates-analytics?${extra}&`,
         setLoading,
       });
       if (request) setData(request.data);

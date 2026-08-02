@@ -313,7 +313,9 @@ const ContractSignature = ({
       );
       return;
     }
-    const uploadResponse = await uploadInChunks(file, setProgress, setOverlay);
+    const uploadResponse = await uploadInChunks(file, setProgress, setOverlay, {
+      publicAccess: { purpose: "CONTRACT", token },
+    });
     const url = uploadResponse?.url;
     if (!url) {
       setAlertError(
@@ -391,7 +393,9 @@ const ContractSignature = ({
       `signature-only-${token || "custom"}.png`,
       { type: "image/png" }
     );
-    const uploadResponse = await uploadInChunks(file, setProgress, setOverlay);
+    const uploadResponse = await uploadInChunks(file, setProgress, setOverlay, {
+      publicAccess: { purpose: "CONTRACT", token },
+    });
     const url = uploadResponse?.url;
     if (!url) {
       setAlertError(

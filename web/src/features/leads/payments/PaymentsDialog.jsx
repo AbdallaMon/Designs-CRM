@@ -48,7 +48,7 @@ const PaymentDialog = ({ payments, fullWidth = false }) => {
                 <ListItem key={payment.id} sx={{ bgcolor: "white", mb: 1.2 }}>
                   <ListItemText
                     primary={
-                      user.role === "ACCOUNTANT" ? (
+                      user.profile === "ACCOUNTANT" ? (
                         <Button
                           component={Link}
                           href={`/dashboard?paymentId=${payment.id}`}

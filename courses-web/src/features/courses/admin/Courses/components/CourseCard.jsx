@@ -8,7 +8,6 @@ import {
   Typography,
   Button,
   Grid,
-  Chip,
   IconButton,
 } from "@mui/material";
 import {
@@ -19,11 +18,8 @@ import {
   MdVisibilityOff,
 } from "react-icons/md";
 import Link from "next/link";
-import { ROLE_LABELS } from "@/app/helpers/constants";
-import { getRoleColor } from "../helpers";
 
-// One admin course card: banner, published state, counts, role chips, and the
-// Edit / Lessons / Tests actions. `onEdit` is called with the course on Edit.
+// One admin course card with its published state, counts, and management actions.
 export default function CourseCard({ course, onEdit }) {
   return (
     <Grid size={{ md: 6, lg: 4 }}>
@@ -68,26 +64,6 @@ export default function CourseCard({ course, onEdit }) {
               <strong>Lessons:</strong> {course._count.lessons} |{" "}
               <strong>Tests:</strong> {course._count.tests}
             </Typography>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Roles:</strong>
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {course.roles.map((role) => (
-                <Chip
-                  key={role}
-                  label={ROLE_LABELS[role.role]}
-                  size="small"
-                  sx={{
-                    backgroundColor: getRoleColor(role.role),
-                    color: "white",
-                    fontSize: "0.75rem",
-                  }}
-                />
-              ))}
-            </Box>
           </Box>
 
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>

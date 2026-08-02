@@ -1,3 +1,5 @@
+import { socketErrorEnvelope } from "./socket-error.js";
+
 /**
  * Chat message event handlers (send, edit, delete, forward, read receipts,
  * pin/unpin, reactions).
@@ -20,7 +22,7 @@ export function registerMessageHandlers(socket, { ctx, usecase }) {
       });
     } catch (err) {
       console.error("message:create error:", err);
-      socket.emit("error", { message: err.message || "Error sending message" });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 
@@ -49,7 +51,7 @@ export function registerMessageHandlers(socket, { ctx, usecase }) {
       });
     } catch (err) {
       console.error("message:edit error:", err);
-      socket.emit("error", { message: err.message || "Error editing message" });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 
@@ -64,9 +66,7 @@ export function registerMessageHandlers(socket, { ctx, usecase }) {
       });
     } catch (err) {
       console.error("message:delete error:", err);
-      socket.emit("error", {
-        message: err.message || "Error deleting message",
-      });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 
@@ -107,7 +107,7 @@ export function registerMessageHandlers(socket, { ctx, usecase }) {
       });
     } catch (err) {
       console.error("message:pin error:", err);
-      socket.emit("error", { message: err.message || "Error pinning message" });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 
@@ -123,9 +123,7 @@ export function registerMessageHandlers(socket, { ctx, usecase }) {
       });
     } catch (err) {
       console.error("message:unpin error:", err);
-      socket.emit("error", {
-        message: err.message || "Error unpinning message",
-      });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 

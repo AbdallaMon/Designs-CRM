@@ -45,8 +45,8 @@ function TwoDBoard() {
 
 export default function Page() {
   const { user } = useAuth();
-  if (!user?.role) return null;
-  if (user.role === "TWO_D_DESIGNER") {
+  if (!user?.profile) return null;
+  if (user.profile === "DESIGNER_2D") {
     return <TwoDBoard />;
   }
   return <WorkStagesKanban type={PROJECT_TYPES_ENUM.ThreeD.DESIGNER} />;

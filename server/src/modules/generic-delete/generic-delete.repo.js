@@ -1,12 +1,62 @@
-// generic-delete repository — Prisma I/O ONLY (no business rules, no side effects). Relocated
-// verbatim from the legacy `shared/legacy/note-services.js` `deleteAModel` Prisma calls. The
-// model name is an allow-listed Prisma delegate name resolved by the caller; the time-window
-// guards, the MeetingReminder calendar cleanup orchestration, and the delete sequencing stay
-// in the usecase. Behavior-preserving: every query object is copied verbatim.
+// Generic-delete Prisma I/O. The caller resolves an allow-listed Prisma delegate name;
+// scope, time windows, cleanup orchestration, and sequencing stay in the usecase.
 import prisma from "../../infra/prisma/prisma.js";
 
 class GenericDeleteRepository {
-  // createdAt of the target row (legacy deleteAModel guard read).
+  async resolveTarget({ model, id }) {
+    const targetId = Number(id);
+    switch (model) {
+      case "File":
+        return prisma.file.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "PriceOffers":
+        return prisma.priceOffers.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "ExtraService":
+        return prisma.extraService.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "MeetingReminder":
+        return prisma.meetingReminder.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "CallReminder":
+        return prisma.callReminder.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "ClientLeadUpdate":
+        return prisma.clientLeadUpdate.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "DeliverySchedule":
+        return prisma.deliverySchedule.findUnique({
+          where: { id: targetId },
+          select: { projectId: true },
+        }).then((row) => row && ({ kind: "project", projectId: row.projectId }));
+      case "contract":
+        return prisma.contract.findUnique({
+          where: { id: targetId },
+          select: { clientLeadId: true },
+        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
+      case "contractPaymentCondition":
+        return prisma.contractPaymentCondition.findUnique({
+          where: { id: targetId },
+          select: { id: true },
+        }).then((row) => row && ({ kind: "site-utility" }));
+      default:
+        return null;
+    }
+  }
+
+  // createdAt supports the delete-window guard.
   findModelCreatedAt({ model, id }) {
     return prisma[model].findUnique({
       where: {
@@ -18,12 +68,7 @@ class GenericDeleteRepository {
     });
   }
 
-  // Pre-main cascade delete for one spec entry (legacy deleteModelesBeforeMain loop).
-  deleteManyBySpec({ name, where }) {
-    return prisma[name].deleteMany({ where });
-  }
-
-  // MeetingReminder detail (legacy MeetingReminder calendar-cleanup branch).
+  // MeetingReminder detail for calendar cleanup.
   findMeetingReminder({ id }) {
     return prisma.meetingReminder.findUnique({
       where: {
@@ -38,7 +83,7 @@ class GenericDeleteRepository {
     });
   }
 
-  // Free the booked slot when a MeetingReminder is deleted (legacy branch).
+  // Free the booked slot when a MeetingReminder is deleted.
   freeAvailableSlot({ availableSlotId }) {
     return prisma.availableSlot.update({
       where: {

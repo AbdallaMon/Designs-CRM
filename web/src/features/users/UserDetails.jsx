@@ -69,10 +69,7 @@ const IDENTITY_INPUTS = [
 // Is this a sales-staff user? Restricted-countries / max-leads / deals tools apply only to
 // them (same predicate the legacy user-profile page used).
 function isStaffUser(user) {
-  return (
-    user?.role === "STAFF" ||
-    user?.subRoles?.some((r) => r.subRole === "STAFF")
-  );
+  return heldProfilesOf(user).some((profile) => profile.family === "SALES");
 }
 
 // Held profiles as a flat [{ id, key, label }] list from the management row's userProfiles.
@@ -85,13 +82,13 @@ function heldProfilesOf(user) {
 export default function UserDetails({ userId }) {
   const { user: authUser, refetchMe } = useAuth();
   const { hasPermission } = usePermission();
-  const canManageRoles = hasPermission(USER_CODES.MANAGE_ROLES);
+  const canManageProfiles = hasPermission(USER_CODES.MANAGE_PROFILES);
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState(0);
-  const [managingRoles, setManagingRoles] = useState(false);
+  const [managingProfiles, setManagingProfiles] = useState(false);
 
   const fetchUser = useCallback(
     async (isRefetch = false) => {
@@ -101,7 +98,7 @@ export default function UserDetails({ userId }) {
       // userId; /profile carries max-leads + edit capability. Merge both.
       const [listRes, profileRes] = await Promise.all([
         getData({
-          url: "admin/users",
+          url: "users",
           setLoading: noop,
           page: 1,
           limit: 1,
@@ -110,7 +107,7 @@ export default function UserDetails({ userId }) {
           sort: {},
           others: "",
         }),
-        getData({ url: `admin/users/${userId}/profile`, setLoading: noop }),
+        getData({ url: `users/${userId}/profile`, setLoading: noop }),
       ]);
 
       const row = Array.isArray(listRes?.data) ? listRes.data[0] : null;
@@ -203,9 +200,9 @@ export default function UserDetails({ userId }) {
           <ProfilesCard
             user={user}
             heldProfiles={heldProfiles}
-            canManageRoles={canManageRoles}
-            managingRoles={managingRoles}
-            setManagingRoles={setManagingRoles}
+            canManageProfiles={canManageProfiles}
+            managingProfiles={managingProfiles}
+            setManagingProfiles={setManagingProfiles}
             onSaved={handleProfilesSaved}
             userId={userId}
           />
@@ -294,7 +291,7 @@ function IdentityCard({ user, setUser }) {
               item={user}
               inputs={IDENTITY_INPUTS}
               isObject
-              href="admin/users"
+              href="users"
               setData={setUser}
               editFormButton="Save"
               renderFormTitle={(u) => `Edit ${u.name || "user"}`}
@@ -313,9 +310,9 @@ function IdentityCard({ user, setUser }) {
 function ProfilesCard({
   user,
   heldProfiles,
-  canManageRoles,
-  managingRoles,
-  setManagingRoles,
+  canManageProfiles,
+  managingProfiles,
+  setManagingProfiles,
   onSaved,
   userId,
 }) {
@@ -328,17 +325,17 @@ function ProfilesCard({
       <CardContent sx={{ p: { xs: 2, md: 3 } }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
           <Typography variant="overline" fontWeight={700} color="text.secondary">
-            Roles &amp; profiles
+            Access profiles
           </Typography>
-          {canManageRoles && !managingRoles && (
+          {canManageProfiles && !managingProfiles && (
             <Button
               size="small"
               variant="outlined"
               startIcon={<FiLayers />}
-              onClick={() => setManagingRoles(true)}
+              onClick={() => setManagingProfiles(true)}
               sx={{ textTransform: "none", fontWeight: 600 }}
             >
-              Manage roles
+              Manage profiles
             </Button>
           )}
         </Stack>
@@ -367,7 +364,7 @@ function ProfilesCard({
           </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            No assigned roles found for this account.
+            No assigned profiles found for this account.
           </Typography>
         )}
 
@@ -377,13 +374,13 @@ function ProfilesCard({
           </Typography>
         )}
 
-        {managingRoles && (
+        {managingProfiles && (
           <UserProfilesPanel
             userId={userId}
             userProfiles={user.userProfiles}
             currentProfileId={user.currentProfileId}
             onSaved={onSaved}
-            onClose={() => setManagingRoles(false)}
+            onClose={() => setManagingProfiles(false)}
           />
         )}
       </CardContent>
@@ -421,14 +418,14 @@ function ManagementCard({ user, setUser, staff, userId }) {
                 setUser={setUser}
                 field="maxLeadsCounts"
                 label="Max leads"
-                href="admin/users/max-leads"
+                href="users/max-leads"
               />
               <MaxLeadsEditor
                 user={user}
                 setUser={setUser}
                 field="maxLeadCountPerDay"
                 label="Max leads / day"
-                href="admin/users/max-leads-per-day"
+                href="users/max-leads-per-day"
               />
               <Button
                 variant="outlined"

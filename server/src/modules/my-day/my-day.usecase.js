@@ -18,37 +18,27 @@ const TK = messagesNames.myDayMessages;
 export const MY_DAY_QUEUE_CAP = 50;
 
 // Profile → queue family. SUPER_SALES supervises but ALSO works own deals (spec §3).
-const SALES_PROFILE_KEYS = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES", "SUPER_SALES_BASE"];
+const SALES_PROFILE_KEYS = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
 const DESIGNER_PROFILE_KEYS = ["DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"];
-// Role fallback for sessions minted before the profile backfill (transitional).
-const ROLE_TO_FAMILY = {
-  STAFF: "SALES",
-  SUPER_SALES: "SALES",
-  THREE_D_DESIGNER: "DESIGNER",
-  TWO_D_DESIGNER: "DESIGNER",
-  TWO_D_EXECUTOR: "DESIGNER",
-  ACCOUNTANT: "FINANCE",
-  CONTACT_INITIATOR: "INITIATOR",
-};
 
-function familyOf({ profileKey, role }) {
+function familyOf(profileKey) {
   if (SALES_PROFILE_KEYS.includes(profileKey)) return "SALES";
   if (DESIGNER_PROFILE_KEYS.includes(profileKey)) return "DESIGNER";
   if (profileKey === "ACCOUNTANT") return "FINANCE";
   if (profileKey === "CONTACT_INITIATOR") return "INITIATOR";
-  return ROLE_TO_FAMILY[role] ?? null;
+  return null;
 }
 
 // Target user's active profile key WITHOUT reading the legacy flags: the relational
 // currentProfile first, the transitional `profile` column second, role-only last
 // (role STAFF can't distinguish sales tiers — but the FAMILY is all the scope needs).
 function targetProfileKey(user) {
-  return user?.currentProfile?.key ?? user?.profile ?? null;
+  return user?.currentProfile?.key ?? null;
 }
 
 function targetFamily(user) {
   const key = targetProfileKey(user);
-  return familyOf({ profileKey: key, role: user?.role });
+  return familyOf(key);
 }
 
 class MyDayUsecase {
@@ -58,7 +48,7 @@ class MyDayUsecase {
     const queue = await this.#queueFor({
       userId: authUser.id,
       profileKey: authUser?.currentProfileKey ?? null,
-      family: familyOf({ profileKey: authUser?.currentProfileKey, role: authUser?.role ?? authUser?.activeRole }),
+      family: familyOf(authUser?.currentProfileKey),
       now,
     });
     // Today's agenda (self surface only — the supervisor drill-down stays exception-
@@ -368,9 +358,11 @@ class MyDayUsecase {
     }
 
     // Admins have no personal queue (spec §3 — team lens only).
-    throw new AppError(myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED, 403, null, {
+    throw new AppError({
+      code: myDayMessagesCodes.MY_DAY_PROFILE_UNSUPPORTED,
+      statusCode: 403,
       translationKey: TK,
-      reason: `no My Day queue family for profile "${profileKey}" / role fallback`,
+      reason: `no My Day queue family for profile "${profileKey}"`,
     });
   }
 
@@ -378,18 +370,23 @@ class MyDayUsecase {
   // ADMIN/SUPER_ADMIN target anyone; SUPER_SALES targets sales-tier users only (spec §5.1).
   async checkIfUserCanViewMyDayOf({ id, authUser }) {
     const target = await myDayRepository.findUserForScope({ userId: Number(id) });
-    if (!target) throw new AppError(myDayMessagesCodes.MY_DAY_TARGET_NOT_FOUND, 404, null, { translationKey: TK });
+    if (!target) {
+      throw new AppError({
+        code: myDayMessagesCodes.MY_DAY_TARGET_NOT_FOUND,
+        statusCode: 404,
+        translationKey: TK,
+      });
+    }
 
-    const callerProfile = authUser?.currentProfileKey;
-    const callerIsAdmin =
-      callerProfile === "ADMIN" || callerProfile === "SUPER_ADMIN" ||
-      (!callerProfile && ["ADMIN", "SUPER_ADMIN"].includes(authUser?.role ?? authUser?.activeRole));
+    const callerIsAdmin = Boolean(authUser?.isAdminTier);
     if (callerIsAdmin) return target;
 
     // Everyone else holding my_day.team.view is a SUPER_SALES-tier supervisor:
     // sales-domain targets only.
     if (targetFamily(target) === "SALES") return target;
-    throw new AppError(myDayMessagesCodes.MY_DAY_TEAM_SCOPE_DENIED, 403, null, {
+    throw new AppError({
+      code: myDayMessagesCodes.MY_DAY_TEAM_SCOPE_DENIED,
+      statusCode: 403,
       translationKey: TK,
       reason: "super-sales supervisors may only view sales-tier queues",
     });
@@ -398,10 +395,7 @@ class MyDayUsecase {
   // ── team lens ──────────────────────────────────────────────────────────────────────
 
   async getTeamOverview({ authUser, now = new Date() }) {
-    const callerProfile = authUser?.currentProfileKey;
-    const isAdmin =
-      callerProfile === "ADMIN" || callerProfile === "SUPER_ADMIN" ||
-      (!callerProfile && ["ADMIN", "SUPER_ADMIN"].includes(authUser?.role ?? authUser?.activeRole));
+    const isAdmin = Boolean(authUser?.isAdminTier);
 
     const domains = { sales: await this.#salesDomain(now) };
     if (isAdmin) domains.designers = await this.#designersDomain(now);

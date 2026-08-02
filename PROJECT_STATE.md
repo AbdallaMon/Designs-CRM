@@ -3,7 +3,52 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-17** · Branch: `feat/workstage-flow-redesign`
+> Last updated: **2026-07-29** · Branch: `feat/workstage-flow-redesign`
+>
+> **LATEST (2026-07-29) — Security, profile-only identity, canonical API, uploads, contracts, and courses cutover ✅.**
+> Completed `docs/superpowers/{specs,plans}/2026-07-29-security-profile-only-cutover*`.
+> **Authorization:** the active relational profile is now the sole runtime identity; auth fails closed when it is
+> absent/invalid, and backend runtime code no longer reads or falls back to `role`, `subRoles`, `isPrimary`, or
+> `isSuperSales`. ADMIN/SUPER_ADMIN profiles receive every explicit permission code and pass object-scope checks.
+> Obsolete role-derived boot/user backfills and role-permission compatibility code were removed; retained schema
+> columns remain untouched and are stripped from profile output. **Security:** utility search, notes, and the
+> compatibility delete surface are permission/scope checked; arbitrary client cascades and obsolete delete adapters
+> were removed. **API/contracts:** `/v2` is the only application mount; both frontends use canonical endpoints and
+> the uniform coded-error envelope. Accountant payment-level payload now matches backend validation. Active contract
+> CRUD/workflow data access lives in the contract module; frozen PDF rendering logic was not behaviorally changed.
+> **Uploads:** public contract/image/chat/calendar/lead uploads require short-lived purpose/session-scoped signed
+> capabilities verified before multipart parsing; internal PDF upload uses its own signed capability. **Courses:**
+> frontend calls align with `/courses` + `/staff-courses`, course access is user/profile based, the UI is English,
+> and the unused Arabic embedded/Google-font dependency was removed. **Verification:** Vitest **936/936** across
+> **96/96 test files**; `web` production build **44/44 routes**; `courses-web` production build **8/8 static pages**
+> plus its dynamic routes; canonical Prisma schema validates. Source gates found no runtime retained-identity reads,
+> no compatibility path translator/old runtime names, and no Arabic text in `courses-web/src`.
+> **Deployment prerequisite:** every existing user must already have at least one `UserProfile` and a valid
+> `currentProfileId`; profileless users are intentionally denied and there is no role-derived fallback/backfill.
+> The existing user-run production migration reconciliation runbook remains operationally pending. No schema change
+> or production database action was performed in this work.
+>
+> **Final contract follow-up (2026-07-29):** all **355** production `AppError` calls now use the single object
+> constructor and language-neutral message codes; the positional compatibility constructor was removed. HTTP and
+> rate-limit responses now share one `{ success, message, data, translationKey }` envelope, including booking leads,
+> Telegram auth, chat socket errors, reports, and admin lead imports. The final report pages were moved onto the shared
+> frontend API client. The runtime `LEGACY_DASHBOARD_ORIGIN` name was replaced by `DASHBOARD_ORIGIN` with no fallback.
+> AST/source gates report zero positional `AppError` calls, zero prose/raw top-level helper messages, zero direct
+> `res.json`/`res.send` application responses, and zero first-party API `fetch` calls outside the shared frontend
+> clients. Focused contract tests are **29/29**; the full result remains **936/936**. Both production frontend builds
+> and Prisma validation pass. **Remaining code work for the agreed critical-fix scope: none.** Remaining work is
+> deployment-only: configure `DASHBOARD_ORIGIN` in the deployed environment; confirm `UserSubRole` is empty and every
+> user has a valid profile/current-profile relation; run the documented production migration reconciliation; then
+> smoke-test authenticated flows against real DB/storage/email services in staging.
+>
+> **Environment templates (2026-07-29):** four safe, copy-ready templates now define the active configuration
+> surface: root `.env.example` (backend; copy to `server/.env`), `packages/db/prisma/.env.example`,
+> `web/.env.example`, and `courses-web/.env.example`. No live secret values are present. The mail transports now
+> honor the documented `SMTP_PORT`/`SMTP_SECURE` settings through the central loader; the person-specific
+> `AHMED_EMAIL` key was replaced by `CLIENT_EMAIL_FROM` with no fallback; unused FTP/bot/phone/`SECRET_KEY`/
+> `COURSES_DOMAIN` loader entries were removed. The web Docker build now receives `NEXT_PUBLIC_COURSES_URL` and
+> `UPLOADS_ORIGIN`, and its local upload fallback uses standard `NODE_ENV` instead of the lowercase `local` key.
+> Verification remains **936/936** tests plus successful `web` and `courses-web` production builds.
 >
 > **LATEST (2026-07-17) — Profiles as single source of truth (auth boundary) + profile-switcher rebuild ✅.**
 > Spec/plan `docs/superpowers/{specs,plans}/2026-07-17-profile-single-source-of-truth*`. Fixes the reported

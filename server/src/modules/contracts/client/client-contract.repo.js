@@ -1,5 +1,5 @@
 import prisma from "../../../infra/prisma/prisma.js";
-import { getDefaultContractDataAndGenerateIfNotFound } from "./generate-default-contract-data.js";
+import { getDefaultContractDataAndGenerateIfNotFound } from "../services/generate-default-contract-data.js";
 export async function getDefaultContractUtilityData(lng) {
   try {
     let contractUtility = await getDefaultContractDataAndGenerateIfNotFound({
@@ -38,7 +38,7 @@ export async function getContractSessionByToken({ token }) {
   });
 
   if (!session) {
-    throw new Error("Session not found or expired");
+    return null;
   }
 
   return session;
@@ -58,7 +58,7 @@ export async function changeContractSessionStatus({
       where: { OR: [{ arToken: token }, { enToken: token }] },
       select: { id: true },
     });
-    if (!found) throw new Error("Session not found or expired");
+    if (!found) return null;
     contractId = found.id;
   }
 

@@ -1,9 +1,11 @@
 import { Router } from "express";
+import authRoutes from "../modules/auth/auth.route.js";
 import { bookingLeadsRouter } from "../modules/leads/client/booking-lead/booking-leads.route.js";
 import { leadRouter } from "../modules/leads/lead/lead.route.js";
 import { userRouter } from "../modules/users/user/user.route.js";
 import { telegramRouter } from "../modules/telegram/auth/telegram.route.js";
 import { chatRouter } from "../modules/chat/chat.route.js";
+import { clientChatRouter } from "../modules/chat/client/client-chat.route.js";
 import { uploadRouter } from "../modules/upload/upload.route.js";
 import { siteUtilityRouter } from "../modules/site-utility/site-utility.route.js";
 import { adminCourseRouter } from "../modules/courses/admin-course/admin-course.route.js";
@@ -26,7 +28,6 @@ import { clientContractRouter } from "../modules/contracts/client/client-contrac
 import { adminImageSessionRouter } from "../modules/image-sessions/admin/admin-image-session.route.js";
 import { imageSessionRouter } from "../modules/image-sessions/session/image-session.route.js";
 import { clientImageSessionRouter } from "../modules/image-sessions/client/client-image-session.route.js";
-import { clientChatRouter } from "../modules/chat/client/client-chat.route.js";
 import { adminResidualRouter } from "../modules/admin-residual/admin-residual.route.js";
 import { staffRouter } from "../modules/admin-residual/staff/staff.route.js";
 import { publicLeadRouter } from "../modules/leads/client/public-lead/public-lead.route.js";
@@ -34,286 +35,55 @@ import { clientPaymentsRouter } from "../modules/client-portal/payments/payments
 import { clientUploadsRouter } from "../modules/client-portal/uploads/uploads.route.js";
 import { clientNotesRouter } from "../modules/client-portal/notes/notes.route.js";
 import { clientLanguagesRouter } from "../modules/client-portal/languages/languages.route.js";
-
 import { auditRouter } from "../modules/audit/audit.route.js";
 import { myDayRouter } from "../modules/my-day/my-day.route.js";
-
 import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.route.js";
 import { noteRouter } from "../modules/notes/note.route.js";
 
-import authRoutes from "../modules/auth/auth.route.js";
 const router = Router();
 
 router.use("/auth", authRoutes);
-
-// Generic model delete (legacy `/shared/delete/:id`, FE-mapped to `/delete/:id`). Restored
-// after the strangler cutover removed the legacy shared router; the frontend's DeleteModelButton
-// (notes, files, price-offers, reminders, extra-services, …) depends on it. Auth + model
-// allow-list; the frozen deleteAModel service keeps the exact delete behavior.
 router.use("/delete", genericDeleteRouter);
-
-// Generic AUTHENTICATED notes (legacy `shared/notes`, FE-mapped `shared/notes` → `/notes`).
-// The single polymorphic note endpoint (keyed by `idKey`) master served for every owner. The
-// shared `NotesComponent` (slug="shared") drives task / delivery / commission / lead-update /
-// sales-stage notes through it; owners with a dedicated scoped surface (accounting, client)
-// keep their own. Auth-only, matching master; `idKey` constrained to real Note columns.
 router.use("/notes", noteRouter);
-
 router.use("/client/booking-leads", bookingLeadsRouter);
-// Authenticated leads-management surface (legacy `/shared/client-leads`, kept mounted
-// in parallel during the strangler window). Object scope enforced per `/:id` route.
 router.use("/leads", leadRouter);
-// Users — three merged legacy surfaces: the authed directory pick-lists (legacy
-// `/shared/all-chat-users` etc. — the chat module consumes `/v2/users/directory`), the
-// admin user-management endpoints (legacy `/admin/users*`), and self-profile (legacy
-// `/shared/users/:userId/profile`, now object-scope checked — the IDOR fix). Legacy
-// routers stay mounted in parallel during the strangler window.
 router.use("/users", userRouter);
 router.use("/telegram", telegramRouter);
 router.use("/chat", chatRouter);
-// PUBLIC client chat surface (legacy routes/client/chat/{rooms,messages,members,files}.js,
-// mounted under `/client/chat` via routes/clients/clients.js, token-based, NO auth).
-// Mounted ungated, exactly like the booking funnel, `/files/client/*`, and the client
-// calendar/contracts/image-session surfaces — gating it would break the public client
-// chat (a client has no session). The room is derived FROM the per-room access token
-// (ChatRoom.chatAccessToken), and any `:roomId` that differs from the token's room is
-// rejected (the IDOR close vs legacy, which gated only on a client-supplied clientId).
-// Legacy routers stay mounted in parallel during the strangler window.
 router.use("/client/chat", clientChatRouter);
 router.use("/files", uploadRouter);
 router.use("/site-utilities", siteUtilityRouter);
-// Courses / LMS — admin management surface (legacy `/admin/courses`) and staff
-// consumption surface (legacy `/shared/courses`). Both mount under `/v2`; legacy
-// routers stay mounted in parallel (strangler) until cutover.
 router.use("/courses", adminCourseRouter);
 router.use("/staff-courses", staffCourseRouter);
-
-// Projects domain — four coupled surfaces centered on the Project/ClientLead entity
-// (legacy `/shared/{projects,tasks,updates,delivery}`, kept mounted in parallel during
-// the strangler window). A single shared project-scope checker enforces object access
-// (the IDOR fix); legacy `/:id/...` sub-resources had no consistent scope check.
 router.use("/projects", projectRouter);
 router.use("/tasks", taskRouter);
 router.use("/updates", updateRouter);
 router.use("/delivery", deliveryRouter);
-
-// Accounting — the MONEY-sensitive accountant surface (legacy `/accountant/*`, kept
-// mounted in parallel during the strangler window). Auth once at the aggregate router;
-// every route is gated by an ACCOUNTING.* code granted to the ACCOUNTANT role only —
-// reproducing the legacy ACCOUNTANT-only gate exactly. Money workflow actions
-// (pay / mark-overdue / change-level) use `/:id/actions/*` with strict money validation.
 router.use("/accounting", accountingRouter);
-
-// Calendar — the authed staff availability/slots + meeting/call month-views + Google
-// Calendar OAuth surface (legacy `routes/calendar/calendar.js`, the SHARED router
-// DOUBLE-MOUNTED at `/shared/calendar` AND `/shared/calendar-management`). The v2 aggregate
-// is mounted twice to mirror that double-mount exactly; legacy routers stay live (strangler).
-// Auth once at the aggregate; every route is gated by a CALENDAR.* code granted to EVERY
-// authed role (CALENDAR_AUTHED) — reproducing the legacy SHARED gate. Availability rows have
-// no per-owner scope in legacy (the code is the gate); Google actions are self-scoped to the
-// caller. The Google OAuth sub-router lives at `/google` under each mount.
 router.use("/calendar", calendarRouter);
 router.use("/calendar-management", calendarRouter);
-// PUBLIC client booking surface (legacy `/client/calendar`, token-based, NO auth). Mounted
-// ungated, exactly like the booking funnel and `/files/client/*` — gating it would break the
-// public client booking flow.
 router.use("/client/calendar", clientCalendarRouter);
-
-// Notifications — the SELF-SCOPED notification surface. Legacy `/utility/notification/*`
-// was UNAUTHENTICATED and filtered by a CLIENT-SUPPLIED userId (`/notification/unread`) /
-// trusted the `:userId` PATH param (`/notification/users/:userId`) → a textbook IDOR; the
-// paginated all-notifications read also lived behind the SHARED gate at
-// `/shared/utilities/notifications`. The v2 module authenticates once, gates on a
-// NOTIFICATION code (granted to every authed role), and derives the subject from
-// req.auth.id ONLY — no route accepts a target userId. Legacy routers stay mounted in
-// parallel during the strangler window. mark-read is a self-scoped workflow action at
-// `/v2/notifications/actions/mark-read`.
 router.use("/notifications", notificationRouter);
-
-// Utilities — the lookup/pick-list helper surface (legacy `/shared/utilities/*` behind the
-// SHARED gate = all authed roles, plus `/utility/search` authed via verifyTokenUsingReq).
-// Auth once at the aggregate; every route is gated by a UTILITY.* code granted to every
-// authed role (preserving the broad legacy surface). The generic-model reads (`/` and
-// `/ids`) ADD a model allow-list (mass-read hardening). Upload (`/utility/upload*`,
-// FROZEN) is NOT here — it belongs to the already-migrated upload module and stays on
-// legacy. Legacy routers stay mounted in parallel during the strangler window.
 router.use("/utilities", utilityRouter);
-
-// Dashboard — the read-only analytics surface (legacy `routes/shared/dashboard.js` behind
-// the SHARED gate = all 9 authed roles). Auth once at the router; every route is gated by
-// the single DASHBOARD.VIEW code (granted to every authed role). Legacy keyed each scoped
-// aggregation off a CLIENT-SUPPLIED `staffId` (and recent-activities also off a client
-// `userId`) → a scoped role could read another user's metrics/feed, and the un-scoped
-// endpoints returned GLOBAL totals to everyone. v2 derives the scope from req.auth: the
-// admin-tier union (ADMIN/SUPER_ADMIN/isSuperSales) may scope to any user or global
-// (preserved 1:1), every other role is FORCED to req.auth.id (the IDOR-class fix). The
-// role used for branching comes from the token, never from a `?role=` param. The legacy
-// `/staff/dashboard/latest-calls` endpoint is NOT migrated here (STAFF call-reminder data,
-// not a dashboard aggregation — stays on legacy). Legacy router stays mounted in parallel
-// during the strangler window.
 router.use("/dashboard", dashboardRouter);
-
-// Leaf domains — three small SHARED-gated surfaces (legacy behind the SHARED router gate
-// = all 9 authed roles), kept mounted in parallel during the strangler window.
-//
-// Questions — the SPIN session-questions/answers + VERSA objection-handling surface
-// (legacy `routes/questions/questions.js` at `/shared/questions`). Auth once at the
-// router; every route gated by a QUESTION.* code granted to every authed role. Global
-// question-type config reads are gated by the code alone; the LEAD-SCOPED reads/writes
-// (session questions, answers, custom questions, VERSA) resolve the parent clientLead and
-// run the leads-module object-scope checker in the usecase (the IDOR fix the legacy routes
-// were MISSING — any authed role could read/mutate ANY lead's questions/answers/VERSA).
-// Mutating bodies are `.strict()` (mass-assignment hardening) and the acting user is
-// derived from req.auth, never the body.
 router.use("/questions", questionsRouter);
-
-// Sales-stages — the per-lead sales-pipeline stage progression surface (legacy
-// `routes/shared/sales-stages.js` at `/shared/sales-stages`). Auth once; gated by
-// SALES_STAGE.* codes granted to every authed role. SalesStage rows are LEAD-SCOPED; the
-// usecase resolves+checks the parent lead via the leads-module checker (the IDOR fix the
-// legacy route was MISSING). The stage change is a workflow action — RENAMED from the
-// legacy `POST /:clientLeadId` to `POST /:clientLeadId/actions/set-stage`. The acting user
-// comes from req.auth, never the body.
 router.use("/sales-stages", salesStagesRouter);
-
-// Reviews — the thin Google Business Profile OAuth review integration (legacy
-// `routes/shared/reviews.js` at `/shared/reviews`). Auth once; gated by REVIEW.* codes
-// granted to every authed role. A studio-wide integration owned by the frozen
-// `services/reviews.js` (single shared oauth2Client, no per-user state) → no object scope,
-// the code is the gate. The OAuth token flow is behavior-frozen and tokens are NEVER
-// returned or logged — the v2 callback CLOSES the legacy raw-token JSON exposure (returns
-// only a connected flag).
 router.use("/reviews", reviewsRouter);
-
-// Contracts — TWO surfaces (legacy routers stay mounted in parallel during the strangler
-// window).
-//
-// 1. Authed staff/admin contract CRUD (legacy `routes/contract/contracts.js` at
-//    `/shared/contracts`, SHARED gate = all 9 authed roles). Auth once; every route gated
-//    by a CONTRACT.* code granted to every authed role via SHARED_AUTHED. Contracts are
-//    lead-scoped; the usecase resolves the parent clientLead (directly for :leadId, or via
-//    contract→clientLeadId for :contractId / child ids) and runs the leads-module
-//    object-scope checker (reads access-scope, writes mutate-scope) before any read/write —
-//    the IDOR fix the legacy routes were MISSING (no object scope at all). Lifecycle status
-//    changes are workflow actions (`/:id/actions/cancel`, `/:id/actions/generate-pdf-token`,
-//    payment `/actions/change-status` + `/actions/update-amounts`). The grouped payments
-//    list keeps its frozen-service internal role-scope. 🔒 PDF generation (cancel builds a
-//    cancelled PDF) is wrapped via a lazy adapter, never modified.
 router.use("/contracts", contractRouter);
-// 2. PUBLIC client e-sign surface (legacy `routes/contract/client-contract.js` at
-//    `/client/contracts`, token-based, NO auth). Mounted ungated, exactly like the booking
-//    funnel and `/files/client/*` — gating it would break the public signing flow. The
-//    session is derived FROM the per-session token, never a client-supplied id (the IDOR
-//    close vs legacy). All Arabic/English prose replaced with language-neutral codes. 🔒
-//    /generate-pdf wraps the FROZEN buildAndUploadContractPdf via a lazy adapter.
 router.use("/client/contracts", clientContractRouter);
-
-// Image-sessions — THREE surfaces (legacy routers stay mounted in parallel during the
-// strangler window). The LARGEST + MOST DELICATE module: two frozen subsystems intersect
-// here (🔒 the pdf-lib image-session PDF and 🔒 the upload-chunk mechanism). Both are only
-// WRAPPED via lazy adapters — never modified. The public generate-pdf preserves the INLINE
-// SYNC pdf path; the legacy commented `pdfQueue.add(...)` enqueue stays unused.
-//
-// 1. ADMIN reference-data CRUD (legacy `routes/image-session/admin-image-session.js` at
-//    `/admin/image-session`, "ADMIN" gate = the `isAdmin` union). Global studio reference
-//    data (spaces/templates/materials/styles/colors/design-images/page-info/pros-and-cons)
-//    — NO per-lead scope; the admin code is the gate (admins see all). Gated by
-//    IMAGE_SESSION.ADMIN_* granted to ADMIN/SUPER_ADMIN base + isSuperSales (matching the
-//    legacy `isAdmin` union exactly, like courses/users — a plain STAFF/sales role is 403'd).
 router.use("/image-sessions/admin", adminImageSessionRouter);
-// 2. SHARED session-management (legacy `routes/image-session/image-session.js` at
-//    `/shared/image-session`, SHARED gate = all 9 authed roles). Gated by IMAGE_SESSION.SESSION_*
-//    granted to every authed role via SHARED_AUTHED. ClientImageSession rows are lead-scoped;
-//    the usecase resolves the parent clientLead (directly for :clientLeadId, or via
-//    session→clientLeadId for :sessionId) and runs the leads-module object-scope checker
-//    (reads access-scope, writes mutate-scope) before any read/write — the IDOR fix the
-//    legacy routes were MISSING. The `/ids` generic-model read adds a model allow-list +
-//    guarded JSON.parse (mass-read hardening).
 router.use("/image-session", imageSessionRouter);
-// 3. PUBLIC client image-selection flow (legacy `routes/image-session/client-image-session.js`
-//    + `routes/client/image-session.js`, BOTH mounted at `/client/image-session`, token-based,
-//    NO auth). Combined cleanly here, preserving every reachable path. Mounted ungated, like
-//    the booking funnel and `/files/client/*`. The session is derived FROM the per-session
-//    token, never a client-supplied id (the IDOR close vs legacy). All prose replaced with
-//    language-neutral codes. 🔒 /generate-pdf wraps the FROZEN PDF orchestrator; signatureUrl
-//    is SSRF-locked to a safe relative upload path.
 router.use("/client/image-session", clientImageSessionRouter);
-
-// Admin/staff RESIDUAL — the LAST backend module: the authed admin/staff endpoints NOT
-// owned by an earlier migrated module (legacy `routes/admin/admin.js` at `/admin` ADMIN
-// gate, and `routes/staff/staff.js` at `/staff` STAFF gate). Legacy routers stay mounted in
-// parallel during the strangler window.
-//
-// 1. ADMIN-tier residual (lead/staff REPORTS 🔒 pdfkit frozen — wrapped only; admin lead
-//    import/create/update/delete + telegram; client field update; fixed-data WRITES;
-//    commissions; the admin leads-with-projects aggregation + project-group create; the
-//    allow-listed model-archive). Auth once at the aggregate; every route gated by an
-//    ADMIN_RESIDUAL.* code granted to ADMIN/SUPER_ADMIN base + isSuperSales (the legacy
-//    `isAdmin` union). LEAD-scoped writes (lead update/delete, telegram, project-group)
-//    ALSO run the leads-module keystone mutate checker (the IDOR-class guard legacy lacked —
-//    admins keep full scope, so behavior is preserved 1:1). The generic model-archive is
-//    constrained to a global-reference-data allow-list (the projects broad-delete lesson).
-//    The client field update is keyed by a CLIENT id (a client may own many leads) — no
-//    single lead to scope; the ADMIN code is the gate (documented, not an IDOR regression).
 router.use("/admin", adminResidualRouter);
-// 2. STAFF-tier residual — the `/staff/dashboard/latest-calls` call-reminder list (the one
-//    STAFF endpoint NOT owned by the dashboard module). SEPARATE gate from the admin
-//    aggregate: STAFF.LATEST_CALLS_VIEW is granted to EXACTLY the five base roles the legacy
-//    "STAFF" gate admits (STAFF / THREE_D_DESIGNER / TWO_D_DESIGNER / ACCOUNTANT /
-//    TWO_D_EXECUTOR) — NOT ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR.
 router.use("/staff", staffRouter);
-
-// Audit — the ADMIN-ONLY action-audit viewer (a NEW additive surface, no legacy
-// equivalent). Auth once at the aggregate; the single read route is gated by
-// AUDIT.LOG_VIEW (granted to ADMIN/SUPER_ADMIN only). The rich ActionAuditLog trail is
-// written from usecases by the non-blocking recordAction service; this surface is
-// read-only + append-only (no create/update/delete). Every row is global (no per-record
-// owner), so the code is the gate — no object-scope checker.
 router.use("/audit-logs", auditRouter);
-
-// My Day — profile-scoped work queue + supervisor team lens (additive, 2026-07-12).
 router.use("/my-day", myDayRouter);
 
-// ── PUBLIC client-portal standalone surfaces ─────────────────────────────────────────────
-// The remaining client-facing sub-routers the legacy `routes/clients/clients.js` aggregated
-// PATHLESS under `/client` (so e.g. `/client/new-lead`, `/client/pay`, `/client/upload-chunk`).
-// Each is migrated under `/v2/client/*`, preserving the observable paths 1:1, and stays PUBLIC
-// (NO auth) exactly like the booking funnel, client calendar, client contracts and
-// `/files/client/*`. Legacy routers stay mounted in parallel during the strangler window.
-//
-// 1. The PUBLIC website lead funnel (legacy `routes/client/leads.js`): the category/item/price
-//    new-lead / register / complete-register / cooperation-request submissions. DISTINCT from
-//    `/v2/client/booking-leads` (the step-based booking draft) — different fields, different
-//    flow. Mounted PATHLESS so `/v2/client/new-lead`, `/v2/client/new-lead/register`,
-//    `/v2/client/new-lead/complete-register/:leadId`, `/v2/client/cooperation-requests`
-//    match legacy. All Arabic/English prose replaced with language-neutral codes; the rich
-//    form body is whitelisted-by-known-keys (mass-assignment hardening). Light per-IP rate
-//    limiting reuses the booking funnel limiters.
+// Public website and client-session surfaces.
 router.use("/client", publicLeadRouter);
-// 2. The PUBLIC client Stripe checkout (legacy `routes/client/payments.js`): `/client/pay`,
-//    `/client/payment-status`, `/client/stripe/backfill`. 🔒 Stripe SDK calls relocated
-//    verbatim (no webhook/signature logic in this flow). payment-status now derives the target
-//    lead from the VERIFIED session metadata (IDOR close). Mounted PATHLESS to preserve paths.
 router.use("/client", clientPaymentsRouter);
-// 3. The PUBLIC client file uploads (legacy `routes/client/uploads.js`): `/client/upload-chunk`,
-//    `/client/api/upload`. 🔒 The chunk mechanism + the frozen `uploadAsChunk`/`uploadAsHttp`
-//    handlers are unchanged — only the multer wiring + invocation are relocated. (This is the
-//    FROZEN-handler surface; the separate `/v2/files/client/*` upload module is a different,
-//    re-implemented storage provider.) Mounted PATHLESS to preserve paths.
 router.use("/client", clientUploadsRouter);
-// 4. The PUBLIC client notes (legacy `routes/client/notes.js`): `/v2/client/notes`. The note
-//    author is forced to ADMIN by the frozen service; `idKey` is constrained to a lead-related
-//    allow-list (dynamic-key / mass-assignment hardening vs the legacy raw body/query
-//    pass-through). Bodies are `.strict()`. Prose replaced with codes.
 router.use("/client/notes", clientNotesRouter);
-// 5. The PUBLIC languages lookup (legacy `routes/client/languages.js`): `/v2/client/languages`.
-//    A read-only lookup the website consumes before any client identity exists.
 router.use("/client/languages", clientLanguagesRouter);
-//
-// NOTE: legacy `routes/client/telegram.js` is entirely COMMENTED OUT (0 live endpoints) and is
-// intentionally NOT migrated — there is nothing to mount. `routes/client/image-session.js`
-// (the extras) is already covered by `/v2/client/image-session`. The PUBLIC token-based client
-// chat routers (`routes/client/chat/*`) are NOT covered by the authed `/v2/chat` module and
-// remain on legacy for now (flagged in the migration report — separate follow-up).
 
 export default router;

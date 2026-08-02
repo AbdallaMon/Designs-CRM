@@ -56,7 +56,6 @@ import { RentValidation } from "../rent/rent.validation.js";
 import { SalaryValidation } from "../salary/salary.validation.js";
 import { RentUsecase } from "../rent/rent.usecase.js";
 import { SalaryUsecase } from "../salary/salary.usecase.js";
-import { mapLegacyError } from "../accounting.errors.js";
 import { paymentRepository } from "../payment/payment.repo.js";
 import { rentRepository } from "../rent/rent.repo.js";
 import { salaryRepository } from "../salary/salary.repo.js";
@@ -67,9 +66,20 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-function makeReq(role, isSuperSales = false) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
-  return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
+function makeReq(profile, superSales = false) {
+  const activeProfile = superSales ? "SUPER_SALES" : {
+    ADMIN: "ADMIN",
+    SUPER_ADMIN: "SUPER_ADMIN",
+    STAFF: "NORMAL_SALES",
+    ACCOUNTANT: "ACCOUNTANT",
+    THREE_D_DESIGNER: "DESIGNER_3D",
+    TWO_D_DESIGNER: "DESIGNER_2D",
+    TWO_D_EXECUTOR: "EXECUTOR_2D",
+    SUPER_SALES: "SUPER_SALES",
+    CONTACT_INITIATOR: "CONTACT_INITIATOR",
+  }[profile];
+  const { permissions, permissionsByModule } = getEffectivePermissions({ profile: activeProfile });
+  return { auth: { id: 1, currentProfileKey: activeProfile, permissions, permissionsByModule } };
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -108,12 +118,11 @@ describe("accounting route permission gate (allow vs deny)", () => {
     expect(err.statusCode).toBe(403);
   });
 
-  it("ADMIN is 403'd on accounting codes (legacy accountant gate is ACCOUNTANT-only)", () => {
+  it("ADMIN can process payments because the admin profile has every permission", () => {
     const req = makeReq(USER_ROLES.ADMIN);
     const next = vi.fn();
     AuthMiddleware.requirePermissions([P.PAYMENT_PROCESS])(req, {}, next);
-    const err = next.mock.calls[0][0];
-    expect(err.statusCode).toBe(403);
+    expect(next).toHaveBeenCalledWith();
   });
 });
 
@@ -243,139 +252,6 @@ describe("PaymentUsecase money workflow actions", () => {
 //  (FIX 2: error-handler only knows AppError; a plain Error becomes 500 and the FE
 //   accountingMessages domain codes never resolve. The usecase wrappers translate.)
 // ════════════════════════════════════════════════════════════════════════════
-describe("accounting legacy-error → AppError mapping", () => {
-  // The exact legacy strings (incl. the two typos) → expected code + status.
-  const CASES = [
-    ["Please fill all data", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
-    ["Please enter a date", accountingMessagesCodes.PAYMENT_DATE_REQUIRED, 422],
-    ["Payment not found", accountingMessagesCodes.PAYMENT_NOT_FOUND, 404],
-    ["Invalid Payment: The payment has already been fully paid.", accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID, 409],
-    [
-      "Invalid Payment: The pending amount is 50. The amount provided (90) exceeds the pending balance.",
-      accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING,
-      400,
-    ],
-    [
-      "Invalid Payment: The payment amount must be greater than zero. You provided -5.",
-      accountingMessagesCodes.PAYMENT_AMOUNT_INVALID,
-      400,
-    ],
-    ["Fill all the fields please", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
-    ["Rent not found", accountingMessagesCodes.RENT_NOT_FOUND, 404],
-    ["Please fill all fiels", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
-    ["Fill all the fileds please", accountingMessagesCodes.REQUIRED_FIELDS_MISSING, 422],
-    ["Monthly salary for June 2026 already exists for this user", accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS, 409],
-  ];
-
-  it.each(CASES)("maps %j → %s (%i)", (message, code, status) => {
-    const mapped = mapLegacyError(new Error(message));
-    expect(mapped).toBeInstanceOf(AppError);
-    expect(mapped.message).toBe(code);
-    expect(mapped.statusCode).toBe(status);
-  });
-
-  it("returns null (re-throw as-is) for an unrecognized error message", () => {
-    expect(mapLegacyError(new Error("ECONNREFUSED: db is down"))).toBeNull();
-  });
-
-  it("does not re-map an existing AppError", () => {
-    expect(mapLegacyError(new AppError(accountingMessagesCodes.PAYMENT_NOT_FOUND, 404))).toBeNull();
-  });
-});
-
-describe("accounting usecases translate legacy throws end-to-end", () => {
-  it("PaymentUsecase.pay: already-fully-paid → AppError 409 PAYMENT_ALREADY_FULLY_PAID", async () => {
-    const usecase = new PaymentUsecase();
-    vi.spyOn(usecase, "_processPayment").mockRejectedValue(
-      new Error("Invalid Payment: The payment has already been fully paid."),
-    );
-    await expect(
-      usecase.pay({ paymentId: "1", body: { amount: "10", issuedDate: "2026-06-01" }, authUser: { id: 1 } }),
-    ).rejects.toMatchObject({ statusCode: 409, message: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID });
-  });
-
-  it("PaymentUsecase.pay: amount-exceeds-pending → AppError 400 PAYMENT_AMOUNT_EXCEEDS_PENDING", async () => {
-    const usecase = new PaymentUsecase();
-    vi.spyOn(usecase, "_processPayment").mockRejectedValue(
-      new Error("Invalid Payment: The pending amount is 50. The amount provided (90) exceeds the pending balance."),
-    );
-    await expect(
-      usecase.pay({ paymentId: "1", body: { amount: "90", issuedDate: "2026-06-01" }, authUser: { id: 1 } }),
-    ).rejects.toMatchObject({ statusCode: 400, message: accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING });
-  });
-
-  it("PaymentUsecase.pay: re-throws an UNKNOWN legacy error as-is (still 500-class)", async () => {
-    const boom = new Error("totally unexpected crash");
-    const usecase = new PaymentUsecase();
-    vi.spyOn(usecase, "_processPayment").mockRejectedValue(boom);
-    await expect(
-      usecase.pay({ paymentId: "1", body: { amount: "10", issuedDate: "2026-06-01" }, authUser: { id: 1 } }),
-    ).rejects.toBe(boom);
-  });
-
-  it("PaymentUsecase.markOverdue: payment-not-found → AppError 404 PAYMENT_NOT_FOUND", async () => {
-    const usecase = new PaymentUsecase();
-    vi.spyOn(usecase, "_markPaymentAsOverdue").mockRejectedValue(new Error("Payment not found"));
-    await expect(usecase.markOverdue({ paymentId: 999 })).rejects.toMatchObject({
-      statusCode: 404,
-      message: accountingMessagesCodes.PAYMENT_NOT_FOUND,
-    });
-  });
-
-  it("RentUsecase.renew: rent-not-found → AppError 404 RENT_NOT_FOUND", async () => {
-    const usecase = new RentUsecase();
-    vi.spyOn(usecase, "_renewRentAndMakeOutCome").mockRejectedValue(new Error("Rent not found"));
-    await expect(usecase.renew({ rentId: "5", body: { amount: 10 } })).rejects.toMatchObject({
-      statusCode: 404,
-      message: accountingMessagesCodes.RENT_NOT_FOUND,
-    });
-  });
-
-  it("RentUsecase.create: missing-fields → AppError 422 REQUIRED_FIELDS_MISSING", async () => {
-    const usecase = new RentUsecase();
-    vi.spyOn(usecase, "_createARent").mockRejectedValue(new Error("Fill all the fields please"));
-    await expect(usecase.createRent({ body: {} })).rejects.toMatchObject({
-      statusCode: 422,
-      message: accountingMessagesCodes.REQUIRED_FIELDS_MISSING,
-    });
-  });
-
-  it("SalaryUsecase.payMonthly: already-exists → AppError 409 MONTHLY_SALARY_ALREADY_EXISTS", async () => {
-    // Drive the real generateMonthlySalary to the already-exists guard: valid fields +
-    // an existing monthly row → it throws the dynamic "Monthly salary for … already exists".
-    salaryRepository.findMonthlySalaryForMonth.mockResolvedValue({ id: 1 });
-    const usecase = new SalaryUsecase();
-    await expect(
-      usecase.payMonthly({
-        body: { baseSalaryId: 1, totalHoursWorked: 160, netSalary: 100, paymentDate: "2026-06-30" },
-      }),
-    ).rejects.toMatchObject({ statusCode: 409, message: accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS });
-  });
-
-  it("SalaryUsecase.editBase: missing-fields (legacy typo string) → AppError 422 REQUIRED_FIELDS_MISSING", async () => {
-    // Real editBaseSalary throws "Please fill all fiels" when a required field is absent.
-    const usecase = new SalaryUsecase();
-    await expect(usecase.editBase({ id: 1, body: {} })).rejects.toMatchObject({
-      statusCode: 422,
-      message: accountingMessagesCodes.REQUIRED_FIELDS_MISSING,
-    });
-  });
-
-  it("SalaryUsecase.payMonthly: re-throws an UNKNOWN error as-is", async () => {
-    // Valid fields, no existing monthly row → the write runs; make the repo write reject with
-    // an unrecognized error, which translateLegacyAccountingError must re-throw unchanged.
-    const boom = new Error("db pool exhausted");
-    salaryRepository.findMonthlySalaryForMonth.mockResolvedValue(null);
-    salaryRepository.createMonthlySalaryWithOutcome.mockRejectedValue(boom);
-    const usecase = new SalaryUsecase();
-    await expect(
-      usecase.payMonthly({
-        body: { baseSalaryId: 1, totalHoursWorked: 160, netSalary: 100, paymentDate: "2026-06-30" },
-      }),
-    ).rejects.toBe(boom);
-  });
-});
-
 describe("PaymentUsecase list (legacy filters parsing preserved)", () => {
   it("parses the `filters` JSON string and forwards status/level (legacy behavior)", async () => {
     paymentRepository.getPayments.mockResolvedValue({ data: [{ id: 1 }], total: 1, totalPages: 1 });

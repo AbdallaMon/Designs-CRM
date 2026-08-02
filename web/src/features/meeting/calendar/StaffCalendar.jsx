@@ -24,7 +24,7 @@ function StaffAdminCalendar() {
   const [loadingAdmins, setLoadingAdmins] = useState(false);
   const loadAdminUsers = async () => {
     const response = await getData({
-      url: "shared/utilities/users/admins",
+      url: "utilities/users/admins",
       setLoading: setLoadingAdmins,
     });
 

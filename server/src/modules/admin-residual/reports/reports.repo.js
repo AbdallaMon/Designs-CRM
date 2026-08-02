@@ -43,8 +43,12 @@ export class ReportsRepository {
   findStaffWithLeadsForReport({ where }) {
     return prisma.user.findMany({
       where: {
-        role: "STAFF",
         isActive: true,
+        currentProfile: {
+          profile: {
+            family: "SALES",
+          },
+        },
       },
       include: {
         clientLeads: {

@@ -124,7 +124,7 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                     Preview lead
                   </Button>
                 </Box>
-                {user.role !== "ACCOUNTANT" && (
+                {user.profile !== "ACCOUNTANT" && (
                   <>
                     {call.status === "IN_PROGRESS" && (
                       <CallResultDialog call={call} onUpdate={onUpdate} />

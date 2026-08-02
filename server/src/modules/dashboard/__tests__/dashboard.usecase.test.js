@@ -38,12 +38,27 @@ import { DashboardValidation } from "../dashboard.validation.js";
 const DC = dashboardMessagesCodes;
 const PD = PERMISSIONS.DASHBOARD;
 
-function authFor(role, id = 1, isSuperSales = false) {
-  const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
+function authFor(persona, id = 1, superSales = false) {
+  const currentProfileKey = superSales
+    ? "SUPER_SALES"
+    : {
+        ADMIN: "ADMIN",
+        SUPER_ADMIN: "SUPER_ADMIN",
+        STAFF: "NORMAL_SALES",
+        THREE_D_DESIGNER: "DESIGNER_3D",
+        TWO_D_DESIGNER: "DESIGNER_2D",
+        TWO_D_EXECUTOR: "EXECUTOR_2D",
+        ACCOUNTANT: "ACCOUNTANT",
+        SUPER_SALES: "SUPER_SALES",
+        CONTACT_INITIATOR: "CONTACT_INITIATOR",
+      }[persona];
+  const { permissions, permissionsByModule } = getEffectivePermissions({
+    profile: currentProfileKey,
+  });
   return {
     id,
-    role,
-    currentProfileKey: isSuperSales ? "SUPER_SALES" : undefined,
+    currentProfileKey,
+    isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
     permissions,
     permissionsByModule,
   };
@@ -63,7 +78,11 @@ const SHARED_ROLES = [
 ];
 
 // Roles that legacy treated as privileged (could scope to any user / see global).
-const ADMIN_TIER = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN];
+const FULL_SCOPE_PROFILES = [
+  USER_ROLES.ADMIN,
+  USER_ROLES.SUPER_ADMIN,
+  USER_ROLES.SUPER_SALES,
+];
 // Roles that must be self-scoped (cannot read another user's metrics).
 const SCOPED_ROLES = [
   USER_ROLES.STAFF,
@@ -71,7 +90,6 @@ const SCOPED_ROLES = [
   USER_ROLES.TWO_D_DESIGNER,
   USER_ROLES.TWO_D_EXECUTOR,
   USER_ROLES.ACCOUNTANT,
-  USER_ROLES.SUPER_SALES,
   USER_ROLES.CONTACT_INITIATOR,
 ];
 
@@ -151,7 +169,7 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
     }
   }
 
-  for (const role of ADMIN_TIER) {
+  for (const role of FULL_SCOPE_PROFILES) {
     it(`${role} → keyMetrics: a client ?staffId=999 IS honored (privileged, preserved 1:1)`, async () => {
       const { usecase, legacy } = makeUsecase();
       await usecase.getKeyMetrics({ query: { staffId: 999 }, authUser: authFor(role, 7) });
@@ -167,30 +185,13 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
     });
   }
 
-  it("isSuperSales (non-admin base role) is treated as admin-tier (legacy isAdmin union)", async () => {
+  it("scope branching uses the active profile and ignores a forged query role", async () => {
     const { usecase, legacy } = makeUsecase();
     await usecase.getKeyMetrics({
-      query: { staffId: 999 },
-      authUser: authFor(USER_ROLES.SUPER_SALES, 7, true),
-    });
-    expect(legacy.getKeyMetrics.mock.calls[0][0].staffId).toBe("999");
-  });
-
-  it("role branching uses the TOKEN role — a forged authUser without admin role is scoped", async () => {
-    // Even if a scoped role's request carried role in the query, the usecase only reads
-    // authUser.role; here we prove the auth role (STAFF) drives the scope, not the query.
-    const { usecase, legacy } = makeUsecase();
-    await usecase.getKeyMetrics({
-      query: { staffId: 999, role: "ADMIN" }, // attacker tries to escalate via ?role=
+      query: { staffId: 999, role: "ADMIN" },
       authUser: authFor(USER_ROLES.STAFF, 7),
     });
     expect(legacy.getKeyMetrics.mock.calls[0][0].staffId).toBe("7");
-  });
-
-  it("the TOKEN role is forwarded to getKeyMetrics (not a query role)", async () => {
-    const { usecase, legacy } = makeUsecase();
-    await usecase.getKeyMetrics({ query: { role: "ADMIN" }, authUser: authFor(USER_ROLES.STAFF, 7) });
-    expect(legacy.getKeyMetrics.mock.calls[0][1]).toBe(USER_ROLES.STAFF);
   });
 
   it("date filters survive sanitization; profile flag is forwarded", async () => {
@@ -315,7 +316,7 @@ describe("DashboardValidation", () => {
 describe("dashboard message codes", () => {
   it("all 9 fetched codes exist and are language-neutral SCREAMING_SNAKE_CASE", () => {
     const codes = Object.values(DC);
-    expect(codes).toHaveLength(9);
+    expect(codes).toHaveLength(10);
     for (const c of codes) expect(c).toMatch(/^[A-Z_]+$/);
   });
 });

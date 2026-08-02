@@ -18,6 +18,25 @@ process.env.JWT_ACCESS_SECRET = "test-access-secret";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 process.env.ISLOCAL = "true";
 
+vi.mock("../../../infra/auth/profile-cache.js", async () => {
+  const { getEffectivePermissions } = await import("@dms/shared");
+  const effective = getEffectivePermissions({ profile: "ADMIN" });
+  const profile = {
+    id: 1,
+    key: "ADMIN",
+    label: "Admin",
+    family: "ADMIN",
+    isAdminTier: true,
+    ...effective,
+  };
+  return {
+    profileCache: {
+      resolve: (id) => (id === 1 ? profile : null),
+      resolveMeta: (id) => (id === 1 ? profile : null),
+    },
+  };
+});
+
 let server;
 let baseUrl;
 let JwtService;
@@ -59,12 +78,9 @@ afterAll(async () => {
 function signAccessFor(id = 1, role = "ADMIN") {
   return JwtService.signAccess({
     id,
-    role,
-    activeRole: role,
+    currentProfileId: 1,
+    profileIds: [1],
     isActive: true,
-    isPrimary: false,
-    isSuperSales: false,
-    subRoles: [],
   });
 }
 
@@ -135,7 +151,7 @@ describe("requireAuth — server-side silent refresh", () => {
     const { AppError } = await import("../../errors/AppError.js");
     const spy = vi
       .spyOn(AuthUseCase, "refreshTokens")
-      .mockRejectedValue(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
+      .mockRejectedValue(new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 }));
 
     const { status } = await ping(
       `${AUTH_COOKIE_NAME}=garbage; ${AUTH_REFRESH_TOKEN_COOKIE_NAME}=bad`,

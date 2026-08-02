@@ -57,7 +57,7 @@ export const NewNoteDialog = ({
         userId: user.id,
       },
       setLoading,
-      `shared/client-leads/${lead.id}/notes`,
+      `leads/${lead.id}/notes`,
       false,
       "Creating"
     );

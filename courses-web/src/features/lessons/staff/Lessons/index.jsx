@@ -25,7 +25,6 @@ import {
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { baseRoleOf } from "@/app/helpers/functions/utility";
 import { useSearchParams } from "next/navigation";
 import CourseNavigation from "./components/CourseNavigation";
 import CourseOverview from "./components/CourseOverview";
@@ -55,12 +54,12 @@ const LesssonView = ({ courseId }) => {
 
   async function getCourse() {
     await getDataAndSet({
-      url: `shared/courses/${courseId}?role=${baseRoleOf(user)}&`,
+      url: `staff-courses/${courseId}`,
       setLoading,
       setData: setCourse,
     });
     await getDataAndSet({
-      url: `shared/courses/${courseId}/progress?role=${baseRoleOf(user)}&`,
+      url: `staff-courses/${courseId}/progress`,
       setLoading,
       setData: setUserProgress,
     });

@@ -129,7 +129,7 @@ export default function AuditDetailDrawer({ open, onClose, item }) {
               <Typography variant="caption" color="text.secondary">
                 Actor:{" "}
                 {actor.name || (actor.id != null ? `User #${actor.id}` : "—")}
-                {actor.role ? ` · ${actor.role}` : ""}
+                {actor.profile ? ` · ${actor.profile}` : ""}
               </Typography>
               {(item.entityType || item.entityId != null) && (
                 <Typography variant="caption" color="text.secondary">

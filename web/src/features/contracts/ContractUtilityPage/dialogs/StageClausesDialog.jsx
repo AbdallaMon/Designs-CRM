@@ -325,7 +325,7 @@ export function StageClausesDialog({ open, onClose, onUpdated }) {
   const fetchStageClauses = useCallback(async () => {
     if (!open) return;
     await getDataAndSet({
-      url: "shared/site-utilities/contract-utility/stage-clauses",
+      url: "site-utilities/contract-utility/stage-clauses",
       setData: setClauses,
       setLoading,
     });
@@ -364,7 +364,7 @@ export function StageClausesDialog({ open, onClose, onUpdated }) {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `shared/site-utilities/contract-utility/stage-clauses/${clauseId}`,
+      `site-utilities/contract-utility/stage-clauses/${clauseId}`,
       false,
       "Deleting",
       false,
@@ -395,8 +395,8 @@ export function StageClausesDialog({ open, onClose, onUpdated }) {
       payload,
       setToastLoading,
       isNew
-        ? `shared/site-utilities/contract-utility/stage-clauses`
-        : `shared/site-utilities/contract-utility/stage-clauses/${updatedClause.id}`,
+        ? `site-utilities/contract-utility/stage-clauses`
+        : `site-utilities/contract-utility/stage-clauses/${updatedClause.id}`,
       false,
       "Saving",
       false,

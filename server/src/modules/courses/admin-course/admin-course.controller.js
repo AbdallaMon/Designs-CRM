@@ -204,13 +204,6 @@ class AdminCourseController {
   }
 
   // ── lesson access / allowed roles ────────────────────────────────────────────────
-  async getAllowedRoles(req, res) {
-    const data = await adminCourseUsecase.getAllowedRoles({
-      courseId: req.params.courseId,
-    });
-    return ok(res, data, coursesMessagesCodes.ALLOWED_ROLES_FETCHED, TK);
-  }
-
   async getAllowedUsers(req, res) {
     const data = await adminCourseUsecase.getAllowedLessonUsers({
       lessonId: req.params.lessonId,

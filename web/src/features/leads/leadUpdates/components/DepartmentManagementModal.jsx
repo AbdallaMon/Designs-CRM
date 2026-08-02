@@ -57,7 +57,7 @@ export function DepartmentManagementModal({ update, onUpdate }) {
   useEffect(() => {
     async function getSharedSettings() {
       const requestData = await getData({
-        url: `shared/updates/shared-settings/${update.id}`,
+        url: `updates/shared-settings/${update.id}`,
         setLoading: setLoadingData,
       });
       if (requestData && requestData.status === 200) {
@@ -143,8 +143,8 @@ export function DepartmentManagementModal({ update, onUpdate }) {
     isCurrentlyAuthorized
   ) => {
     const url = !isCurrentlyAuthorized
-      ? `shared/updates/${update.id}/actions/authorize`
-      : `shared/updates/${update.id}/actions/authorize-shared`;
+      ? `updates/${update.id}/actions/authorize`
+      : `updates/${update.id}/actions/authorize-shared`;
 
     const request = await handleRequestSubmit(
       { type: departmentValue },

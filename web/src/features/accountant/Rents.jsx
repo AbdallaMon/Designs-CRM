@@ -19,7 +19,7 @@ const Rents = () => {
     total,
     setTotal,
     totalPages,
-  } = useDataFetcher(`accountant/rents?`);
+  } = useDataFetcher(`accounting/rents?`);
   function handleAfterEdit(newData) {
     // const newRents = data.map((item) => {
     //   if (item.id === newData.rentId) {
@@ -40,7 +40,7 @@ const Rents = () => {
       >
         <Box sx={{ display: "flex", gap: 2 }}>
           <CreateModal
-            href={"accountant/rents"}
+            href={"accounting/rents"}
             inputs={inputs}
             label={"Add rent"}
             setData={setData}
@@ -66,7 +66,7 @@ const Rents = () => {
         setData={setData}
         totalPages={totalPages}
         withEdit={true}
-        editHref={`accountant/rents`}
+        editHref={`accounting/rents`}
         editFormButton={"Renew"}
         inputs={renewInputs}
         handleBeforeSubmit={(data, item) => {

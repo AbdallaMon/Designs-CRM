@@ -32,7 +32,7 @@ export function Lessons({ courseId }) {
 
   async function getLessons() {
     await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons`,
+      url: `courses/${courseId}/lessons`,
       setData,
       setLoading,
     });
@@ -41,7 +41,7 @@ export function Lessons({ courseId }) {
     const req = await handleRequestSubmit(
       { mustUploadHomework: !lesson.mustUploadHomework },
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lesson.id}/home-works/toggle`,
+      `courses/${courseId}/lessons/${lesson.id}/home-works/toggle`,
       false,
       "Updating"
     );

@@ -1,52 +1,40 @@
-// Generic model delete — the delete flow relocated 1:1 from the legacy
-// `shared/legacy/note-services.js` `deleteAModel`. Prisma I/O is delegated to
-// `genericDeleteRepository`; the non-admin 5-minute window, the super-sales 2-day window, and
-// the MeetingReminder calendar cleanup stay here (business logic / infra orchestration). The
-// module-level `deleteAModel` is the shared entry consumed BOTH by this module's usecase and
-// by projects/task (wired into their DI seams) — replacing the removed shared/legacy barrel.
-// Authentication + the model allow-list are enforced at the route/validation layer.
+// Allow-listed model deletion. Prisma I/O is delegated to genericDeleteRepository;
+// scope, time windows, and MeetingReminder cleanup remain in this usecase.
 import dayjs from "dayjs";
 import { AppError } from "../../shared/errors/AppError.js";
+import {
+  authMessagesCodes,
+  hasPermission,
+  PERMISSIONS,
+  projectsMessagesCodes,
+} from "@dms/shared";
 import { deleteCalendarEvent } from "../../infra/google/google-calendar.client.js";
 import { genericDeleteRepository } from "./generic-delete.repo.js";
+import { leadRepository } from "../leads/lead/lead.repo.js";
+import { projectRepository } from "../projects/project/project.repo.js";
+import { checkNoteDeletionAccess } from "../notes/note.usecase.js";
 
-export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
+export async function deleteAllowedModel({ id, isAdmin, data, hasSuperSalesScope }) {
   const model = data.model;
   const item = await genericDeleteRepository.findModelCreatedAt({ model, id });
   if (!item) {
-    throw new Error(`${data.model} not found`);
+    throw new AppError({ code: projectsMessagesCodes.NOTE_TARGET_NOT_FOUND, statusCode: 404 });
   }
 
   if (!isAdmin) {
     const now = dayjs();
     const createdAt = dayjs(item.createdAt);
     const diffInMinutes = now.diff(createdAt, "minute");
-    if (isSuperSales) {
+    if (hasSuperSalesScope) {
       const timeNotExceedTwoDays =
         dayjs().diff(dayjs(item.createdAt), "day") < 2;
       if (!timeNotExceedTwoDays) {
-        throw new Error(
-          `Super Sales can only delete ${data.model} within 2 days of creation`
-        );
+        throw new AppError({ code: projectsMessagesCodes.DELETE_NOT_ALLOWED, statusCode: 409 });
       }
     } else if (diffInMinutes > 5) {
-      throw new Error(`Cannot delete ${data.model} older than 5 minutes`);
+      throw new AppError({ code: projectsMessagesCodes.DELETE_NOT_ALLOWED, statusCode: 409 });
     }
   }
-  if (data.deleteModelesBeforeMain) {
-    for (const mod of data.deleteModelesBeforeMain) {
-      let where = {};
-      if (mod.key) {
-        where[mod.key] = Number(id);
-      } else if (mod.keyIn) {
-        where = {
-          ...mod.keyIn,
-        };
-      }
-      await genericDeleteRepository.deleteManyBySpec({ name: mod.name, where });
-    }
-  }
-
   if (model === "MeetingReminder") {
     const meeting = await genericDeleteRepository.findMeetingReminder({ id });
     if (meeting && meeting.googleEventId) {
@@ -64,7 +52,7 @@ export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
   // (contractId nulled) and delivery schedules (stage link nulled). See the repo method.
   if (model === "contract" || model === "Contract") {
     await genericDeleteRepository.deleteContractWithDependents({ id });
-    return { data: item, message: `${data.model} deleted successfully` };
+    return { data: item };
   }
 
   // ClientLeadUpdate has RESTRICT foreign keys (its SharedUpdates + Notes) that make a plain
@@ -72,26 +60,70 @@ export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
   // never rely on a client-supplied cascade. See the repo method.
   if (model === "ClientLeadUpdate") {
     await genericDeleteRepository.deleteClientLeadUpdateWithDependents({ id });
-    return { data: item, message: `${data.model} deleted successfully` };
+    return { data: item };
   }
 
   await genericDeleteRepository.deleteModel({ model, id });
-  return { data: item, message: `${data.model} deleted successfully` };
+  return { data: item };
 }
 
 class GenericDeleteUsecase {
   isAdminUser(authUser) {
-    return authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
+    return Boolean(authUser?.isAdminTier);
+  }
+
+  async checkIfUserCanDeleteModel({ id, body, authUser }) {
+    if (body.model === "Note") {
+      return checkNoteDeletionAccess({ id, authUser });
+    }
+    const target = await genericDeleteRepository.resolveTarget({
+      model: body.model,
+      id,
+    });
+    if (!target) throw new AppError({ code: projectsMessagesCodes.NOTE_TARGET_NOT_FOUND, statusCode: 404 });
+
+    if (target.kind === "site-utility") {
+      if (
+        !hasPermission(
+          authUser?.permissions,
+          PERMISSIONS.SITE_UTILITY.PAYMENT_CONDITION_DELETE,
+        )
+      ) {
+        throw new AppError({ code: authMessagesCodes.PERMISSION_DENIED, statusCode: 403 });
+      }
+      return target;
+    }
+    if (target.kind === "project") {
+      const where = projectRepository.buildAuthUserProjectWhere({
+        authUser,
+        where: { id: Number(target.projectId) },
+        mode: "mutate",
+      });
+      const project = await projectRepository.findScopedProject({ where });
+      if (!project) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+      return target;
+    }
+    const where = leadRepository.buildAuthUserLeadWhere({
+      authUser,
+      where: { id: Number(target.clientLeadId) },
+      mode: "mutate",
+    });
+    const lead = await leadRepository.findScopedLead({ where });
+    if (!lead) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+    return target;
   }
 
   async deleteModel({ id, body, authUser }) {
-    if (!body?.model) throw new AppError("DELETE_MODEL_REQUIRED", 400);
-    // NOTE: `deleteModelesBeforeMain` is intentionally NOT forwarded (the schema strips it),
-    // so this endpoint can never cascade-delete arbitrary models.
-    return deleteAModel({
+    if (!body?.model) {
+      throw new AppError({
+        code: projectsMessagesCodes.DELETE_MODEL_REQUIRED,
+        statusCode: 400,
+      });
+    }
+    return deleteAllowedModel({
       id: Number(id),
       isAdmin: this.isAdminUser(authUser),
-      isSuperSales: authUser?.currentProfileKey === "SUPER_SALES",
+      hasSuperSalesScope: authUser?.currentProfileKey === "SUPER_SALES",
       data: { model: body.model },
     });
   }

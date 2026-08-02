@@ -26,7 +26,7 @@ export const messageMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const [messages, total, unreadCount] = await Promise.all([
       chatRepository.getMessagesWithReceipts({
@@ -72,7 +72,7 @@ export const messageMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const pins = await chatRepository.getPinnedMessages(roomId);
     return pins.map((p) => p.message);
@@ -127,7 +127,7 @@ export const messageMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     await chatRepository.updateMemberReadAt(member.id);
 
@@ -183,7 +183,7 @@ export const messageMethods = {
       userId,
       emoji,
     });
-    if (!reaction) throw new AppError(chatMessagesCodes.REACTION_NOT_FOUND, 404);
+    if (!reaction) throw new AppError({ code: chatMessagesCodes.REACTION_NOT_FOUND, statusCode: 404 });
     await chatRepository.deleteReaction(reaction.id);
     const io = getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:removed", {
@@ -211,13 +211,13 @@ export const messageMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (!room?.isChatEnabled)
-      throw new AppError(chatMessagesCodes.CHAT_DISABLED, 400);
+      throw new AppError({ code: chatMessagesCodes.CHAT_DISABLED, statusCode: 400 });
     if ((type === "FILE" || attachments?.length) && !room.allowFiles) {
-      throw new AppError(chatMessagesCodes.FILES_DISABLED, 400);
+      throw new AppError({ code: chatMessagesCodes.FILES_DISABLED, statusCode: 400 });
     }
 
     const message = await chatRepository.createMessage({
@@ -260,14 +260,14 @@ export const messageMethods = {
 
   async editMessage({ messageId, userId, clientId, content }) {
     const message = await chatRepository.getMessageById(messageId);
-    if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
+    if (!message) throw new AppError({ code: chatMessagesCodes.MESSAGE_NOT_FOUND, statusCode: 404 });
 
     const isOwner =
       (userId && message.senderId === Number(userId)) ||
       (clientId && message.senderClient === Number(clientId));
 
     if (!isOwner)
-      throw new AppError(chatMessagesCodes.MESSAGE_FORBIDDEN, 403);
+      throw new AppError({ code: chatMessagesCodes.MESSAGE_FORBIDDEN, statusCode: 403 });
 
     const updated = await chatRepository.updateMessage(messageId, {
       content,
@@ -282,7 +282,7 @@ export const messageMethods = {
 
   async deleteMessage({ messageId, userId, clientId }) {
     const message = await chatRepository.getMessageById(messageId);
-    if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
+    if (!message) throw new AppError({ code: chatMessagesCodes.MESSAGE_NOT_FOUND, statusCode: 404 });
 
     const member = await chatRepository.getMember({
       roomId: message.roomId,
@@ -295,7 +295,7 @@ export const messageMethods = {
     const isAdmin = member?.role === "ADMIN" || member?.role === "MODERATOR";
 
     if (!isOwner && !isAdmin)
-      throw new AppError(chatMessagesCodes.MESSAGE_FORBIDDEN, 403);
+      throw new AppError({ code: chatMessagesCodes.MESSAGE_FORBIDDEN, statusCode: 403 });
 
     await chatRepository.softDeleteMessage(messageId);
 
@@ -305,7 +305,7 @@ export const messageMethods = {
       roomId: message.roomId,
     });
 
-    return { message: "Message deleted successfully" };
+    return { code: chatMessagesCodes.MESSAGE_DELETED };
   },
 
   async pinMessage({ roomId, messageId, userId, clientId }) {
@@ -314,7 +314,7 @@ export const messageMethods = {
       userId,
       clientId,
     });
-    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+    if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (
@@ -322,7 +322,7 @@ export const messageMethods = {
       member.role !== "ADMIN" &&
       member.role !== "MODERATOR"
     ) {
-      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
 
     const pinned = await chatRepository.createPin({
@@ -350,7 +350,7 @@ export const messageMethods = {
       userId,
       clientId,
     });
-    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+    if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (
@@ -358,7 +358,7 @@ export const messageMethods = {
       member.role !== "ADMIN" &&
       member.role !== "MODERATOR"
     ) {
-      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
 
     const result = await chatRepository.deletePins({ roomId, messageId });

@@ -20,7 +20,7 @@ export const fileMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const parsedUniqueMonths = uniqueMonths ? JSON.parse(uniqueMonths) : {};
 
@@ -61,7 +61,7 @@ export const fileMethods = {
       clientId,
     });
     if (!member)
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
     return chatRepository.getFileStats(roomId);
   },
 };

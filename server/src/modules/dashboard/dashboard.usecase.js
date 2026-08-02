@@ -1,34 +1,6 @@
-// dashboard usecase — business logic / orchestration for the 9 read-only analytics
-// aggregations (legacy `/shared/dashboard/*`). Prisma NEVER appears here: the heavy
-// aggregations are reused 1:1 from the legacy `dashboardServices.js` via the sibling
-// `dashboard.aggregations.js` module (no duplication), and the one small scoped read
-// (recent-activities) goes through the repository. Behavior is ported from the legacy
-// handlers with ONE deliberate security change — the scope identity is derived from
-// req.auth, never from a client param.
-//
-// ════════════════════════════════════════════════════════════════════════════════════
-//  THE IDOR-CLASS FIX (over-exposure / cross-user metric reads)
-// ════════════════════════════════════════════════════════════════════════════════════
-//  Legacy keyed every scoped aggregation off `searchParams.staffId` (a CLIENT-SUPPLIED
-//  query param), and `getRecentActivities` ALSO off `searchParams.userId`. So:
-//    - a scoped role (sales/designer/executor) could pass `?staffId=<other>` /
-//      `?userId=<other>` and read ANOTHER user's metrics / activity feed, and
-//    - omitting `staffId` returned the GLOBAL aggregate to everyone.
-//  The `role` argument the legacy passed to getKeyMetrics / getDashboardLeadStatusData was
-//  the TOKEN role (getCurrentUser decodes the JWT) — that part is fine and preserved; we
-//  keep deriving role from req.auth, NEVER from a `?role=` query param.
-//
-//  v2 computes an EFFECTIVE staffId from the authenticated caller:
-//    - admin-tier union (ADMIN / SUPER_ADMIN / isSuperSales): the client `staffId` is
-//      honored as-is (scope to anyone), or omitted for the global aggregate — preserved
-//      1:1 with legacy privileged behavior.
-//    - every other role: staffId is FORCED to req.auth.id — they can only ever see their
-//      OWN metrics (this matches the FE, which already sends the caller's own id for a
-//      self-view; the ONLY thing closed is the cross-user read).
-//  The sanitized searchParams handed to the legacy service carry ONLY the auth-derived
-//  staffId (+ date filters + the harmless `profile` flag) — a raw client `staffId`/`userId`
-//  never reaches the aggregation (the same lesson as the notifications fix: no
-//  trusted-userId passthrough that makes the scope an illusion).
+// Dashboard analytics orchestration. Prisma stays in repositories/aggregations and
+// request scope is derived from the authenticated user's active profile. Admin-tier
+// profiles may select a staff filter; other profiles are forced to their own user ID.
 import { dashboardRepository } from "./dashboard.repo.js";
 import {
   getKeyMetrics,
@@ -43,15 +15,11 @@ import {
 
 // Roles that historically saw GLOBAL data / could scope to ANY user on the dashboard
 // (the legacy `isAdmin` union). Everyone else is forced to a self-scope.
-const ADMIN_TIER_ROLES = ["ADMIN", "SUPER_ADMIN"];
-
 class DashboardUsecase {
   // Admin-tier predicate — the legacy `isAdmin` union, read from the TOKEN (req.auth).
   #isAdminTier(authUser) {
-    return (
-      ADMIN_TIER_ROLES.includes(authUser?.role) ||
-      authUser?.currentProfileKey === "SUPER_SALES"
-    );
+    return Boolean(authUser?.isAdminTier) ||
+      authUser?.currentProfileKey === "SUPER_SALES";
   }
 
   // Resolve the effective staffId scope from the authenticated caller. Admin-tier may
@@ -84,14 +52,14 @@ class DashboardUsecase {
   // GET /key-metrics — role-scoped revenue/lead/commission aggregate.
   getKeyMetrics({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
-    return getKeyMetrics(sp, authUser.role);
+    return getKeyMetrics(sp);
   }
 
   // GET /leads-status — role-scoped lead-status breakdown (legacy also runs an ADMIN-only
   // commission recompute side-effect, gated on the TOKEN role — preserved).
   getLeadsStatus({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
-    return getDashboardLeadStatusData(sp, authUser.role);
+    return getDashboardLeadStatusData(sp, Boolean(authUser.isAdminTier));
   }
 
   // GET /monthly-performance — 12-month lead/revenue trend, scoped to the caller (legacy

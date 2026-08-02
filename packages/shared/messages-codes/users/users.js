@@ -17,8 +17,6 @@ export const userMessagesCodes = {
   USER_CREATED: "USER_CREATED",
   USER_UPDATED: "USER_UPDATED",
   USER_STATUS_TOGGLED: "USER_STATUS_TOGGLED", // ban / unban (changeUserStatus)
-  USER_STAFF_EXTRA_UPDATED: "USER_STAFF_EXTRA_UPDATED",
-  USER_ROLES_UPDATED: "USER_ROLES_UPDATED",
   USER_PROFILE_UPDATED: "USER_PROFILE_UPDATED",
   USER_PROFILES_UPDATED: "USER_PROFILES_UPDATED", // admin changed a user's assigned permission profiles
   USER_PROFILES_FETCHED: "USER_PROFILES_FETCHED", // assignable-profiles list
@@ -34,6 +32,6 @@ export const userMessagesCodes = {
   USER_PROFILE_MUTATE_DENIED: "USER_PROFILE_MUTATE_DENIED", // not self and not admin-tier (IDOR fix)
   EMAIL_ALREADY_REGISTERED: "EMAIL_ALREADY_REGISTERED", // legacy P2002 on email
   USER_NO_DATA_SENT: "USER_NO_DATA_SENT", // legacy "No data was sent" on create
-  USER_ROLE_NOT_ALLOWED: "USER_ROLE_NOT_ALLOWED", // super-sales creating/editing non-STAFF roles
+  USER_PROFILE_NOT_ALLOWED: "USER_PROFILE_NOT_ALLOWED",
   USER_SALES_TIER_EXCLUSIVE: "USER_SALES_TIER_EXCLUSIVE", // >1 of Sales/Primary/Super-sales assigned
 };

@@ -27,7 +27,7 @@ vi.mock("../../../infra/notifications/index.js", () => ({
 vi.mock("../../chat/system-rooms.js", () => ({
   addADesginerToAllRelatedProjectsRooms: vi.fn(),
 }));
-vi.mock("../../contracts/services/contract-services.js", () => ({
+vi.mock("../../contracts/contract/contract.workflow.repo.js", () => ({
   checkIfProjectHasStagesAndUpdateNextAndPrevious: vi.fn(),
   checkIfProjectHasPaymentAndUpdate: vi.fn(),
 }));
@@ -39,13 +39,13 @@ vi.mock("../../../infra/telegram/telegram-functions.js", () => ({
 }));
 vi.mock("../../../infra/config/links.js", () => ({ dealsLink: "http://x/deals" }));
 
-const { legacyDefaults } = await import("../project/project.flows.js");
+const { projectOperations } = await import("../project/project.flows.js");
 
 beforeEach(() => vi.clearAllMocks());
 
 describe("updateProject statusChangedAt stamp", () => {
   it("stamps statusChangedAt when status changes", async () => {
-    await legacyDefaults.updateProject({
+    await projectOperations.updateProject({
       data: { id: 10, status: "3D", oldStatus: "To Do", isAdmin: true },
       isAdmin: true,
     });
@@ -56,7 +56,7 @@ describe("updateProject statusChangedAt stamp", () => {
 
   it("does NOT stamp when status is unchanged (same value)", async () => {
     findProjectDeliveryStatus.mockResolvedValueOnce({ deliveryTime: null, status: "3D" });
-    await legacyDefaults.updateProject({
+    await projectOperations.updateProject({
       data: { id: 10, status: "3D", oldStatus: "3D", isAdmin: true },
       isAdmin: true,
     });
@@ -64,7 +64,7 @@ describe("updateProject statusChangedAt stamp", () => {
   });
 
   it("does NOT stamp on a non-status edit (priority only)", async () => {
-    await legacyDefaults.updateProject({
+    await projectOperations.updateProject({
       data: { id: 10, priority: "HIGH", isAdmin: true },
       isAdmin: true,
     });

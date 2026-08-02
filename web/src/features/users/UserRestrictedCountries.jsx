@@ -50,7 +50,7 @@ const UserRestrictedCountries = ({ userId }) => {
     setLoading(true);
     try {
       const response = await getData({
-        url: `admin/users/${userId}/restricted-countries`,
+        url: `users/${userId}/restricted-countries`,
         setLoading,
       });
       // getData may return the raw array OR the { data } envelope — normalize to an
@@ -87,7 +87,7 @@ const UserRestrictedCountries = ({ userId }) => {
     const request = await handleRequestSubmit(
       { countries: restrictedCountries },
       setToastLoading,
-      `admin/users/${userId}/restricted-countries`,
+      `users/${userId}/restricted-countries`,
       false,
       "Updating"
     );

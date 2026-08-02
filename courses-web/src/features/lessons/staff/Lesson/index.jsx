@@ -30,7 +30,6 @@ import {
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { baseRoleOf } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import CombinedHomeWork from "../CombinedHomeWork";
 import VideoItem from "./components/VideoItem";
@@ -54,7 +53,7 @@ const LessonComponent = ({
   const theme = useTheme();
   async function getLesson() {
     await getDataAndSet({
-      url: `shared/courses/${courseId}/lessons/${lessonId}?role=${baseRoleOf(user)}&`,
+      url: `staff-courses/${courseId}/lessons/${lessonId}`,
       setLoading,
       setData: setLesson,
     });

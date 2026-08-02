@@ -1,8 +1,12 @@
 import { allowedOrigins as allowedOriginsTemplate, env } from "./env.js";
 
 const allowedOrigins = env.ALLOW_ORIGIN
-  ? env.ALLOW_ORIGIN.split(",").map((o) => o.trim())
-  : allowedOriginsTemplate.map((o) => o.trim());
+  ? env.ALLOW_ORIGIN.split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  : allowedOriginsTemplate
+      .filter(Boolean)
+      .map((origin) => origin.trim());
 
 // Optional: bare base domains (CSV) whose any subdomain is allowed, e.g. "domain.com,domain2.com".
 // No-op when unset — the exact-match allowedOrigins list above stays the sole gate.

@@ -109,10 +109,10 @@ const KanbanColumn = ({
     setError(false);
     const request = await getData({
       url: isNotStaff
-        ? `shared/projects/designers/columns?skip=${
+        ? `projects/designers/columns?skip=${
             page * take
           }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
-        : `shared/client-leads/columns?status=${status}&skip=${
+        : `leads/columns?status=${status}&skip=${
             page * take
           }&take=${take}&staffId=${staffId}&type=${type}&`,
       filters,
@@ -172,7 +172,7 @@ const KanbanColumn = ({
         ? { status: newStatus, oldStatus, id: l.projects[0].id }
         : { status: newStatus, oldStatus },
       isNotStaff ? setLoading : setToastLoading,
-      `shared/${isNotStaff ? "projects/designers" : "client-leads"}/${
+      `${isNotStaff ? "projects/designers" : "client-leads"}/${
         l.id
       }/actions/change-status`,
       false,

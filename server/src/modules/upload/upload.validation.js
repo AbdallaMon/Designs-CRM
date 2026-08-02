@@ -12,6 +12,25 @@ const booleanFromMultipart = z.preprocess((value) => {
 }, z.boolean().optional().default(true));
 
 class UploadSchemas {
+  publicCapability = z
+    .object({
+      purpose: z.literal("PUBLIC_LEAD"),
+      subject: z.string().trim().email().max(255),
+    })
+    .strict();
+
+  publicAccessQuery = z
+    .object({
+      purpose: z.enum([
+        "CONTRACT",
+        "IMAGE_SESSION",
+        "CHAT",
+        "CALENDAR",
+        "PUBLIC_LEAD",
+      ]),
+    })
+    .strict();
+
   singleFile = z.object({
     folder: optionalFolder,
     createThumbnail: booleanFromMultipart,
@@ -30,7 +49,7 @@ class UploadSchemas {
     uploadSessionId: z.string().trim().optional(),
     folder: optionalFolder,
     createThumbnail: booleanFromMultipart,
-  });
+  }).strict();
 }
 
 export const uploadSchemas = new UploadSchemas();

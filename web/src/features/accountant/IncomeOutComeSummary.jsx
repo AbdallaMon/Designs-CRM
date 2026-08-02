@@ -11,7 +11,7 @@ import {
 import dayjs from "dayjs";
 
 export function IncomeOutcomeSummary() {
-  const { data } = useDataFetcher(`accountant/summary?`);
+  const { data } = useDataFetcher(`accounting/summary?`);
 
   // Format currency values with AED
   const formatCurrency = (amount) => {

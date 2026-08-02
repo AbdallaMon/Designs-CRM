@@ -4,31 +4,36 @@
 // so those handlers do NOT call a response helper afterwards — they await the usecase, which
 // routes the validated body + the real `res` to the frozen fn.
 //
-// The NON-frozen DATA endpoints (lead-report / staff-report data) now RETURN their payload
-// from the usecase; the controller owns `res.json` and the legacy 500 error envelope
-// (preserved byte-for-byte from the former generateLeadReport / generateStaffReport
-// try/catch — the FE consumes this raw `{ leads, summary }` / `{ staffStats, ... }` shape).
+// The non-streaming data endpoints use the canonical JSON envelope. The frozen
+// Excel/PDF generators still own their binary responses.
 import { reportsUsecase } from "./reports.usecase.js";
+import { ok } from "../../../shared/http/response.js";
+import {
+  adminResidualMessagesCodes,
+  messagesNames,
+} from "@dms/shared";
+
+const TK = messagesNames.adminResidualMessages;
 
 class ReportsController {
   async getLeadReportData(req, res) {
-    try {
-      const data = await reportsUsecase.getLeadReportData({ body: req.body });
-      return res.json(data);
-    } catch (error) {
-      console.error("Error generating report:", error);
-      return res.status(500).json({ error: "Failed to generate report" });
-    }
+    const data = await reportsUsecase.getLeadReportData({ body: req.body });
+    return ok(
+      res,
+      data,
+      adminResidualMessagesCodes.LEAD_REPORT_GENERATED,
+      TK,
+    );
   }
 
   async getStaffReportData(req, res) {
-    try {
-      const data = await reportsUsecase.getStaffReportData({ body: req.body });
-      return res.json(data);
-    } catch (error) {
-      console.error("Error generating staff report:", error);
-      return res.status(500).json({ error: "Failed to generate staff report" });
-    }
+    const data = await reportsUsecase.getStaffReportData({ body: req.body });
+    return ok(
+      res,
+      data,
+      adminResidualMessagesCodes.STAFF_REPORT_GENERATED,
+      TK,
+    );
   }
 
   leadReportExcel(req, res) { return reportsUsecase.leadReportExcel({ body: req.body, res }); }

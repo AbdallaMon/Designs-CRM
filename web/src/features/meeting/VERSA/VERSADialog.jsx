@@ -36,7 +36,7 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
   const handleCategorySelect = async (category) => {
     const getCatData = async () => {
       const request = await getData({
-        url: `shared/questions/versa/${clientLeadId}/category/${category.id}`,
+        url: `questions/versa/${clientLeadId}/category/${category.id}`,
         setLoading: setLoadingVersa,
       });
       if (request.status === 200) {
@@ -48,7 +48,7 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
       const newVersa = await handleRequestSubmit(
         { categoryId: category.id },
         setLoading,
-        `shared/questions/versa/${clientLeadId}/category/${category.id}`
+        `questions/versa/${clientLeadId}/category/${category.id}`
       );
       if (!newVersa || newVersa.status !== 200) {
         return;

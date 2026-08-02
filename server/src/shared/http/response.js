@@ -1,62 +1,120 @@
-export function ok(res, data, message = "OK", translationKey) {
+import { generalMessagesCodes, messagesNames } from "@dms/shared";
+
+const GENERAL_MESSAGES = messagesNames.generalMessages;
+
+function assertMessageCode(message) {
+  if (
+    typeof message !== "string" ||
+    !/^[A-Z][A-Z0-9_]*$/.test(message)
+  ) {
+    throw new TypeError(
+      "Response message must be a SCREAMING_SNAKE_CASE message code",
+    );
+  }
+}
+
+function successResponse(res, data, message, translationKey) {
+  assertMessageCode(message);
   return res
     .status(200)
     .json({ success: true, message, data, translationKey });
 }
 
-// NOTE: returns HTTP 200 (not 201) ON PURPOSE. The entire frontend data layer checks
-// `response.status === 200` after a create (notes, files, price-offers, payments, reminders,
-// …). master returned 200 for these creates; the migration's earlier 201 silently broke every
-// "add then show without refresh" flow. Keep 200 to preserve that observable contract.
-export function created(res, data, message = "Created", translationKey) {
-  return res
-    .status(200)
-    .json({ success: true, message, data, translationKey });
+export function ok(
+  res,
+  data,
+  message = generalMessagesCodes.OK,
+  translationKey = GENERAL_MESSAGES,
+) {
+  return successResponse(res, data, message, translationKey);
 }
-export function updated(res, data, message = "Updated", translationKey) {
-  return res
-    .status(200)
-    .json({ success: true, message, data, translationKey });
+
+// HTTP 200 is intentional. The frontend data layer expects 200 after creates.
+export function created(
+  res,
+  data,
+  message = generalMessagesCodes.CREATED,
+  translationKey = GENERAL_MESSAGES,
+) {
+  return successResponse(res, data, message, translationKey);
 }
-export function deleted(res, message = "Deleted", translationKey) {
-  return res.status(200).json({ success: true, message, translationKey });
+
+export function updated(
+  res,
+  data,
+  message = generalMessagesCodes.UPDATED,
+  translationKey = GENERAL_MESSAGES,
+) {
+  return successResponse(res, data, message, translationKey);
 }
+
+export function deleted(
+  res,
+  message = generalMessagesCodes.DELETED,
+  translationKey = GENERAL_MESSAGES,
+) {
+  return successResponse(res, null, message, translationKey);
+}
+
 export function noContent(res) {
   return res.status(204).send();
 }
-export function badRequest(res, message = "Bad Request", details = null) {
-  return res.status(400).json({ success: false, message, details });
+
+function errorResponse(res, statusCode, message, details) {
+  assertMessageCode(message);
+  return res.status(statusCode).json({
+    success: false,
+    message,
+    data: null,
+    translationKey: GENERAL_MESSAGES,
+    details,
+  });
 }
-export function unauthorized(res, message = "Unauthorized", details = null) {
-  return res.status(401).json({ success: false, message, details });
-}
-export function forbidden(res, message = "Forbidden", details = null) {
-  return res.status(403).json({ success: false, message, details });
-}
-export function notFound(res, message = "Not Found", details = null) {
-  return res.status(404).json({ success: false, message, details });
-}
-export function conflict(res, message = "Conflict", details = null) {
-  return res.status(409).json({ success: false, message, details });
-}
-export function internalServerError(
+
+export function badRequest(
   res,
-  message = "Internal Server Error",
+  message = generalMessagesCodes.BAD_REQUEST,
   details = null,
 ) {
-  return res.status(500).json({ success: false, message, details });
+  return errorResponse(res, 400, message, details);
 }
 
-// ✅ Usage in controller:
-// import { ok, created } from "../../shared/http/response.js";
+export function unauthorized(
+  res,
+  message = generalMessagesCodes.UNAUTHORIZED,
+  details = null,
+) {
+  return errorResponse(res, 401, message, details);
+}
 
-// export async function login(req, res) {
-//   const result = await authUseCase.login(req.body);
-//   return ok(res, result, "Logged in");
-// }
-// Response: { success: true, message: "Logged in", data: { user, token } }
+export function forbidden(
+  res,
+  message = generalMessagesCodes.FORBIDDEN,
+  details = null,
+) {
+  return errorResponse(res, 403, message, details);
+}
 
-// ❌ Bad: different format in every controller
-// Controller A: res.json({ data: user })
-// Controller B: res.json({ result: user, status: "ok" })
-// Controller C: res.json({ user, token })
+export function notFound(
+  res,
+  message = generalMessagesCodes.NOT_FOUND,
+  details = null,
+) {
+  return errorResponse(res, 404, message, details);
+}
+
+export function conflict(
+  res,
+  message = generalMessagesCodes.CONFLICT,
+  details = null,
+) {
+  return errorResponse(res, 409, message, details);
+}
+
+export function internalServerError(
+  res,
+  message = generalMessagesCodes.INTERNAL_SERVER_ERROR,
+  details = null,
+) {
+  return errorResponse(res, 500, message, details);
+}

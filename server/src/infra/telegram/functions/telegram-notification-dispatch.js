@@ -63,19 +63,16 @@ export async function createNotification(
   contentType = "TEXT",
   clientLeadId,
   staffId,
-  role = ["STAFF"],
-  specifiRole,
+  profileKeys = ["NORMAL_SALES"],
+  specificProfiles,
 ) {
   let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
-  if (specifiRole) {
+  if (specificProfiles) {
     const users = await prisma.user.findMany({
       where: {
         isActive: true,
-        OR: [
-          { role: { in: role } }, // Search in the main role
-          { subRoles: { some: { subRole: { in: role } } } }, // Search in subRoles
-        ],
+        currentProfile: { key: { in: profileKeys } },
       },
       select: {
         id: true,
@@ -97,7 +94,17 @@ export async function createNotification(
     const users = await prisma.user.findMany({
       where: {
         isActive: true,
-        role: { in: ["STAFF", "ADMIN", "SUPER_ADMIN"] },
+        currentProfile: {
+          key: {
+            in: [
+              "NORMAL_SALES",
+              "PRIMARY_SALES",
+              "SUPER_SALES",
+              "ADMIN",
+              "SUPER_ADMIN",
+            ],
+          },
+        },
       },
       select: {
         id: true,
@@ -119,7 +126,7 @@ export async function createNotification(
     if (isAdmin) {
       const admin = await prisma.user.findFirst({
         where: {
-          role: "ADMIN",
+          currentProfile: { key: "ADMIN" },
         },
         select: {
           id: true,
@@ -127,7 +134,7 @@ export async function createNotification(
       });
       subAdmins = await prisma.user.findMany({
         where: {
-          role: "SUPER_ADMIN",
+          currentProfile: { key: "SUPER_ADMIN" },
         },
         select: {
           id: true,
@@ -178,7 +185,7 @@ async function sendNotification(
   staffId,
 ) {
   const link = href
-    ? `<a href="${process.env.LEGACY_DASHBOARD_ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
+    ? `<a href="${process.env.DASHBOARD_ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
     : "";
   const emailContent = `
         <div style=" color: #333; direction: ltr; text-align: left;">
@@ -212,7 +219,7 @@ async function sendNotification(
         ${emailContent}
     </div>
     <div style="margin-top: 10px;">
-        <a href="${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
+        <a href="${process.env.DASHBOARD_ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
             Go to notifications?
         </a>
     </div>

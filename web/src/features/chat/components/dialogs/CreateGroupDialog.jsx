@@ -71,7 +71,7 @@ export function CreateGroupDialog({
   const loadAvailableUsers = async () => {
     setLoadingUsers(true);
     try {
-      let url = isAdmin ? `admin/all-users?` : `shared/all-related-chat-users?`;
+      let url = isAdmin ? `users/all-users?` : `users/related-chat-directory?`;
       if (projectId) url += `projectId=${projectId}&`;
 
       const response = await getData({

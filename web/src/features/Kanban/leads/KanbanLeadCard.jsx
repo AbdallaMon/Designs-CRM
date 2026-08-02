@@ -324,7 +324,7 @@ const LeadCard = ({
             </Box>
           )}
 
-          {user.role !== "STAFF" && lead.projects && lead.projects[0] && (
+          {!["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) && lead.projects && lead.projects[0] && (
             <Box
               sx={{
                 mt: 1,
@@ -400,9 +400,9 @@ const LeadCard = ({
           <Stack spacing={2}>
             {latestCalls?.map((call, index) => {
               if (
-                user.role !== "ADMIN" &&
-                user.role !== "SUPER_ADMIN" &&
-                user.role !== "STAFF" &&
+                user.profile !== "ADMIN" &&
+                user.profile !== "SUPER_ADMIN" &&
+                !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
                 call.userId !== user.id
               ) {
                 return;

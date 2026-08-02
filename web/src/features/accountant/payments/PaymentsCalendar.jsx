@@ -82,7 +82,7 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher(`accountant/payments?paymentId=${paymentId}&`, false, {
+  } = useDataFetcher(`accounting/payments?paymentId=${paymentId}&`, false, {
     status: status,
   });
   // const [status, setStatus] = useState("PENDING");
@@ -115,7 +115,7 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
     const request = await handleRequestSubmit(
       {},
       setLoading,
-      `accountant/payments/overdue/${id}`,
+      `accounting/payments/${id}/actions/mark-overdue`,
       false,
       "Marking as over due"
     );
@@ -145,7 +145,7 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
         <Grid spacing={2} container sx={{ flex: 1, maxWidth: "1200px" }}>
           <Grid size={4}>
             <SearchComponent
-              apiEndpoint="search?model=client"
+              resource="clients"
               setFilters={setFilters}
               inputLabel="Search client by name or phone"
               renderKeys={["name", "phone"]}
@@ -234,7 +234,7 @@ export const PaymentHistoryModal = ({ payment }) => {
   useEffect(() => {
     async function getInvoices() {
       const request = await getData({
-        url: `accountant/payments/${payment.id}/invoices`,
+        url: `accounting/payments/${payment.id}/invoices`,
         setLoading,
       });
       if (request.status === 200) {

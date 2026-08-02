@@ -45,9 +45,7 @@ export class UserController {
     return ok(res, data, userMessagesCodes.ALL_USERS_FETCHED, TK);
   }
 
-  // chat member-picker — one endpoint; the usecase branches on req.auth (admin-tier →
-  // admin-wide list; non-admin → related-by-project). Returns the legacy bare user array
-  // under `data` (the chat FE reads response.data directly).
+  // The usecase applies active-profile directory scope.
   async getChatDirectory(req, res) {
     const data = await userUsecase.getChatDirectory({ query: req.query, authUser: req.auth });
     return ok(res, data, userMessagesCodes.USERS_DIRECTORY_FETCHED, TK);
@@ -78,16 +76,6 @@ export class UserController {
   async changeStatus(req, res) {
     const data = await userUsecase.changeStatus({ userId: req.params.userId, body: req.body });
     return ok(res, data, userMessagesCodes.USER_STATUS_TOGGLED, TK);
-  }
-
-  async getStaffExtra(req, res) {
-    const data = await userUsecase.toggleStaffExtra({ userId: req.params.userId, body: req.body });
-    return ok(res, data, userMessagesCodes.USER_STAFF_EXTRA_UPDATED, TK);
-  }
-
-  async manageRoles(req, res) {
-    const data = await userUsecase.manageRoles({ userId: req.params.userId, body: req.body, auditCtx: auditCtxFromReq(req) });
-    return ok(res, data, userMessagesCodes.USER_ROLES_UPDATED, TK);
   }
 
   // ── DB-relational profiles (admin assign/remove + list) ──────────────────────

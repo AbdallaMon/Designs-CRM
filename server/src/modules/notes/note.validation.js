@@ -35,6 +35,7 @@ const idKey = z.enum(NOTE_ID_KEYS);
 const id = z.coerce.number().int().positive();
 
 export const NoteValidation = {
+  deleteParams: z.object({ id }),
   // GET /notes?idKey=taskId&id=2
   listQuery: z
     .object({

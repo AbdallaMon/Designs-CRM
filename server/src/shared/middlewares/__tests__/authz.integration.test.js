@@ -9,13 +9,37 @@
 // CRITICAL: `config/env.js` reads `process.env` at import time (dotenv). We set
 // the JWT secrets BEFORE importing any module that transitively pulls in env.js,
 // then dynamic-`import()` everything inside `beforeAll`.
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import express from "express";
 import cookieParser from "cookie-parser";
 
 process.env.JWT_ACCESS_SECRET = "test-access-secret";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 process.env.ISLOCAL = "true";
+
+vi.mock("../../../infra/auth/profile-cache.js", async () => {
+  const { getEffectivePermissions } = await import("@dms/shared");
+  const keys = { 1: "ACCOUNTANT", 2: "ADMIN" };
+  const toProfile = (id) => {
+    const key = keys[id];
+    if (!key) return null;
+    const effective = getEffectivePermissions({ profile: key });
+    return {
+      id,
+      key,
+      label: key,
+      family: key === "ACCOUNTANT" ? "FINANCE" : "ADMIN",
+      isAdminTier: key === "ADMIN",
+      ...effective,
+    };
+  };
+  return {
+    profileCache: {
+      resolve: toProfile,
+      resolveMeta: toProfile,
+    },
+  };
+});
 
 let server;
 let baseUrl;
@@ -53,7 +77,9 @@ beforeAll(async () => {
   router.get(
     "/scoped",
     AuthMiddleware.requireSpecialChecker(async () => {
-      throw new AppError(authMessagesCodes.ACCESS_DENIED, 403, null, {
+      throw new AppError({
+        code: authMessagesCodes.ACCESS_DENIED,
+        statusCode: 403,
         translationKey: "leadsMessages",
         redirectTo: "/dashboard/leads",
         redirectText: "BACK_TO_LEADS",
@@ -77,14 +103,12 @@ afterAll(async () => {
 });
 
 function signFor(role) {
+  const currentProfileId = role === "ACCOUNTANT" ? 1 : 2;
   return JwtService.signAccess({
     id: 1,
-    role,
-    activeRole: role,
+    currentProfileId,
+    profileIds: [currentProfileId],
     isActive: true,
-    isPrimary: false,
-    isSuperSales: false,
-    subRoles: [],
   });
 }
 

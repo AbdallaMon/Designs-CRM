@@ -29,6 +29,7 @@ export const projectsMessages = {
   TASK_DELETED: "Task deleted",
   NOTES_FETCHED: "Notes fetched",
   NOTE_ADDED: "Note added",
+  NOTE_DELETED: "Note deleted",
 
   // ── updates ──────────────────────────────────────────────────────────────────────
   UPDATES_FETCHED: "Updates fetched",
@@ -56,6 +57,10 @@ export const projectsMessages = {
   UPDATE_NOT_FOUND: "Update not found",
   SHARED_UPDATE_NOT_FOUND: "Shared update not found",
   DELIVERY_NOT_FOUND: "Delivery schedule not found",
+  NOTE_NOT_FOUND: "Note not found",
+  NOTE_TARGET_NOT_FOUND: "The note target no longer exists",
+  NOTE_AUTHOR_NOT_FOUND: "No active admin profile is available to author this note",
+  NOTE_DELETE_WINDOW_EXPIRED: "Notes can only be deleted within five minutes",
   PROJECT_STATUS_TRANSITION_FORBIDDEN: "Cannot change the status from the current status",
   TASK_STATUS_TRANSITION_FORBIDDEN: "Cannot edit a completed task",
   PROJECT_NOT_IN_MODIFICATION: "The project is not in the modification stage yet",

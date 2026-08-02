@@ -13,8 +13,7 @@ class AuthController {
       password,
     );
 
-    // Issue ONLY the unified access/refresh pair. The legacy `"token"` cookie is
-    // no longer issued (the middleware keeps a read-shim for already-issued ones).
+    // Issue the unified access/refresh pair.
     res
       .cookie(AuthSchema.cookieNames.ACCESS, accessToken, JwtService.cookies.access)
       .cookie(AuthSchema.cookieNames.REFRESH, refreshToken, JwtService.cookies.refresh);
@@ -23,11 +22,10 @@ class AuthController {
   }
 
   static async logout(req, res) {
-    // Clear the unified pair AND the legacy cookie (so legacy sessions log out too).
+    // Clear the unified cookie pair.
     res
       .cookie(AuthSchema.cookieNames.ACCESS, "", JwtService.cookies.clear)
-      .cookie(AuthSchema.cookieNames.REFRESH, "", JwtService.cookies.clear)
-      .cookie("token", "", JwtService.cookies.clear);
+      .cookie(AuthSchema.cookieNames.REFRESH, "", JwtService.cookies.clear);
     ok(res, null, authMessagesCodes.LOGOUT_SUCCESS, messagesNames.authMessages);
   }
 

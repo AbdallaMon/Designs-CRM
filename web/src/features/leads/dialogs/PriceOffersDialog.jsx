@@ -79,7 +79,7 @@ export const AddPriceOffers = ({
         userId: user.id,
       },
       setLoading,
-      `shared/client-leads/${lead.id}/price-offers`,
+      `leads/${lead.id}/price-offers`,
       false,
       "Adding"
     );

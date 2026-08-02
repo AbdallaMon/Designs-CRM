@@ -35,7 +35,7 @@ export function StartNewChat() {
       setLoading: setUsersLoading,
       setData: setUsers,
       setError: setUsersError,
-      url: "shared/all-chat-users",
+      url: "users/chat-directory",
     });
   }, []);
 
@@ -50,7 +50,7 @@ export function StartNewChat() {
     const res = await handleRequestSubmit(
       { participantId: selectedUser.id },
       setCreating,
-      "shared/chat/rooms/create-chat",
+      "chat/rooms/create-chat",
       false,
       "Starting chat..."
     );

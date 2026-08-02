@@ -5,15 +5,7 @@ import MUIContextProvider from "@/app/providers/MUIContext";
 import DotsLoader from "@/shared/components/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
-import { Noto_Kufi_Arabic } from "next/font/google";
 import UploadingProvider from "./providers/UploadingProgressProvider";
-
-const noto = Noto_Kufi_Arabic({
-  weight: ["400", "500", "700"],
-  style: ["normal"],
-  subsets: ["arabic"],
-  display: "swap",
-});
 
 export const metadata = {
   // Clear and benefit-focused for educational platform
@@ -32,8 +24,8 @@ export const metadata = {
     "learn interior design",
     "professional development",
     "online education",
-    "كورسات اونلاين", // Online Courses
-    "تدريب مهني", // Professional Training
+    "Online courses", // Online Courses
+    "Professional training", // Professional Training
   ],
 
   creator: "Dream Studio",
@@ -74,14 +66,12 @@ export const metadata = {
 };
 export default function RootLayout({ children }) {
   return (
-    <html>
+    <html lang="en" translate="no">
       <head>
+        <meta name="google" content="notranslate" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body
-        className={noto.className}
-        style={{ backgroundColor: colors.bgSecondary }}
-      >
+      <body style={{ backgroundColor: colors.bgSecondary }}>
         <MuiAlertProvider>
           <MUIContextProvider>
             <UploadingProvider>

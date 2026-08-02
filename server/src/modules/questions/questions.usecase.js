@@ -27,7 +27,7 @@ export class QuestionsUsecase {
   // genuine read entrypoints (and by getQuestionTypes, see its note).
   async assertLeadAccess({ clientLeadId, authUser }) {
     if (clientLeadId == null) {
-      throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
+      throw new AppError({ code: questionsMessagesCodes.QUESTION_NOT_FOUND, statusCode: 404 });
     }
     // Delegates to the keystone IDOR checker; throws AppError(LEAD_ACCESS_DENIED, 403)
     // when the lead is outside the caller's scope or does not exist.
@@ -40,7 +40,7 @@ export class QuestionsUsecase {
   // first claiming it. Throws AppError(LEAD_MUTATE_DENIED, 403) on denial / non-existence.
   async assertLeadMutate({ clientLeadId, authUser }) {
     if (clientLeadId == null) {
-      throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
+      throw new AppError({ code: questionsMessagesCodes.QUESTION_NOT_FOUND, statusCode: 404 });
     }
     return leadUsecase.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
   }
@@ -72,7 +72,7 @@ export class QuestionsUsecase {
   // ── POST /:sessionQuestionId/answer ──────────────────────────────────────────────
   async submitAnswer({ sessionQuestionId, response, authUser }) {
     const clientLeadId = await questionsRepository.findLeadIdBySessionQuestion({ sessionQuestionId });
-    if (clientLeadId == null) throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
+    if (clientLeadId == null) throw new AppError({ code: questionsMessagesCodes.QUESTION_NOT_FOUND, statusCode: 404 });
     // WRITE path → MUTATE scope (owned-only); a claimable NEW lead is not writable.
     await this.assertLeadMutate({ clientLeadId, authUser });
     return questionsRepository.upsertAnswer({ sessionQuestionId, response, userId: authUser.id });
@@ -86,7 +86,7 @@ export class QuestionsUsecase {
     const results = [];
     for (const { sessionQuestionId, response } of answers) {
       const clientLeadId = await questionsRepository.findLeadIdBySessionQuestion({ sessionQuestionId });
-      if (clientLeadId == null) throw new AppError(questionsMessagesCodes.QUESTION_NOT_FOUND, 404);
+      if (clientLeadId == null) throw new AppError({ code: questionsMessagesCodes.QUESTION_NOT_FOUND, statusCode: 404 });
       await this.assertLeadMutate({ clientLeadId, authUser });
       await questionsRepository.upsertAnswer({ sessionQuestionId, response, userId: authUser.id });
       results.push({ sessionQuestionId, response });
@@ -131,10 +131,10 @@ export class QuestionsUsecase {
   // The step resolves to its VersaModel → parent lead; scope-check before updating.
   async updateVersaStep({ stepId, fields, authUser }) {
     const exists = await questionsRepository.versaStepExists({ stepId });
-    if (!exists) throw new AppError(questionsMessagesCodes.VERSA_STEP_NOT_FOUND, 404);
+    if (!exists) throw new AppError({ code: questionsMessagesCodes.VERSA_STEP_NOT_FOUND, statusCode: 404 });
     const clientLeadId = await questionsRepository.findLeadIdByVersaStep({ stepId });
     // A step always belongs to a VersaModel (created together); if orphaned, deny.
-    if (clientLeadId == null) throw new AppError(questionsMessagesCodes.QUESTION_ACCESS_DENIED, 403);
+    if (clientLeadId == null) throw new AppError({ code: questionsMessagesCodes.QUESTION_ACCESS_DENIED, statusCode: 403 });
     // WRITE path → MUTATE scope (owned-only) on the resolved parent lead.
     await this.assertLeadMutate({ clientLeadId, authUser });
     return questionsRepository.updateVersaStep({ stepId, ...fields });

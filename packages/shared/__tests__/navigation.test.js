@@ -11,7 +11,7 @@ const subOf = (u, href) =>
 
 describe("buildNavigationTabs matches master's per-role nav", () => {
   it("ACCOUNTANT sees only the accounting screens (no leads/deals)", () => {
-    const h = hrefs({ role: "ACCOUNTANT" });
+    const h = hrefs({ profile: "ACCOUNTANT" });
     expect(h).toContain("/dashboard"); // Payments landing
     expect(h).toContain("/dashboard/operational-expenses");
     expect(h).toContain("/dashboard/rents");
@@ -21,7 +21,7 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
     expect(h).not.toContain("/dashboard/users");
   });
   it("STAFF (sales) sees dashboard/leads/deals/calendar/payments, NOT users", () => {
-    const h = hrefs({ role: "STAFF" });
+    const h = hrefs({ profile: "NORMAL_SALES" });
     expect(h).toEqual([
       "/dashboard", "/dashboard/leads", "/dashboard/deals",
       "/dashboard/calendar", "/dashboard/payments",
@@ -30,22 +30,22 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
   it("STAFF resolved to the SUPER_SALES nav role (via navRole, as auth.dto.toMe computes it from the active profile) additionally sees users", () => {
     // navRoleFor no longer reads isSuperSales directly (Phase 4) — the sidebar is
     // driven by `navRole`, which auth.dto.toMe derives from the active profile.
-    expect(hrefs({ role: "STAFF", navRole: "SUPER_SALES" })).toContain("/dashboard/users");
+    expect(hrefs({ profile: "SUPER_SALES"  })).toContain("/dashboard/users");
   });
   it("SUPER_SALES (role) sees users by role (master behavior)", () => {
-    expect(hrefs({ role: "SUPER_SALES" })).toContain("/dashboard/users");
+    expect(hrefs({ profile: "SUPER_SALES" })).toContain("/dashboard/users");
   });
   it("CONTACT_INITIATOR sees only leads", () => {
-    expect(hrefs({ role: "CONTACT_INITIATOR" })).toEqual(["/dashboard"]);
+    expect(hrefs({ profile: "CONTACT_INITIATOR" })).toEqual(["/dashboard"]);
   });
   it("ADMIN sees users + website utilities + reports", () => {
-    const h = hrefs({ role: "ADMIN" });
+    const h = hrefs({ profile: "ADMIN" });
     expect(h).toContain("/dashboard/users");
     expect(h).toContain("/dashboard/website-utilities");
     expect(h).toContain("/dashboard/report");
   });
   it("THREE_D_DESIGNER sees work-stages, not leads/deals", () => {
-    const h = hrefs({ role: "THREE_D_DESIGNER" });
+    const h = hrefs({ profile: "DESIGNER_3D" });
     expect(h).toContain("/dashboard/work-stages");
     expect(h).not.toContain("/dashboard/leads");
     expect(h).not.toContain("/dashboard/deals");
@@ -57,7 +57,7 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
 // filters subLinks by role, so each role must get exactly master's sub-list.
 describe("Work stages sub-links match master exactly (labels + hrefs + order)", () => {
   it("ADMIN work-stages sub-links", () => {
-    expect(subOf({ role: "ADMIN" }, "/dashboard/work-stages")).toEqual([
+    expect(subOf({ profile: "ADMIN" }, "/dashboard/work-stages")).toEqual([
       { label: "All projects", href: "/dashboard/projects" },
       { label: "Plan study department", href: "/dashboard/work-stages/study" },
       { label: "3D Work stage", href: "/dashboard/work-stages" },
@@ -68,14 +68,14 @@ describe("Work stages sub-links match master exactly (labels + hrefs + order)", 
     ]);
   });
   it("THREE_D_DESIGNER work-stages sub-links", () => {
-    expect(subOf({ role: "THREE_D_DESIGNER" }, "/dashboard/work-stages")).toEqual([
+    expect(subOf({ profile: "DESIGNER_3D" }, "/dashboard/work-stages")).toEqual([
       { label: "3D Work stage", href: "/dashboard/work-stages" },
       { label: "Modifcation stage", href: "/dashboard/modification" },
       { label: "Archived projects", href: "/dashboard/archived" },
     ]);
   });
   it("TWO_D_DESIGNER work-stages sub-links", () => {
-    expect(subOf({ role: "TWO_D_DESIGNER" }, "/dashboard/work-stages")).toEqual([
+    expect(subOf({ profile: "DESIGNER_2D" }, "/dashboard/work-stages")).toEqual([
       { label: "Plan study department", href: "/dashboard/study" },
       { label: "Final plan department", href: "/dashboard/final-plan" },
       { label: "Quantity calcualtion department", href: "/dashboard/quantity" },
@@ -83,7 +83,7 @@ describe("Work stages sub-links match master exactly (labels + hrefs + order)", 
     ]);
   });
   it("TWO_D_EXECUTOR work-stage has NO sub-links (direct link)", () => {
-    const item = buildNavigationTabs({ role: "TWO_D_EXECUTOR" }).find(
+    const item = buildNavigationTabs({ profile: "EXECUTOR_2D" }).find(
       (t) => t.href === "/dashboard/work-stages",
     );
     expect(item).toBeTruthy();
@@ -95,8 +95,25 @@ describe("Work stages sub-links match master exactly (labels + hrefs + order)", 
 // ── Full per-role parity: label + href + subLinks (label/href), in order ──────
 // Transcribed directly from linksForRole(user) in
 // web/src/app/(auth)/dashboard/(dashboard)/layout.jsx.
-function expected(role, opts = {}) {
-  return buildNavigationTabs({ role, ...opts }).map((t) => ({
+const PROFILE_BY_PERSONA = {
+  ADMIN: "ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
+  STAFF: "NORMAL_SALES",
+  SUPER_SALES: "SUPER_SALES",
+  ACCOUNTANT: "ACCOUNTANT",
+  THREE_D_DESIGNER: "DESIGNER_3D",
+  TWO_D_DESIGNER: "DESIGNER_2D",
+  TWO_D_EXECUTOR: "EXECUTOR_2D",
+  CONTACT_INITIATOR: "CONTACT_INITIATOR",
+};
+
+function expected(persona, opts = {}) {
+  const profile =
+    opts.profile ??
+    (opts.navRole === "SUPER_SALES"
+      ? "SUPER_SALES"
+      : PROFILE_BY_PERSONA[persona]);
+  return buildNavigationTabs({ profile }).map((t) => ({
     label: t.label,
     href: t.href,
     subLinks: t.subLinks ? t.subLinks.map((s) => ({ label: s.label, href: s.href })) : undefined,
@@ -212,16 +229,16 @@ describe("full per-role parity with linksForRole (all 9 roles)", () => {
 });
 
 describe("NAVIGATION config shape", () => {
-  it("every item has key/label/href/allowedRoles", () => {
+  it("every item has key/label/href/allowedProfiles", () => {
     for (const item of NAVIGATION) {
       expect(typeof item.key).toBe("string");
       expect(typeof item.label).toBe("string");
       expect(typeof item.href).toBe("string");
-      expect(Array.isArray(item.allowedRoles)).toBe(true);
-      expect(item.allowedRoles.length).toBeGreaterThan(0);
+      expect(Array.isArray(item.allowedProfiles)).toBe(true);
+      expect(item.allowedProfiles.length).toBeGreaterThan(0);
     }
   });
-  it("returns [] for a user with no role", () => {
+  it("returns [] for a user with no active profile", () => {
     expect(buildNavigationTabs(undefined)).toEqual([]);
     expect(buildNavigationTabs({})).toEqual([]);
   });

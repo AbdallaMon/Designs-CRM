@@ -39,7 +39,7 @@ const EditLessonInfo = ({ courseId, lessonId }) => {
 
   async function getLessonData() {
     const req = await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons/${lessonId}`,
+      url: `courses/${courseId}/lessons/${lessonId}`,
       setData: setLesson,
       setLoading,
     });
@@ -68,7 +68,7 @@ const EditLessonInfo = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       formData,
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}`,
+      `courses/${courseId}/lessons/${lessonId}`,
       false,
       "Updating",
       false,

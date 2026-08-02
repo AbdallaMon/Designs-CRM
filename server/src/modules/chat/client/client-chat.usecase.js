@@ -41,12 +41,12 @@ export class ClientChatUsecase {
     if (!resolved?.room) {
       // No token / token does not resolve to a room. 404 — do not leak whether the
       // token format was valid.
-      throw new AppError(chatMessagesCodes.INVALID_ROOM_TOKEN, 404);
+      throw new AppError({ code: chatMessagesCodes.INVALID_ROOM_TOKEN, statusCode: 404 });
     }
     // If the caller named a roomId, it MUST be the token's room. Anything else is a
     // cross-room read attempt → deny (IDOR close). 403 without leaking the target.
     if (roomId != null && Number(roomId) !== Number(resolved.room.id)) {
-      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
     }
     return resolved;
   }
@@ -77,7 +77,7 @@ export class ClientChatUsecase {
     const clientId = this.clientIdOf(resolved);
 
     const room = await repo.getRoomById(resolved.room.id, null, clientId);
-    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
+    if (!room) throw new AppError({ code: chatMessagesCodes.ROOM_NOT_FOUND, statusCode: 404 });
 
     const selfMember = resolved.chatMember;
     const otherMembers = (room.members || []).filter(
@@ -103,7 +103,7 @@ export class ClientChatUsecase {
     const clientId = this.clientIdOf(resolved);
 
     const member = resolved.chatMember;
-    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+    if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
     const parsedPage = page != null ? Number(page) : 0;
     const parsedLimit = limit != null ? Number(limit) : 50;
@@ -172,7 +172,7 @@ export class ClientChatUsecase {
 
     const message = await repo.getMessageById(messageId);
     if (!message || Number(message.roomId) !== Number(resolved.room.id)) {
-      throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
+      throw new AppError({ code: chatMessagesCodes.MESSAGE_NOT_FOUND, statusCode: 404 });
     }
     const parsedLimit = limit != null ? Number(limit) : 50;
     return repo.getMessageIndexInRoom(messageId, parsedLimit);

@@ -7,6 +7,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import axios from "axios";
 import FormData from "form-data";
+import { JwtService } from "../security/jwt.js";
 
 // used
 export async function uploadAsHttp(req, res) {
@@ -71,8 +72,15 @@ export async function uploadToFTPHttpAsBuffer(
     const form = new FormData();
     form.append("file", buffer, remoteFilename);
 
-    await axios.post(`${process.env.SERVER_URL}/client/api/upload`, form, {
-      headers: form.getHeaders(),
+    const uploadToken = JwtService.signUploadCapability({
+      purpose: "INTERNAL_PDF",
+      subject: remoteFilename,
+    });
+    await axios.post(`${process.env.SERVER_URL}/v2/client/api/upload`, form, {
+      headers: {
+        ...form.getHeaders(),
+        "x-upload-token": uploadToken,
+      },
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
       timeout: 10 * 60 * 1000,

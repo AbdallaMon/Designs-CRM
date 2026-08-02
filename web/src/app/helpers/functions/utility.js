@@ -161,61 +161,34 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 };
 
 export const checkIfADesigner = (user) => {
-  return (
-    user.role === "TWO_D_DESIGNER" ||
-    user.role === "THREE_D_DESIGNER" ||
-    user.subRoles?.some(
-      (r) => r.subRole === "TWO_D_DESIGNER" || r.subRole === "THREE_D_DESIGNER"
-    )
-  );
+  return user?.profile === "DESIGNER_2D" || user?.profile === "DESIGNER_3D";
 };
 export const checkIfThreeDDesigner = (user) => {
-  return (
-    user.role === "THREE_D_DESIGNER" ||
-    user.subRoles?.some((r) => r.subRole === "THREE_D_DESIGNER")
-  );
+  return user?.profile === "DESIGNER_3D";
 };
 export const checkIfTwoDDesigner = (user) => {
-  return (
-    user.role === "TWO_D_DESIGNER" ||
-    user.subRoles?.some((r) => r.subRole === "TWO_D_DESIGNER")
-  );
+  return user?.profile === "DESIGNER_2D";
 };
 export const checkIfStaff = (user) => {
-  return (
-    user.role === "STAFF" || user.subRoles?.some((r) => r.subRole === "STAFF")
-  );
+  return ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user?.profile);
 };
 export const checkIfPrimaryStaff = (user) => {
   // Primary-tier includes super-sales (super ⊇ primary), matching backend #isPrimaryScope.
-  return (
-    (user.role === "STAFF" ||
-      user.subRoles?.some((r) => r.subRole === "STAFF")) &&
-    (user.profile === "PRIMARY_SALES" || user.profile === "SUPER_SALES")
-  );
+  return user?.profile === "PRIMARY_SALES" || user?.profile === "SUPER_SALES";
 };
 export const checkIfAdmin = (user) => {
-  return (
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    user.role === "CONTACT_INITIATOR"
-  );
+  return ["ADMIN", "SUPER_ADMIN", "CONTACT_INITIATOR"].includes(user?.profile);
 };
 export const checkIfAdminOnly = (user) => {
-  return user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  return user?.profile === "ADMIN" || user?.profile === "SUPER_ADMIN";
 };
 export const checkIfAdminOrSuperSales = (user) => {
-  return (
-    user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.profile === "SUPER_SALES"
-  );
+  return ["ADMIN", "SUPER_ADMIN", "SUPER_SALES"].includes(user?.profile);
 };
 
 export const checkIfAdminOrSuperOrContactInitiator = (user) => {
-  return (
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    user.profile === "SUPER_SALES" ||
-    user.role === "CONTACT_INITIATOR"
+  return ["ADMIN", "SUPER_ADMIN", "SUPER_SALES", "CONTACT_INITIATOR"].includes(
+    user?.profile,
   );
 };
 export function ensureHttps(url) {

@@ -33,7 +33,6 @@ class AdminCourseUsecase {
         description: data.description,
         imageUrl: data.imageUrl,
         isPublished: data.isPublished,
-        roles: { create: (data.roles || []).map((role) => ({ role })) },
       },
     });
   }
@@ -46,9 +45,6 @@ class AdminCourseUsecase {
     if (data.description !== undefined) update.description = data.description;
     if (data.imageUrl !== undefined) update.imageUrl = data.imageUrl;
     if (data.isPublished !== undefined) update.isPublished = data.isPublished;
-    update.roles = data.roles
-      ? { deleteMany: {}, create: data.roles.map((role) => ({ role })) }
-      : undefined;
     return adminCourseRepository.updateCourse({ id: courseId, data: update });
   }
 
@@ -210,11 +206,6 @@ class AdminCourseUsecase {
   }
 
   // ── lesson access / allowed roles ────────────────────────────────────────────────
-  async getAllowedRoles({ courseId }) {
-    const rows = await adminCourseRepository.getAllowedRoles({ courseId });
-    return rows?.map((r) => r.role);
-  }
-
   async getAllowedLessonUsers({ lessonId }) {
     return adminCourseRepository.getAllowedLessonUsers({ lessonId });
   }
@@ -419,7 +410,7 @@ class AdminCourseUsecase {
   // Legacy `increaseAttemptToUser` — bump the latest attempt's limit by one.
   async increaseAttemptToUser({ testId, userId }) {
     const last = await adminCourseRepository.getLastUserAttempt({ testId, userId });
-    if (!last) throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
+    if (!last) throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
     await adminCourseRepository.updateAttemptLimit({
       id: last.id,
       attemptLimit: last.attemptLimit + 1,
@@ -430,9 +421,9 @@ class AdminCourseUsecase {
   // Legacy `decreaseAttemptToUser` — guard against dropping below consumed count.
   async decreaseAttemptToUser({ testId, userId }) {
     const last = await adminCourseRepository.getLastUserAttempt({ testId, userId });
-    if (!last) throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
+    if (!last) throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
     if (last.attemptLimit === last.attemptCount) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_CANNOT_DECREASE, 400);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_CANNOT_DECREASE, statusCode: 400 });
     }
     await adminCourseRepository.updateAttemptLimit({
       id: last.id,
@@ -522,7 +513,7 @@ class AdminCourseUsecase {
         acc[userId] = {
           name: attempt.user.name,
           email: attempt.user.email,
-          role: attempt.user.role,
+          profile: attempt.user.currentProfile,
           attempts: 1,
           maxScore: attempt.score ?? 0,
           passed: attempt.passed,

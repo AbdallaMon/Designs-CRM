@@ -30,7 +30,7 @@ export async function generateContractPdfToken({ contractId, lang, setLoading })
   return handleRequestSubmit(
     { lang },
     setLoading,
-    `shared/contracts/${contractId}/actions/generate-pdf-token`,
+    `contracts/${contractId}/actions/generate-pdf-token`,
     false,
     "Generating",
     false,

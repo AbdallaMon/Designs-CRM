@@ -68,7 +68,7 @@ function AdminOnHoldDeals() {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher("shared/client-leads" + `?assignedOverdue=true&`, false);
+  } = useDataFetcher("leads" + `?assignedOverdue=true&`, false);
   const leadTypes = enumToKeyValueArray(LeadCategory);
   console.log(data, "data in leads page");
   return (
@@ -104,7 +104,7 @@ function AdminOnHoldDeals() {
           >
             <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
               <SearchComponent
-                apiEndpoint="search?model=client"
+                resource="clients"
                 setFilters={setFilters}
                 inputLabel="Search by name or email"
                 renderKeys={["name", "email"]}
@@ -163,7 +163,7 @@ function SuperOnHoldDeals() {
     setTotal,
     totalPages,
     setFilters,
-  } = useDataFetcher("shared/client-leads" + `?assignedOverdue=true&`, false);
+  } = useDataFetcher("leads" + `?assignedOverdue=true&`, false);
   const leadTypes = enumToKeyValueArray(LeadCategory);
   return (
     <div>
@@ -192,7 +192,7 @@ function SuperOnHoldDeals() {
           <Box display="flex" gap={2} flexWrap="wrap" alignItems="center" flex={1}>
             <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
               <SearchComponent
-                apiEndpoint="search?model=client"
+                resource="clients"
                 setFilters={setFilters}
                 inputLabel="Search by name or email"
                 renderKeys={["name", "email"]}
@@ -252,7 +252,7 @@ function StaffOnHoldDeals() {
     totalPages,
     setFilters,
   } = useDataFetcher(
-    "shared/client-leads" + `?staffId=${user.id}&assignedOverdue=true&`,
+    "leads" + `?staffId=${user.id}&assignedOverdue=true&`,
     false
   );
 
@@ -263,7 +263,7 @@ function StaffOnHoldDeals() {
     const assign = await handleRequestSubmit(
       item,
       setLoading,
-      `shared/client-leads`,
+      `leads`,
       false,
       "Assigning",
       false,
@@ -305,13 +305,11 @@ function StaffOnHoldDeals() {
 
 export default function Leads() {
   const { user } = useAuth();
-  if (!user?.role) return null;
-  const role = user.role;
-
-  if (role === "STAFF" && user.profile !== "SUPER_SALES") {
+  if (!user?.profile) return null;
+  if (["NORMAL_SALES", "PRIMARY_SALES"].includes(user.profile)) {
     return <StaffOnHoldDeals />;
   }
-  if (role === "ADMIN") {
+  if (user.profile === "ADMIN" || user.profile === "SUPER_ADMIN") {
     return <AdminOnHoldDeals />;
   }
   return <SuperOnHoldDeals />;

@@ -1,18 +1,7 @@
-// admin-residual — aggregate router for the residual `/admin` (ADMIN gate) surface NOT
-// owned by an earlier migrated module (legacy `routes/admin/admin.js`, kept mounted in
-// parallel during the strangler window). Mounted under `/v2/admin`. Authentication is
-// mounted ONCE here; each sub-router declares its per-route ADMIN_RESIDUAL.* permission
-// codes, granted to ADMIN/SUPER_ADMIN base + isSuperSales (via SUPER_SALES_EXTRA_PERMISSIONS)
-// so the effective set matches the legacy "ADMIN" gate's `isAdmin` union EXACTLY (ADMIN/
-// SUPER_ADMIN base + isSuperSales + ADMIN/SUPER_ADMIN sub-roles) — without widening any other
-// base role. A plain STAFF/sales/designer/accountant is 403'd on every route here.
+// Administrative modules that share the /v2/admin namespace. Each sub-router declares
+// action-specific permission codes; ADMIN/SUPER_ADMIN profiles receive every permission.
 //
-// NOTE: the legacy `/admin` router ALSO mounted user-management (→ migrated users module),
-// `/admin/image-session` (→ image-sessions module) and `/admin/courses` (→ courses module).
-// Those are NOT re-mounted here — they stay on legacy under the strangler and are already on
-// `/v2` via their own modules. This aggregate carries ONLY the genuine residual.
-//
-// Sub-surface → mount (legacy `/admin/*` → v2 `/v2/admin/*`, paths 1:1):
+// Sub-surface mounts:
 //   /reports/*               → /v2/admin/reports/*           (reportsRouter)
 //   /commissions*            → /v2/admin/commissions*        (commissionsRouter)
 //   /fixed-data*             → /v2/admin/fixed-data*         (fixedDataRouter — writes only)

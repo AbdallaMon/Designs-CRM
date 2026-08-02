@@ -23,7 +23,7 @@ const HomeworkStatusHeader = ({ theme, canProceed, setHomeworkDialog }) => {
           variant="h5"
           sx={{ fontWeight: 600, color: "text.primary" }}
         >
-          واجبات الدرس
+          Lesson homework
         </Typography>
         <Button
           variant="contained"
@@ -36,7 +36,7 @@ const HomeworkStatusHeader = ({ theme, canProceed, setHomeworkDialog }) => {
             py: 1,
           }}
         >
-          عرض المتطلبات
+          View requirements
         </Button>
       </Box>
 
@@ -66,17 +66,17 @@ const HomeworkStatusHeader = ({ theme, canProceed, setHomeworkDialog }) => {
                 variant="subtitle1"
                 sx={{ fontWeight: 600, mb: 0.5 }}
               >
-                {canProceed ? "تم إكمال جميع المتطلبات!" : "الواجب مطلوب"}
+                {canProceed ? "All requirements are complete!" : "Homework required"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {canProceed
-                  ? "يمكنك الآن الانتقال إلى الدرس التالي أو الاختبار."
-                  : `يجب تقديم ملخص بصيغة PDF وفيديو للمتابعة.`}
+                  ? "You can now continue to the next lesson or test."
+                  : `Submit a PDF summary and a video to continue.`}
               </Typography>
             </Box>
             {canProceed && (
               <Chip
-                label="جاهز"
+                label="Ready"
                 color="success"
                 variant="filled"
                 sx={{ fontWeight: 600 }}

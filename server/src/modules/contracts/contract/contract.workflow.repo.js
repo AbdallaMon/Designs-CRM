@@ -1,7 +1,8 @@
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
-import { buildAndUploadContractPdf } from "./generate-contract-pdf.js";
 import { assignProjectToUser } from "../../projects/project/project.usecase.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { contractsMessagesCodes } from "@dms/shared";
 export const stageLevelStartProject = {
   LEVEL_3: "2D_Study",
   LEVEL_4: "3D_Designer",
@@ -54,30 +55,26 @@ export async function getLeadContractList({ leadId }) {
 async function validatePayments(payments) {
   {
     if (payments.length === 0)
-      throw new Error("You have to add at least one payment");
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENTS_REQUIRED, statusCode: 400 });
   }
   if (!payments.every((payment) => payment.amount > 0))
-    throw new Error("You have to add amount > 0 for each payment");
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_AMOUNT_INVALID, statusCode: 400 });
   if (!payments.every((payment) => payment.condition !== "To Do")) {
-    throw new Error(
-      "You cant select this condition as it is the project initial condition by default"
-    );
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
 }
 
 async function validateStages(stages) {
   {
     if (stages.length === 0)
-      throw new Error("You have to add at least one contract level");
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_STAGES_REQUIRED, statusCode: 400 });
   }
   if (
     !stages.every(
       (stage) => stage.deliveryDays > 0 && stage.deptDeliveryDays > 0
     )
   )
-    throw new Error(
-      "You have to both delivery days and staff delivery days for each level"
-    );
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_STAGE_DAYS_INVALID, statusCode: 400 });
 }
 export async function createContract({ payload }) {
   try {
@@ -167,7 +164,7 @@ export async function createContract({ payload }) {
     return contract;
   } catch (e) {
     console.log(e.message, "error in contract");
-    throw new Error(e.message);
+    throw e;
   }
 }
 async function createPayments({
@@ -483,7 +480,7 @@ export async function generatePdfSessionToken({ contractId }) {
     where: { id: contractId },
   });
 
-  if (!session) throw new Error("Session not found");
+  if (!session) throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
 
   const arToken = uuidv4();
   const enToken = uuidv4();
@@ -517,7 +514,7 @@ export async function createContractStage({ contractId, stage }) {
     const newStage = await createStage({ contractId, stage, ...contract });
     return newStage;
   } catch (e) {
-    throw new Error(e.message);
+    throw e;
   }
 }
 
@@ -559,7 +556,7 @@ export async function updateContractStage({ stageId, newStage }) {
       data,
     });
   } catch (e) {
-    throw new Error(e.message);
+    throw e;
   }
 }
 
@@ -571,7 +568,7 @@ export async function deleteContractStage({ stageId }) {
       },
     });
     if (stage.stageStatus === "COMPLETED") {
-      throw new Error("Can not delete this level as it is already completed");
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_STAGE_COMPLETED, statusCode: 409 });
     }
     return await prisma.contractStage.delete({
       where: {
@@ -579,7 +576,7 @@ export async function deleteContractStage({ stageId }) {
       },
     });
   } catch (e) {
-    throw new Error(e.message);
+    throw e;
   }
 }
 
@@ -598,9 +595,7 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
       },
     });
     if (payment.status === "NOT_DUE") {
-      throw new Error(
-        "Paymnet is not due yet, u can change status when the payment is due"
-      );
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_NOT_DUE, statusCode: 409 });
     }
     await prisma.contractPayment.update({
       where: {
@@ -619,7 +614,7 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
       contractId: payment.contractId,
     });
   } catch (e) {
-    throw new Error(e.message);
+    throw e;
   }
 }
 async function checkIfNoOtherPaymentAndNoOtherStages({ contractId }) {
@@ -661,9 +656,7 @@ export async function createNewContractPayment({ contractId, payment }) {
   // update total payment
   contractId = Number(contractId);
   if (payment.condition === "To Do") {
-    throw new Error(
-      "You cant select this condition as it is the project initial condition by default"
-    );
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
   try {
     const contract = await prisma.contract.findUnique({
@@ -694,7 +687,7 @@ export async function createNewContractPayment({ contractId, payment }) {
 
     return newPayment;
   } catch (e) {
-    throw new Error(e.message);
+    throw e;
   }
 }
 
@@ -702,12 +695,10 @@ export async function updateContractPayment({ paymentId, newPayment }) {
   // update total payment if amount updated
   let data = {};
   if (newPayment.condition === "To Do") {
-    throw new Error(
-      "You cant select this condition as it is the project initial condition by default"
-    );
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
   if (newPayment.type && !newPayment.condition) {
-    throw new Error("You have to choose a payment condition");
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
   const payment = await prisma.contractPayment.findUnique({
     where: {
@@ -781,7 +772,7 @@ export async function deleteContractPayment({ paymentId }) {
     },
   });
   if (payment.paymentCondition === "SIGNATURE") {
-    throw new Error("Cant delete signature payment");
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_SIGNATURE_PAYMENT_REQUIRED, statusCode: 409 });
   }
   await prisma.contractPayment.delete({
     where: {
@@ -797,7 +788,7 @@ export async function updateContractTotals(contractId) {
     include: { paymentsNew: true },
   });
 
-  if (!contract) throw new Error("Contract not found");
+  if (!contract) throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
 
   const amount = contract.paymentsNew.reduce(
     (sum, p) => sum + Number(p.amount || 0),
@@ -1091,20 +1082,16 @@ export async function createADeliveryScheduleAndRelateItToStage({
   });
 }
 
-export async function markContractAsCancelled({ contractId }) {
-  const contract = await prisma.contract.findUnique({
+export async function getContractForCancellation({ contractId }) {
+  return prisma.contract.findUnique({
     where: {
       id: Number(contractId),
     },
   });
-  await buildAndUploadContractPdf({
-    token: contract.arToken,
-    id: contract.id,
-    signatureUrl: contract.signatureUrl,
-    lng: "ar",
-    canceled: true,
-  });
-  return await prisma.contract.update({
+}
+
+export async function setContractCancelled({ contractId }) {
+  return prisma.contract.update({
     where: {
       id: Number(contractId),
     },
@@ -1152,8 +1139,7 @@ export async function getContractPaymentsGroupedService({
     : { paymentsNew: { some: {} } };
   if (
     user &&
-    user.role !== "ADMIN" &&
-    user.role !== "SUPER_ADMIN" &&
+    !user.isAdminTier &&
     user.currentProfileKey !== "SUPER_SALES"
   ) {
     whereForCount.clientLead = {
@@ -1288,27 +1274,24 @@ export async function updateContractPaymentAmounts({
     where: { id: Number(paymentId) },
     select: { amount: true, paymentCondition: true, contractId: true },
   });
+  if (!payment) {
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_NOT_FOUND, statusCode: 404 });
+  }
   const contract = await prisma.contract.findFirst({
     where: { id: payment.contractId },
     select: { taxRate: true },
   });
   const taxRate = contract?.taxRate ?? 5;
-  if (!payment) {
-    throw new Error("Payment not found");
-  }
-
   const lost = Number(amountLost ?? 0);
   const received = Number(amountReceived ?? 0);
   // const total = Number(payment.amount ?? 0);
   const total = withTax(payment.amount, taxRate);
   if (Number.isNaN(lost) || Number.isNaN(received)) {
-    throw new Error("Invalid amount values");
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_AMOUNTS_INVALID, statusCode: 400 });
   }
 
   if (lost + received > total) {
-    throw new Error(
-      "Amount lost + received cannot be more than the payment total"
-    );
+    throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_AMOUNTS_EXCEED_TOTAL, statusCode: 400 });
   }
 
   const updated = prisma.contractPayment.update({

@@ -4,10 +4,7 @@ import { apiRequest } from "@/app/helpers/functions/apiClient";
 
 export const AuthContext = createContext(null);
 export default function AuthProvider({ children }) {
-  const [user, setUser] = useState({
-    role: null,
-    emailConfirmed: null,
-  });
+  const [user, setUser] = useState({ profile: null, emailConfirmed: null });
   // Real permission codes emitted by /v2/auth/me — the single source of truth for gating
   // (the collapsed, role-agnostic feature pages gate on these, not on role).
   const [permissions, setPermissions] = useState([]);
@@ -34,7 +31,7 @@ export default function AuthProvider({ children }) {
       const nextUser = me.user;
 
       // NOTE: the old localStorage `role` override was removed — it desynced
-      // `user.role` from the profile-derived `navigationTabs`/permissions and broke
+      // `user.profile` from the profile-derived `navigationTabs`/permissions and broke
       // route access. Profile switching now goes through /auth/profile/switch +
       // refetchMe (a real, server-side switch).
 
@@ -52,11 +49,7 @@ export default function AuthProvider({ children }) {
       setNavigationTabs([]);
       setProfiles([]);
       setCurrentProfileId(null);
-      setUser({
-        role: null,
-        emailConfirmed: null,
-        accountStatus: null,
-      });
+      setUser({ profile: null, emailConfirmed: null, accountStatus: null });
     } finally {
       setValidatingAuth(false);
     }

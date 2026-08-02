@@ -10,11 +10,10 @@ export default function AccountantLanding() {
   const moveCard = async (payment, newPaymentLevel, setPayments) => {
     const request = await handleRequestSubmit(
       {
-        newPaymentLevel: newPaymentLevel,
-        oldPaymentLevel: payment.paymentLevel,
+        newPaymentLevel,
       },
       setLoading,
-      `accountant/payments/status/${payment.id}`,
+      `accounting/payments/${payment.id}/actions/change-status`,
       false,
       "Updating",
       false,

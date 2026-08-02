@@ -5,11 +5,11 @@
 // admin-residual legacy service exactly as before. Behavior is preserved verbatim,
 // including the historical `updateKeyFilterForUserFilter(fn, searchParams)` call shape.
 //
-// These functions used to be wired into the dashboard usecase via a `legacyDefaults` DI
-// seam; the DI seam is gone (the usecase imports them directly). Splitting them into this
-// sibling module keeps them independently importable (and mockable) without any behavior
-// change — no logic was altered in the move.
+// The dashboard usecase imports these functions directly. Keeping aggregations in this
+// sibling module makes them independently testable.
 import dayjs from "dayjs";
+import { AppError } from "../../shared/errors/AppError.js";
+import { dashboardMessagesCodes } from "@dms/shared";
 import {
   getCommissionByUserId,
   reverseCommissions,
@@ -21,7 +21,7 @@ import {
   buildStaffFilter,
 } from "./dashboard.filters.js";
 
-export async function getKeyMetrics(searchParams, role) {
+export async function getKeyMetrics(searchParams) {
   try {
     let userFilter = {};
 
@@ -135,13 +135,13 @@ export async function getKeyMetrics(searchParams, role) {
     };
   } catch (error) {
     console.error("Error fetching key metrics:", error);
-    throw new Error("Unable to fetch key metrics");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }
 
-export async function getDashboardLeadStatusData(searchParams, role) {
+export async function getDashboardLeadStatusData(searchParams, isAdmin) {
   let userFilter = {};
-  if (role === "ADMIN") {
+  if (isAdmin) {
     const users = await dashboardRepository.findStaffUsers();
     users.forEach(async (user) => {
       await getCommissionByUserId(user.id);
@@ -167,7 +167,7 @@ export async function getDashboardLeadStatusData(searchParams, role) {
     return formattedStatuses;
   } catch (error) {
     console.error("Error fetching lead status data:", error);
-    throw new Error("Unable to fetch lead status data");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }
 
@@ -236,7 +236,7 @@ export async function getMonthlyPerformanceData(searchParams) {
     return results;
   } catch (error) {
     console.error("Error fetching monthly performance data:", error);
-    throw new Error("Unable to fetch monthly performance data");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }
 
@@ -350,7 +350,7 @@ export async function getEmiratesAnalytics(searchParams) {
     };
   } catch (error) {
     console.error("Error fetching Emirates analytics:", error);
-    throw new Error("Unable to fetch Emirates analytics");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }
 
@@ -604,7 +604,7 @@ export async function getPerformanceMetrics(searchParams) {
     };
   } catch (error) {
     console.error("Error fetching performance metrics:", error);
-    throw new Error("Unable to fetch performance metrics");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }
 
@@ -614,7 +614,7 @@ export async function getLatestNewLeads() {
     return latestLeads;
   } catch (error) {
     console.error("Error fetching latest new leads:", error);
-    throw new Error("Unable to fetch latest new leads");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }
 
@@ -743,6 +743,6 @@ export async function getDesignerMetrics(searchParams) {
     };
   } catch (error) {
     console.error("Error fetching designer metrics:", error);
-    throw new Error("Unable to fetch designer metrics");
+    throw new AppError({ code: dashboardMessagesCodes.DASHBOARD_FETCH_FAILED, statusCode: 500 });
   }
 }

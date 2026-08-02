@@ -1,7 +1,6 @@
 "use client"
 import {Button} from "@mui/material";
 import {useRouter} from "next/navigation";
-import {FaSignOutAlt} from "react-icons/fa";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit";
 import {useAuth} from "@/app/providers/AuthProvider";
@@ -19,14 +18,11 @@ export default function Logout({fit}) {
               setLoading,
               `auth/logout`,
               false,
-              "جاري تسجيل الخروج",
+              "Logging out",
         );
         if (logout?.status === 200) {
             setIsLoggedIn(false)
-            setUser({
-                role: null,
-
-            })
+            setUser(null)
             router.push("/login");
         }
     }

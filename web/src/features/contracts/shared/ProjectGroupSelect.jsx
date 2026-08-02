@@ -27,7 +27,7 @@ export default function ProjectGroupSelect({
 
   const fetchGroups = async () => {
     const req = await getDataAndSet({
-      url: `shared/projects/${clientLeadId}/groups`,
+      url: `projects/${clientLeadId}/groups`,
       setData: setGroups,
       setLoading,
     });

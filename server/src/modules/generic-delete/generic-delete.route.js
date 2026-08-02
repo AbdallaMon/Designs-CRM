@@ -5,16 +5,15 @@ import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { genericDeleteController } from "./generic-delete.controller.js";
 import { genericDeleteSchemas } from "./generic-delete.validation.js";
 
-// Restores master's single generic delete. The frontend's DeleteModelButton posts
-// `shared/delete/:id` which the FE path-map rewrites to `/delete/:id`. Authenticated for any
-// role (the legacy SHARED gate); the frozen deleteAModel service enforces the non-admin
-// time-window guard, and the validation layer allow-lists which models may be deleted.
+// Authenticated, allow-listed compatibility delete surface. Object scope and model
+// validation run before the usecase enforces profile-specific time windows.
 const genericDeleteRouter = Router();
 
 genericDeleteRouter.delete(
   "/:id",
   AuthMiddleware.requireAuth,
   validate(genericDeleteSchemas.remove),
+  AuthMiddleware.requireSpecialChecker(genericDeleteController.checkIfUserCanDeleteModel),
   asyncHandler(genericDeleteController.deleteModel),
 );
 

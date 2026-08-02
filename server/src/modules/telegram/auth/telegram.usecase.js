@@ -10,6 +10,12 @@ import { TelegramAuthCache } from "./telegram.cache.js";
 import { mapTelegramStatus } from "./telegram.dto.js";
 import { TelegramAuthEmails } from "./telegram.emails.js";
 import { telegramAuthRepo } from "./telegram.repo.js";
+import {
+  adminResidualMessagesCodes,
+  messagesNames,
+} from "@dms/shared";
+
+const TK = messagesNames.adminResidualMessages;
 
 export class TelegramAuthusecase {
   static #CACHE_PREFIX = "telegram:auth:";
@@ -25,7 +31,11 @@ export class TelegramAuthusecase {
         await telegramManager.connect();
         const health = await telegramManager.checkHealth();
         if (!health.authorized) {
-          throw new AppError("Telegram session is not authorized", 401);
+          throw new AppError({
+            code: adminResidualMessagesCodes.TELEGRAM_SESSION_UNAUTHORIZED,
+            statusCode: 401,
+            translationKey: TK,
+          });
         }
       }
       return telegramData;
@@ -42,10 +52,11 @@ export class TelegramAuthusecase {
         },
       });
       await telegramAuthRepo.markNotifiedOfDisconnection();
-      throw new AppError(
-        "Telegram connection failed. Admins have been notified to re-authenticate.",
-        503,
-      );
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CONNECTION_FAILED,
+        statusCode: 503,
+        translationKey: TK,
+      });
     }
   }
   static async updateTelegramAuthConnection({
@@ -100,29 +111,23 @@ export class TelegramAuthusecase {
       });
       return {
         data,
-        message:
-          "Telegram authentication initiated. Please enter the code sent to your Telegram app.",
+        message: adminResidualMessagesCodes.TELEGRAM_AUTH_INITIATED,
       };
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error.code === 420 && error.errorMessage === "FLOOD") {
-        const waitTimeInMinute = Math.ceil(error.seconds / 60);
-        const waitTimeInHour = Math.ceil(waitTimeInMinute / 60);
-        const waitTime =
-          waitTimeInHour > 0
-            ? `${waitTimeInHour} hour(s)`
-            : `${waitTimeInMinute} minute(s)`;
-        throw new AppError(
-          `Too many attempts to get otp code. Please wait ${waitTime} before trying again.`,
-          429,
-        );
+        throw new AppError({
+          code: adminResidualMessagesCodes.TELEGRAM_AUTH_RATE_LIMITED,
+          statusCode: 429,
+          translationKey: TK,
+          details: { retryAfterSeconds: error.seconds ?? null },
+        });
       }
-      throw new AppError(
-        error.errorMessage ||
-          error.message ||
-          "Failed to initiate Telegram authentication",
-        error.code || 500,
-      );
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_AUTH_INIT_FAILED,
+        statusCode: 502,
+        translationKey: TK,
+      });
     }
   }
   static async #checkIfValidOTPCode(phoneNumber, code) {
@@ -173,26 +178,29 @@ export class TelegramAuthusecase {
       const data = await this.#sendPasswordNeeded(phoneNumber);
       return {
         data,
-        message: "Code verified. Please enter your 2FA password.",
+        message: adminResidualMessagesCodes.TELEGRAM_PASSWORD_REQUIRED,
       };
     } else {
       if (error.code === 400 && error.errorMessage === "PHONE_CODE_INVALID") {
-        throw new AppError(
-          "The code you entered is incorrect. Please check the code sent to your Telegram app and try again.",
-          401,
-        );
+        throw new AppError({
+          code: adminResidualMessagesCodes.TELEGRAM_CODE_INCORRECT,
+          statusCode: 401,
+          translationKey: TK,
+        });
       }
       if (error.code === 400 && error.errorMessage === "PHONE_CODE_EXPIRED") {
-        throw new AppError(
-          "The code you entered has expired. Please request a new code.",
-          401,
-        );
+        throw new AppError({
+          code: adminResidualMessagesCodes.TELEGRAM_CODE_EXPIRED,
+          statusCode: 401,
+          translationKey: TK,
+        });
       }
 
-      throw new AppError(
-        error.errorMessage || error.message || "Failed to verify Telegram code",
-        error.code || 500,
-      );
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CODE_VERIFICATION_FAILED,
+        statusCode: 502,
+        translationKey: TK,
+      });
     }
   }
   static async verifyCode({ phoneNumber, code }) {
@@ -201,7 +209,7 @@ export class TelegramAuthusecase {
       console.log("OTP code verified successfully for phone number:", data);
       return {
         data,
-        message: "Code verified. Telegram authentication successful.",
+        message: adminResidualMessagesCodes.TELEGRAM_CODE_VERIFIED,
       };
     } catch (error) {
       console.error("Error verifying Telegram code:", error);
@@ -219,47 +227,24 @@ export class TelegramAuthusecase {
       await this.#handleTelegramAuthSuccess({
         key: this.#cacheKey(phoneNumber),
       });
-      return { data, message: "Telegram authentication successful." };
+      return {
+        data,
+        message: adminResidualMessagesCodes.TELEGRAM_PASSWORD_VERIFIED,
+      };
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error.errorMessage === "PASSWORD_HASH_INVALID") {
-        // Language-neutral CODE (not prose) so the FE resolveMessage map can surface a
-        // clear "wrong password" message instead of the generic fallback.
-        throw new AppError("TELEGRAM_PASSWORD_INCORRECT", 401);
+        throw new AppError({
+          code: adminResidualMessagesCodes.TELEGRAM_PASSWORD_INCORRECT,
+          statusCode: 401,
+          translationKey: TK,
+        });
       }
-      throw new AppError(
-        error.errorMessage ||
-          error.message ||
-          "Failed to verify Telegram password",
-        error.code || 500,
-      );
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_PASSWORD_VERIFICATION_FAILED,
+        statusCode: 502,
+        translationKey: TK,
+      });
     }
   }
-  // static async verifyPassword({ phoneNumber, password }) {
-  //   const telegramManager = getTelegramManager();
-  //   let verifyPassword;
-  //   try {
-  //     verifyPassword = await telegramManager.verifyPassword(password);
-  //   } catch (error) {
-  //     console.error("Error verifying Telegram password:", error);
-  //   }
-  //   if (!verifyPassword) {
-  //     throw new AppError("Incorrect Telegram password", 401);
-  //   } else {
-  //     const data = mapTelegramStatus({
-  //       data: { phoneNumber: verifyPassword.phoneNumber },
-  //       teleStatus: TELEGRAM_CONSTANTS.STATUS.passwordVerified,
-  //     });
-
-  //     await this.#handleTelegramAuthSuccess({
-  //       key: String(phoneNumber),
-  //     });
-  //     return {
-  //       data,
-  //       message: "Telegram authentication successful.",
-  //     };
-  //   }
-  // }
 }
-
-// if (error?.errorMessage === "SESSION_PASSWORD_NEEDED") {

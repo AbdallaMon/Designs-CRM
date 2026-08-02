@@ -8,31 +8,6 @@ import {
 import { notifyUsersThatAClientHasSubmittedAPdf } from "../../../infra/telegram/telegram-functions.js";
 import { generateImageSessionPdf } from "./generate-image-session-pdf.js";
 
-export async function getSessionByToken(token) {
-  const session = await prisma.clientImageSession.findUnique({
-    where: { token },
-    include: {
-      preferredPatterns: true,
-      selectedSpaces: { include: { space: true } },
-      selectedImages: {
-        include: {
-          image: {
-            include: {
-              spaces: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!session) {
-    throw new Error("Session not found or expired");
-  }
-
-  return session;
-}
-
 export async function uploadPdfAndApproveSession({
   sessionData,
   signatureUrl,
@@ -78,7 +53,7 @@ export async function uploadPdfAndApproveSession({
     });
   } catch (e) {
     console.log("e in uploadig pdf", e);
-    throw new Error(e.message);
+    throw e;
   }
 }
 
@@ -123,22 +98,7 @@ export async function sendSuccessEmailAfterSessionDone({
   const adminUsers = await prisma.user.findMany({
     where: {
       isActive: true,
-      OR: [
-        {
-          role: {
-            in: ["ADMIN", "SUPER_ADMIN"],
-          },
-        },
-        {
-          subRoles: {
-            some: {
-              subRole: {
-                in: ["ADMIN", "SUPER_ADMIN"],
-              },
-            },
-          },
-        },
-      ],
+      currentProfile: { isAdminTier: true },
     },
     select: {
       id: true,

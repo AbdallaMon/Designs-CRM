@@ -19,7 +19,7 @@ const TOKEN_SCOPED_KEYS = ["imageSessionId", "selectedImageId"];
 export class NotesUsecase {
   #assertAllowedKey(idKey) {
     if (!CLIENT_NOTE_ID_KEYS.includes(idKey)) {
-      throw new AppError(clientPortalMessagesCodes.NOTE_TARGET_INVALID, 422);
+      throw new AppError({ code: clientPortalMessagesCodes.NOTE_TARGET_INVALID, statusCode: 422 });
     }
   }
 
@@ -30,11 +30,11 @@ export class NotesUsecase {
     if (!TOKEN_SCOPED_KEYS.includes(idKey)) return;
 
     const session = await clientNotesRepository.findSessionIdByToken(token);
-    if (!session) throw new AppError(clientPortalMessagesCodes.NOTE_NOT_AUTHORIZED, 403);
+    if (!session) throw new AppError({ code: clientPortalMessagesCodes.NOTE_NOT_AUTHORIZED, statusCode: 403 });
 
     if (idKey === "imageSessionId") {
       if (Number(id) !== session.id) {
-        throw new AppError(clientPortalMessagesCodes.NOTE_NOT_AUTHORIZED, 403);
+        throw new AppError({ code: clientPortalMessagesCodes.NOTE_NOT_AUTHORIZED, statusCode: 403 });
       }
       return;
     }
@@ -42,7 +42,7 @@ export class NotesUsecase {
     // selectedImageId — the image must belong to the token's session.
     const owner = await clientNotesRepository.findSelectedImageOwnerSessionId(id);
     if (!owner || owner.imageSessionId !== session.id) {
-      throw new AppError(clientPortalMessagesCodes.NOTE_NOT_AUTHORIZED, 403);
+      throw new AppError({ code: clientPortalMessagesCodes.NOTE_NOT_AUTHORIZED, statusCode: 403 });
     }
   }
 

@@ -33,7 +33,7 @@ export default function DeleteModal({
       ? `${href}/${item.id}?${extra ? extra : ""}&`
       : `${href}/${item.id}?${extra ? extra : ""}&`;
     const method = archive ? "PATCH" : "DELETE";
-    const message = archive ? "جاري الارشفة..." : "Deleting";
+    const message = archive ? "Archiving..." : "Deleting";
     const result = await handleRequestSubmit(
       {},
       setToastLoading,
@@ -85,7 +85,7 @@ export default function DeleteModal({
           <Box sx={{ ...simpleModalStyle }}>
             <Typography variant="h6" component="h2">
               {archive
-                ? "هل انت متاكد انك تريد عمل ارشفة لهذا العنصر"
+                ? "Are you sure you want to archive this item?"
                 : "Are u sure u want to delete this item?"}
             </Typography>
             <Box
@@ -100,7 +100,7 @@ export default function DeleteModal({
                 color={archive ? "warning" : "secondary"}
                 onClick={handleDeleteOrArchive}
               >
-                {archive ? "ارشفه" : "Delete"}
+                {archive ? "Archive" : "Delete"}
               </Button>
               <Button
                 variant="contained"

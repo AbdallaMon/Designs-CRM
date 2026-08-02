@@ -31,7 +31,7 @@ const StudentDashboard = () => {
   useEffect(() => {
     async function getDashboardData() {
       await getDataAndSet({
-        url: `shared/courses/dashboard`, // Changed to student endpoint
+        url: "staff-courses/dashboard",
         setLoading,
         setData: setDashboardData,
       });

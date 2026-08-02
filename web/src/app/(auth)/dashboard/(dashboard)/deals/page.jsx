@@ -8,11 +8,9 @@ import StaffLeadsKanbanBoard from "@/features/Kanban/staff/StaffLeadsKanbanBoard
 export default function Page() {
   const { user } = useAuth();
   const sp = useSearchParams();
-  if (!user?.role) return null;
-  const role = user.role;
-
+  if (!user?.profile) return null;
   const board =
-    role === "STAFF" && user.profile !== "SUPER_SALES" ? (
+    ["NORMAL_SALES", "PRIMARY_SALES"].includes(user.profile) ? (
       <StaffLeadsKanbanBoard />
     ) : (
       <StaffLeadsKanbanBoard staffId={sp.get("staffId") ?? undefined} />

@@ -21,12 +21,12 @@ const familyConfig = {
 const fallbackConfig = { icon: <FaUserTie />, color: colors.textTertiary };
 
 // The profile chip IS the switcher trigger. Driven purely by the profiles[] array from
-// /auth/me (each { id, key, label, family, isAdminTier }) — zero legacy-column reads.
+// /auth/me (each { id, key, label, family, isAdminTier }).
 // Holds >1 profile → a clickable chip with a caret that opens a menu and performs a real
 // server-side switch (POST auth/profile/switch → refetchMe). Holds exactly 1 → a static
-// chip showing the active profile's label. Holds 0 (unmigrated) → legacy roleLabel fallback.
+// chip showing the active profile's label. With no active profile, nothing is rendered.
 export default function ProfileSwitcher() {
-  const { profiles = [], currentProfileId, user, refetchMe } = useAuth();
+  const { profiles = [], currentProfileId, refetchMe } = useAuth();
   const { setToastLoading } = useToastContext();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -35,8 +35,7 @@ export default function ProfileSwitcher() {
   const active = list.find((p) => p.id === currentProfileId) || null;
   const activeFamilyConfig = (active && familyConfig[active.family]) || fallbackConfig;
 
-  // 0 profiles (unmigrated): fall back to the legacy role label so nothing regresses.
-  const label = activeLabel ?? legacyRoleLabel(user);
+  const label = activeLabel;
   if (!label) return null;
 
   const multi = list.length > 1;
@@ -128,17 +127,4 @@ export default function ProfileSwitcher() {
       </Menu>
     </>
   );
-}
-
-// Legacy fallback for unmigrated accounts (0 profiles) — mirrors the pre-change
-// roleLabel(user) so those users still see a correct-ish label.
-function legacyRoleLabel(user) {
-  if (!user) return "";
-  if (user.role === "STAFF") return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
-  const map = {
-    ADMIN: "Admin", SUPER_ADMIN: "Admin", THREE_D_DESIGNER: "3D Designer",
-    TWO_D_DESIGNER: "2D Designer", TWO_D_EXECUTOR: "Executor", ACCOUNTANT: "Accountant",
-    CONTACT_INITIATOR: "Contact Initiator", SUPER_SALES: "Super Sales",
-  };
-  return map[user.role] || user.role || "";
 }

@@ -58,7 +58,7 @@ export default function LeadContractList({
 
   async function fetchContracts() {
     const req = await getDataAndSet({
-      url: `shared/contracts/client-lead/${leadId}`,
+      url: `contracts/client-lead/${leadId}`,
       setLoading,
       setData: setContracts,
     });

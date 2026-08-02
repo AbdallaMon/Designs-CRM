@@ -188,12 +188,12 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
 
   async function fetchData() {
     await getDataAndSet({
-      url: `shared/image-session/${clientLeadId}/sessions?`,
+      url: `image-session/${clientLeadId}/sessions?`,
       setLoading,
       setData: setSessions,
     });
     await getDataAndSet({
-      url: `shared/image-session/ids?where=${JSON.stringify({
+      url: `image-session/ids?where=${JSON.stringify({
         isArchived: false,
       })}&model=space&select=id,title&isLanguage=true&`,
       setLoading,
@@ -216,7 +216,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
     const regenerateRequest = await handleRequestSubmit(
       {},
       setToastLoading,
-      `shared/image-session/${clientLeadId}/sessions/${sessionId}/re-generate`,
+      `image-session/${clientLeadId}/sessions/${sessionId}/re-generate`,
       false,
       "Regenerating",
       false,
@@ -252,7 +252,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
     const createRequest = await handleRequestSubmit(
       { spaces: selectedSpaces },
       setToastLoading,
-      `shared/image-session/${clientLeadId}/sessions`,
+      `image-session/${clientLeadId}/sessions`,
       false,
       "Creating"
     );
@@ -388,10 +388,10 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   if (
-    user.role !== "ADMIN" &&
-    user.role !== "SUPER_ADMIN" &&
-    user.role !== "STAFF" &&
-    user.role !== "THREE_D_DESIGNER"
+    user.profile !== "ADMIN" &&
+    user.profile !== "SUPER_ADMIN" &&
+    !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
+    user.profile !== "DESIGNER_3D"
   )
     return null;
 
@@ -473,7 +473,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               )) && (
                               <DeleteModal
                                 buttonType="ICON"
-                                href={`shared/image-session/${clientLeadId}/sessions`}
+                                href={`image-session/${clientLeadId}/sessions`}
                                 item={session}
                                 setData={setSessions}
                               />

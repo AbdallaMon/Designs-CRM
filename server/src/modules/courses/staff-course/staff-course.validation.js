@@ -17,11 +17,9 @@ export class StaffCourseValidation {
     .object({
       page: z.coerce.number().int().min(1).optional(),
       limit: z.coerce.number().int().min(1).optional(),
-      role: z.string().optional(),
     })
     .passthrough();
 
-  static roleQuery = z.object({ role: z.string().optional() }).passthrough();
 
   // ── params ─────────────────────────────────────────────────────────────────────
   static courseParams = z.object({ courseId: idParam });

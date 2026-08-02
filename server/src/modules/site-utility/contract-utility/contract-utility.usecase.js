@@ -54,7 +54,7 @@ class ContractUtilityUsecase {
   async #requireUtilityId() {
     const utility = await contractUtilityRepository.getUtility();
     if (!utility) {
-      throw new AppError(siteUtilityMessagesCodes.CONTRACT_UTILITY_NOT_FOUND, 409);
+      throw new AppError({ code: siteUtilityMessagesCodes.CONTRACT_UTILITY_NOT_FOUND, statusCode: 409 });
     }
     return utility.id;
   }
@@ -73,13 +73,13 @@ class ContractUtilityUsecase {
 
   async updateStageClause({ id, input }) {
     const existing = await contractUtilityRepository.getStageClauseById({ id });
-    if (!existing) throw new AppError(siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, 404);
+    if (!existing) throw new AppError({ code: siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, statusCode: 404 });
     return contractUtilityRepository.updateStageClause({ id, data: input });
   }
 
   async deleteStageClause({ id }) {
     const existing = await contractUtilityRepository.getStageClauseById({ id });
-    if (!existing) throw new AppError(siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, 404);
+    if (!existing) throw new AppError({ code: siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, statusCode: 404 });
     await contractUtilityRepository.deleteStageClause({ id });
     return { id };
   }
@@ -98,13 +98,13 @@ class ContractUtilityUsecase {
 
   async updateSpecialClause({ id, input }) {
     const existing = await contractUtilityRepository.getSpecialClauseById({ id });
-    if (!existing) throw new AppError(siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, 404);
+    if (!existing) throw new AppError({ code: siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, statusCode: 404 });
     return contractUtilityRepository.updateSpecialClause({ id, data: input });
   }
 
   async deleteSpecialClause({ id }) {
     const existing = await contractUtilityRepository.getSpecialClauseById({ id });
-    if (!existing) throw new AppError(siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, 404);
+    if (!existing) throw new AppError({ code: siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, statusCode: 404 });
     await contractUtilityRepository.deleteSpecialClause({ id });
     return { id };
   }
@@ -123,13 +123,13 @@ class ContractUtilityUsecase {
 
   async updateLevelClause({ id, input }) {
     const existing = await contractUtilityRepository.getLevelClauseById({ id });
-    if (!existing) throw new AppError(siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, 404);
+    if (!existing) throw new AppError({ code: siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, statusCode: 404 });
     return contractUtilityRepository.updateLevelClause({ id, data: input });
   }
 
   async deleteLevelClause({ id }) {
     const existing = await contractUtilityRepository.getLevelClauseById({ id });
-    if (!existing) throw new AppError(siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, 404);
+    if (!existing) throw new AppError({ code: siteUtilityMessagesCodes.CLAUSE_NOT_FOUND, statusCode: 404 });
     await contractUtilityRepository.deleteLevelClause({ id });
     return { id };
   }

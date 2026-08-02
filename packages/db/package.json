@@ -15,8 +15,7 @@
     "migrate:status": "prisma migrate status",
     "studio": "prisma studio",
     "seed": "node prisma/seed.js",
-    "migrate:users": "node scripts/migrate-users-to-profiles.js",
-    "prod:rollout": "npm run migrate:deploy && npm run seed && npm run migrate:users"
+    "prod:rollout": "npm run migrate:deploy && npm run seed"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",

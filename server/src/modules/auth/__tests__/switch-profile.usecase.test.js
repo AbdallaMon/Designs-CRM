@@ -20,9 +20,8 @@ import { profileCache } from "../../../infra/auth/profile-cache.js";
 import { authAuditRepository } from "../../../infra/audit/auth-audit.repo.js";
 
 const baseUser = {
-  id: 1, email: "a@b.c", name: "A", role: "STAFF", isActive: true, currentProfileId: 2,
-  isSuperSales: false, isPrimary: false, subRoles: [],
-  currentProfile: { id: 2, key: "NORMAL_SALES", baseRole: "STAFF", isAdminTier: false },
+  id: 1, email: "a@b.c", name: "A", isActive: true, currentProfileId: 2,
+  currentProfile: { id: 2, key: "NORMAL_SALES", isAdminTier: false },
   userProfiles: [
     { profile: { id: 2, key: "NORMAL_SALES", label: "عادي", family: "SALES", isAdminTier: false } },
     { profile: { id: 5, key: "ACCOUNTANT", label: "محاسب", family: "FINANCE", isAdminTier: false } },
@@ -34,7 +33,7 @@ describe("AuthUseCase.switchProfile", () => {
     vi.clearAllMocks();
     AuthRepository.findById.mockResolvedValue(baseUser);
     profileCache.resolve.mockReturnValue({
-      key: "ACCOUNTANT", baseRole: "ACCOUNTANT", isAdminTier: false,
+      key: "ACCOUNTANT", family: "FINANCE", isAdminTier: false,
       permissions: ["accounting.summary.view"],
       permissionsByModule: { accounting: { codes: ["accounting.summary.view"] } },
     });
@@ -43,10 +42,8 @@ describe("AuthUseCase.switchProfile", () => {
   it("switches to a held profile, persists, audits, re-mints, returns /me", async () => {
     const res = await AuthUseCase.switchProfile({ authUser: { id: 1 }, profileId: 5 });
     expect(AuthRepository.setCurrentProfile).toHaveBeenCalledWith(1, 5);
-    // Regression (reported bug): the returned /me role follows the SWITCHED profile's
-    // baseRole, not the stale legacy column (baseUser.role === "STAFF"). Fails pre-change.
-    expect(res.user.role).toBe("ACCOUNTANT");
-    expect(res.user.activeRole).toBe("ACCOUNTANT");
+    expect(res.user).not.toHaveProperty("role");
+    expect(res.user).not.toHaveProperty("activeRole");
     expect(authAuditRepository.record).toHaveBeenCalledWith(
       expect.objectContaining({ actorUserId: 1, targetUserId: 1, action: "PROFILE_SWITCH", detail: { from: 2, to: 5 } }),
     );

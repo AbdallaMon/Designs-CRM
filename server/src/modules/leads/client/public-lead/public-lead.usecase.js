@@ -164,14 +164,14 @@ class PublicLeadUsecase {
   async completeRegister(leadId, body) {
     const lead = await publicLeadRepository.findLeadById(leadId);
     if (!lead) {
-      throw new AppError(leadsMessagesCodes.LEAD_NOT_FOUND, 404);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
     }
 
     // Legacy guard: a lead that already moved past the draft AND has a price cannot be
     // re-submitted.
     if (lead.description !== "Didn't complete register yet") {
       if (lead.price && lead.averagePrice) {
-        throw new AppError(leadsMessagesCodes.CLIENT_LEAD_ALREADY_COMPLETED, 400);
+        throw new AppError({ code: leadsMessagesCodes.CLIENT_LEAD_ALREADY_COMPLETED, statusCode: 400 });
       }
     }
 
@@ -245,7 +245,7 @@ class PublicLeadUsecase {
 
     const existingLead = await publicLeadRepository.findTodaysLeadByEmail(body.email);
     if (existingLead) {
-      throw new AppError(leadsMessagesCodes.CLIENT_LEAD_ALREADY_TODAY, 422);
+      throw new AppError({ code: leadsMessagesCodes.CLIENT_LEAD_ALREADY_TODAY, statusCode: 422 });
     }
 
     await publicLeadRepository.updateClientPhone(

@@ -40,7 +40,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 function requireExcelFile(req, res, next) {
   const file = req.file;
   if (!file) {
-    return next(new AppError(generalMessagesCodes.VALIDATION_ERROR, 422, [{ path: "file", message: "File is required" }]));
+    return next(new AppError({ code: generalMessagesCodes.VALIDATION_ERROR, statusCode: 422, details: [{ path: "file", message: "File is required" }] }));
   }
   const allowed = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -49,7 +49,7 @@ function requireExcelFile(req, res, next) {
     "application/octet-stream", // some browsers send this for .xlsx
   ];
   if (file.mimetype && !allowed.includes(file.mimetype)) {
-    return next(new AppError(generalMessagesCodes.VALIDATION_ERROR, 422, [{ path: "file", message: "Unsupported file type" }]));
+    return next(new AppError({ code: generalMessagesCodes.VALIDATION_ERROR, statusCode: 422, details: [{ path: "file", message: "Unsupported file type" }] }));
   }
   return next();
 }

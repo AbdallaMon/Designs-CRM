@@ -112,13 +112,13 @@ export async function createPageInfo({ data }) {
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.type) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TYPE_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TYPE_REQUIRED, statusCode: 400 });
   }
   if (!data.titles || titles.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_TITLES_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_TITLES_REQUIRED, statusCode: 400 });
   }
   if (!data.descriptions || descriptions.length === 0) {
-    throw new AppError(imageSessionsMessagesCodes.IMAGE_SESSION_DESCRIPTIONS_REQUIRED, 400);
+    throw new AppError({ code: imageSessionsMessagesCodes.IMAGE_SESSION_DESCRIPTIONS_REQUIRED, statusCode: 400 });
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

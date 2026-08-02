@@ -136,10 +136,6 @@ export async function createClientImageSession({
   userId,
   selectedSpaceIds,
 }) {
-  if (!selectedSpaceIds || selectedSpaceIds.length === 0) {
-    throw new Error("At least one space must be selected");
-  }
-
   const token = uuidv4();
 
   const session = await prisma.clientImageSession.create({
@@ -163,7 +159,7 @@ export async function regenerateSessionToken(sessionId) {
     where: { id: sessionId },
   });
 
-  if (!session) throw new Error("Session not found");
+  if (!session) return null;
 
   const newToken = uuidv4();
 
@@ -176,7 +172,7 @@ export async function regenerateSessionToken(sessionId) {
 
   return {
     token: updated.token,
-    url: `${process.env.LEGACY_DASHBOARD_ORIGIN}/image-session?token=${updated.token}`,
+    url: `${process.env.DASHBOARD_ORIGIN}/image-session?token=${updated.token}`,
   };
 }
 
@@ -194,13 +190,10 @@ export async function deleteInProgressSession(sessionId, user) {
     where: { id: sessionId },
   });
 
-  if (!session) throw new Error("Session not found");
-  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    if (
-      session.sessionStatus !== "PDF_GENERATED" ||
-      session.sessionStatus !== "SUBMITTED"
-    ) {
-      throw new Error("You cant delete session after client submit it");
+  if (!session) return { notFound: true };
+  if (!user.isAdminTier) {
+    if (["PDF_GENERATED", "SUBMITTED"].includes(session.sessionStatus)) {
+      return { locked: true };
     }
   }
   // await prisma
@@ -330,7 +323,7 @@ export async function getSessionByToken({ token }) {
   });
 
   if (!session) {
-    throw new Error("Session not found or expired");
+    return null;
   }
 
   // customColors is a String? (LongText) JSON column — decode to the hex array callers expect.

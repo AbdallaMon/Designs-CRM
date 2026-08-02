@@ -44,9 +44,9 @@ export const auditColumns = [
           <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
             {actor.name || (actor.id != null ? `User #${actor.id}` : "—")}
           </Typography>
-          {actor.role && (
+          {actor.profile && (
             <Typography variant="caption" color="text.secondary" noWrap>
-              {actor.role}
+              {actor.profile}
             </Typography>
           )}
         </Box>

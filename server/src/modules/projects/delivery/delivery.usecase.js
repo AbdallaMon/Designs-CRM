@@ -30,7 +30,7 @@ async function createNewDeliverySchedule({ projectId, deliveryAt, userId, name }
   if (daysLeft === 1) timeLeftLabel = "Tomorrow";
   else if (daysLeft === 0) timeLeftLabel = "Today";
   else timeLeftLabel = `${daysLeft} days left`;
-  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
+  const link = `${process.env.DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
 
   const note = {
     id: `note-${projectId}-${userId}`,
@@ -51,7 +51,7 @@ async function linkADeliveryToMeeting({ deliveryId, meetingReminderId }) {
 
 const deleteDeliverySchedule = ({ id }) => deliveryRepository.deleteById({ id });
 
-export const legacyDefaults = {
+export const deliveryOperations = {
   createNewDeliverySchedule,
   linkADeliveryToMeeting,
   deleteDeliverySchedule,
@@ -82,11 +82,11 @@ class DeliveryUsecase {
   }
 
   createDeliverySchedule({ body, authUser }) {
-    return legacyDefaults.createNewDeliverySchedule({ userId: authUser.id, ...body });
+    return deliveryOperations.createNewDeliverySchedule({ userId: authUser.id, ...body });
   }
 
   linkMeeting({ deliveryId, body }) {
-    return legacyDefaults.linkADeliveryToMeeting({
+    return deliveryOperations.linkADeliveryToMeeting({
       deliveryId: Number(deliveryId),
       meetingReminderId: body.meetingReminderId,
     });
@@ -94,7 +94,7 @@ class DeliveryUsecase {
 
   // legacy bug: service signature is `{ id }`, route passed `{ deliveryId }` → pass id.
   deleteDeliverySchedule({ deliveryId }) {
-    return legacyDefaults.deleteDeliverySchedule({ id: Number(deliveryId) });
+    return deliveryOperations.deleteDeliverySchedule({ id: Number(deliveryId) });
   }
 }
 

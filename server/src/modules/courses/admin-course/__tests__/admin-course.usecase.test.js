@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 describe("AdminCourseUsecase.createCourse", () => {
-  it("nested-creates the CourseRole rows from the roles[] payload", async () => {
+  it("creates a course without role-based access rows", async () => {
     adminCourseRepository.createCourse.mockResolvedValue({ id: 1 });
 
     await adminCourseUsecase.createCourse({
@@ -48,14 +48,13 @@ describe("AdminCourseUsecase.createCourse", () => {
         description: "D",
         imageUrl: null,
         isPublished: true,
-        roles: { create: [{ role: "STAFF" }, { role: "ACCOUNTANT" }] },
       },
     });
   });
 });
 
 describe("AdminCourseUsecase.editCourse", () => {
-  it("replaces roles wholesale (deleteMany + create) and spreads the rest", async () => {
+  it("updates only explicit course fields", async () => {
     adminCourseRepository.updateCourse.mockResolvedValue({ id: 1 });
 
     await adminCourseUsecase.editCourse({
@@ -67,19 +66,18 @@ describe("AdminCourseUsecase.editCourse", () => {
       id: 1,
       data: {
         title: "New",
-        roles: { deleteMany: {}, create: [{ role: "STAFF" }] },
       },
     });
   });
 
-  it("leaves roles undefined when not provided (no role wipe)", async () => {
+  it("does not write role access when not provided", async () => {
     adminCourseRepository.updateCourse.mockResolvedValue({ id: 1 });
 
     await adminCourseUsecase.editCourse({ courseId: 1, data: { isPublished: false } });
 
     expect(adminCourseRepository.updateCourse).toHaveBeenCalledWith({
       id: 1,
-      data: { isPublished: false, roles: undefined },
+      data: { isPublished: false },
     });
   });
 });

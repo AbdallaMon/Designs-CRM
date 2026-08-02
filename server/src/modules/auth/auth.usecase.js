@@ -32,38 +32,56 @@ class AuthUseCase {
     );
 
     if (!user || !user.password || !validPassword) {
-      throw new AppError(authMessagesCodes.INVALID_CREDENTIALS, 401);
+      throw new AppError({ code: authMessagesCodes.INVALID_CREDENTIALS, statusCode: 401 });
     }
 
     if (!user.isActive) {
-      throw new AppError(authMessagesCodes.ACCOUNT_BLOCKED, 403);
+      throw new AppError({ code: authMessagesCodes.ACCOUNT_BLOCKED, statusCode: 403 });
     }
 
     // Ensure the token carries a HELD current profile; persist a correction if the
     // stored one is stale/null.
     const currentProfileId = resolveValidCurrentProfileId(user);
+    if (!currentProfileId) {
+      throw new AppError({ code: authMessagesCodes.PROFILE_REQUIRED, statusCode: 403 });
+    }
     if (currentProfileId && currentProfileId !== user.currentProfileId) {
       await AuthRepository.setCurrentProfile(user.id, currentProfileId);
     }
     const withCurrent = { ...user, currentProfileId };
+    const resolved = profileCache.resolve(currentProfileId);
+    if (!resolved) {
+      throw new AppError({ code: authMessagesCodes.PROFILE_REQUIRED, statusCode: 403 });
+    }
+    const authenticatedUser = {
+      ...withCurrent,
+      currentProfileKey: resolved.key,
+      profileFamily: resolved.family,
+      isAdminTier: resolved.isAdminTier,
+      permissions: resolved.permissions,
+      permissionsByModule: resolved.permissionsByModule,
+    };
 
-    const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(withCurrent));
+    const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(authenticatedUser));
     const refreshToken = JwtService.signRefresh({ id: user.id });
 
-    return { user: AuthSchema.toPublicUser(withCurrent), accessToken, refreshToken };
+    return { user: AuthSchema.toMe(authenticatedUser), accessToken, refreshToken };
   }
   static async refreshTokens(token) {
-    if (!token) throw new AppError(authMessagesCodes.REFRESH_TOKEN_MISSING, 401);
+    if (!token) throw new AppError({ code: authMessagesCodes.REFRESH_TOKEN_MISSING, statusCode: 401 });
 
     const decoded = JwtService.verifyRefresh(token);
     const user = await AuthRepository.findById(decoded.id);
 
     if (!user || !user.isActive)
-      throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
+      throw new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 });
 
     // Re-validate the current profile on every refresh (this is where an admin's
     // profile change propagates into a fresh access token).
     const currentProfileId = resolveValidCurrentProfileId(user);
+    if (!currentProfileId) {
+      throw new AppError({ code: authMessagesCodes.PROFILE_REQUIRED, statusCode: 403 });
+    }
     if (currentProfileId && currentProfileId !== user.currentProfileId) {
       await AuthRepository.setCurrentProfile(user.id, currentProfileId);
     }
@@ -83,15 +101,15 @@ class AuthUseCase {
    */
   static async switchProfile({ authUser, profileId }) {
     const user = await AuthRepository.findById(authUser.id);
-    if (!user || !user.isActive) throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
+    if (!user || !user.isActive) throw new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 });
 
     const targetId = Number(profileId);
     const held = (user.userProfiles ?? []).map((up) => up.profile.id);
     if (!held.includes(targetId)) {
-      throw new AppError(authMessagesCodes.PROFILE_NOT_ASSIGNED, 403);
+      throw new AppError({ code: authMessagesCodes.PROFILE_NOT_ASSIGNED, statusCode: 403 });
     }
     const resolved = profileCache.resolve(targetId);
-    if (!resolved) throw new AppError(authMessagesCodes.PROFILE_NOT_FOUND, 404);
+    if (!resolved) throw new AppError({ code: authMessagesCodes.PROFILE_NOT_FOUND, statusCode: 404 });
 
     await AuthRepository.setCurrentProfile(user.id, targetId);
     await authAuditRepository.record({
@@ -108,9 +126,12 @@ class AuthUseCase {
       currentProfile: {
         id: targetId,
         key: resolved.key,
-        baseRole: resolved.baseRole,
+        family: resolved.family,
         isAdminTier: resolved.isAdminTier,
       },
+      currentProfileKey: resolved.key,
+      profileFamily: resolved.family,
+      isAdminTier: resolved.isAdminTier,
       permissions: resolved.permissions,
       permissionsByModule: resolved.permissionsByModule,
     };
@@ -133,18 +154,18 @@ class AuthUseCase {
     return;
   }
   static async resetPassword(token, newPassword) {
-    if (!token) throw new AppError(authMessagesCodes.RESET_TOKEN_MISSING, 400);
+    if (!token) throw new AppError({ code: authMessagesCodes.RESET_TOKEN_MISSING, statusCode: 400 });
     const decoded = JwtService.verifyReset(token);
     const user = await AuthRepository.findById(decoded.id);
     if (!user || !user.isActive)
-      throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
+      throw new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 });
 
     const isSamePassword = await HashService.compare(
       newPassword,
       user.password,
     );
     if (isSamePassword)
-      throw new AppError(authMessagesCodes.PASSWORD_MUST_DIFFER, 400);
+      throw new AppError({ code: authMessagesCodes.PASSWORD_MUST_DIFFER, statusCode: 400 });
 
     const hashedPassword = await HashService.hash(newPassword);
     return await AuthRepository.changePassword(hashedPassword, user.id);

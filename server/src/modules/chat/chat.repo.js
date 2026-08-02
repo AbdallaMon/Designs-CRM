@@ -230,7 +230,16 @@ export class ChatRepository {
         members: {
           where: { leftAt: null },
           include: {
-            user: { select: { id: true, name: true, email: true, role: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                currentProfile: {
+                  select: { key: true, label: true, family: true, isAdminTier: true },
+                },
+              },
+            },
             client: { select: { id: true, name: true, email: true } },
           },
         },
@@ -341,7 +350,9 @@ export class ChatRepository {
             name: true,
             email: true,
             profilePicture: true,
-            role: true,
+            currentProfile: {
+              select: { key: true, label: true, family: true, isAdminTier: true },
+            },
             lastSeenAt: true,
           },
         },
@@ -479,7 +490,7 @@ export class ChatRepository {
       where: { id: Number(messageId) },
       select: { createdAt: true, id: true, roomId: true },
     });
-    if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
+    if (!message) throw new AppError({ code: chatMessagesCodes.MESSAGE_NOT_FOUND, statusCode: 404 });
 
     const index = await prisma.chatMessage.count({
       where: {

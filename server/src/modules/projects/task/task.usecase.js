@@ -15,13 +15,10 @@ import {
   newTaskCreatedNotification,
 } from "../../../infra/notifications/index.js";
 import { getNotes, addNote } from "../../notes/note.usecase.js";
-import { deleteAModel } from "../../generic-delete/generic-delete.usecase.js";
+import { deleteAllowedModel } from "../../generic-delete/generic-delete.usecase.js";
 
-// ── task flows ported 1:1 from the legacy shared/legacy/task-services.js. Prisma I/O is
-// delegated to taskRepository; the notification fan-out stays here. The note helpers
-// (getNotes/addNote/deleteAModel) live in the cross-cluster note/generic-delete usecases and
-// are imported statically above (safe: those modules reference task only via a lazy import,
-// so there is no module-eval cycle).
+// Task orchestration. Prisma I/O is delegated to taskRepository; notification fan-out
+// stays here. Note and allow-listed delete helpers come from their owner modules.
 async function createNewTask({ data, isAdmin = false, staffId }) {
   const { userId, projectId, ...rest } = data;
 
@@ -67,7 +64,7 @@ async function createNewTask({ data, isAdmin = false, staffId }) {
 export async function updateTask({ data, taskId, isAdmin = false, userId }) {
   const oldTask = await taskRepository.findTaskStatus({ id: taskId });
   if (!isAdmin && oldTask.status === "DONE") {
-    throw new AppError(projectsMessagesCodes.TASK_STATUS_TRANSITION_FORBIDDEN, 403);
+    throw new AppError({ code: projectsMessagesCodes.TASK_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
   }
 
   if (data.status && data.status === "DONE") {
@@ -131,21 +128,21 @@ async function getTaskDetails({ searchParams, id }) {
     }
   }
 
-  throw new AppError(projectsMessagesCodes.TASK_ACCESS_DENIED, 403);
+  throw new AppError({ code: projectsMessagesCodes.TASK_ACCESS_DENIED, statusCode: 403 });
 }
 
-export const legacyDefaults = {
+export const taskOperations = {
   getTaskDetails,
   createNewTask,
   updateTask,
   getNotes,
   addNote,
-  deleteAModel,
+  deleteAllowedModel,
 };
 
 class TaskUsecase {
   isAdminUser(authUser) {
-    return authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
+    return Boolean(authUser?.isAdminTier);
   }
 
   // The frontend sends `dueDate` as a date-only string ("2026-06-12"), but Prisma
@@ -185,9 +182,16 @@ class TaskUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   // GET / — list. Legacy narrowed designers/staff to self (searchParams.userId).
   async listTasks({ query, authUser }) {
-    const { role } = authUser;
     const searchParams = { ...query };
-    if (role === "THREE_D_DESIGNER" || role === "TWO_D_DESIGNER" || role === "STAFF") {
+    if (
+      [
+        "DESIGNER_3D",
+        "DESIGNER_2D",
+        "NORMAL_SALES",
+        "PRIMARY_SALES",
+        "SUPER_SALES",
+      ].includes(authUser.currentProfileKey)
+    ) {
       searchParams.userId = authUser.id;
     }
     // reproduce legacy getTasksWithNotesIncluded `where` so we keep Prisma in the repo.
@@ -204,12 +208,19 @@ class TaskUsecase {
 
   // GET /:id — detail. Object scope already enforced; reproduce the legacy self-narrow.
   async getTask({ id, query, authUser }) {
-    const { role } = authUser;
     const searchParams = { ...query };
-    if (role === "THREE_D_DESIGNER" || role === "TWO_D_DESIGNER" || role === "STAFF") {
+    if (
+      [
+        "DESIGNER_3D",
+        "DESIGNER_2D",
+        "NORMAL_SALES",
+        "PRIMARY_SALES",
+        "SUPER_SALES",
+      ].includes(authUser.currentProfileKey)
+    ) {
       searchParams.userId = authUser.id;
     }
-    return legacyDefaults.getTaskDetails({ searchParams, id: Number(id) });
+    return taskOperations.getTaskDetails({ searchParams, id: Number(id) });
   }
 
   // POST / — create. Legacy did NOT object-scope creation (any authed role could create
@@ -217,40 +228,37 @@ class TaskUsecase {
   async createTask({ body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
     const data = this.coerceTaskDates({ ...body, createdById: Number(authUser.id) });
-    const task = await legacyDefaults.createNewTask({ data, isAdmin, staffId: authUser.id });
+    const task = await taskOperations.createNewTask({ data, isAdmin, staffId: authUser.id });
     return { task, isModification: task?.type === "MODIFICATION" };
   }
 
   // PUT /:taskId — update. Object scope already enforced via the parent project.
   async updateTask({ taskId, body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
-    const task = await legacyDefaults.updateTask({ data: this.coerceTaskDates({ ...body }), taskId: Number(taskId), isAdmin, userId: authUser.id });
+    const task = await taskOperations.updateTask({ data: this.coerceTaskDates({ ...body }), taskId: Number(taskId), isAdmin, userId: authUser.id });
     return { task, isModification: task?.type === "MODIFICATION" };
   }
 
   // DELETE /:id — TASK delete only (IDOR fix). The validation layer guarantees
   // body.model === "Task" and strips any other key, so this route can ONLY ever delete a
   // Task. We ALWAYS resolve the task's parent project and run the project MUTATE scope
-  // BEFORE deleting (never conditionally), then delegate to the legacy deleteAModel with a
-  // SERVER-FIXED model:"Task" and NO client-supplied deleteModelesBeforeMain — preserving
-  // the legacy non-admin createdAt time-window / super-sales guard for Task deletion while
-  // closing the broad-delete hole. Other legacy models retain their own legacy endpoints
-  // (e.g. /shared/delete/:id) under the strangler, so capability is not removed.
+  // before deleting, then delegate with a server-fixed model:"Task". Clients cannot
+  // provide model names or cascade instructions for this route.
   async deleteTask({ id, body, authUser }) {
-    if (!body?.model) throw new AppError(projectsMessagesCodes.DELETE_MODEL_REQUIRED, 400);
+    if (!body?.model) throw new AppError({ code: projectsMessagesCodes.DELETE_MODEL_REQUIRED, statusCode: 400 });
     await this.checkIfUserCanMutateTask({ taskId: id, authUser });
     const isAdmin = this.isAdminUser(authUser);
-    return legacyDefaults.deleteAModel({ id: Number(id), isAdmin, data: { model: "Task" } });
+    return taskOperations.deleteAllowedModel({ id: Number(id), isAdmin, data: { model: "Task" } });
   }
 
   // ── notes (generic shared helpers) ───────────────────────────────────────────────
   getNotes({ query }) {
-    return legacyDefaults.getNotes(query);
+    return taskOperations.getNotes(query);
   }
 
   addNote({ body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
-    return legacyDefaults.addNote({ ...body, userId: authUser.id, isAdmin });
+    return taskOperations.addNote({ ...body, userId: authUser.id, isAdmin });
   }
 }
 

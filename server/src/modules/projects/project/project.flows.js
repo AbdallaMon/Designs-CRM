@@ -1,10 +1,5 @@
-// projects/project — legacy flow functions ported 1:1 from the legacy handlers +
-// services (routes/shared/projects.js, services/main/shared/{projectServices,taskServices}.js).
-// These are the raw orchestration flows the ProjectUsecase facade delegates to via
-// `legacyDefaults`. Prisma NEVER appears here (only repo calls); the heavy cross-module
-// side effects (notifications, telegram, contract-services payment/stage recompute, chat
-// room membership) are invoked via the EXISTING implementations / lazy imports so
-// observable behavior is preserved. Extracted from project.usecase.js (structure-only).
+// Project orchestration flows consumed by the ProjectUsecase facade. Prisma never
+// appears here; cross-module side effects use their owning modules.
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
@@ -24,7 +19,7 @@ import { addADesginerToAllRelatedProjectsRooms } from "../../chat/system-rooms.j
 import {
   checkIfProjectHasStagesAndUpdateNextAndPrevious,
   checkIfProjectHasPaymentAndUpdate,
-} from "../../contracts/services/contract-services.js";
+} from "../../contracts/contract/contract.workflow.repo.js";
 import {
   addUsersToATeleChannelUsingQueue,
   notifyUsersAddedToProject,
@@ -59,10 +54,6 @@ async function createProjects(clientLeadId, groupTitle = "Initial Project") {
       endedAt: null,
       groupTitle: groupTitle,
       groupId: nextGroupId,
-      role:
-        type === "3D_Designer" || type === "3D_Modification"
-          ? "THREE_D_DESIGNER"
-          : "TWO_D_DESIGNER",
     });
   });
   await projectRepository.createManyProjects({
@@ -88,10 +79,6 @@ async function getProjectsByClientLeadId({ searchParams }) {
         endedAt: null,
         groupTitle: "Initial Project",
         groupId: 1,
-        role:
-          type === "3D_Designer" || type === "3D_Modification"
-            ? "THREE_D_DESIGNER"
-            : "TWO_D_DESIGNER",
       });
     });
     const isPresent = await projectRepository.findGroupOneInitialProject({ clientLeadId });
@@ -114,14 +101,14 @@ async function getProjectsByClientLeadId({ searchParams }) {
 
 export async function createGroupProjects({ clientleadId, title }) {
   if (!title) {
-    throw new AppError(projectsMessagesCodes.PROJECT_GROUP_TITLE_REQUIRED, 400);
+    throw new AppError({ code: projectsMessagesCodes.PROJECT_GROUP_TITLE_REQUIRED, statusCode: 400 });
   }
   const checkForTitle = await projectRepository.findProjectByIdAndTitle({
     id: clientleadId,
     title,
   });
   if (checkForTitle) {
-    throw new AppError(projectsMessagesCodes.PROJECT_GROUP_TITLE_DUPLICATE, 409);
+    throw new AppError({ code: projectsMessagesCodes.PROJECT_GROUP_TITLE_DUPLICATE, statusCode: 409 });
   }
   const projects = await createProjects(Number(clientleadId), title);
   const groupProjectsResult = {
@@ -144,7 +131,7 @@ export async function assignProjectToUser({
   const checkIfUserIsAlreadyAssigned = async () => {
     const assignment = await projectRepository.findAssignment({ userId, projectId });
     if (assignment) {
-      throw new AppError(projectsMessagesCodes.DESIGNER_ALREADY_ASSIGNED, 409);
+      throw new AppError({ code: projectsMessagesCodes.DESIGNER_ALREADY_ASSIGNED, statusCode: 409 });
     }
   };
   await checkIfUserIsAlreadyAssigned();
@@ -217,7 +204,7 @@ async function updateProject({ data, isAdmin }) {
         data.oldStatus === "Canceled" ||
         data.oldStatus === "Rejected")
     ) {
-      throw new AppError(projectsMessagesCodes.PROJECT_STATUS_TRANSITION_FORBIDDEN, 403);
+      throw new AppError({ code: projectsMessagesCodes.PROJECT_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
     }
 
     delete rest.oldStatus;
@@ -383,7 +370,7 @@ async function getProjectDetailsById({ id, searchParams }) {
     project.type === "3D_Modification" &&
     !project.isModification
   ) {
-    throw new AppError(projectsMessagesCodes.PROJECT_NOT_IN_MODIFICATION, 400);
+    throw new AppError({ code: projectsMessagesCodes.PROJECT_NOT_IN_MODIFICATION, statusCode: 400 });
   }
   return project;
 }
@@ -499,10 +486,8 @@ async function getLeadByPorjects({ searchParams, isAdmin }) {
     };
   }
 
-  const getTaskVisibilityFilter = (userRole) => {
-    const allowedRoles = ["ADMIN", "SUPER_ADMIN", "THREE_D_DESIGNER"];
-
-    if (allowedRoles.includes(userRole)) {
+  const getTaskVisibilityFilter = (profileKey) => {
+    if (searchParams.isAdmin || profileKey === "DESIGNER_3D") {
       return {
         type: {
           in: ["PROJECT", "MODIFICATION"],
@@ -515,8 +500,7 @@ async function getLeadByPorjects({ searchParams, isAdmin }) {
     }
   };
 
-  const userRole = searchParams.userRole;
-  const taskFilter = getTaskVisibilityFilter(userRole);
+  const taskFilter = getTaskVisibilityFilter(searchParams.profileKey);
 
   const rawLeads = await projectRepository.findLeadByProjects({
     where,
@@ -674,10 +658,8 @@ async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
     };
   }
 
-  const getTaskVisibilityFilter = (userRole) => {
-    const allowedRoles = ["ADMIN", "SUPER_ADMIN", "THREE_D_DESIGNER"];
-
-    if (allowedRoles.includes(userRole)) {
+  const getTaskVisibilityFilter = (profileKey) => {
+    if (searchParams.isAdmin || profileKey === "DESIGNER_3D") {
       return {
         type: {
           in: ["PROJECT", "MODIFICATION"],
@@ -690,8 +672,7 @@ async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
     }
   };
 
-  const userRole = searchParams.userRole;
-  const taskFilter = getTaskVisibilityFilter(userRole);
+  const taskFilter = getTaskVisibilityFilter(searchParams.profileKey);
 
   const rawLeads = await projectRepository.findLeadByProjectsColumn({
     where,
@@ -834,7 +815,9 @@ async function getLeadDetailsByProject(clientLeadId, searchParams) {
   });
 
   if (!clientLead) {
-    throw new AppError(projectsMessagesCodes.CLIENT_LEAD_NOT_FOUND, 404, null, {
+    throw new AppError({
+      code: projectsMessagesCodes.CLIENT_LEAD_NOT_FOUND,
+      statusCode: 404,
       reason: `ClientLead with ID ${clientLeadId} not found`,
     });
   }
@@ -862,10 +845,6 @@ async function getUniqueProjectGroups({ clientLeadId }) {
         endedAt: null,
         groupTitle: "Initial Project",
         groupId: 1,
-        role:
-          type === "3D_Designer" || type === "3D_Modification"
-            ? "THREE_D_DESIGNER"
-            : "TWO_D_DESIGNER",
       });
     });
     const isPresent = await projectRepository.findGroupOneInitialProject({ clientLeadId });
@@ -883,7 +862,7 @@ async function getUniqueProjectGroups({ clientLeadId }) {
   return groups;
 }
 
-export const legacyDefaults = {
+export const projectOperations = {
   getLeadByPorjects,
   getLeadByPorjectsColumn,
   getLeadDetailsByProject,

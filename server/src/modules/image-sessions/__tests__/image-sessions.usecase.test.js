@@ -75,11 +75,34 @@ import { uploadPdfAndApproveSession } from "../services/session-approval.js";
 
 const P = PERMISSIONS.IMAGE_SESSION;
 
-function makeReq(role, isSuperSales = false, profile) {
+function makeReq(persona, superSales = false, profile) {
+  const currentProfileKey =
+    profile ??
+    (superSales
+      ? "SUPER_SALES"
+      : {
+          ADMIN: "ADMIN",
+          SUPER_ADMIN: "SUPER_ADMIN",
+          STAFF: "NORMAL_SALES",
+          THREE_D_DESIGNER: "DESIGNER_3D",
+          TWO_D_DESIGNER: "DESIGNER_2D",
+          TWO_D_EXECUTOR: "EXECUTOR_2D",
+          ACCOUNTANT: "ACCOUNTANT",
+          SUPER_SALES: "SUPER_SALES",
+          CONTACT_INITIATOR: "CONTACT_INITIATOR",
+        }[persona]);
   const { permissions, permissionsByModule } = getEffectivePermissions({
-    role, isSuperSales, ...(profile ? { profile } : {}),
+    profile: currentProfileKey,
   });
-  return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
+  return {
+    auth: {
+      id: 1,
+      currentProfileKey,
+      isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
+      permissions,
+      permissionsByModule,
+    },
+  };
 }
 
 const ALL_ROLES = [
@@ -103,11 +126,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   leadUsecase.checkIfUserCanAccessLead.mockImplementation(async ({ id }) => {
     if (Number(id) === 100 || Number(id) === 200) return { id: Number(id) };
-    throw new AppError("LEAD_ACCESS_DENIED", 403);
+    throw new AppError({ code: "LEAD_ACCESS_DENIED", statusCode: 403 });
   });
   leadUsecase.checkIfUserCanMutateLead.mockImplementation(async ({ id }) => {
     if (Number(id) === 100) return { id: 100 };
-    throw new AppError("LEAD_MUTATE_DENIED", 403);
+    throw new AppError({ code: "LEAD_MUTATE_DENIED", statusCode: 403 });
   });
   imageSessionRepository.getSessionClientLeadId.mockImplementation(async ({ sessionId }) =>
     Number(sessionId) === 999 ? null : { id: Number(sessionId), clientLeadId: 100 },
@@ -129,14 +152,12 @@ describe("image-sessions ADMIN surface — role parity (legacy `/admin/image-ses
     }
   });
 
-  it("isSuperSales alone no longer holds the admin reference-data codes (legacy `isAdmin` union removed)", () => {
-    const req = makeReq(USER_ROLES.SUPER_SALES, true);
+  it("the SUPER_SALES active profile holds the admin reference-data codes", () => {
+    const req = makeReq(USER_ROLES.SUPER_SALES);
     for (const code of [P.ADMIN_VIEW, P.ADMIN_MANAGE]) {
       const next = vi.fn();
       AuthMiddleware.requirePermissions([code])(req, {}, next);
-      const err = next.mock.calls[0][0];
-      expect(err, `isSuperSales should NOT hold ${code}`).toBeInstanceOf(AppError);
-      expect(err.statusCode).toBe(403);
+      expect(next, `SUPER_SALES should hold ${code}`).toHaveBeenCalledWith();
     }
   });
 
@@ -152,7 +173,6 @@ describe("image-sessions ADMIN surface — role parity (legacy `/admin/image-ses
   it("the KEY parity check: a plain STAFF / sales / designer role is 403'd on the admin surface", () => {
     for (const role of [
       USER_ROLES.STAFF,
-      USER_ROLES.SUPER_SALES, // base SUPER_SALES WITHOUT the isSuperSales flag
       USER_ROLES.THREE_D_DESIGNER,
       USER_ROLES.TWO_D_DESIGNER,
       USER_ROLES.TWO_D_EXECUTOR,

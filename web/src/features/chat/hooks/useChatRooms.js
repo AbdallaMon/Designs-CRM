@@ -54,7 +54,7 @@ export function useChatRooms({
 
     setError(null);
     try {
-      let url = `shared/chat/rooms?`;
+      let url = `chat/rooms?`;
       if (category) url += `category=${category}&`;
       if (clientLeadId) url += `clientLeadId=${clientLeadId}&`;
       if (searchKey) url += `searchKey=${encodeURIComponent(searchKey)}&`;
@@ -157,7 +157,7 @@ export function useChatRooms({
       const response = await handleRequestSubmit(
         roomData,
         setToastLoading,
-        "shared/chat/rooms",
+        "chat/rooms",
         false,
         "Creating chat room",
         false,
@@ -177,7 +177,7 @@ export function useChatRooms({
       const response = await handleRequestSubmit(
         roomData,
         setToastLoading,
-        "shared/chat/rooms/lead-rooms",
+        "chat/rooms/lead-rooms",
         false,
         "Creating chat room",
         false,
@@ -199,7 +199,7 @@ export function useChatRooms({
       const response = await handleRequestSubmit(
         updates,
         setToastLoading,
-        `shared/chat/rooms/${roomId}`,
+        `chat/rooms/${roomId}`,
         false,
         "Updating chat room",
         false,
@@ -220,7 +220,7 @@ export function useChatRooms({
       const response = await handleRequestSubmit(
         { id: roomId },
         setToastLoading,
-        `shared/chat/rooms/${roomId}`,
+        `chat/rooms/${roomId}`,
         false,
         "Deleting chat room",
         false,
@@ -240,7 +240,7 @@ export function useChatRooms({
       const response = await handleRequestSubmit(
         { id: roomId },
         setToastLoading,
-        `shared/chat/rooms/${roomId}/leave`,
+        `chat/rooms/${roomId}/leave`,
         false,
         "Leaving chat room",
         false,

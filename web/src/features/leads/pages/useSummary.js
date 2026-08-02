@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData";
 
 /* ----------------------------------------------------------------------------
- * Single counts source. ONE call to `shared/client-leads/summary?staffId=<id>`
+ * Single counts source. ONE call to `leads/summary?staffId=<id>`
  * returns `{ new, nonConsulted, stale, calls, meetings }`. These counts feed
  * BOTH the KPI rail and the tab/section badges. Refetches whenever `token`
  * changes (the page bumps it from the refresh button).
@@ -24,7 +24,7 @@ export function useSummary(staffId, token) {
     let alive = true;
     async function load() {
       const res = await getData({
-        url: `shared/client-leads/summary?staffId=${staffId}&`,
+        url: `leads/summary?staffId=${staffId}&`,
         setLoading,
         // getData appends pagination params; the summary endpoint ignores them.
         page: 1,

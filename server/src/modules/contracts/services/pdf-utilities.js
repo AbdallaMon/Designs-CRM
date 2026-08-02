@@ -21,10 +21,7 @@ export async function sendSuccessEmailAfterContractSigned({
   const adminUsers = await prisma.user.findMany({
     where: {
       isActive: true,
-      OR: [
-        { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
-        { subRoles: { some: { subRole: { in: ["ADMIN", "SUPER_ADMIN"] } } } },
-      ],
+      currentProfile: { isAdminTier: true },
     },
     select: { id: true, email: true },
   });
@@ -79,7 +76,7 @@ export async function sendContractEmailToClient({
   // If you have a public contract viewing page, put it here:
   // Adjust this path to your actual route (e.g., /contracts/view, /contract, etc.)
   const contractPageUrl = `${
-    process.env.LEGACY_DASHBOARD_ORIGIN
+    process.env.DASHBOARD_ORIGIN
   }/contracts?token=${encodeURIComponent(token)}`;
 
   const T = getClientEmailText(lng);
@@ -181,7 +178,7 @@ export async function sendContractEmailForStaff({
 }) {
   if (!staffs?.length) return;
 
-  const leadUrl = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
+  const leadUrl = `${process.env.DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
 
   const staffHtml = `
   <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">

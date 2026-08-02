@@ -50,7 +50,7 @@ export function ProfileManagerDialog({
   const [current, setCurrent] = useState(currentProfileId ?? null);
   const { setLoading } = useToastContext();
   const { hasPermission } = usePermission();
-  const admin = hasPermission(USER_CODES.MANAGE_ROLES);
+  const admin = hasPermission(USER_CODES.MANAGE_PROFILES);
 
   const heldIds = useMemo(
     () => userProfiles.map((up) => up.profileId ?? up.profile?.id).filter((x) => x != null),
@@ -62,7 +62,7 @@ export function ProfileManagerDialog({
     setSelectedIds(heldIds);
     setCurrent(currentProfileId ?? heldIds[0] ?? null);
     (async () => {
-      const res = await apiRequest("admin/users/assignable-profiles");
+      const res = await apiRequest("users/assignable-profiles");
       if (res.ok) {
         const body = await res.json();
         setAllProfiles(body?.data?.items ?? body?.data ?? []);
@@ -97,7 +97,7 @@ export function ProfileManagerDialog({
     const req = await handleRequestSubmit(
       { profileIds: selectedIds, currentProfileId: current },
       setLoading,
-      `admin/users/${userId}/profiles`,
+      `users/${userId}/profiles`,
       false,
       "Updating profiles...",
       null,
@@ -146,7 +146,7 @@ export function ProfileManagerDialog({
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
           Only one sales level (Sales, Primary sales, or Super sales) can be assigned; other
-          roles can be combined freely.
+          profiles can be combined freely.
         </Typography>
         <Stack spacing={0.5} sx={{ mt: 1 }}>
           {allProfiles.map((p) => {

@@ -11,14 +11,14 @@ import { apiRequest } from "@/app/helpers/functions/apiClient";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const SearchComponent = ({
-  apiEndpoint,
+  resource,
+  profile,
   setFilters,
   inputLabel,
   renderKeys,
   mainKey,
   resetTrigger,
   searchKey = "userId",
-  localFilters,
   restOtherFilters = false,
   withParamsChange = false,
   size,
@@ -33,12 +33,14 @@ const SearchComponent = ({
     setLoading(true);
     try {
       const response = await apiRequest(
-        `utility/${apiEndpoint}&query=${query}&filters=${JSON.stringify(
-          localFilters
-        )}`
+        `utilities/search?${new URLSearchParams({
+          resource,
+          query,
+          ...(profile ? { profile } : {}),
+        })}`
       );
       const result = await response.json();
-      setSearchResults(result.data);
+      setSearchResults(response.ok && Array.isArray(result.data) ? result.data : []);
     } catch (error) {
       console.error("Error fetching search results:", error);
     } finally {
@@ -52,7 +54,7 @@ const SearchComponent = ({
     } else {
       setSearchResults([]);
     }
-  }, [searchTerm]);
+  }, [searchTerm, resource, profile]);
 
   const handleSelect = (event, newValue) => {
     setSelectedItem(newValue);

@@ -39,7 +39,7 @@ export default function ContractUtilityPage() {
 
   const fetchContractUtility = async () => {
     await getDataAndSet({
-      url: "shared/site-utilities/contract-utility/details",
+      url: "site-utilities/contract-utility/details",
       setData: setContractUtility,
       setLoading: setIsLoading,
     });

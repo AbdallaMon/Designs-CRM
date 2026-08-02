@@ -196,10 +196,6 @@ export const UpdateCard = ({
                           window.location.reload();
                         }
                       }}
-                      deleteModelesBeforeMain={[
-                        { name: "Note", key: "updateId" },
-                        { name: "SharedUpdate", key: "updateId" },
-                      ]}
                     />
                   )}
                   <Tooltip title="More actions">

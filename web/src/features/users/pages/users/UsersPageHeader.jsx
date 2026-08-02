@@ -44,7 +44,7 @@ export default function UsersPageHeader() {
             Users
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage team accounts, their roles and permissions
+            Manage team accounts, access profiles, and permissions
           </Typography>
         </Box>
       </Stack>

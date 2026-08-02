@@ -32,7 +32,7 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
     const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
     const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const req = await getData({
-      url: `shared/calendar-management/dates/day?date=${correctedDate}&isAdmin=${isAdmin}&`,
+      url: `calendar-management/dates/day?date=${correctedDate}&isAdmin=${isAdmin}&`,
       setLoading,
     });
 

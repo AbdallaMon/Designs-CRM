@@ -23,18 +23,18 @@ export default function MuiFileField({
 
         if (file) {
             if (input.acceptOnly === "pdf" && file.type !== "application/pdf") {
-                setError("الملف يجب أن يكون بصيغة PDF فقط");
+                setError("The file must be a PDF.");
                 setValue(id, null);
                 setPreview(null);
                 return;
             } else if (input.acceptOnly === "image" && !file.type.startsWith("image/")) {
-                setError("الملف يجب أن يكون صورة فقط");
+                setError("The file must be an image.");
                 setValue(id, null);
                 setPreview(null);
                 return;
             }
             if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-                setError("نوع الملف غير مدعوم (يجب ان يكون الملف صورة او pdf)");
+                setError("Unsupported file type. Upload an image or PDF.");
                 setValue(id, null);
                 setPreview(null);
                 return;
@@ -66,7 +66,7 @@ export default function MuiFileField({
         if (isPdf) {
             return (
                   <a href={preview} target="_blank" rel="noopener noreferrer">
-                      {fileName || "عرض الملف"} {/* Show file name if uploaded, else default label */}
+                      {fileName || "View file"} {/* Show file name if uploaded, else default label */}
                   </a>
             );
         }

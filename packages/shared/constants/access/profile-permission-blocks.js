@@ -19,7 +19,6 @@
 // widen access beyond the current behavior without an explicit decision.
 
 import { PERMISSIONS } from "./permissions.constants.js";
-import { USER_ROLES } from "./roles.constants.js";
 
 const P = PERMISSIONS;
 
@@ -38,6 +37,9 @@ export const SHARED_AUTHED = [
   P.CHAT.MESSAGE_VIEW,
   P.CHAT.MESSAGE_SEND,
   P.UPLOAD.FILE_UPLOAD,
+  P.NOTE.LIST,
+  P.NOTE.CREATE,
+  P.NOTE.DELETE,
   // staff-course (course-taking) — legacy `/shared/courses` was behind SHARED
   // authentication (any logged-in role), so every role gets these. Object-level
   // course/lesson access is gated by the course-role match + the attempt scope
@@ -79,7 +81,7 @@ export const SHARED_AUTHED = [
   P.UTILITY.FIXED_DATA_LIST,
   P.UTILITY.USER_LOG_VIEW,
   P.UTILITY.USER_LOG_SUBMIT,
-  P.UTILITY.USER_ROLE_VIEW,
+  P.UTILITY.USER_PROFILE_VIEW,
   P.UTILITY.ADMIN_LIST,
   P.UTILITY.IMAGE_LIST,
   P.UTILITY.MODEL_READ,
@@ -170,22 +172,12 @@ export const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 // isSuperSales, and NOT granted to any staff/sales/designer/accountant role.
 export const AUDIT_ADMIN = [P.AUDIT.LOG_VIEW];
 
-// My Day — personal queue for the working tiers; team lens for supervisors. Additive
-// (new surface, no legacy equivalent). Admins get TEAM only (no personal queue).
+// My Day — personal queue for working profiles; team lens for supervisors.
 export const MY_DAY_PERSONAL = [P.MY_DAY.VIEW];
 export const MY_DAY_TEAM = [P.MY_DAY.TEAM_VIEW];
 
 // ── leads / lead ────────────────────────────────────────────────────────────────
-// Legacy `/shared/client-leads` sat behind SHARED authentication only — EVERY
-// authenticated role could call every route; object scope was enforced ad-hoc inside
-// the handlers (sales: their own `userId` leads; ADMIN/SUPER_ADMIN/ACCOUNTANT/
-// isSuperSales: all). To PRESERVE that "any authed role" surface, every role receives
-// the broad lead-management code set below; the v2 module's object-scope checkers
-// (checkIfUserCanAccessLead / checkIfUserCanMutateLead) supply the row-level gate that
-// the legacy `/:id/...` routes were MISSING (the IDOR fix). The single genuinely
-// admin-tier route in legacy was `/bulk-convert` (it threw for non-admin) and
-// assigning a lead to ANOTHER user (PUT / with isAdmin); both map to LEAD.ASSIGN_OTHER,
-// granted only to ADMIN/SUPER_ADMIN base + isSuperSales (see below) — matching legacy.
+// Broad authenticated lead actions. Object-scope checkers enforce the row-level gate.
 export const LEAD_AUTHED = [
   P.LEAD.LIST,
   P.LEAD.VIEW,
@@ -203,17 +195,10 @@ export const LEAD_AUTHED = [
   P.LEAD.COUNTRY_CHECK,
 ];
 
-// Admin-tier lead actions — assign a lead to ANOTHER user and bulk-convert. Legacy
-// gated these on the `isAdmin` union (ADMIN / SUPER_ADMIN / isSuperSales). Granted to
-// ADMIN/SUPER_ADMIN base here; the isSuperSales slice is layered via
-// SUPER_SALES_EXTRA_PERMISSIONS below (matching legacy exactly, without widening any
-// base role).
+// Privileged lead actions such as assigning a lead to another user.
 export const LEAD_ADMIN = [P.LEAD.ASSIGN_OTHER];
 
-// Site-utility management — ADMIN + SUPER_ADMIN only. The legacy routes were only
-// behind SHARED authentication (any logged-in role could mutate them); the FE pages
-// are @admin / @super_admin, so the v2 module tightens this to a privileged-only
-// surface. This is a deliberate SECURITY FIX, not a behavior-preserving 1:1 grant.
+// Site-utility management — ADMIN and SUPER_ADMIN profiles only.
 export const SITE_UTILITY_ADMIN = [
   P.SITE_UTILITY.PDF_CONFIG_VIEW,
   P.SITE_UTILITY.PDF_CONFIG_EDIT,
@@ -225,27 +210,17 @@ export const SITE_UTILITY_ADMIN = [
   P.SITE_UTILITY.CONTRACT_UTILITY_EDIT,
 ];
 
-// ── users / user — admin user-management ────────────────────────────────────────
-// Legacy `/admin` router gate "ADMIN" (`verifyTokenAndHandleAuthorization`) admits
-// role ADMIN/SUPER_ADMIN, OR `isSuperSales`, OR a subRole of ADMIN/SUPER_ADMIN. These
-// management codes are granted to ADMIN/SUPER_ADMIN base here; the `isSuperSales` slice
-// is layered via SUPER_SALES_EXTRA_PERMISSIONS below, and sub-roles are unioned
-// automatically by getEffectivePermissions — so the effective set matches the legacy
-// `isAdmin` union exactly without widening any other base role. (Legacy further
-// constrains isSuperSales: it may only create/edit STAFF users and may not set
-// ADMIN/SUPER_ADMIN roles — that finer rule is preserved in the v2 usecase, not the
-// grant.) Reads/writes split per convention.
+// ── users / user — administrative user management ───────────────────────────────
 export const USER_ADMIN = [
   P.USER.LIST,
   P.USER.VIEW_LOGS,
   P.USER.VIEW_LAST_SEEN,
   P.USER.CREATE,
   P.USER.UPDATE,
-  P.USER.MANAGE_ROLES,
+  P.USER.MANAGE_PROFILES,
   P.USER.MANAGE_RESTRICTED_COUNTRIES,
   P.USER.MANAGE_AUTO_ASSIGNMENTS,
   P.USER.SET_MAX_LEADS,
-  P.USER.MANAGE_STAFF_EXTRA,
 ];
 
 // ── projects domain (project / task / update / delivery) ──────────────────────────
@@ -366,78 +341,7 @@ export const ADMIN_RESIDUAL = [
 // CONTACT_INITIATOR role lists.
 export const STAFF_GATE = [P.STAFF.LATEST_CALLS_VIEW];
 
-/**
- * Base role → permission codes. Every UserRole value is present (no role may be
- * unmapped — an unmapped role would silently get nothing). De-duplication of the
- * union happens in `getEffectivePermissions`.
- */
-export const ROLE_PERMISSIONS = {
-  // ADMIN / SUPER_ADMIN are the privileged operators today: shared authed access
-  // PLUS telegram management.
-  [USER_ROLES.ADMIN]: [
-    ...SHARED_AUTHED,
-    ...TELEGRAM_ADMIN,
-    ...SITE_UTILITY_ADMIN,
-    ...COURSE_ADMIN,
-    ...LEAD_AUTHED,
-    ...LEAD_ADMIN,
-    ...USER_ADMIN,
-    ...PROJECT_AUTHED,
-    ...PROJECT_ADMIN,
-    ...IMAGE_SESSION_ADMIN,
-    ...ADMIN_RESIDUAL,
-    ...AUDIT_ADMIN,
-    ...MY_DAY_TEAM,
-  ],
-  [USER_ROLES.SUPER_ADMIN]: [
-    ...SHARED_AUTHED,
-    ...TELEGRAM_ADMIN,
-    ...SITE_UTILITY_ADMIN,
-    ...COURSE_ADMIN,
-    ...LEAD_AUTHED,
-    ...LEAD_ADMIN,
-    ...USER_ADMIN,
-    ...PROJECT_AUTHED,
-    ...PROJECT_ADMIN,
-    ...IMAGE_SESSION_ADMIN,
-    ...ADMIN_RESIDUAL,
-    ...AUDIT_ADMIN,
-    ...MY_DAY_TEAM,
-  ],
-
-  // All other roles currently have the shared authenticated surface (chat, authed
-  // upload, auth self-service) but NOT telegram. They also held the full lead-
-  // management surface (LEAD_AUTHED) — every authed role could reach `/shared/
-  // client-leads`; object scope is what differs and is enforced by the checkers.
-  // The five base roles below are EXACTLY the set the legacy `/staff` "STAFF" gate
-  // admits, so each gets STAFF_GATE (the latest-calls reminder list). ADMIN/SUPER_ADMIN/
-  // SUPER_SALES/CONTACT_INITIATOR do NOT (the STAFF gate keys off the base role and does
-  // not admit them).
-  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
-  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
-  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
-  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
-  // 2026-07-15 additive (spec my-day-preview-productivity-pass §6): accountant collections
-  // queue + contact-initiator first-touch queue — new SURFACE only, no data widening
-  // (accountant already has full lead read scope; initiator already reads the NEW pool).
-  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL, ...STAFF_GATE, ...MY_DAY_PERSONAL],
-  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...MY_DAY_PERSONAL, ...MY_DAY_TEAM],
-  [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...MY_DAY_PERSONAL],
-};
-
-/**
- * Extra codes granted by the `isSuperSales` boolean flag, layered ON TOP of the
- * user's base + sub-role codes. Empty today (no telegram/extra surface is
- * super-sales-only in the current code) — kept as the documented augmentation
- * point so a future module can grant super-sales-specific codes here without
- * touching role logic.
- *
- * Course admin: the legacy `/admin/courses` gate admits `isSuperSales` users (see
- * `verifyTokenAndHandleAuthorization` `isAdmin`). To preserve that exactly without
- * widening any base role, the admin course-management codes are layered on here for
- * `isSuperSales`. (The base SUPER_SALES role itself does NOT get them — only the
- * `isSuperSales` flag, matching legacy.)
- */
+/** Extra capabilities owned by the active SUPER_SALES profile. */
 export const SUPER_SALES_EXTRA_PERMISSIONS = [
   P.COURSE.VIEW,
   P.COURSE.MANAGE,
@@ -456,11 +360,10 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   P.USER.VIEW_LAST_SEEN,
   P.USER.CREATE,
   P.USER.UPDATE,
-  P.USER.MANAGE_ROLES,
+  P.USER.MANAGE_PROFILES,
   P.USER.MANAGE_RESTRICTED_COUNTRIES,
   P.USER.MANAGE_AUTO_ASSIGNMENTS,
   P.USER.SET_MAX_LEADS,
-  P.USER.MANAGE_STAFF_EXTRA,
   // Project admin-tier: legacy `isAdmin` (which admits isSuperSales) gated the designer
   // assign/unassign and the designer-board status change. Layer the admin-tier project
   // code on for isSuperSales so the union matches legacy exactly without granting the

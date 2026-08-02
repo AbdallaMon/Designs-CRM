@@ -70,7 +70,13 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
       { id: 1, createdAt: new Date("2026-01-01"), actorUserId: 7, actorRole: "ADMIN", module: "user", action: "USER_UPDATED", entityType: "User", entityId: 9, clientLeadId: null, summary: null, detail: null },
     ];
     auditRepo.findManyPaged.mockResolvedValue({ items, total: 2 });
-    auditRepo.findUsersByIds.mockResolvedValue([{ id: 7, name: "Boss", role: "SUPER_ADMIN" }]);
+    auditRepo.findUsersByIds.mockResolvedValue([
+      {
+        id: 7,
+        name: "Boss",
+        currentProfile: { key: "SUPER_ADMIN", label: "Super admin" },
+      },
+    ]);
     const result = await auditUsecase.listAuditLogs({ query: { page: 1, limit: 20 } });
 
     // distinct ids only (7 appears twice → looked up once)
@@ -83,7 +89,7 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
         {
           id: 2,
           createdAt: items[0].createdAt,
-          actor: { id: 7, name: "Boss", role: "ADMIN" }, // role = snapshot at action time
+          actor: { id: 7, name: "Boss", profile: "ADMIN" },
           module: "lead",
           action: "LEAD_CREATED",
           entityType: "ClientLead",
@@ -95,7 +101,7 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
         {
           id: 1,
           createdAt: items[1].createdAt,
-          actor: { id: 7, name: "Boss", role: "ADMIN" },
+          actor: { id: 7, name: "Boss", profile: "ADMIN" },
           module: "user",
           action: "USER_UPDATED",
           entityType: "User",
@@ -114,7 +120,11 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
     ];
     auditRepo.findManyPaged.mockResolvedValue({ items, total: 1 });
     const result = await auditUsecase.listAuditLogs({ query: { page: 1, limit: 20 } });
-    expect(result.items[0].actor).toEqual({ id: 99, name: null, role: "STAFF" });
+    expect(result.items[0].actor).toEqual({
+      id: 99,
+      name: null,
+      profile: "STAFF",
+    });
   });
 });
 

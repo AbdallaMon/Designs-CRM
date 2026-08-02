@@ -7,12 +7,11 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes } from "@dms/shared";
 import { rentRepository } from "./rent.repo.js";
 import { shapeRentRow, shapeRentList } from "./rent.dto.js";
-import { translateLegacyAccountingError } from "../accounting.errors.js";
 
 class RentUsecase {
   async checkRentExists({ rentId }) {
     const rent = await rentRepository.findRentState({ rentId });
-    if (!rent) throw new AppError(accountingMessagesCodes.RENT_NOT_FOUND, 404);
+    if (!rent) throw new AppError({ code: accountingMessagesCodes.RENT_NOT_FOUND, statusCode: 404 });
     return rent;
   }
 
@@ -35,7 +34,7 @@ class RentUsecase {
   async _createARent(data) {
     let { name, amount, description, startDate, endDate, paymentDate } = data;
     if (!name || !amount || !startDate || !endDate || !paymentDate) {
-      throw new Error("Fill all the fields please");
+      throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
     }
 
     amount = Number(amount);
@@ -59,21 +58,20 @@ class RentUsecase {
 
     return {
       data: createdRent,
-      message: "Rent created successfully",
     };
   }
 
   // ── relocated renew orchestration (formerly legacy renewRentAndMakeOutCome) ───────
   async _renewRentAndMakeOutCome({ rentId, amount, startDate, endDate, paymentDate, name }) {
     if (!rentId || !amount || !startDate || !endDate) {
-      throw new Error("Fill all the fields please");
+      throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
     }
 
     amount = Number(amount);
     const rent = await rentRepository.findRentForRenew({ id: rentId });
 
     if (!rent) {
-      throw new Error("Rent not found");
+      throw new AppError({ code: accountingMessagesCodes.RENT_NOT_FOUND, statusCode: 404 });
     }
 
     const newRentPeriod = await rentRepository.createRentPeriod({
@@ -92,7 +90,6 @@ class RentUsecase {
 
     return {
       data: newRentPeriod,
-      message: "Rent renewed successfully",
     };
   }
 
@@ -103,22 +100,20 @@ class RentUsecase {
   // Known legacy throw: "Fill all the fields please" (createARent also delegates to
   // renewRentAndMakeOutCome, whose required-fields/"Rent not found" throws are covered too).
   createRent({ body }) {
-    return translateLegacyAccountingError(() => this._createARent(body));
+    return this._createARent(body);
   }
 
   // Known legacy throws: "Fill all the fields please" / "Rent not found".
   renew({ rentId, body }) {
     const { amount, startDate, endDate, paymentDate, name } = body;
-    return translateLegacyAccountingError(() =>
-      this._renewRentAndMakeOutCome({
-        rentId: Number(rentId),
-        amount,
-        startDate,
-        endDate,
-        paymentDate,
-        name,
-      }),
-    );
+    return this._renewRentAndMakeOutCome({
+      rentId: Number(rentId),
+      amount,
+      startDate,
+      endDate,
+      paymentDate,
+      name,
+    });
   }
 }
 

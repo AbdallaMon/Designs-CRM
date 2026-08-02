@@ -42,7 +42,7 @@ export default function SpecialItemRow({ item, contractId, onReload }) {
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/${contractId}/special-items/${item.id}`,
+      `contracts/${contractId}/special-items/${item.id}`,
       false,
       "Updating",
       false,
@@ -59,7 +59,7 @@ export default function SpecialItemRow({ item, contractId, onReload }) {
     const req = await handleRequestSubmit(
       {},
       setLoading,
-      `shared/contracts/${contractId}/special-items/${item.id}`,
+      `contracts/${contractId}/special-items/${item.id}`,
       false,
       "Updating",
       false,

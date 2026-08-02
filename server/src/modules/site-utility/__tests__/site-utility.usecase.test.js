@@ -190,6 +190,6 @@ describe("SiteUtilityUsecase.deletePaymentCondition", () => {
     expect(siteUtilityRepository.deletePaymentCondition).toHaveBeenCalledWith({ id: 1 });
 
     // sanity: thrown errors elsewhere are AppError instances
-    expect(new AppError("X", 400)).toBeInstanceOf(AppError);
+    expect(new AppError({ code: "X", statusCode: 400 })).toBeInstanceOf(AppError);
   });
 });

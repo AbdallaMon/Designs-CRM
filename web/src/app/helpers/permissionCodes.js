@@ -22,7 +22,7 @@ export const PROJECT_CODES = {
 // Mirror of packages/shared/constants/access/permissions.constants.js USER_PERMISSIONS.
 // Admin-tier user-management codes (granted to ADMIN/SUPER_ADMIN base + isSuperSales).
 export const USER_CODES = {
-  MANAGE_ROLES: "user.manage_roles",
+  MANAGE_PROFILES: "user.manage_profiles",
   MANAGE_AUTO_ASSIGNMENTS: "user.manage_auto_assignments",
 };
 

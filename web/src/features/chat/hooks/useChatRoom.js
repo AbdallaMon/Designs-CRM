@@ -14,7 +14,7 @@ export function useChatRoom(roomId, clientId, token) {
     await getDataAndSet({
       url: clientId
         ? `client/chat/rooms/${roomId}?clientId=${clientId}&token=${token}&`
-        : `shared/chat/rooms/${roomId}`,
+        : `chat/rooms/${roomId}`,
       setData: setChatRoom,
       setLoading,
       setError,

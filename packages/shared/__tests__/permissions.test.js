@@ -1,259 +1,101 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
+  ALL_PERMISSIONS,
+  computeCapabilities,
   getEffectivePermissions,
-  getPermissionsForRole,
-  hasPermission,
   hasAllPermissions,
   hasAnyPermission,
-  computeCapabilities,
+  hasPermission,
   PERMISSIONS,
-  ROLE_PERMISSIONS,
-  USER_ROLES,
-  ALL_USER_ROLES,
+  PROFILE_KEYS,
+  PROFILES,
 } from "../index.js";
 
-describe("ROLE_PERMISSIONS map", () => {
-  it("maps every UserRole value (no role is unmapped)", () => {
-    for (const role of ALL_USER_ROLES) {
-      expect(Array.isArray(ROLE_PERMISSIONS[role])).toBe(true);
+describe("profile permissions", () => {
+  it("maps every active profile to permission codes", () => {
+    for (const profile of PROFILE_KEYS) {
+      expect(Array.isArray(PROFILES[profile])).toBe(true);
+      expect(PROFILES[profile].length).toBeGreaterThan(0);
     }
   });
 
-  it("grants telegram.manage ONLY to ADMIN and SUPER_ADMIN (preserves ADMIN-only behavior)", () => {
-    for (const role of ALL_USER_ROLES) {
-      const has = getPermissionsForRole(role).includes(
-        PERMISSIONS.TELEGRAM.MANAGE,
-      );
-      if (role === USER_ROLES.ADMIN || role === USER_ROLES.SUPER_ADMIN) {
-        expect(has).toBe(true);
-      } else {
-        expect(has).toBe(false);
-      }
-    }
-  });
-
-  it("grants the shared authed surface (chat/upload/auth.me) to every role", () => {
-    for (const role of ALL_USER_ROLES) {
-      const codes = getPermissionsForRole(role);
-      expect(codes).toContain(PERMISSIONS.AUTH.ME);
-      expect(codes).toContain(PERMISSIONS.AUTH.LOGOUT);
-      expect(codes).toContain(PERMISSIONS.CHAT.ROOM_LIST);
-      expect(codes).toContain(PERMISSIONS.UPLOAD.FILE_UPLOAD);
-    }
-  });
-});
-
-describe("getEffectivePermissions", () => {
-  it("returns empty for null/undefined user", () => {
+  it("returns no permissions without a valid active profile", () => {
     expect(getEffectivePermissions(null)).toEqual({
       permissions: [],
       permissionsByModule: {},
     });
-  });
-
-  it("ADMIN gets the full set including telegram.manage", () => {
-    const { permissions, permissionsByModule } = getEffectivePermissions({
-      role: USER_ROLES.ADMIN,
+    expect(getEffectivePermissions({})).toEqual({
+      permissions: [],
+      permissionsByModule: {},
     });
-    expect(permissions).toContain(PERMISSIONS.TELEGRAM.MANAGE);
-    expect(permissions).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
-    // grouped by module for nav lookups — each module entry is { codes, ...flags }
-    expect(permissionsByModule.telegram.codes).toContain(PERMISSIONS.TELEGRAM.MANAGE);
-    expect(permissionsByModule.chat.codes).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
+    expect(getEffectivePermissions({ profile: "UNKNOWN" }).permissions).toEqual([]);
   });
 
-  it("permissionsByModule exposes codes + action flags per module", () => {
-    const { permissionsByModule } = getEffectivePermissions({ role: USER_ROLES.ADMIN });
-    expect(permissionsByModule.lead.codes).toContain("lead.list");
+  it("does not infer access from retained schema fields", () => {
+    const retainedFieldsOnly = getEffectivePermissions({
+      role: "ADMIN",
+      subRoles: ["SUPER_ADMIN"],
+      isPrimary: true,
+      isSuperSales: true,
+    });
+    expect(retainedFieldsOnly.permissions).toEqual([]);
+  });
+
+  it("ADMIN and SUPER_ADMIN can do anything", () => {
+    for (const profile of ["ADMIN", "SUPER_ADMIN"]) {
+      const { permissions } = getEffectivePermissions({ profile });
+      expect(new Set(permissions)).toEqual(new Set(ALL_PERMISSIONS));
+    }
+  });
+
+  it("groups profile permissions into module action flags", () => {
+    const { permissionsByModule } = getEffectivePermissions({ profile: "ADMIN" });
+    expect(permissionsByModule.lead.codes).toContain(PERMISSIONS.LEAD.LIST);
     expect(permissionsByModule.lead.canList).toBe(true);
     expect(permissionsByModule.user.canCreate).toBe(true);
   });
 
-  it("STAFF does NOT get telegram.manage", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.STAFF });
-    expect(permissions).not.toContain(PERMISSIONS.TELEGRAM.MANAGE);
-    expect(permissions).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
-  });
-
-  it("each base role resolves to exactly its mapped codes, plus profile-only new view codes", () => {
-    // getEffectivePermissions now resolves via the user's PROFILE (see
-    // constants/access/profiles.js), which additively grants the 5 new
-    // `lead.*.view` codes on top of the legacy ROLE_PERMISSIONS map for STAFF
-    // (analysis.view only) and ADMIN/SUPER_ADMIN (all five) — by design, not a
-    // regression. Restricting the effective set to the OLD code universe must
-    // still equal ROLE_PERMISSIONS exactly (parity); see profiles.test.js for the
-    // full parity matrix across every role/flag combination.
-    const NEW_VIEW_CODES = new Set([
-      PERMISSIONS.LEAD.PRICE_OFFER_VIEW,
-      PERMISSIONS.LEAD.PROJECTS_VIEW,
-      PERMISSIONS.LEAD.MODIFICATIONS_VIEW,
-      PERMISSIONS.LEAD.UPDATES_VIEW,
-      PERMISSIONS.LEAD.ANALYSIS_VIEW,
-    ]);
-    for (const role of ALL_USER_ROLES) {
-      const { permissions } = getEffectivePermissions({ role });
-      const oldUniverseOnly = permissions.filter((c) => !NEW_VIEW_CODES.has(c));
-      const expected = Array.from(new Set(ROLE_PERMISSIONS[role]));
-      expect(oldUniverseOnly.sort()).toEqual(expected.sort());
-    }
-  });
-
-  it("no longer unions sub-role codes (Prisma {subRole} row shape) — profile is the sole source", () => {
-    // a STAFF user who ALSO holds an ADMIN sub-role does NOT gain telegram.manage
-    // anymore (the transitional subRoles union was removed — Phase 4).
-    const { permissions } = getEffectivePermissions({
-      role: USER_ROLES.STAFF,
-      profile: "NORMAL_SALES",
-      subRoles: [{ subRole: USER_ROLES.ADMIN }],
-    });
-    expect(permissions).not.toContain(PERMISSIONS.TELEGRAM.MANAGE);
-  });
-
-  it("no longer unions sub-role codes (plain string[] shape) — profile is the sole source", () => {
-    const { permissions } = getEffectivePermissions({
-      role: USER_ROLES.STAFF,
-      profile: "NORMAL_SALES",
-      subRoles: [USER_ROLES.ADMIN],
-    });
-    expect(permissions).not.toContain(PERMISSIONS.TELEGRAM.MANAGE);
-  });
-
-  it("the equivalent grant now comes from the ADMIN profile directly", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.STAFF, profile: "ADMIN" });
-    expect(permissions).toContain(PERMISSIONS.TELEGRAM.MANAGE);
-  });
-
-  it("does not emit duplicate codes for a single role", () => {
-    const { permissions } = getEffectivePermissions({
-      role: USER_ROLES.ADMIN,
-      subRoles: [{ subRole: USER_ROLES.ADMIN }],
-    });
-    const unique = new Set(permissions);
-    expect(unique.size).toBe(permissions.length);
-  });
-
-  it("isSuperSales augments the base set with the admin-tier codes (legacy isAdmin)", () => {
-    // SUPER_SALES_EXTRA_PERMISSIONS reproduces the legacy `isAdmin` gate (which admits
-    // isSuperSales) WITHOUT widening any base role. Populated by:
-    //   - Courses/LMS migration: the four COURSE.* codes (legacy `/admin/courses`).
-    //   - Leads migration: LEAD.ASSIGN_OTHER (legacy bulk-convert / assign-to-other).
-    //   - Users migration: the user-management codes (legacy `/admin/users*` "ADMIN"
-    //     gate admits isSuperSales; legacy further limits it to STAFF — enforced in the
-    //     user usecase, not the grant).
-    //   - Projects migration: PROJECT.MANAGE (legacy designer assign/unassign + the
-    //     designer-board status change were gated on the `isAdmin` union).
-    //   - Image-sessions migration: IMAGE_SESSION.ADMIN_VIEW/ADMIN_MANAGE (legacy
-    //     `/admin/image-session` "ADMIN" gate admits isSuperSales).
-    //   - Admin-residual migration: the ADMIN_RESIDUAL.* codes (legacy `/admin` "ADMIN"
-    //     gate admits isSuperSales — reports, lead import/create/update/delete + telegram,
-    //     client edit, fixed-data writes, commissions, admin projects, model-archive).
-    const base = getEffectivePermissions({ role: USER_ROLES.STAFF });
-    const elevated = getEffectivePermissions({
-      role: USER_ROLES.STAFF,
-      isSuperSales: true,
-    });
-    const added = elevated.permissions.filter(
-      (code) => !base.permissions.includes(code),
-    );
-    expect(added.sort()).toEqual(
-      [
-        // Profile-only addition: isSuperSales resolves to the SUPER_SALES profile,
-        // which extends PRIMARY_SALES — so the 4 primary-only lead section-visibility
-        // view codes come along too (additive, by design; see profiles.js).
-        PERMISSIONS.LEAD.PRICE_OFFER_VIEW,
-        PERMISSIONS.LEAD.PROJECTS_VIEW,
-        PERMISSIONS.LEAD.MODIFICATIONS_VIEW,
-        PERMISSIONS.LEAD.UPDATES_VIEW,
-        PERMISSIONS.COURSE.VIEW,
-        PERMISSIONS.COURSE.MANAGE,
-        PERMISSIONS.COURSE.ACCESS_MANAGE,
-        PERMISSIONS.COURSE.ATTEMPT_MANAGE,
-        PERMISSIONS.LEAD.ASSIGN_OTHER,
-        PERMISSIONS.PROJECT.MANAGE,
-        PERMISSIONS.USER.LIST,
-        PERMISSIONS.USER.VIEW_LOGS,
-        PERMISSIONS.USER.VIEW_LAST_SEEN,
-        PERMISSIONS.USER.CREATE,
-        PERMISSIONS.USER.UPDATE,
-        PERMISSIONS.USER.MANAGE_ROLES,
-        PERMISSIONS.USER.MANAGE_RESTRICTED_COUNTRIES,
-        PERMISSIONS.USER.MANAGE_AUTO_ASSIGNMENTS,
-        PERMISSIONS.USER.SET_MAX_LEADS,
-        PERMISSIONS.USER.MANAGE_STAFF_EXTRA,
-        PERMISSIONS.IMAGE_SESSION.ADMIN_VIEW,
-        PERMISSIONS.IMAGE_SESSION.ADMIN_MANAGE,
-        PERMISSIONS.ADMIN_RESIDUAL.REPORT_GENERATE,
-        PERMISSIONS.ADMIN_RESIDUAL.LEAD_IMPORT,
-        PERMISSIONS.ADMIN_RESIDUAL.LEAD_CREATE,
-        PERMISSIONS.ADMIN_RESIDUAL.LEAD_EDIT,
-        PERMISSIONS.ADMIN_RESIDUAL.LEAD_DELETE,
-        PERMISSIONS.ADMIN_RESIDUAL.CLIENT_EDIT,
-        PERMISSIONS.ADMIN_RESIDUAL.TELEGRAM_MANAGE,
-        PERMISSIONS.ADMIN_RESIDUAL.FIXED_DATA_MANAGE,
-        PERMISSIONS.ADMIN_RESIDUAL.COMMISSION_VIEW,
-        PERMISSIONS.ADMIN_RESIDUAL.COMMISSION_MANAGE,
-        PERMISSIONS.ADMIN_RESIDUAL.PROJECT_VIEW,
-        PERMISSIONS.ADMIN_RESIDUAL.PROJECT_GROUP_CREATE,
-        PERMISSIONS.ADMIN_RESIDUAL.MODEL_ARCHIVE,
-        // My Day: isSuperSales resolves to the SUPER_SALES profile, which adds the
-        // team lens (my_day.team.view) on top of the personal queue STAFF already
-        // holds via its base role array (see profiles.js / role-permissions.js).
-        PERMISSIONS.MY_DAY.TEAM_VIEW,
-      ].sort(),
-    );
+  it("sales elevation comes from the active profile only", () => {
+    const normal = getEffectivePermissions({ profile: "NORMAL_SALES" }).permissions;
+    const elevated = getEffectivePermissions({ profile: "SUPER_SALES" }).permissions;
+    expect(normal).not.toContain(PERMISSIONS.USER.MANAGE_PROFILES);
+    expect(elevated).toContain(PERMISSIONS.USER.MANAGE_PROFILES);
   });
 });
 
-describe("hasPermission helpers", () => {
-  const perms = [PERMISSIONS.CHAT.ROOM_VIEW, PERMISSIONS.CHAT.ROOM_LIST];
-  it("hasPermission", () => {
-    expect(hasPermission(perms, PERMISSIONS.CHAT.ROOM_VIEW)).toBe(true);
-    expect(hasPermission(perms, PERMISSIONS.TELEGRAM.MANAGE)).toBe(false);
-  });
-  it("hasAllPermissions / hasAnyPermission", () => {
+describe("permission helpers", () => {
+  const permissions = [
+    PERMISSIONS.CHAT.ROOM_VIEW,
+    PERMISSIONS.CHAT.ROOM_LIST,
+  ];
+
+  it("checks one, all, or any code", () => {
+    expect(hasPermission(permissions, PERMISSIONS.CHAT.ROOM_VIEW)).toBe(true);
     expect(
-      hasAllPermissions(perms, [
+      hasAllPermissions(permissions, [
         PERMISSIONS.CHAT.ROOM_VIEW,
         PERMISSIONS.CHAT.ROOM_LIST,
       ]),
     ).toBe(true);
     expect(
-      hasAllPermissions(perms, [
-        PERMISSIONS.CHAT.ROOM_VIEW,
+      hasAnyPermission(permissions, [
         PERMISSIONS.TELEGRAM.MANAGE,
+        PERMISSIONS.CHAT.ROOM_VIEW,
       ]),
-    ).toBe(false);
-    expect(
-      hasAnyPermission(perms, [PERMISSIONS.TELEGRAM.MANAGE, PERMISSIONS.CHAT.ROOM_VIEW]),
     ).toBe(true);
   });
-});
 
-describe("computeCapabilities", () => {
-  it("evaluates each rule against the context and coerces to boolean", () => {
-    const caps = computeCapabilities(
+  it("computes rendering capabilities safely", () => {
+    const capabilities = computeCapabilities(
       {
-        canEdit: ({ permissions, record, authUserId }) =>
-          hasPermission(permissions, PERMISSIONS.CHAT.ROOM_EDIT) &&
-          record.createdById === authUserId,
-        canDelete: ({ permissions, record, authUserId }) =>
-          hasPermission(permissions, PERMISSIONS.CHAT.ROOM_DELETE) &&
-          record.createdById === authUserId,
+        canEdit: ({ permissions: codes }) =>
+          hasPermission(codes, PERMISSIONS.CHAT.ROOM_EDIT),
+        invalidRule: () => {
+          throw new Error("test invariant");
+        },
       },
-      {
-        permissions: [PERMISSIONS.CHAT.ROOM_EDIT],
-        record: { createdById: 7 },
-        authUserId: 7,
-      },
+      { permissions: [PERMISSIONS.CHAT.ROOM_EDIT] },
     );
-    expect(caps).toEqual({ canEdit: true, canDelete: false });
-  });
-
-  it("a throwing rule yields false rather than blowing up", () => {
-    const caps = computeCapabilities(
-      { boom: () => { throw new Error("x"); } },
-      {},
-    );
-    expect(caps.boom).toBe(false);
+    expect(capabilities).toEqual({ canEdit: true, invalidRule: false });
   });
 });

@@ -31,7 +31,6 @@ import {
   createContract,
   getContractDetailsById,
   updateContractBasics,
-  markContractAsCancelled,
   generatePdfSessionToken,
   createContractStage,
   updateContractStage,
@@ -48,7 +47,8 @@ import {
   createContractSpecialItem,
   updateContractSpecialItem,
   deleteContractSpecialItem,
-} from "../services/contract-services.js";
+} from "./contract.workflow.repo.js";
+import { markContractAsCancelled } from "../services/contract-pdf.service.js";
 
 class ContractUsecase {
   // ── scope helpers ─────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ class ContractUsecase {
   // against a non-existent contract). `mode` selects access (read) vs mutate (write).
   async #scopeByContract({ contractId, authUser, mode }) {
     const row = await contractRepository.getContractClientLeadId({ contractId });
-    if (!row || row.clientLeadId == null) throw new AppError(contractsMessagesCodes.CONTRACT_NOT_FOUND, 404);
+    if (!row || row.clientLeadId == null) throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
     if (mode === "mutate") await this.assertLeadMutate({ clientLeadId: row.clientLeadId, authUser });
     else await this.assertLeadAccess({ clientLeadId: row.clientLeadId, authUser });
     return row;
@@ -74,7 +74,7 @@ class ContractUsecase {
   // Generic child-id resolver: `resolver` returns { clientLeadId } for the child id.
   async #scopeByResolved({ resolver, authUser, mode }) {
     const row = await resolver();
-    if (!row || row.clientLeadId == null) throw new AppError(contractsMessagesCodes.CONTRACT_NOT_FOUND, 404);
+    if (!row || row.clientLeadId == null) throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
     if (mode === "mutate") await this.assertLeadMutate({ clientLeadId: row.clientLeadId, authUser });
     else await this.assertLeadAccess({ clientLeadId: row.clientLeadId, authUser });
     return row;
@@ -140,9 +140,9 @@ class ContractUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  PAYMENTS GROUPED LIST (global, role-scoped INSIDE the frozen service)
   // ════════════════════════════════════════════════════════════════════════════
-  // GET /payments/all. NOT per-record lead-scoped: the legacy service applies the role
+  // GET /payments/all. NOT per-record lead-scoped: the workflow repository applies profile scope
   // scope (admin-tier see all; others scoped to clientLead.userId === user.id). We pass
-  // req.auth as `user`, exactly as legacy passed getCurrentUser(req). Preserved 1:1.
+  // req.auth as `user`.
   async getGroupedPayments({ page, limit, status, authUser }) {
     return getContractPaymentsGroupedService({ page, limit, status, user: authUser });
   }

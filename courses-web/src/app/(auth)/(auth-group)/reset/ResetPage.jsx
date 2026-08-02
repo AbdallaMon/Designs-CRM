@@ -22,7 +22,7 @@ export default function ResetPage(props) {
         await handleRequestSubmit(
           { email: data.email },
           setToastLoading,
-          "auth/reset",
+          "auth/request-password-reset",
           false,
           "Email is being reviewed"
         );
@@ -31,7 +31,7 @@ export default function ResetPage(props) {
         await handleRequestSubmit(
           { password: data.password, confirmPassword: data.confirmPassword, token },
           setToastLoading,
-          `auth/reset/${token}`,
+          "auth/reset-password",
           false,
           "Resetting the password"
         );

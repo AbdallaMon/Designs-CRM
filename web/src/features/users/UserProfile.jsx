@@ -20,12 +20,12 @@ import EditModal from "@/shared/components/models/EditModal.jsx";
 import UserRestrictedCountries from "@/features/users/UserRestrictedCountries.jsx";
 import Commission from "@/features/accountant/Commission.jsx";
 
-export default function UserProfile({ id, role }) {
+export default function UserProfile({ id }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   async function getUser() {
     const user = await getData({
-      url: `admin/users/${id}/profile`,
+      url: `users/${id}/profile`,
       setLoading,
     });
     if (user) {
@@ -100,8 +100,7 @@ export default function UserProfile({ id, role }) {
                 <Box>
                   <Commission userId={user.id} />
                 </Box>
-                {(user.role === "STAFF" ||
-                  user.subRoles?.some((r) => r.subRole === "STAFF")) && (
+                {user.currentProfile?.family === "SALES" && (
                   <>
                     <UserRestrictedCountries userId={user.id} />
                     <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
@@ -152,7 +151,7 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
           },
         ]}
         isObject={true}
-        href={`admin/users/max-leads`}
+        href={`users/max-leads`}
         setData={setUser}
         extraProps={{
           formTitle: "Change max leads count",
@@ -188,7 +187,7 @@ function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
           },
         ]}
         isObject={true}
-        href={`admin/users/max-leads-per-day`}
+        href={`users/max-leads-per-day`}
         setData={setUser}
         extraProps={{
           formTitle: "Change max leads count",

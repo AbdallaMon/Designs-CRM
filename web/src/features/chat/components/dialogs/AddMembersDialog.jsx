@@ -325,7 +325,7 @@ function MarkAsModerator({ member, onMark, roomId }) {
         role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
       },
       setLoading,
-      `shared/chat/rooms/${roomId}/members/${member.id}`,
+      `chat/rooms/${roomId}/members/${member.id}`,
       false,
       "Update Role",
       false,

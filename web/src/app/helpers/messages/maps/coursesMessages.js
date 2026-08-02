@@ -15,7 +15,6 @@ export const coursesMessages = {
   LESSON_PDFS_FETCHED: "Lesson files fetched",
   LESSON_LINKS_FETCHED: "Lesson links fetched",
   LESSON_VIDEO_PDFS_FETCHED: "Video files fetched",
-  ALLOWED_ROLES_FETCHED: "Allowed roles fetched",
   ALLOWED_USERS_FETCHED: "Allowed users fetched",
   HOMEWORKS_FETCHED: "Homework fetched",
   TESTS_FETCHED: "Tests fetched",

@@ -178,7 +178,7 @@ export function OurCostAndContractorCost({ lead, setLead }) {
       const updateResponse = await handleRequestSubmit(
         updateData,
         setLoading,
-        `shared/client-leads/update/${lead.id}`,
+        `leads/update/${lead.id}`,
         false,
         "Updating Lead",
         false,

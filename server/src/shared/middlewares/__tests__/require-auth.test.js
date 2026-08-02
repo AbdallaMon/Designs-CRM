@@ -13,12 +13,12 @@ import { JwtService } from "../../../infra/security/jwt.js";
 import { profileCache } from "../../../infra/auth/profile-cache.js";
 import { AUTH_COOKIE_NAME } from "@dms/shared";
 
-function run(payload, resolved) {
+async function run(payload, resolved) {
   JwtService.verifyAccess.mockReturnValue(payload);
   profileCache.resolve.mockReturnValue(resolved);
   const req = { cookies: { [AUTH_COOKIE_NAME]: "token" } };
   let nextArg;
-  AuthMiddleware.requireAuth(req, {}, (e) => {
+  await AuthMiddleware.requireAuth(req, {}, (e) => {
     nextArg = e;
   });
   return { req, nextArg };
@@ -27,13 +27,13 @@ function run(payload, resolved) {
 describe("requireAuth resolves via the profile cache", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("attaches the current profile's permissions + isAdminTier", () => {
-    const { req, nextArg } = run(
-      { id: 5, currentProfileId: 1, role: "ADMIN" },
+  it("attaches the current profile's permissions + isAdminTier", async () => {
+    const { req, nextArg } = await run(
+      { id: 5, currentProfileId: 1 },
       {
         key: "ADMIN",
         isAdminTier: true,
-        baseRole: "ADMIN",
+        family: "ADMIN",
         permissions: ["lead.view"],
         permissionsByModule: { lead: { codes: ["lead.view"] } },
       },
@@ -42,33 +42,22 @@ describe("requireAuth resolves via the profile cache", () => {
     expect(req.auth.permissions).toEqual(["lead.view"]);
     expect(req.auth.isAdminTier).toBe(true);
     expect(req.auth.currentProfileKey).toBe("ADMIN");
-    expect(req.auth.baseRole).toBe("ADMIN");
+    expect(req.auth.profileFamily).toBe("ADMIN");
   });
 
-  it("falls back to the legacy code-map for permission codes when the profile is unresolved (old token / unmigrated user), but is waived to non-admin-tier", () => {
-    const { req, nextArg } = run(
+  it("rejects an unresolved active profile without role fallback", async () => {
+    const { req, nextArg } = await run(
       { id: 5, currentProfileId: null, role: "ADMIN", subRoles: [] },
       null,
     );
-    expect(nextArg).toBeUndefined();
-    expect(req.auth.permissions.length).toBeGreaterThan(0); // real ADMIN code-map perms
-    // Profiles are the sole source of admin-tier now; an unresolved profile is
-    // waived to non-admin-tier (owner decision) — no flag/role read here.
-    expect(req.auth.isAdminTier).toBe(false);
+    expect(nextArg).toMatchObject({ statusCode: 403, message: "PROFILE_REQUIRED" });
+    expect(req.auth).toBeUndefined();
   });
 
-  it("fallback marks a plain STAFF user as non-admin-tier", () => {
-    const { req } = run(
-      { id: 9, currentProfileId: null, role: "STAFF", subRoles: [] },
-      null,
-    );
-    expect(req.auth.isAdminTier).toBe(false);
-  });
-
-  it("401 when no access-token cookie is present", () => {
+  it("401 when no access-token cookie is present", async () => {
     const req = { cookies: {} };
     let nextArg;
-    AuthMiddleware.requireAuth(req, {}, (e) => (nextArg = e));
+    await AuthMiddleware.requireAuth(req, {}, (e) => (nextArg = e));
     expect(nextArg?.statusCode).toBe(401);
   });
 });

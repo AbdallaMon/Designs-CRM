@@ -98,7 +98,7 @@ export const CallResultDialog = ({
     const request = await handleRequestSubmit(
       requestedData,
       setLoading,
-      `shared/client-leads/${
+      `leads/${
         reminderType === "MEETING" ? "meeting-reminders" : "call-reminders"
       }/${call.id}`,
       false,
@@ -328,7 +328,7 @@ export const NewCallDialog = ({
         userId: user.id,
       },
       setLoading,
-      `shared/client-leads/${lead.id}/${
+      `leads/${lead.id}/${
         reminderType === "MEETING" ? "meeting-reminders" : "call-reminders"
       }`,
       false,

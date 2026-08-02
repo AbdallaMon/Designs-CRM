@@ -71,7 +71,7 @@ export default function AllDealsPage({ staff }) {
     totalPages,
     setFilters,
   } = useDataFetcher(
-    "shared/client-leads" + (staff ? `?staffId=${user.id}&` : ""),
+    "leads" + (staff ? `?staffId=${user.id}&` : ""),
     false
   );
 
@@ -132,7 +132,7 @@ export default function AllDealsPage({ staff }) {
             <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
               {!staff && (
                 <SearchComponent
-                  apiEndpoint="search?model=user"
+                  resource="users"
                   setFilters={setFilters}
                   inputLabel="Search staff by name or email"
                   renderKeys={["name", "email"]}
@@ -153,7 +153,7 @@ export default function AllDealsPage({ staff }) {
                 withParamsChange={true}
               /> */}
               <SearchComponent
-                apiEndpoint="search?model=clientLead"
+                resource="leads"
                 setFilters={setFilters}
                 inputLabel="Search lead by id ,name or phone"
                 renderKeys={[
@@ -164,7 +164,6 @@ export default function AllDealsPage({ staff }) {
                 ]}
                 mainKey="id"
                 searchKey={"id"}
-                localFilters={{ staffId: user.id, userRole: user.role }}
                 withParamsChange={true}
               />
             </Box>{" "}

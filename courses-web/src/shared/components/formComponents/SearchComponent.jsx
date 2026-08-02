@@ -7,17 +7,18 @@ import {
   getPropertyValue,
   handleSearchParamsChange,
 } from "@/app/helpers/functions/utility";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const SearchComponent = ({
-  apiEndpoint,
+  resource,
+  profile,
   setFilters,
   inputLabel,
   renderKeys,
   mainKey,
   resetTrigger,
   searchKey = "userId",
-  localFilters,
   restOtherFilters = false,
   withParamsChange = false,
 }) => {
@@ -30,16 +31,15 @@ const SearchComponent = ({
   const fetchSearchResults = async (query) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_URL
-        }/utility/${apiEndpoint}&query=${query}&filters=${JSON.stringify(
-          localFilters
-        )}`,
-        { credentials: "include" }
+      const response = await apiRequest(
+        `utilities/search?${new URLSearchParams({
+          resource,
+          query,
+          ...(profile ? { profile } : {}),
+        })}`
       );
       const result = await response.json();
-      setSearchResults(result.data);
+      setSearchResults(response.ok && Array.isArray(result.data) ? result.data : []);
     } catch (error) {
       console.error("Error fetching search results:", error);
     } finally {
@@ -53,7 +53,7 @@ const SearchComponent = ({
     } else {
       setSearchResults([]);
     }
-  }, [searchTerm]);
+  }, [searchTerm, resource, profile]);
 
   const handleSelect = (event, newValue) => {
     setSelectedItem(newValue);

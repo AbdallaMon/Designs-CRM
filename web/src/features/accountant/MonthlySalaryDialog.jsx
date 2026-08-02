@@ -41,7 +41,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
 
     try {
       const res = await getData({
-        url: `accountant/users/${salaryData.userId}/last-seen`,
+        url: `accounting/users/${salaryData.userId}/last-seen`,
         setLoading: setFetchLoading,
       });
       setMonthlyData(res);
@@ -124,7 +124,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
     const request = await handleRequestSubmit(
       { ...formData, baseSalaryId: salaryData.id },
       setLoading,
-      `accountant/salaries/monthly/pay`,
+      `accounting/salaries/monthly/pay`,
       false,
       "Paying"
     );

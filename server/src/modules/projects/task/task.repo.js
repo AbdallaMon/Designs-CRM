@@ -1,21 +1,24 @@
-// projects/task repository — Prisma I/O ONLY. The task reads plus the Prisma pieces of
-// the notification-laden create/update flows (ported from the legacy taskServices) live
-// here as thin methods; the orchestration (notifications) stays in the usecase. The note
-// helpers (getNotes/addNote/deleteAModel) are generic shared services invoked from the
-// usecase. Behavior-preserving: every query object is copied verbatim.
+// Task Prisma I/O. Notification orchestration and cross-module note/delete operations
+// remain in their owning usecases.
 import prisma from "../../../infra/prisma/prisma.js";
 
 class TaskRepository {
   model = prisma.task;
 
-  // GET / — tasks list (legacy getTasksWithNotesIncluded). `where` is built in the
-  // usecase from the legacy searchParams narrowing.
+  // GET / — the usecase supplies the scoped where clause.
   list({ where }) {
     return prisma.task.findMany({
       where,
       include: {
         notes: true,
-        createdBy: { select: { id: true, name: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            currentProfile: { select: { key: true, label: true, isAdminTier: true } },
+          },
+        },
       },
     });
   }
@@ -69,7 +72,7 @@ class TaskRepository {
     });
   }
 
-  // GET /:id detail (no userId narrowing) — legacy getTaskDetails first branch.
+  // GET /:id detail without user narrowing.
   findTaskDetailNoUser({ id }) {
     return prisma.task.findUnique({
       where: { id: Number(id) },
@@ -83,13 +86,14 @@ class TaskRepository {
             id: true,
             name: true,
             email: true,
+            currentProfile: { select: { key: true, label: true, isAdminTier: true } },
           },
         },
       },
     });
   }
 
-  // GET /:id detail (userId narrowing path) — legacy getTaskDetails second branch.
+  // GET /:id detail for the user-narrowed path.
   findTaskDetailWithProject({ id }) {
     return prisma.task.findUnique({
       where: { id: Number(id) },
@@ -104,6 +108,7 @@ class TaskRepository {
             id: true,
             name: true,
             email: true,
+            currentProfile: { select: { key: true, label: true, isAdminTier: true } },
           },
         },
       },

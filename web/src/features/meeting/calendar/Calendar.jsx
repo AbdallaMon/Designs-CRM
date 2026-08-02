@@ -121,9 +121,9 @@ export const Calendar = ({
 
       const baseUrl =
         type === "STAFF"
-          ? `shared/calendar/available-days?month=${monthParam}&adminId=${adminId}&`
+          ? `calendar/available-days?month=${monthParam}&adminId=${adminId}&`
           : isAdmin
-          ? `shared/calendar/available-days?month=${monthParam}&`
+          ? `calendar/available-days?month=${monthParam}&`
           : `client/calendar/available-days?month=${monthParam}&token=${token}&`;
 
       const url =

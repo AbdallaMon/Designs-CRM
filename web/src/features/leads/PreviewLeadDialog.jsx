@@ -59,7 +59,7 @@ const LeadContent = ({
     const assign = await handleRequestSubmit(
       { id: lead.id },
       setLoading,
-      `shared/client-leads`,
+      `leads`,
       false,
       "Assigning",
       false,
@@ -87,7 +87,7 @@ const LeadContent = ({
     const request = await handleRequestSubmit(
       { status: value, oldStatus: lead.status },
       setLoading,
-      `shared/client-leads/${lead.id}/actions/change-status`,
+      `leads/${lead.id}/actions/change-status`,
       false,
       "Updating",
       null,
@@ -113,7 +113,7 @@ const LeadContent = ({
     const request = await handleRequestSubmit(
       { status: "ON_HOLD" },
       setLoading,
-      `shared/client-leads/${lead.id}/actions/change-status`,
+      `leads/${lead.id}/actions/change-status`,
       false,
       "Converting",
       false,
@@ -131,7 +131,7 @@ const LeadContent = ({
   if (!lead) return;
 
   const leadStatus = enumToKeyValueArray(
-    user.role === "STAFF" &&
+    ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
       user.profile !== "PRIMARY_SALES" &&
       user.profile !== "SUPER_SALES"
       ? KanbanBeginerLeadsStatus
@@ -277,7 +277,7 @@ const PreviewDialog = ({
       setleads={setleads}
       setRerenderColumns={setRerenderColumns}
       page={page}
-      url={`shared/client-leads/${id}`}
+      url={`leads/${id}`}
     />
   );
 };

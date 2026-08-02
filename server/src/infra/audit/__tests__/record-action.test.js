@@ -8,7 +8,7 @@ vi.mock("../action-audit.repo.js", () => ({
 import { actionAuditRepository } from "../action-audit.repo.js";
 import { recordAction, auditCtxFromReq } from "../record-action.js";
 
-const ctx = { actorUserId: 7, actorRole: "ADMIN", ip: "1.2.3.4" };
+const ctx = { actorUserId: 7, actorProfileKey: "ADMIN", ip: "1.2.3.4" };
 
 describe("recordAction", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -116,15 +116,15 @@ describe("recordAction", () => {
 
 describe("auditCtxFromReq", () => {
   it("derives the actor from req.auth (never client input) + req.ip", () => {
-    expect(auditCtxFromReq({ auth: { id: 3, role: "STAFF" }, ip: "9.9.9.9" })).toEqual({
+    expect(auditCtxFromReq({ auth: { id: 3, currentProfileKey: "NORMAL_SALES" }, ip: "9.9.9.9" })).toEqual({
       actorUserId: 3,
-      actorRole: "STAFF",
+      actorProfileKey: "NORMAL_SALES",
       ip: "9.9.9.9",
     });
   });
 
   it("is null-safe for a request without auth", () => {
-    expect(auditCtxFromReq({})).toEqual({ actorUserId: null, actorRole: null, ip: null });
-    expect(auditCtxFromReq(undefined)).toEqual({ actorUserId: null, actorRole: null, ip: null });
+    expect(auditCtxFromReq({})).toEqual({ actorUserId: null, actorProfileKey: null, ip: null });
+    expect(auditCtxFromReq(undefined)).toEqual({ actorUserId: null, actorProfileKey: null, ip: null });
   });
 });

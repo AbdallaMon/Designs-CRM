@@ -1,9 +1,6 @@
-// projects/project routes — the authenticated projects-management surface (legacy
-// `/shared/projects`). Mounted under `/v2/projects` (legacy router stays mounted in
-// parallel during the strangler window). Auth once at the router; each route declares
-// its permission code(s); every object-scoped route ALSO carries the object-scope
-// checker (requireSpecialChecker) — the IDOR fix the legacy routes lacked. Status
-// changes move to `POST /:.../actions/<kebab>` per the workflow convention.
+// Project-management API mounted under /v2/projects. Every route declares permission
+// codes; object-scoped routes additionally run the project scope checker. Workflow
+// changes use dedicated POST /:id/actions/<action> endpoints.
 //
 // ROUTE ORDER: literal paths are declared BEFORE the `/:id` catch-all so they are not
 // shadowed (Express matches in declaration order).

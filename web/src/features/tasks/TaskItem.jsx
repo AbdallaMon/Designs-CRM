@@ -38,7 +38,7 @@ export const TaskItem = ({ task, setTasks, name }) => {
       : theme.palette.divider;
 
   const createdByLabel = task.createdBy
-    ? task.createdBy.role === "ADMIN" || task.createdBy.role === "SUPER_ADMIN"
+    ? task.createdBy.currentProfile?.isAdminTier
       ? "Admin - " + task.createdBy.name
       : task.createdBy.name
     : null;

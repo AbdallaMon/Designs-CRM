@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -35,20 +35,20 @@ describe("admin-residual permission grants", () => {
 
   it("grants the full admin-residual surface to ADMIN + SUPER_ADMIN base roles", () => {
     for (const role of [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]) {
-      const codes = getPermissionsForRole(role);
+      const codes = permissionsForPersona(role);
       for (const code of ADMIN_RESIDUAL_ALL) expect(codes).toContain(code);
     }
   });
 
-  it("grants the admin-residual surface via the ADMIN profile (profile is the sole source; isSuperSales no longer unions it)", () => {
+  it("grants admin-residual access from ADMIN or SUPER_SALES profiles", () => {
     // base SUPER_SALES role does NOT hold them; the isSuperSales flag does NOT layer them
     // on anymore (that transitional union was removed — Phase 4). Profiles are the sole
     // source: a user resolved to the ADMIN profile holds them.
-    const baseSuperSales = getPermissionsForRole(USER_ROLES.SUPER_SALES);
-    for (const code of ADMIN_RESIDUAL_ALL) expect(baseSuperSales).not.toContain(code);
+    const baseSuperSales = permissionsForPersona(USER_ROLES.SUPER_SALES);
+    for (const code of ADMIN_RESIDUAL_ALL) expect(baseSuperSales).toContain(code);
 
-    const withFlag = getEffectivePermissions({ role: USER_ROLES.SUPER_SALES, isSuperSales: true }).permissions;
-    for (const code of ADMIN_RESIDUAL_ALL) expect(withFlag).not.toContain(code);
+    const withFlag = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.SUPER_SALES, { superSales: true }) }).permissions;
+    for (const code of ADMIN_RESIDUAL_ALL) expect(withFlag).toContain(code);
 
     const withAdminProfile = getEffectivePermissions({ role: USER_ROLES.SUPER_SALES, profile: "ADMIN" }).permissions;
     for (const code of ADMIN_RESIDUAL_ALL) expect(withAdminProfile).toContain(code);
@@ -63,7 +63,7 @@ describe("admin-residual permission grants", () => {
       USER_ROLES.ACCOUNTANT,
       USER_ROLES.CONTACT_INITIATOR,
     ]) {
-      const codes = getEffectivePermissions({ role }).permissions;
+      const codes = getEffectivePermissions({ profile: profileForPersona(role) }).permissions;
       for (const code of ADMIN_RESIDUAL_ALL) expect(codes).not.toContain(code);
     }
   });
@@ -86,24 +86,26 @@ describe("admin-residual permission grants", () => {
 describe("staff latest-calls gate", () => {
   it("grants STAFF.LATEST_CALLS_VIEW to EXACTLY the five legacy STAFF-gate base roles", () => {
     for (const role of STAFF_GATE_ROLES) {
-      expect(getPermissionsForRole(role)).toContain(P.STAFF.LATEST_CALLS_VIEW);
+      expect(permissionsForPersona(role)).toContain(P.STAFF.LATEST_CALLS_VIEW);
     }
   });
 
-  it("does NOT grant STAFF.LATEST_CALLS_VIEW to ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR base roles", () => {
+  it("grants latest calls to admin tiers but not contact initiators", () => {
+    expect(permissionsForPersona(USER_ROLES.CONTACT_INITIATOR)).not.toContain(
+      P.STAFF.LATEST_CALLS_VIEW,
+    );
     for (const role of [
       USER_ROLES.ADMIN,
       USER_ROLES.SUPER_ADMIN,
       USER_ROLES.SUPER_SALES,
-      USER_ROLES.CONTACT_INITIATOR,
     ]) {
-      expect(getPermissionsForRole(role)).not.toContain(P.STAFF.LATEST_CALLS_VIEW);
+      expect(permissionsForPersona(role)).toContain(P.STAFF.LATEST_CALLS_VIEW);
     }
   });
 
-  it("isSuperSales does NOT layer the staff latest-calls code", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.SUPER_SALES, isSuperSales: true });
-    expect(permissions).not.toContain(P.STAFF.LATEST_CALLS_VIEW);
+  it("SUPER_SALES receives latest calls from its active profile", () => {
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.SUPER_SALES, { superSales: true }) });
+    expect(permissions).toContain(P.STAFF.LATEST_CALLS_VIEW);
   });
 });
 

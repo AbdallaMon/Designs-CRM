@@ -1,7 +1,7 @@
 // leads/lead — STAFF sub-resource orchestration (notes / call & meeting reminders /
 // price offers / files). Extracted VERBATIM from lead.usecase.js (behavior-preserving;
-// no logic/value change). Imported back into lead.usecase.js and wired into the
-// `legacyDefaults` DI seam there; `getCallReminders` is re-exported from lead.usecase.js
+// no logic/value change). Imported directly by lead.usecase.js; `getCallReminders`
+// is re-exported from lead.usecase.js
 // (consumed by admin-residual/staff). Prisma NEVER appears here (only repo calls); the
 // interleaved notification / telegram side effects run from their infra locations.
 import dayjs from "dayjs";
@@ -36,7 +36,7 @@ dayjs.extend(timezone);
 // ════════════════════════════════════════════════════════════════════════════════
 export async function createNote({ clientLeadId, userId, content }) {
   if (!content.trim()) {
-    throw new AppError(leadsMessagesCodes.NOTE_CONTENT_EMPTY, 400);
+    throw new AppError({ code: leadsMessagesCodes.NOTE_CONTENT_EMPTY, statusCode: 400 });
   }
 
   const newNote = await leadRepository.createNoteRecord({
@@ -69,7 +69,7 @@ export async function createCallReminder({
 
   let formattedTime = dayjs(time).tz(userTimezone).utc(); // Convert to UTC
   if (formattedTime.isBefore(dayjs().utc())) {
-    throw new AppError(leadsMessagesCodes.REMINDER_TIME_IN_PAST, 400);
+    throw new AppError({ code: leadsMessagesCodes.REMINDER_TIME_IN_PAST, statusCode: 400 });
   }
   formattedTime = formattedTime.toDate().toISOString();
   const newReminder = await leadRepository.createCallReminderRecord({
@@ -95,16 +95,16 @@ export async function createMeetingReminder({
   currentUser,
 }) {
   if (
-    currentUser.role === "THREE_D_DESIGNER" ||
-    currentUser.role === "TWO_D_DESIGNER"
+    currentUser.currentProfileKey === "DESIGNER_3D" ||
+    currentUser.currentProfileKey === "DESIGNER_2D"
   ) {
-    throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
+    throw new AppError({ code: leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, statusCode: 403 });
   }
   const userTimezone = dayjs.tz.guess(); // Detect user's timezone
 
   let formattedTime = dayjs(time).tz(userTimezone).utc();
   if (formattedTime.isBefore(dayjs().utc())) {
-    throw new AppError(leadsMessagesCodes.REMINDER_TIME_IN_PAST, 400);
+    throw new AppError({ code: leadsMessagesCodes.REMINDER_TIME_IN_PAST, statusCode: 400 });
   }
   formattedTime = formattedTime.toDate().toISOString();
   const submittedTime = dayjs(formattedTime); // already UTC ISO
@@ -120,7 +120,7 @@ export async function createMeetingReminder({
       maxTime,
     });
     if (!matchingSlot) {
-      throw new AppError(leadsMessagesCodes.NO_AVAILABLE_SLOT, 400);
+      throw new AppError({ code: leadsMessagesCodes.NO_AVAILABLE_SLOT, statusCode: 400 });
     }
     data.time = matchingSlot.startTime;
     data.availableSlotId = matchingSlot.id;
@@ -160,10 +160,10 @@ export async function createMeetingReminderWithToken({
   currentUser,
 }) {
   if (
-    currentUser.role === "THREE_D_DESIGNER" ||
-    currentUser.role === "TWO_D_DESIGNER"
+    currentUser.currentProfileKey === "DESIGNER_3D" ||
+    currentUser.currentProfileKey === "DESIGNER_2D"
   ) {
-    throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
+    throw new AppError({ code: leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, statusCode: 403 });
   }
   const token = uuidv4();
 
@@ -189,7 +189,7 @@ export async function createMeetingReminderWithToken({
     });
 
     if (!availableSlot) {
-      throw new AppError(leadsMessagesCodes.NO_AVAILABLE_SLOT, 400);
+      throw new AppError({ code: leadsMessagesCodes.NO_AVAILABLE_SLOT, statusCode: 400 });
     }
   }
   if (type) {
@@ -208,7 +208,7 @@ export async function createMeetingReminderWithToken({
 
 export async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
   if (priceOffer.minPrice > priceOffer.maxPrice) {
-    throw new AppError(leadsMessagesCodes.PRICE_OFFER_RANGE_INVALID, 400);
+    throw new AppError({ code: leadsMessagesCodes.PRICE_OFFER_RANGE_INVALID, statusCode: 400 });
   }
   const newPrice = await leadRepository.createPriceOfferRecord({
     clientLeadId,
@@ -228,7 +228,7 @@ export async function createFile({
   userId,
 }) {
   if (!url || !name) {
-    throw new AppError(leadsMessagesCodes.FILE_FIELDS_REQUIRED, 400);
+    throw new AppError({ code: leadsMessagesCodes.FILE_FIELDS_REQUIRED, statusCode: 400 });
   }
   const data = {
     name,
@@ -279,7 +279,9 @@ async function assertNextTouchPlanned({ clientLeadId, exclude, status, next, noF
     ...exclude,
   });
   if (!hasFuture) {
-    throw new AppError(leadsMessagesCodes.NEXT_TOUCH_REQUIRED, 422, null, {
+    throw new AppError({
+      code: leadsMessagesCodes.NEXT_TOUCH_REQUIRED,
+      statusCode: 422,
       reason:
         "closing the last touchpoint on an active lead — schedule the next touch or record why none is needed",
     });
@@ -328,9 +330,9 @@ export async function updateCallReminderStatus({
   const callReminder = await leadRepository.findCallReminderOwner({
     reminderId,
   });
-  if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
+  if (!currentUser.isAdminTier) {
     if (callReminder.user.id !== currentUser.id) {
-      throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
     }
   }
   await assertNextTouchPlanned({
@@ -369,18 +371,18 @@ export async function updateMeetingReminderStatus({
   noFollowUp = null,
 }) {
   if (
-    currentUser.role === "THREE_D_DESIGNER" ||
-    currentUser.role === "TWO_D_DESIGNER"
+    currentUser.currentProfileKey === "DESIGNER_3D" ||
+    currentUser.currentProfileKey === "DESIGNER_2D"
   ) {
-    throw new AppError(leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, 403);
+    throw new AppError({ code: leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, statusCode: 403 });
   }
 
   const meetingReminder = await leadRepository.findMeetingReminderOwner({
     reminderId,
   });
-  if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
+  if (!currentUser.isAdminTier) {
     if (meetingReminder.user.id !== currentUser.id) {
-      throw new AppError(leadsMessagesCodes.LEAD_MUTATE_DENIED, 403);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
     }
   }
   await assertNextTouchPlanned({

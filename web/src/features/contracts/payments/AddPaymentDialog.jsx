@@ -65,7 +65,7 @@ export default function AddPaymentDialog({
     const req = await handleRequestSubmit(
       payload,
       setLoading,
-      `shared/contracts/${contractId}/payments`,
+      `contracts/${contractId}/payments`,
       false,
       "Updating"
     );

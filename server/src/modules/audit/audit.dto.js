@@ -12,9 +12,10 @@ export class AuditDto {
       actor: {
         id: row.actorUserId,
         name: user?.name ?? null,
-        // Prefer the role snapshot captured at action time; fall back to the
-        // actor's current role.
-        role: row.actorRole ?? user?.role ?? null,
+        profile:
+          row.actorRole ??
+          user?.currentProfile?.key ??
+          null,
       },
       module: row.module,
       action: row.action,

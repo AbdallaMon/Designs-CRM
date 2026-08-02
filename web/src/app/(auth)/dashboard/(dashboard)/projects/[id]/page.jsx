@@ -6,10 +6,10 @@ import ProjectPage from "@/features/work-stages/projects/ProjectPage";
 export default function Page() {
   const { user } = useAuth();
   const params = useParams();
-  if (!user?.role) return null;
+  if (!user?.profile) return null;
   const { id } = params;
 
-  if (user.role === "THREE_D_DESIGNER" || user.role === "TWO_D_DESIGNER") {
+  if (user.profile === "DESIGNER_3D" || user.profile === "DESIGNER_2D") {
     return <ProjectPage id={id} isStaff={true} />;
   }
   return <ProjectPage id={id} />;

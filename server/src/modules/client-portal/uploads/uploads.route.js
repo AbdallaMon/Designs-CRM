@@ -15,20 +15,15 @@
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { uploadsController } from "./uploads.controller.js";
-import { chunkUpload, memoryUpload } from "./uploads.middleware.js";
+import { memoryUpload } from "./uploads.middleware.js";
+import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 
 const router = Router();
 
 // POST /v2/client/upload-chunk
 router.post(
-  "/upload-chunk",
-  chunkUpload.single("chunk"),
-  asyncHandler(uploadsController.uploadChunk),
-);
-
-// POST /v2/client/api/upload
-router.post(
   "/api/upload",
+  AuthMiddleware.requireSpecialChecker(uploadsController.authorizeInternalUpload),
   memoryUpload.single("file"),
   asyncHandler(uploadsController.uploadHttp),
 );

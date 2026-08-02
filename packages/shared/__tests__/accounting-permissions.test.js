@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -26,16 +26,22 @@ describe("accounting permission grants", () => {
   });
 
   it("grants the full accounting surface to the ACCOUNTANT role (legacy ACCOUNTANT gate)", () => {
-    const codes = getPermissionsForRole(USER_ROLES.ACCOUNTANT);
+    const codes = permissionsForPersona(USER_ROLES.ACCOUNTANT);
     for (const code of ACCOUNTING_ALL) {
       expect(codes).toContain(code);
     }
   });
 
-  it("does NOT grant ANY accounting code to non-accountant roles (incl. ADMIN/SUPER_ADMIN)", () => {
+  it("does not grant accounting codes outside accountant/admin profiles", () => {
     for (const role of ALL_USER_ROLES) {
-      if (role === USER_ROLES.ACCOUNTANT) continue;
-      const codes = getPermissionsForRole(role);
+      if (
+        [USER_ROLES.ACCOUNTANT, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN].includes(
+          role,
+        )
+      ) {
+        continue;
+      }
+      const codes = permissionsForPersona(role);
       for (const code of ACCOUNTING_ALL) {
         expect(codes).not.toContain(code);
       }
@@ -43,22 +49,22 @@ describe("accounting permission grants", () => {
   });
 
   it("isSuperSales does NOT layer accounting codes (legacy gate did not admit isSuperSales)", () => {
-    const { permissions } = getEffectivePermissions({ role: USER_ROLES.STAFF, isSuperSales: true });
+    const { permissions } = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF, { superSales: true }) });
     for (const code of ACCOUNTING_ALL) {
       expect(permissions).not.toContain(code);
     }
   });
 
   it("an ACCOUNTANT can process payments + pay salaries; a STAFF/designer cannot", () => {
-    const acc = getEffectivePermissions({ role: USER_ROLES.ACCOUNTANT }).permissions;
+    const acc = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.ACCOUNTANT ) }).permissions;
     expect(acc).toContain(P.ACCOUNTING.PAYMENT_PROCESS);
     expect(acc).toContain(P.ACCOUNTING.SALARY_PAY);
 
-    const staff = getEffectivePermissions({ role: USER_ROLES.STAFF }).permissions;
+    const staff = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF ) }).permissions;
     expect(staff).not.toContain(P.ACCOUNTING.PAYMENT_PROCESS);
     expect(staff).not.toContain(P.ACCOUNTING.SALARY_PAY);
 
-    const designer = getEffectivePermissions({ role: USER_ROLES.THREE_D_DESIGNER }).permissions;
+    const designer = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.THREE_D_DESIGNER ) }).permissions;
     expect(designer).not.toContain(P.ACCOUNTING.PAYMENT_PROCESS);
   });
 });

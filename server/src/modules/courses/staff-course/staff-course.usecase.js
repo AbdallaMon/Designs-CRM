@@ -18,10 +18,10 @@ class StaffCourseUsecase {
   async checkIfUserCanAccessAttempt({ attemptId, authUserId }) {
     const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
     if (!attempt) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
     }
     if (attempt.userId !== authUserId) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, 403);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
     }
     return attempt;
   }
@@ -34,23 +34,22 @@ class StaffCourseUsecase {
   async checkIfUserCanMutateAttempt({ attemptId, authUserId }) {
     const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
     if (!attempt) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
     }
     if (attempt.userId !== authUserId) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, 403);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
     }
     return attempt;
   }
 
   // ── courses ───────────────────────────────────────────────────────────────────
-  async listCourses({ role, skip, take }) {
-    return staffCourseRepository.listPublishedCoursesForRole({ role, skip, take });
+  async listCourses({ skip, take }) {
+    return staffCourseRepository.listPublishedCourses({ skip, take });
   }
 
-  async getCourse({ courseId, role, userId }) {
-    const course = await staffCourseRepository.getPublishedCourseForRole({
+  async getCourse({ courseId, userId }) {
+    const course = await staffCourseRepository.getPublishedCourse({
       courseId,
-      role,
       userId,
     });
     if (!course) return null;
@@ -81,13 +80,12 @@ class StaffCourseUsecase {
   }
 
   // ── lessons ──────────────────────────────────────────────────────────────────
-  async getLesson({ role, lessonId, userId }) {
-    const lesson = await staffCourseRepository.getPreviewableLessonForRole({
+  async getLesson({ lessonId, userId }) {
+    const lesson = await staffCourseRepository.getPreviewableLesson({
       lessonId,
-      role,
     });
     if (!lesson) {
-      throw new AppError(coursesMessagesCodes.LESSON_NOT_FOUND, 404);
+      throw new AppError({ code: coursesMessagesCodes.LESSON_NOT_FOUND, statusCode: 404 });
     }
     await this.assertCanAccessLesson({ lesson, userId });
     return lesson;
@@ -101,7 +99,7 @@ class StaffCourseUsecase {
       userId,
     });
     if (!access) {
-      throw new AppError(coursesMessagesCodes.LESSON_ACCESS_DENIED, 403);
+      throw new AppError({ code: coursesMessagesCodes.LESSON_ACCESS_DENIED, statusCode: 403 });
     }
     await this.assertPreviousLessonsCleared({
       courseId: lesson.courseId,
@@ -150,10 +148,7 @@ class StaffCourseUsecase {
     }
 
     if (!allPreviousCompleted || !allPreviousTestsPassed) {
-      throw new AppError(
-        coursesMessagesCodes.PREVIOUS_LESSONS_INCOMPLETE,
-        403,
-      );
+      throw new AppError({ code: coursesMessagesCodes.PREVIOUS_LESSONS_INCOMPLETE, statusCode: 403 });
     }
   }
 
@@ -247,7 +242,7 @@ class StaffCourseUsecase {
   // correctly rejected. Same observable result/shape as before for serial callers.
   async createAttempt({ testId, userId }) {
     const test = await staffCourseRepository.getTestById({ testId });
-    if (!test) throw new AppError(coursesMessagesCodes.TEST_NOT_FOUND, 404);
+    if (!test) throw new AppError({ code: coursesMessagesCodes.TEST_NOT_FOUND, statusCode: 404 });
 
     return staffCourseRepository.runTransaction(async (tx) => {
       const last = await staffCourseRepository.getLastUserAttemptForUpdate({
@@ -258,7 +253,7 @@ class StaffCourseUsecase {
       const attemptLimit = Math.max(last?.attemptLimit ?? 0, test.attemptLimit);
 
       if (last && last.attemptCount >= last.attemptLimit) {
-        throw new AppError(coursesMessagesCodes.ATTEMPT_LIMIT_REACHED, 400);
+        throw new AppError({ code: coursesMessagesCodes.ATTEMPT_LIMIT_REACHED, statusCode: 400 });
       }
 
       const created = await staffCourseRepository.createAttempt({
@@ -285,21 +280,21 @@ class StaffCourseUsecase {
   async submitAnswer({ answer, attemptId, questionId, testId, authUserId }) {
     const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
     if (!attempt) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
     }
     if (authUserId != null && attempt.userId !== authUserId) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, 403);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
     }
     if (attempt.endTime) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, 409);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
     }
     if (testId != null && attempt.testId !== testId) {
-      throw new AppError(coursesMessagesCodes.QUESTION_TEST_MISMATCH, 400);
+      throw new AppError({ code: coursesMessagesCodes.QUESTION_TEST_MISMATCH, statusCode: 400 });
     }
 
     const question = await staffCourseRepository.getQuestionTestId({ questionId });
     if (!question || question.testId !== attempt.testId) {
-      throw new AppError(coursesMessagesCodes.QUESTION_TEST_MISMATCH, 400);
+      throw new AppError({ code: coursesMessagesCodes.QUESTION_TEST_MISMATCH, statusCode: 400 });
     }
 
     const existing = await staffCourseRepository.findExistingAnswer({
@@ -346,10 +341,10 @@ class StaffCourseUsecase {
   // pass it, so a staff PUT on a finalized attempt (endTime set) is rejected (H1).
   async endAttempt({ attemptId, reScore = false }) {
     const attempt = await staffCourseRepository.getAttemptForScoring({ attemptId });
-    if (!attempt) throw new AppError(coursesMessagesCodes.ATTEMPT_NOT_FOUND, 404);
+    if (!attempt) throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
 
     if (!reScore && attempt.endTime) {
-      throw new AppError(coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, 409);
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
     }
 
     const totalQuestions = attempt.test.questions.length;

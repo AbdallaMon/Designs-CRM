@@ -23,7 +23,7 @@ const IncomeOverTimeChart = ({staff,staffId}) => {
         async function fetchData(){
             const extra=staffId?"staffId="+staffId:staff?"staffId="+user.id:""
 
-            const request=await getData({url:`shared/dashboard/monthly-performance?${extra}&`,setLoading})
+            const request=await getData({url:`dashboard/monthly-performance?${extra}&`,setLoading})
             if(request)setData(request.data)
         }
         fetchData()

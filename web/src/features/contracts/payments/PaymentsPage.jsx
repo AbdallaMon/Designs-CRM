@@ -243,7 +243,7 @@ function PaymentAmountsDialog({ open, onClose, payment, onSave, loading }) {
         status,
       },
       setLoading,
-      `shared/contracts/payments/${payment.id}/actions/update-amounts`,
+      `contracts/payments/${payment.id}/actions/update-amounts`,
       false,
       "Updating amounts",
       false
@@ -433,7 +433,7 @@ export default function ContractPaymentsPage() {
     // envelope was unwrapped in normalizeEnvelope), plus `total`/`totalPages`/`page`.
     // This page's UI reads an object with `.items`, so re-wrap the array back into it.
     const res = await getData({
-      url: "shared/contracts/payments/all",
+      url: "contracts/payments/all",
       setLoading,
       page,
       limit,
@@ -476,7 +476,7 @@ export default function ContractPaymentsPage() {
     const req = await handleRequestSubmit(
       { status: newStatus },
       setLoading,
-      `shared/contracts/payments/${paymentId}/actions/change-status`,
+      `contracts/payments/${paymentId}/actions/change-status`,
       false,
       "Updating",
       false

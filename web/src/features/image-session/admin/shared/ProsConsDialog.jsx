@@ -60,7 +60,7 @@ const ProsConsDialog = ({
     const req = await handleRequestSubmit(
       { type, id, item, itemType },
       setSaving,
-      `admin/image-session/pros-and-cons`,
+      `image-sessions/admin/pros-and-cons`,
       false,
       "Saving"
     );
@@ -73,7 +73,7 @@ const ProsConsDialog = ({
     const req = await handleRequestSubmit(
       { id: id, itemType: itemType },
       setSaving,
-      `admin/image-session/pros-and-cons/${id}`,
+      `image-sessions/admin/pros-and-cons/${id}`,
       false,
       "Saving",
       false,
@@ -88,7 +88,7 @@ const ProsConsDialog = ({
     const req = await handleRequestSubmit(
       { id, item, itemType },
       setSaving,
-      `admin/image-session/pros-and-cons/${id}`,
+      `image-sessions/admin/pros-and-cons/${id}`,
       false,
       "Saving",
       false,
@@ -158,7 +158,7 @@ const ProsConsDialog = ({
     const req = await handleRequestSubmit(
       { itemType: isOrderDirty, data: isOrderDirty === "PRO" ? pros : cons },
       setSaving,
-      `admin/image-session/pros-and-cons/order/`,
+      `image-sessions/admin/pros-and-cons/order/`,
       false,
       "Saving"
     );

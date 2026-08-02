@@ -9,27 +9,27 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { toArabicNumerals } from "../helpers";
+import { formatNumber } from "../helpers";
 
 const NewAttemptDialog = ({ open, onClose, test, onConfirm }) => (
   <Dialog open={open} onClose={onClose}>
-    <DialogTitle>بدء محاولة اختبار جديدة</DialogTitle>
+    <DialogTitle>Start a new test attempt</DialogTitle>
     <DialogContent>
       <Typography variant="body1" sx={{ mb: 2 }}>
-        أنت على وشك بدء محاولة اختبار جديدة.
+        You are about to start a new test attempt.
         {test.timeLimit &&
-          ` سيكون لديك ${toArabicNumerals(
+          ` You will have ${formatNumber(
             test.timeLimit
-          )} دقيقة لإكمال الاختبار.`}
+          )} minutes to complete the test.`}
       </Typography>
       <Alert severity="warning">
-        تأكد من أن لديك اتصال إنترنت مستقر ووقت كافي لإكمال الاختبار.
+        Make sure you have a stable internet connection and enough time to finish the test.
       </Alert>
     </DialogContent>
     <DialogActions>
-      <Button onClick={onClose}>إلغاء</Button>
+      <Button onClick={onClose}>Cancel</Button>
       <Button onClick={onConfirm} variant="contained">
-        بدء الاختبار
+        Start test
       </Button>
     </DialogActions>
   </Dialog>

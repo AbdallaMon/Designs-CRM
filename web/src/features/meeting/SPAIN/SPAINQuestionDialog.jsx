@@ -34,7 +34,7 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
 
     const fetchCategories = async () => {
       const response = await getData({
-        url: `shared/questions/question-types/${clientLeadId}?`,
+        url: `questions/question-types/${clientLeadId}?`,
         setLoading,
       });
       if (response.status === 200) {
@@ -200,7 +200,7 @@ export const SPAINQuestionsDialog = ({ clientLeadId }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
-  if (!isAdmin && user.role !== "STAFF") {
+  if (!isAdmin && !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) {
     return null;
   }
 

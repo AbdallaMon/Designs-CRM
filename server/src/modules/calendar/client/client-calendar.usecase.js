@@ -18,6 +18,8 @@ import { sendReminderCreatedToClient } from "../../../infra/mail/email-templates
 import { createCalendarEvent } from "../../../infra/google/google-calendar.client.js";
 import { clientCalendarRepository } from "./client-calendar.repo.js";
 import { shapeCalendarTokenData } from "../calendar.dto.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { calendarMessagesCodes } from "@dms/shared";
 import {
   getAvailableDaysImpl,
   getAvailableSlotsForDayImpl,
@@ -64,16 +66,16 @@ export async function bookAMeeting({
 export async function verifySlotIsAvailableAndNotBooked({ slotId }) {
   const slotData = await clientCalendarRepository.findSlotById(slotId);
   if (!slotData) {
-    throw new Error("Slot not found,please select another slot");
+    throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
   }
   if (slotData.isBooked) {
-    throw new Error("Slot is already booked, please select another slot");
+    throw new AppError({ code: calendarMessagesCodes.SLOT_ALREADY_BOOKED, statusCode: 409 });
   }
   return slotData;
 }
 
 export async function verifyAndExtractCalendarToken(token) {
-  if (!token) throw new Error("No token provided");
+  if (!token) throw new AppError({ code: calendarMessagesCodes.BOOKING_TOKEN_REQUIRED, statusCode: 401 });
 
   const tokenData = await clientCalendarRepository.findReminderByToken(token);
   return shapeCalendarTokenData(tokenData);
@@ -89,7 +91,7 @@ export async function assignSlotToMeeting({
   const slot = await clientCalendarRepository.findSlotForAssign(slotId);
 
   if (!slot || slot.isBooked)
-    throw new Error("Time already booked book another");
+    throw new AppError({ code: calendarMessagesCodes.SLOT_ALREADY_BOOKED, statusCode: 409 });
 
   const reminder = await clientCalendarRepository.assignSlotToReminder({
     meetingReminderId,

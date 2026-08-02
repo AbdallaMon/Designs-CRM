@@ -4,6 +4,7 @@
 // usecase; the limiter caps brute-force/spam attempts (e.g. probing selectedImageIds, flooding
 // notes). Mirrors the booking-lead limiter pattern (express-rate-limit).
 import rateLimit from "express-rate-limit";
+import { rateLimitResponse } from "../../../shared/http/rate-limit-response.js";
 
 // Writes are the sensitive path (each creates a Note authored as ADMIN). Keep it modest — a
 // real client adds a handful of notes across a session.
@@ -12,7 +13,7 @@ export const clientNotesWriteLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many notes submitted, please try again later" },
+  message: rateLimitResponse(),
 });
 
 // Reads happen on every notes-modal open; allow more but still bound enumeration attempts.
@@ -21,5 +22,5 @@ export const clientNotesReadLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many requests, please try again later" },
+  message: rateLimitResponse(),
 });

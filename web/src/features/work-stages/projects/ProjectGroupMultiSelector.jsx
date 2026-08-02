@@ -31,7 +31,7 @@ export default function ProjectGroupMultiSelect({
   console.log(groups, "groups");
   const fetchGroups = async () => {
     await getDataAndSet({
-      url: `shared/projects/${clientLeadId}/groups`,
+      url: `projects/${clientLeadId}/groups`,
       setData: setGroups,
       setLoading,
     });

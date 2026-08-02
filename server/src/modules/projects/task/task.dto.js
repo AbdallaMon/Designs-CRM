@@ -7,7 +7,7 @@ import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
 const P = PERMISSIONS;
 
 function isAdmin(authUser) {
-  return Boolean(authUser?.isAdminTier) || ["ADMIN", "SUPER_ADMIN"].includes(authUser?.role);
+  return Boolean(authUser?.isAdminTier);
 }
 
 export function computeTaskCapabilities(record, authUser) {

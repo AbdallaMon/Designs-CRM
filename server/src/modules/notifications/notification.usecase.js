@@ -82,8 +82,8 @@ export async function createNotification(
   contentType = "TEXT",
   clientLeadId,
   staffId,
-  role = ["STAFF"],
-  specifiRole,
+  profileKeys = ["NORMAL_SALES"],
+  specificProfiles,
 ) {
   await getNotificationQueue().add("deliver", {
     userId,
@@ -96,8 +96,8 @@ export async function createNotification(
     contentType,
     clientLeadId,
     staffId,
-    role,
-    specifiRole,
+    profileKeys,
+    specificProfiles,
   });
 }
 
@@ -112,8 +112,8 @@ export async function deliverNotification({
   contentType = "TEXT",
   clientLeadId,
   staffId,
-  role = ["STAFF"],
-  specifiRole,
+  profileKeys = ["NORMAL_SALES"],
+  specificProfiles,
 }) {
   let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
@@ -148,9 +148,9 @@ export async function deliverNotification({
       });
     }
   }
-  if (specifiRole) {
-    const users = await notificationRepository.findActiveUsersByRoles({
-      roles: role,
+  if (specificProfiles) {
+    const users = await notificationRepository.findActiveUsersByProfiles({
+      profileKeys,
     });
     users?.map(async (user) => {
       await sendNotification(
@@ -205,7 +205,7 @@ async function sendNotification(
   staffId,
 ) {
   const link = href
-    ? `<a href="${process.env.LEGACY_DASHBOARD_ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
+    ? `<a href="${process.env.DASHBOARD_ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
     : "";
   const emailContent = `
         <div style=" color: #333; direction: ltr; text-align: left;">
@@ -237,7 +237,7 @@ async function sendNotification(
         ${emailContent}
     </div>
     <div style="margin-top: 10px;">
-        <a href="${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
+        <a href="${process.env.DASHBOARD_ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
             Go to notifications?
         </a>
     </div>

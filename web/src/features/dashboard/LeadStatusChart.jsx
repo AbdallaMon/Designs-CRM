@@ -55,7 +55,7 @@ const LeadStatusChart = ({ staff, staffId }) => {
         : "";
 
       const request = await getData({
-        url: `shared/dashboard/leads-status?${extra}&`,
+        url: `dashboard/leads-status?${extra}&`,
         setLoading,
       });
       if (request) setData(request.data);

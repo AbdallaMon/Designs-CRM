@@ -28,6 +28,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import {STATUS_COLORS} from "@/app/helpers/colors.js";
 import {statusColors} from "@/app/helpers/constants";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 
 const LeadReportFilters = () => {
     const [filters, setFilters] = useState({
@@ -84,7 +85,7 @@ const LeadReportFilters = () => {
     const fetchReportData = async () => {
         setLoading(true);
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_URL+'/admin/reports/lead-report', {
+            const response = await apiRequest('admin/reports/lead-report', {
                 method: 'POST',
                 credentials: "include",
                 headers: {
@@ -92,10 +93,11 @@ const LeadReportFilters = () => {
                 },
                 body: JSON.stringify(filters),
             });
-            const data = await response.json();
-            // Only render a real report payload; an error body (no summary/leads) must not
+            const envelope = await response.json();
+            const data = envelope?.data;
+            // Only render a real report payload; an error envelope must not
             // reach the renderer or it crashes reading `summary`/`leads`.
-            if (response.ok && data?.summary) {
+            if (response.ok && envelope?.success && data?.summary) {
                 setReportData(data);
             } else {
                 console.error('Lead report request failed:', response.status, data);
@@ -110,7 +112,7 @@ const LeadReportFilters = () => {
 
     const downloadExcel = async () => {
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_URL+'/admin/reports/lead-report/excel', {
+            const response = await apiRequest('admin/reports/lead-report/excel', {
                 method: 'POST',
                 credentials: "include",
                 headers: {
@@ -133,7 +135,7 @@ const LeadReportFilters = () => {
 
     const downloadPDF = async () => {
         try {
-            const response = await fetch(process.env.NEXT_PUBLIC_URL+'/admin/reports/lead-report/pdf', {
+            const response = await apiRequest('admin/reports/lead-report/pdf', {
                 method: 'POST',
                 credentials: "include",
                 headers: {

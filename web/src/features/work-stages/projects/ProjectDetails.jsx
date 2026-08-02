@@ -124,7 +124,7 @@ export const ProjectDetails = ({
   const [deleteDesigner, setDeleteDesigner] = useState(false);
   const { setLoading } = useToastContext();
   const { user } = useAuth();
-  const cantDoActions = user.role === "STAFF";
+  const cantDoActions = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile);
   const { setAlertError } = useAlertContext();
   const isAdmin = checkIfAdmin(user);
   const isDesigner = checkIfADesigner(user);
@@ -176,7 +176,7 @@ export const ProjectDetails = ({
         id: project.id,
       },
       setLoading,
-      `shared/designers/${project.clientLeadId}/actions/change-status`,
+      `projects/designers/${project.clientLeadId}/actions/change-status`,
       false,
       "Updating",
       null,
@@ -212,7 +212,7 @@ export const ProjectDetails = ({
     const updatedProject = await handleRequestSubmit(
       editedProject,
       setLoading,
-      `shared/projects/${project.id}`,
+      `projects/${project.id}`,
       false,
       "Updating",
       false,

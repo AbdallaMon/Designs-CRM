@@ -26,9 +26,24 @@ const P = PERMISSIONS;
 const ADMIN_PERMS = [P.PROJECT.EDIT, P.PROJECT.MANAGE, P.TASK.CREATE, P.DELIVERY.CREATE];
 const DESIGNER_PERMS = [P.PROJECT.EDIT, P.TASK.CREATE, P.DELIVERY.CREATE]; // NO project.manage
 
-const admin = { id: 1, role: "ADMIN", permissions: ADMIN_PERMS };
-const assignedDesigner = { id: 4, role: "THREE_D_DESIGNER", permissions: DESIGNER_PERMS };
-const otherDesigner = { id: 7, role: "TWO_D_DESIGNER", permissions: DESIGNER_PERMS };
+const admin = {
+  id: 1,
+  currentProfileKey: "ADMIN",
+  isAdminTier: true,
+  permissions: ADMIN_PERMS,
+};
+const assignedDesigner = {
+  id: 4,
+  currentProfileKey: "DESIGNER_3D",
+  isAdminTier: false,
+  permissions: DESIGNER_PERMS,
+};
+const otherDesigner = {
+  id: 7,
+  currentProfileKey: "DESIGNER_2D",
+  isAdminTier: false,
+  permissions: DESIGNER_PERMS,
+};
 
 // Shape returned by legacy getLeadDetailsByProject (designerLeadDetail): a clientLead
 // carrying nested projects[], each project selecting assignments { user { id } }.

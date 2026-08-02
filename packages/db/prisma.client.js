@@ -1,7 +1,6 @@
 // The ONE singleton Prisma client for the whole monorepo.
 //
-// IMPORTANT (Stage 1 / strangler constraint): this keeps the EXACT generation
-// and instantiation behavior the legacy app already relies on —
+// Keep the canonical Prisma generation and singleton-instantiation behavior:
 //   - default `@prisma/client` output (no custom output dir),
 //   - no driver adapter (the reference's mariadb adapter is intentionally NOT
 //     adopted here),

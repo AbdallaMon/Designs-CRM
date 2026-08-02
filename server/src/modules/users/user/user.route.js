@@ -1,22 +1,5 @@
-// users/user routes — the authenticated user surface, mounted under `/v2/users`
-// (legacy routers stay mounted in parallel during the strangler window). Auth once at
-// the router; each route declares its permission code(s); the self-profile `/:userId/
-// profile` routes ALSO carry the object-scope checker (requireSpecialChecker) — this is
-// the IDOR fix the legacy `/shared/users/:userId/profile` routes lacked.
-//
-// THREE legacy surfaces are merged here, each with its OWN gate (verified against the
-// legacy `verifyTokenAndHandleAuthorization` modes):
-//   - DIRECTORY  (legacy `/shared/all-chat-users`, `/shared/all-related-chat-users`,
-//                 gate "SHARED" → any authed role) → P.DIRECTORY (all authed roles).
-//   - MANAGEMENT (legacy `/admin/users*`, gate "ADMIN" → ADMIN/SUPER_ADMIN/isSuperSales/
-//                 admin sub-role) → per-action management codes (admin-tier only).
-//   - PROFILE    (legacy `/shared/users/:userId/profile`, gate "SHARED") → P.PROFILE_*
-//                 (all authed roles) + the self-OR-admin scope checker (IDOR fix).
-//
-// ROUTE ORDER: literal paths are declared BEFORE the `/:userId` catch-all so they are
-// not shadowed (Express matches in declaration order). NOTE: validate(..,"params") runs
-// AT MOST ONCE per route — the middleware replaces req.params with the parsed object, so
-// a second params-validate would strip the first.
+// Authenticated user API mounted under /v2/users. Every route has a permission code;
+// profile routes additionally enforce object scope. Literal paths precede /:userId.
 import { Router } from "express";
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
@@ -41,11 +24,7 @@ router.get(
   AuthMiddleware.requirePermissions([P.DIRECTORY]),
   asyncHandler(userController.getRelatedChatDirectory),
 );
-// Consolidated chat member-picker directory — replaces the chat FE's TWO legacy calls
-// (`/admin/all-users` for admins, `/shared/all-related-chat-users?projectId=` for staff).
-// The server branches on req.auth (admin-tier vs not) instead of an FE flag. Same broad
-// gate (P.DIRECTORY → every authed role) — preserves the legacy "SHARED"/"ADMIN" gates
-// without widening (admins already pass; the scope split happens in the usecase).
+// The server applies admin/profile directory scope from req.auth.
 router.get(
   "/chat-directory",
   AuthMiddleware.requirePermissions([P.DIRECTORY]),
@@ -61,7 +40,7 @@ router.get(
 // assignable permission profiles for the admin picker (literal — before /:userId)
 router.get(
   "/assignable-profiles",
-  AuthMiddleware.requirePermissions([P.MANAGE_ROLES]),
+  AuthMiddleware.requirePermissions([P.MANAGE_PROFILES]),
   asyncHandler(userController.listProfiles),
 );
 router.get(
@@ -76,7 +55,7 @@ router.post(
   asyncHandler(userController.createUser),
 );
 
-// ── max-leads (legacy literal-prefixed `/max-leads/:userId`) ─────────────────────
+// ── max leads ────────────────────────────────────────────────────────────────────
 router.put(
   "/max-leads/:userId",
   AuthMiddleware.requirePermissions([P.SET_MAX_LEADS]),
@@ -135,19 +114,10 @@ router.post(
   validate(UserValidation.restrictedCountries),
   asyncHandler(userController.updateRestrictedCountries),
 );
-router.put(
-  "/:userId/roles",
-  AuthMiddleware.requirePermissions([P.MANAGE_ROLES]),
-  validate(UserValidation.userIdParams, "params"),
-  validate(UserValidation.manageRoles),
-  asyncHandler(userController.manageRoles),
-);
-// PUT /:userId/profiles — admin assigns the user's permission profiles + current
-// (admin-tier gate: MANAGE_ROLES is granted only to admin profiles, matching the
-// sibling /:userId/roles endpoint — the code is the gate).
+// Admin assigns the user's permission profiles and active profile.
 router.put(
   "/:userId/profiles",
-  AuthMiddleware.requirePermissions([P.MANAGE_ROLES]),
+  AuthMiddleware.requirePermissions([P.MANAGE_PROFILES]),
   validate(UserValidation.userIdParams, "params"),
   validate(UserValidation.updateUserProfiles),
   asyncHandler(userController.updateProfiles),
@@ -165,14 +135,6 @@ router.put(
   validate(UserValidation.manageAutoAssignments),
   asyncHandler(userController.updateAutoAssignments),
 );
-router.patch(
-  "/:userId/staff-extra",
-  AuthMiddleware.requirePermissions([P.MANAGE_STAFF_EXTRA]),
-  validate(UserValidation.userIdParams, "params"),
-  validate(UserValidation.staffExtra),
-  asyncHandler(userController.getStaffExtra),
-);
-
 // Status change is a workflow transition → dedicated action endpoint (not a generic PATCH).
 router.post(
   "/:userId/actions/change-status",

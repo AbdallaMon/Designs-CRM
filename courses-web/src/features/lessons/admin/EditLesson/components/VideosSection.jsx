@@ -58,7 +58,7 @@ const VideosSection = ({ courseId, lessonId }) => {
 
   async function getVideos() {
     await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons/${lessonId}/videos`,
+      url: `courses/${courseId}/lessons/${lessonId}/videos`,
       setLoading,
       setData: setVideoList,
     });
@@ -76,7 +76,7 @@ const VideosSection = ({ courseId, lessonId }) => {
       const req = await handleRequestSubmit(
         newVideo,
         setToastLoading,
-        `admin/courses/${courseId}/lessons/${lessonId}/videos`,
+        `courses/${courseId}/lessons/${lessonId}/videos`,
         false,
         "Creating"
       );
@@ -91,7 +91,7 @@ const VideosSection = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/videos/${id}`,
+      `courses/${courseId}/lessons/${lessonId}/videos/${id}`,
       false,
       "Deleting",
       false,
@@ -112,7 +112,7 @@ const VideosSection = ({ courseId, lessonId }) => {
     const req = await handleRequestSubmit(
       editData,
       setToastLoading,
-      `admin/courses/${courseId}/lessons/${lessonId}/videos/${editingId}`,
+      `courses/${courseId}/lessons/${lessonId}/videos/${editingId}`,
       false,
       "Updating",
       false,

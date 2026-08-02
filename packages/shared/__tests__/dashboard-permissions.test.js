@@ -1,7 +1,7 @@
+import { permissionsForPersona, profileForPersona } from "./profile-fixtures.js";
 import { describe, it, expect } from "vitest";
 import {
   getEffectivePermissions,
-  getPermissionsForRole,
   PERMISSIONS,
   USER_ROLES,
   ALL_USER_ROLES,
@@ -28,15 +28,15 @@ describe("dashboard permission grants", () => {
 
   it("grants dashboard.view to EVERY authed role (legacy SHARED gate parity)", () => {
     for (const role of ALL_USER_ROLES) {
-      const codes = getPermissionsForRole(role);
+      const codes = permissionsForPersona(role);
       expect(codes, `${role} should hold dashboard.view`).toContain(P.DASHBOARD.VIEW);
     }
   });
 
   it("effective permissions for a scoped role include dashboard.view", () => {
-    const staff = getEffectivePermissions({ role: USER_ROLES.STAFF }).permissions;
+    const staff = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.STAFF ) }).permissions;
     expect(staff).toContain(P.DASHBOARD.VIEW);
-    const designer = getEffectivePermissions({ role: USER_ROLES.THREE_D_DESIGNER }).permissions;
+    const designer = getEffectivePermissions({ profile: profileForPersona(USER_ROLES.THREE_D_DESIGNER ) }).permissions;
     expect(designer).toContain(P.DASHBOARD.VIEW);
   });
 });

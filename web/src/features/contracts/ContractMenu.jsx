@@ -33,7 +33,7 @@ export default function ContractMenu({
         canceled: true,
       },
       setLoading,
-      `shared/contracts/${contract.id}/actions/cancel`,
+      `contracts/${contract.id}/actions/cancel`,
       false,
       "Cancelling",
       false,

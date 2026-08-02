@@ -54,7 +54,7 @@ const inputs = [
 ];
 export function FixedData() {
   const { data, loading, setData } = useDataFetcher(
-    "shared/utilities/fixed-data",
+    "utilities/fixed-data",
     false
   );
   return (
@@ -177,7 +177,7 @@ function FixedDataSlider({ data, loading, setData }) {
       }}
     >
       {loading && <LoadingOverlay />}
-      {user.role === "ADMIN" && (
+      {user.profile === "ADMIN" && (
         <Box sx={{ width: "fit-content", ml: "auto" }}>
           <CreateModal
             label={"Create new data"}
@@ -241,7 +241,7 @@ function FixedDataSlider({ data, loading, setData }) {
         {data?.map((item, index) => (
           <SwiperSlide key={index} style={{ width: "auto" }}>
             <FixedCardData
-              admin={user.role === "ADMIN"}
+              admin={user.profile === "ADMIN"}
               data={item}
               setData={setData}
             />

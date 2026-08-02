@@ -18,23 +18,8 @@ import {
 
 import { initialPageLimit } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import PaginationWithLimit from "@/shared/components/common/PaginationWithLimit";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { baseRoleOf } from "@/app/helpers/functions/utility";
-
-const getRoleColor = (role) => {
-  const colors = {
-    STAFF: "#ff9800",
-    THREE_D_DESIGNER: "#4caf50",
-    TWO_D_DESIGNER: "#2196f3",
-    ACCOUNTANT: "#9c27b0",
-    SUPER_ADMIN: "#f44336",
-  };
-  return colors[role] || "#757575";
-};
 
 export default function StaffCourses() {
   const [courses, setCourses] = useState([]);
@@ -43,11 +28,9 @@ export default function StaffCourses() {
   const [limit, setLimit] = useState(initialPageLimit);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const { user } = useAuth();
-
   async function getCourses() {
     await getDataAndSet({
-      url: `shared/courses?role=${baseRoleOf(user)}&`,
+      url: "staff-courses",
       setLoading,
       setData: setCourses,
       page,
@@ -84,7 +67,7 @@ export default function StaffCourses() {
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         {!loading && courses && courses.length === 0 && (
           <Alert severity="error">
-            No Courses Available for your current role
+            No courses are available for your current profile.
           </Alert>
         )}
         <Grid container spacing={3}>

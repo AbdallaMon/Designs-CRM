@@ -1,64 +1,100 @@
-// ايه هو؟ آخر middleware في الـ app. أي throw أو next(err) بيوصل هنا.
-// ليه في shared؟ لأنه بيمسك errors من كل الموديولات (auth, chat, أي حاجه).
-
 import multer from "multer";
+import {
+  generalMessagesCodes,
+  messagesNames,
+} from "@dms/shared";
 import { AppError } from "./AppError.js";
 
-// بيعمل ايه؟ يشوف لو AppError يرجع statusCode بتاعها، لو Error عادي يرجع 500.
+const TK = messagesNames.generalMessages;
+
 export function notFoundHandler(req, res, next) {
-  next(new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404));
+  next(
+    new AppError({
+      code: generalMessagesCodes.NOT_FOUND,
+      statusCode: 404,
+      translationKey: TK,
+      reason: `route not found: ${req.method} ${req.originalUrl}`,
+    }),
+  );
 }
 
-// Global error handler — لازم يكون آخر app.use()
-// Express بيعرف إنه error handler لأن عنده 4 parameters (err, req, res, next)
+function multerCode(error) {
+  if (error.code === "LIMIT_FILE_SIZE") return generalMessagesCodes.FILE_TOO_LARGE;
+  if (error.code === "LIMIT_FILE_COUNT") return generalMessagesCodes.TOO_MANY_FILES;
+  if (error.code === "LIMIT_UNEXPECTED_FILE") {
+    return generalMessagesCodes.UNEXPECTED_FILE_FIELD;
+  }
+  return generalMessagesCodes.FILE_UPLOAD_ERROR;
+}
+
 export function errorHandler(err, req, res, next) {
   console.error("Error caught by errorHandler:", err);
 
   if (err instanceof AppError) {
-    // خطأ متوقع (400, 401, 404, 409, 422 ...)
     return res.status(err.statusCode).json({
       success: false,
-      message: err.message, // CODE (unchanged key the FE already reads via resolveMessage)
+      message: err.message,
       code: err.code,
+      data: null,
       translationKey: err.translationKey,
-      reason: err.reason, // developer-facing "why"
+      reason: err.reason,
       redirectTo: err.redirectTo,
       redirectText: err.redirectText,
       dontRedirect: err.dontRedirect,
-      details: err.details, // e.g. { requiredPermissions: [...] }
+      details: err.details,
       route: `${req.method} ${req.originalUrl}`,
     });
   }
 
   if (err instanceof multer.MulterError) {
+    const code = multerCode(err);
     return res.status(400).json({
       success: false,
-      message: err.message || "File upload error",
-      code: err.code,
+      message: code,
+      code,
+      data: null,
+      translationKey: TK,
+      reason: err.code,
+      redirectTo: null,
+      redirectText: null,
+      dontRedirect: false,
+      details: null,
+      route: `${req.method} ${req.originalUrl}`,
     });
   }
 
-  // خطأ غير متوقع (database crash, bug, etc.)
-  if (err?.code && typeof err.code === "number") {
+  if (Number.isInteger(err?.code) && err.code >= 400 && err.code <= 599) {
+    const code =
+      err.code >= 500
+        ? generalMessagesCodes.INTERNAL_SERVER_ERROR
+        : generalMessagesCodes.UNEXPECTED_ERROR;
     return res.status(err.code).json({
       success: false,
-      message:
-        err.errorMessage || err.message || "An unexpected error occurred",
+      message: code,
+      code,
+      data: null,
+      translationKey: TK,
+      reason: null,
+      redirectTo: null,
+      redirectText: null,
+      dontRedirect: false,
+      details: null,
+      route: `${req.method} ${req.originalUrl}`,
     });
   }
+
   console.error("Unexpected error:", err);
   return res.status(500).json({
     success: false,
-    message: "Internal server error",
+    message: generalMessagesCodes.INTERNAL_SERVER_ERROR,
+    code: generalMessagesCodes.INTERNAL_SERVER_ERROR,
+    data: null,
+    translationKey: TK,
+    reason: null,
+    redirectTo: null,
+    redirectText: null,
+    dontRedirect: false,
+    details: null,
+    route: `${req.method} ${req.originalUrl}`,
   });
 }
-
-// ✅ in app.js (ORDER MATTERS):
-// app.use("/api/auth", authRoutes);   // routes first
-// app.use("/api/chat", chatRoutes);
-// app.use(notFoundHandler);           // then 404
-// app.use(errorHandler);              // then error handler LAST
-
-// ❌ Bad: error handler before routes → will never catch anything
-// app.use(errorHandler);
-// app.use("/api/auth", authRoutes);

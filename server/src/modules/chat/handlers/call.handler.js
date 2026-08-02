@@ -1,3 +1,5 @@
+import { socketErrorEnvelope } from "./socket-error.js";
+
 /**
  * WebRTC call signalling handlers (initiated, answered, ended).
  *
@@ -12,7 +14,7 @@ export function registerCallHandlers(socket, { io, ctx, usecase }) {
       await usecase.initiateCall({ roomId, callType, userId: ctx.userId });
     } catch (err) {
       console.error("call:initiated error:", err);
-      socket.emit("error", { message: err.message || "Error initiating call" });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 
@@ -23,7 +25,7 @@ export function registerCallHandlers(socket, { io, ctx, usecase }) {
       await usecase.answerCall({ callId, roomId, userId: ctx.userId });
     } catch (err) {
       console.error("call:answered error:", err);
-      socket.emit("error", { message: err.message || "Error answering call" });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 
@@ -34,7 +36,7 @@ export function registerCallHandlers(socket, { io, ctx, usecase }) {
       await usecase.endCall({ callId, roomId, userId: ctx.userId });
     } catch (err) {
       console.error("call:ended error:", err);
-      socket.emit("error", { message: err.message || "Error ending call" });
+      socket.emit("error", socketErrorEnvelope(err));
     }
   });
 }

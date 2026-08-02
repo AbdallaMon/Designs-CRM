@@ -1,7 +1,7 @@
 "use client";
 // Per-tab data layer for the lead / deal detail.
 //
-// The lead detail used to fetch ONE big bundle (`shared/client-leads/:id`) and every
+// The lead detail used to fetch ONE big bundle (`leads/:id`) and every
 // tab read its slice from that object. This provider splits that into:
 //   • a CORE/shared lead (identity, status, contract, payment, projects…) that the
 //     header + the Details tab + several tabs always need — fetched once by PreviewLead
@@ -27,7 +27,7 @@ import {
 import { apiRequest, normalizeEnvelope } from "@/app/helpers/functions/apiClient";
 
 // tab key → endpoint. A STRING is a sub-resource appended to the lead base url
-// (`shared/client-leads/:id/<string>`). A FUNCTION receives the lead id and returns
+// (`leads/:id/<string>`). A FUNCTION receives the lead id and returns
 // a FULL path, for tabs whose resource does not hang off the lead base url.
 const TAB_ENDPOINTS = {
   notes: "notes",
@@ -35,8 +35,8 @@ const TAB_ENDPOINTS = {
   meetings: "meetings",
   files: "files",
   priceOffers: "price-offers",
-  salesStage: (leadId) => `shared/sales-stages/${leadId}`,
-  cockpit: (leadId) => `shared/client-leads/${leadId}/cockpit`,
+  salesStage: (leadId) => `sales-stages/${leadId}`,
+  cockpit: (leadId) => `leads/${leadId}/cockpit`,
 };
 
 const EMPTY_TAB = { data: undefined, loading: false, loaded: false, error: null };
@@ -61,7 +61,7 @@ export function LeadDetailsProvider({
   children,
   lead,
   setLead,
-  leadBaseUrl, // e.g. `shared/client-leads/123`
+  leadBaseUrl, // e.g. `leads/123`
   setRerenderColumns, // kanban column re-render toggles (absent in full-page mode)
 }) {
   // per-tab cache: { [key]: { data, loading, loaded, error } }

@@ -7,7 +7,7 @@ export * from "./messages-names.js";
 export * from "./messages-codes/index.js";
 export * from "./constants/access/permissions.constants.js";
 export * from "./constants/access/roles.constants.js";
-export * from "./constants/access/role-permissions.js";
+export * from "./constants/access/profile-permission-blocks.js";
 export * from "./constants/access/navigation.js";
 export * from "./constants/access/profiles.js";
 export * from "./constants/access/audit-actions.js";

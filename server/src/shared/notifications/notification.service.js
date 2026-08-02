@@ -20,6 +20,8 @@ import prisma from "../../infra/prisma/prisma.js";
 import { getIo } from "../../infra/socket/index.js";
 import { sendEmail } from "../../infra/mail/mail.js";
 import { CONTENT_TYPES, EMAIL_TEMPLATES } from "./notification.constants.js";
+import { generalMessagesCodes } from "@dms/shared";
+import { AppError } from "../errors/AppError.js";
 
 /**
  * Internal function: Send a notification to a single user.
@@ -118,7 +120,7 @@ export async function sendToUser({
   type,
   options = {},
 }) {
-  if (!userId) throw new Error("userId is required");
+  if (!userId) throw new AppError({ code: generalMessagesCodes.BAD_REQUEST, statusCode: 400 });
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -170,7 +172,7 @@ export async function sendToAdmins({
   const adminUsers = await prisma.user.findMany({
     where: {
       isActive: true,
-      role: { in: ["ADMIN", "SUPER_ADMIN"] },
+      currentProfile: { isAdminTier: true },
     },
     select: { id: true, email: true, allowEmailing: true },
   });
@@ -203,7 +205,7 @@ export async function sendToAdmins({
  * Send notification to users with specific roles (DB + Socket.IO + email)
  *
  * @param {Object} params
- * @param {Array<string>} params.roles - e.g. ["STAFF", "THREE_D_DESIGNER"]
+ * @param {Array<string>} params.profiles - e.g. ["NORMAL_SALES", "DESIGNER_3D"]
  * @param {string} params.content
  * @param {string} params.type
  * @param {boolean} [params.isEmailOnly] - If true, only send email without creating DB notification or emitting Socket.IO
@@ -215,37 +217,34 @@ export async function sendToAdmins({
  * @param {number} [params.options.staffId]
  *
  * @example
- * await sendToRoles({
- *   roles: ["STAFF"],
+ * await sendToProfiles({
+ *   profiles: ["NORMAL_SALES"],
  *   content: "New lead available",
  *   type: NOTIFICATION_TYPES.LEAD_CREATED,
  *   options: { emailSubject: "New Lead Alert" }
  * });
  */
-export async function sendToRoles({
+export async function sendToProfiles({
   isEmailOnly,
-  roles,
+  profiles,
   content,
   type,
   options = {},
 }) {
-  if (!Array.isArray(roles) || roles.length === 0) {
-    throw new Error("roles must be a non-empty array");
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    throw new AppError({ code: generalMessagesCodes.BAD_REQUEST, statusCode: 400 });
   }
 
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
-      OR: [
-        { role: { in: roles } },
-        { subRoles: { some: { subRole: { in: roles } } } },
-      ],
+      currentProfile: { key: { in: profiles } },
     },
     select: { id: true, email: true, allowEmailing: true },
   });
 
   if (users.length === 0) {
-    console.log(`No users found with roles: ${roles.join(", ")}`);
+    console.log(`No users found with profiles: ${profiles.join(", ")}`);
     return [];
   }
 
@@ -286,7 +285,7 @@ export async function sendToAll({ isEmailOnly, content, type, options = {} }) {
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
-      role: { in: ["STAFF", "ADMIN", "SUPER_ADMIN"] },
+      currentProfileId: { not: null },
     },
     select: { id: true, email: true, allowEmailing: true },
   });
@@ -335,7 +334,7 @@ export function builder() {
   let content = "";
   let type = "";
   let options = {};
-  let recipients = []; // Array of { type: "admin"|"roles"|"user"|"all", data: ... }
+  let recipients = []; // Array of { type: "admin"|"profiles"|"user"|"all", data: ... }
 
   return {
     /**
@@ -373,8 +372,8 @@ export function builder() {
     /**
      * Add specific roles as recipients
      */
-    toRoles(roles) {
-      recipients.push({ type: "roles", data: roles });
+    toProfiles(profiles) {
+      recipients.push({ type: "profiles", data: profiles });
       return this;
     },
 
@@ -399,11 +398,11 @@ export function builder() {
      */
     async send() {
       if (!content || !type) {
-        throw new Error("Content and type are required");
+        throw new AppError({ code: generalMessagesCodes.BAD_REQUEST, statusCode: 400 });
       }
 
       if (recipients.length === 0) {
-        throw new Error("At least one recipient type must be specified");
+        throw new AppError({ code: generalMessagesCodes.BAD_REQUEST, statusCode: 400 });
       }
 
       const results = [];
@@ -412,9 +411,9 @@ export function builder() {
         if (recipient.type === "admin") {
           const result = await sendToAdmins({ content, type, options });
           results.push(...result);
-        } else if (recipient.type === "roles") {
-          const result = await sendToRoles({
-            roles: recipient.data,
+        } else if (recipient.type === "profiles") {
+          const result = await sendToProfiles({
+            profiles: recipient.data,
             content,
             type,
             options,

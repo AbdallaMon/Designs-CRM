@@ -63,8 +63,8 @@ const TAB_DEFS = [
     icon: <MdOutlinePending />,
     countKey: "nonConsulted",
     show: (user) =>
-      user.role === "ADMIN" ||
-      user.role === "CONTACT_INITIATOR" ||
+      user.profile === "ADMIN" ||
+      user.profile === "CONTACT_INITIATOR" ||
       user.profile === "SUPER_SALES",
   },
   {
@@ -73,7 +73,7 @@ const TAB_DEFS = [
     icon: <MdHistoryToggleOff />,
     countKey: "stale",
     warnable: true,
-    show: (user) => user.role !== "CONTACT_INITIATOR",
+    show: (user) => user.profile !== "CONTACT_INITIATOR",
   },
 ];
 
@@ -88,14 +88,14 @@ const SECTION_DEFS = [
     title: "Today's Calls",
     icon: <MdPhoneInTalk />,
     countKey: "calls",
-    show: (user) => user.role !== "CONTACT_INITIATOR",
+    show: (user) => user.profile !== "CONTACT_INITIATOR",
   },
   {
     key: "meetings",
     title: "Meetings",
     icon: <MdEventAvailable />,
     countKey: "meetings",
-    show: (user) => user.role !== "CONTACT_INITIATOR",
+    show: (user) => user.profile !== "CONTACT_INITIATOR",
   },
   {
     key: "targets",
@@ -106,7 +106,7 @@ const SECTION_DEFS = [
 ];
 
 function defaultTabFor(user) {
-  if (user.role === "STAFF" && user.profile !== "SUPER_SALES") return "new";
+  if (["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) && user.profile !== "SUPER_SALES") return "new";
   // CONTACT_INITIATOR, SUPER_SALES, ADMIN â†’ non-consulted (falls back to new
   // if the role can't see non-consulted, e.g. plain STAFF).
   return "non-consulted";
@@ -231,7 +231,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
               dialog; for everyone else it filters the New-leads pool. */}
           <Box sx={{ mt: 2.5 }}>
             <SearchComponent
-              apiEndpoint="search?model=clientLead"
+              resource="leads"
               setFilters={
                 admin
                   ? (updater) => {
@@ -639,7 +639,7 @@ function NewLeadsPanel({ def, searchParams }) {
     total,
     totalPages,
     setRender,
-  } = useDataFetcher("shared/client-leads?isNew=true&", false, {
+  } = useDataFetcher("leads?isNew=true&", false, {
     clientId: searchParams?.clientId ? searchParams.clientId : null,
   });
   useEffect(() => {
@@ -682,7 +682,7 @@ function NonConsultedPanel({ def }) {
     total,
     totalPages,
     setRender,
-  } = useDataFetcher("shared/client-leads?noConsulted=true&", false);
+  } = useDataFetcher("leads?noConsulted=true&", false);
   useEffect(() => {
     if (filters) setPage(1);
   }, [filters]);
@@ -723,7 +723,7 @@ function StalePanel({ def }) {
     totalPages,
     setRender,
   } = useDataFetcher(
-    `shared/client-leads?staffId=${user.id}&assignedOverdue=true&`,
+    `leads?staffId=${user.id}&assignedOverdue=true&`,
     false
   );
 

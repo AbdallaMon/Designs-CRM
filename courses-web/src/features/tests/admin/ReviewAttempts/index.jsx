@@ -32,7 +32,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
 
   async function getTest() {
     const req = await getDataAndSet({
-      url: `shared/courses/tests/${testId}`,
+      url: `staff-courses/tests/${testId}`,
       setLoading,
       setData: setTest,
     });
@@ -41,7 +41,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
 
   async function getTestQuestions() {
     const req = await getDataAndSet({
-      url: `shared/courses/tests/${testId}/test-questions`,
+      url: `staff-courses/tests/${testId}/test-questions`,
       setData: setQuestions,
       setLoading,
     });
@@ -50,7 +50,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
 
   async function getUserAttempts() {
     const req = await getDataAndSet({
-      url: `admin/courses/tests/${testId}/attampts/user?userId=${userId}&`,
+      url: `courses/tests/${testId}/attampts/user?userId=${userId}&`,
       setLoading,
       setData: setAttempts,
     });
@@ -70,7 +70,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
       const req = await handleRequestSubmit(
         { isApproved },
         setToastLoading,
-        `admin/courses/tests/${testId}/attempts/${attemptId}/questions/${questionId}/approve`
+        `courses/tests/${testId}/attempts/${attemptId}/questions/${questionId}/approve`
       );
 
       if (req.status === 200) {
@@ -134,7 +134,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
   if (!test) {
     return (
       <Alert severity="error">
-        الاختبار غير موجود أو ليس لديك صلاحية للوصول إليه.
+        The test was not found or you do not have permission to access it.
       </Alert>
     );
   }
@@ -153,25 +153,25 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
               attempts && attempts.length > 0
                 ? attempts[attempts.length - 1].attemptLimit
                 : test.attemptLimit
-            } محاولات مسموحة`}
+            } attempts allowed`}
             variant="outlined"
           />
           {test.timeLimit && (
-            <Chip label={`${test.timeLimit} دقيقة`} variant="outlined" />
+            <Chip label={`${test.timeLimit} minutes`} variant="outlined" />
           )}
         </Box>
         <Typography variant="body1" color="text.secondary">
           {test.course
-            ? `الدورة: ${test.course?.title}`
-            : `الدرس: ${test.lesson?.title}`}
+            ? `Course: ${test.course?.title}`
+            : `Lesson: ${test.lesson?.title}`}
         </Typography>
         {attempts && attempts.length > 0 && (
           <Box>
             <Box>
-              <strong>الاسم</strong> :{attempts[0].user.name}
+              <strong>Name</strong> :{attempts[0].user.name}
             </Box>
             <Box>
-              <strong>البريد الإلكتروني</strong> :{attempts[0].user.email}
+              <strong>Email</strong> :{attempts[0].user.email}
             </Box>
           </Box>
         )}

@@ -1,8 +1,7 @@
 // leads/lead — assign / status / convert + list aggregators.
 // Extracted VERBATIM from lead.usecase.js (behavior-preserving; no logic/value change).
-// These repo-backed module functions are imported back into lead.usecase.js and wired
-// into the `legacyDefaults` DI seam there. Prisma NEVER appears here (only repo calls);
-// notification / telegram-queue side effects are invoked from their infra locations.
+// These repo-backed functions are imported directly by lead.usecase.js. Prisma never
+// appears here; notification and queue side effects use their current infra modules.
 import dayjs from "dayjs";
 import { leadRepository } from "./lead.repo.js";
 import {
@@ -25,8 +24,7 @@ import { leadsMessagesCodes } from "@dms/shared";
 //  mutations + read aggregators). Prisma I/O is delegated to leadRepository; the
 //  notification / telegram-queue side effects are invoked from their current infra
 //  locations (imported above). These replace the former shared/legacy barrel lazy-imports
-//  and are wired into the `legacyDefaults` DI seam below — mirroring the migrated
-//  delivery/update/task usecases. Behavior, error strings, and typos are preserved verbatim.
+//  and are imported directly by the lead facade.
 // ════════════════════════════════════════════════════════════════════════════════
 
 // Claim status rule: a NEW or ON_HOLD lead (or a missing record) becomes IN_PROGRESS
@@ -51,14 +49,14 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     clientLead.status !== "ON_HOLD" &&
     !isAdmin
   ) {
-    throw new AppError(leadsMessagesCodes.LEAD_ALREADY_ASSIGNED, 400);
+    throw new AppError({ code: leadsMessagesCodes.LEAD_ALREADY_ASSIGNED, statusCode: 400 });
   }
   const isAlloedToTakeThisLead = await checkIfUserAllowedToTakeALead(
     Number(userId),
     clientLead.country,
   );
   if (!isAlloedToTakeThisLead) {
-    throw new AppError(leadsMessagesCodes.LEAD_COUNTRY_NOT_ALLOWED, 403);
+    throw new AppError({ code: leadsMessagesCodes.LEAD_COUNTRY_NOT_ALLOWED, statusCode: 403 });
   }
   const activeLeadsCount = await leadRepository.countLeads({
     where: {
@@ -70,7 +68,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   });
   const maxUserLeadsCount = await leadRepository.getUserLeadLimits({ userId });
   if (activeLeadsCount >= (maxUserLeadsCount.maxLeadsCounts || 50)) {
-    throw new AppError(leadsMessagesCodes.LEAD_MAX_ACTIVE_REACHED, 400);
+    throw new AppError({ code: leadsMessagesCodes.LEAD_MAX_ACTIVE_REACHED, statusCode: 400 });
   }
   const startOfToday = dayjs().startOf("day").toDate();
   const endOfToday = dayjs().endOf("day").toDate();
@@ -87,7 +85,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     todaysLeadsCount >= (maxUserLeadsCount.maxLeadCountPerDay || 5) &&
     !isAdmin
   ) {
-    throw new AppError(leadsMessagesCodes.LEAD_MAX_PER_DAY_REACHED, 400);
+    throw new AppError({ code: leadsMessagesCodes.LEAD_MAX_PER_DAY_REACHED, statusCode: 400 });
   }
   if (clientLead.status === "ON_HOLD" || isAdmin) {
     const shadowLead = await leadRepository.createLead({
@@ -143,10 +141,10 @@ export async function updateClientLeadStatus({
       oldStatus === "REJECTED" ||
       oldStatus === "ARCHIVED"
     ) {
-      throw new AppError(leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
     }
     if (oldStatus === "ON_HOLD") {
-      throw new AppError(leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
+      throw new AppError({ code: leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
     }
   }
 

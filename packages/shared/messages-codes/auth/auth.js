@@ -21,6 +21,7 @@ export const authMessagesCodes = {
   // profiles (DB-relational permissions)
   PROFILE_NOT_ASSIGNED: "PROFILE_NOT_ASSIGNED", // tried to switch to a profile the user doesn't hold
   PROFILE_NOT_FOUND: "PROFILE_NOT_FOUND", // profile id does not exist
+  PROFILE_REQUIRED: "PROFILE_REQUIRED", // request has no valid active relational profile
   PROFILE_SWITCHED: "PROFILE_SWITCHED", // success: active profile changed
   PROFILES_UPDATED: "PROFILES_UPDATED", // success: a user's assigned profiles changed (admin)
 

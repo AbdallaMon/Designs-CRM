@@ -240,7 +240,7 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                 )}
 
                 <Stack direction="row" spacing={1} alignItems="center">
-                  {user.role !== "ACCOUNTANT" && (
+                  {user.profile !== "ACCOUNTANT" && (
                     <>
                       {meeting.status === "IN_PROGRESS" && (
                         <CallResultDialog

@@ -46,7 +46,7 @@ const HomeworkTable = ({ courseId, lessonId }) => {
 
   const fetchHomeworks = async () => {
     await getDataAndSet({
-      url: `admin/courses/${courseId}/lessons/${lessonId}/home-works`,
+      url: `courses/${courseId}/lessons/${lessonId}/home-works`,
       setLoading,
       setData: setHomeworks,
     });

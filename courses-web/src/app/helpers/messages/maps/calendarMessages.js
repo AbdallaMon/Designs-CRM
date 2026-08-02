@@ -33,6 +33,16 @@ export const calendarMessages = {
   GOOGLE_ALREADY_CONNECTED: "Google account is already connected",
   GOOGLE_CALLBACK_INVALID: "Invalid connection link",
   CALENDAR_ACCESS_DENIED: "You do not have access to the calendar",
+  ADMIN_ID_REQUIRED: "An administrator is required",
+  AVAILABLE_DAY_HAS_BOOKINGS: "This day contains booked slots and cannot be deleted",
+  RELATED_MEETINGS_EXIST: "This date has related meetings and cannot be changed",
+  SLOT_NOT_FOUND: "The selected slot was not found",
+  SLOT_ALREADY_BOOKED: "The selected slot is already booked",
+  AVAILABLE_DAY_NOT_FOUND: "The available day was not found",
+  SLOT_FIELDS_REQUIRED: "Start time, end time, and day are required",
+  SLOT_CONFLICT: "This time conflicts with an existing slot",
+  BOOKING_TOKEN_REQUIRED: "A valid booking token is required",
+  CALENDAR_FETCH_FAILED: "Calendar data could not be loaded",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
   OK: "Operation completed successfully",

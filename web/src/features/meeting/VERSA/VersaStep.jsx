@@ -74,7 +74,7 @@ export const VersaStep = forwardRef(({ step, stepKey, onSaved }, ref) => {
     const request = await handleRequestSubmit(
       formData,
       setLoading,
-      `shared/questions/versa/steps/${step.id}`,
+      `questions/versa/steps/${step.id}`,
       false,
       "Saving",
       false,

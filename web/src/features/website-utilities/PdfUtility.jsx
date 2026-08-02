@@ -13,25 +13,25 @@ export default function PdfUtility({
     {
       key: "pdfFrame",
       label: "PDF Frame",
-      endpoint: "shared/site-utilities/pdf-utility",
+      endpoint: "site-utilities/pdf-utility",
     },
     // {
     //   key: "pdfHeader",
     //   label: "PDF Header",
-    //   endpoint: "shared/site-utilities",
+    //   endpoint: "site-utilities",
     // },
     {
       key: "introPage",
       label: "Intro Page",
-      endpoint: "shared/site-utilities/pdf-utility",
+      endpoint: "site-utilities/pdf-utility",
     },
     // {
     //   key: "pageTitle",
     //   label: "Page Title",
-    //   endpoint: "shared/site-utilities",
+    //   endpoint: "site-utilities",
     // },
   ],
-  fetchUrl = "shared/site-utilities/pdf-utility",
+  fetchUrl = "site-utilities/pdf-utility",
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoadingState] = useState(true);

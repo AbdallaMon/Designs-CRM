@@ -133,7 +133,7 @@ function ChatSettingsModal({
         ...formValues,
       },
       setLoading,
-      `shared/chat/rooms/${room.id}`,
+      `chat/rooms/${room.id}`,
       false,
       "Saving chat settings",
       false,

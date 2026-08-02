@@ -9,7 +9,7 @@ import colors from "@/app/helpers/colors";
 import { FiBookOpen, FiGrid } from "react-icons/fi";
 
 import Navbar from "@/shared/components/utility/Navbar.jsx";
-import { baseRoleOf } from "@/app/helpers/functions/utility";
+import { activeProfileOf } from "@/app/helpers/functions/utility";
 import {
   Failed,
   Success,
@@ -99,9 +99,10 @@ export default function Layout({ admin, staff, threeD, twoD, accountant }) {
 
     fetchData();
   }, [validatingAuth]);
-  // Route the dashboard slot on the ACTIVE profile's base role, not the legacy user.role.
-  const role = baseRoleOf(user);
-  if (!user || !role) return null;
+  // Route the dashboard slot from the active profile.
+  const profile = activeProfileOf(user);
+  if (!user || !profile) return null;
+  const isAdmin = profile === "ADMIN" || profile === "SUPER_ADMIN";
   return (
     <Box
       sx={{
@@ -110,32 +111,10 @@ export default function Layout({ admin, staff, threeD, twoD, accountant }) {
       }}
     >
       <Navbar
-        links={
-          role === "ADMIN"
-            ? adminLinks
-            : role === "STAFF"
-            ? staffLinks
-            : role === "THREE_D_DESIGNER"
-            ? threeDLinks
-            : role === "TWO_D_DESIGNER"
-            ? twoDLinks
-            : role === "ACCOUNTANT"
-            ? accountantLinks
-            : adminLinks
-        }
+        links={isAdmin ? adminLinks : staffLinks}
       />
 
-      {role === "ADMIN"
-        ? admin
-        : role === "STAFF"
-        ? staff
-        : role === "THREE_D_DESIGNER"
-        ? staff
-        : role === "TWO_D_DESIGNER"
-        ? staff
-        : role === "ACCOUNTANT"
-        ? staff
-        : admin}
+      {isAdmin ? admin : staff}
     </Box>
   );
 }

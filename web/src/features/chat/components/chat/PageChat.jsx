@@ -47,7 +47,6 @@ export function RenderPageChat({
               sx={{
                 height: "calc(100vh - 78px)",
                 overflow: "hidden",
-                display: "flex",
                 flexDirection: "column",
                 borderRadius: 3,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",

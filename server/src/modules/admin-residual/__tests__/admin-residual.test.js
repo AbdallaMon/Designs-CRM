@@ -45,11 +45,34 @@ beforeEach(() => {
 const PA = PERMISSIONS.ADMIN_RESIDUAL;
 const PS = PERMISSIONS.STAFF;
 
-function makeReq(role, { isSuperSales = false, subRoles = [], profile } = {}) {
+function makeReq(persona, { isSuperSales = false, profile } = {}) {
+  const currentProfileKey =
+    profile ??
+    (isSuperSales
+      ? "SUPER_SALES"
+      : {
+          ADMIN: "ADMIN",
+          SUPER_ADMIN: "SUPER_ADMIN",
+          STAFF: "NORMAL_SALES",
+          THREE_D_DESIGNER: "DESIGNER_3D",
+          TWO_D_DESIGNER: "DESIGNER_2D",
+          TWO_D_EXECUTOR: "EXECUTOR_2D",
+          ACCOUNTANT: "ACCOUNTANT",
+          SUPER_SALES: "SUPER_SALES",
+          CONTACT_INITIATOR: "CONTACT_INITIATOR",
+        }[persona]);
   const { permissions, permissionsByModule } = getEffectivePermissions({
-    role, isSuperSales, subRoles, ...(profile ? { profile } : {}),
+    profile: currentProfileKey,
   });
-  return { auth: { id: 1, role, isSuperSales, permissions, permissionsByModule } };
+  return {
+    auth: {
+      id: 1,
+      currentProfileKey,
+      isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
+      permissions,
+      permissionsByModule,
+    },
+  };
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -68,12 +91,10 @@ describe("admin-residual route permission gate (allow vs deny)", () => {
     expect(next).toHaveBeenCalledWith();
   });
 
-  it("isSuperSales alone no longer passes the model-archive gate (legacy isAdmin union removed)", () => {
+  it("the SUPER_SALES profile passes the model-archive gate", () => {
     const next = vi.fn();
     AuthMiddleware.requirePermissions([PA.MODEL_ARCHIVE])(makeReq(USER_ROLES.SUPER_SALES, { isSuperSales: true }), {}, next);
-    const err = next.mock.calls[0][0];
-    expect(err).toBeInstanceOf(AppError);
-    expect(err.statusCode).toBe(403);
+    expect(next).toHaveBeenCalledWith();
   });
 
   it("the ADMIN profile passes the model-archive gate (profile is the sole source)", () => {
@@ -146,17 +167,19 @@ describe("staff latest-calls route gate", () => {
     }
   });
 
-  it("an ADMIN / SUPER_ADMIN / SUPER_SALES / CONTACT_INITIATOR is 403'd on the latest-calls gate", () => {
-    for (const role of [
-      USER_ROLES.ADMIN,
-      USER_ROLES.SUPER_ADMIN,
-      USER_ROLES.SUPER_SALES,
-      USER_ROLES.CONTACT_INITIATOR,
-    ]) {
+  it("ADMIN / SUPER_ADMIN / SUPER_SALES can view latest calls; CONTACT_INITIATOR cannot", () => {
+    for (const role of [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.SUPER_SALES]) {
       const next = vi.fn();
       AuthMiddleware.requirePermissions([PS.LATEST_CALLS_VIEW])(makeReq(role), {}, next);
-      expect(next.mock.calls[0][0].statusCode).toBe(403);
+      expect(next).toHaveBeenCalledWith();
     }
+    const next = vi.fn();
+    AuthMiddleware.requirePermissions([PS.LATEST_CALLS_VIEW])(
+      makeReq(USER_ROLES.CONTACT_INITIATOR),
+      {},
+      next,
+    );
+    expect(next.mock.calls[0][0].statusCode).toBe(403);
   });
 });
 
@@ -280,33 +303,35 @@ describe("validation shapes", () => {
 // ════════════════════════════════════════════════════════════════════════════
 //  FIX 1 — destructive lead DELETE is base-role-ADMIN ONLY (legacy parity)
 // ════════════════════════════════════════════════════════════════════════════
-describe("admin lead DELETE — base-role-ADMIN-only guard (FIX 1)", () => {
-  it("ALLOWS a base-role ADMIN (the legacy `token.role === 'ADMIN'` narrowing)", async () => {
+describe("admin lead DELETE — active-profile guard", () => {
+  it.each(["ADMIN", "SUPER_ADMIN"])("allows the %s profile", async (currentProfileKey) => {
     adminLeadsRepository.deleteALead.mockResolvedValue({ id: 42, deleted: true });
     const usecase = new AdminLeadsUsecase();
-    const out = await usecase.deleteLead({ id: 42, authUser: { id: 1, role: USER_ROLES.ADMIN } });
+    const out = await usecase.deleteLead({
+      id: 42,
+      authUser: { id: 1, currentProfileKey, isAdminTier: true },
+    });
     expect(adminLeadsRepository.deleteALead).toHaveBeenCalledWith(42);
     expect(out).toEqual({ id: 42, deleted: true });
   });
 
-  it("403s SUPER_ADMIN, isSuperSales, and an ADMIN sub-role (the privilege-widening fix)", async () => {
+  it("rejects non-admin profiles even when retained role fields claim admin access", async () => {
     const cases = [
-      { id: 1, role: USER_ROLES.SUPER_ADMIN },
-      { id: 2, role: USER_ROLES.SUPER_SALES, isSuperSales: true },
-      { id: 3, role: USER_ROLES.STAFF, subRoles: [{ subRole: USER_ROLES.ADMIN }] },
+      { id: 2, currentProfileKey: "SUPER_SALES", isAdminTier: false, isSuperSales: true },
+      { id: 3, currentProfileKey: "NORMAL_SALES", isAdminTier: false, role: USER_ROLES.ADMIN },
+      {
+        id: 4,
+        currentProfileKey: "NORMAL_SALES",
+        isAdminTier: false,
+        subRoles: [{ subRole: USER_ROLES.ADMIN }],
+      },
     ];
     for (const authUser of cases) {
       const usecase = new AdminLeadsUsecase();
-      // the guard throws synchronously (before the cascading delete is reached)
-      let err;
-      try {
-        usecase.deleteLead({ id: 42, authUser });
-      } catch (e) {
-        err = e;
-      }
-      expect(err).toBeInstanceOf(AppError);
-      expect(err.statusCode).toBe(403);
-      expect(err.message).toBe(authMessagesCodes.FORBIDDEN);
+      await expect(usecase.deleteLead({ id: 42, authUser })).rejects.toMatchObject({
+        statusCode: 403,
+        message: authMessagesCodes.FORBIDDEN,
+      });
       expect(adminLeadsRepository.deleteALead).not.toHaveBeenCalled(); // never reaches the cascading delete
     }
   });

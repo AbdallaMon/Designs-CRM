@@ -47,7 +47,7 @@ function LinkMeetingDialog({
     (async () => {
       if (active) {
         await getDataAndSet({
-          url: `shared/client-leads/${clientLeadId}/meeting-reminders`,
+          url: `leads/${clientLeadId}/meeting-reminders`,
           setLoading,
           setData: setMeetings,
         });
