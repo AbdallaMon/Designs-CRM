@@ -29,7 +29,6 @@ export const env = {
   // Per-frontend public domains (link/asset building).
   CRM_DOMAIN: process.env.CRM_DOMAIN,
   PORTFOLIO_DOMAIN: process.env.PORTFOLIO_DOMAIN,
-  CRM_ORIGIN: process.env.CRM_ORIGIN,
   DASHBOARD_ORIGIN: process.env.DASHBOARD_ORIGIN,
   COURSES_ORIGIN: process.env.COURSES_ORIGIN,
   PORTFOLIO_ORIGIN: process.env.PORTFOLIO_ORIGIN,
@@ -62,7 +61,6 @@ export const env = {
 };
 // Per-frontend CORS origins (fallback when ALLOW_ORIGIN is unset). One per site.
 export const allowedOrigins = [
-  env.CRM_ORIGIN,
   env.DASHBOARD_ORIGIN,
   env.COURSES_ORIGIN,
   env.PORTFOLIO_ORIGIN,

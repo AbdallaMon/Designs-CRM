@@ -3,7 +3,21 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-29** · Branch: `feat/workstage-flow-redesign`
+> Last updated: **2026-08-02** · Branch: `feat/workstage-flow-redesign`
+>
+> **LATEST (2026-08-02) — production configuration + one-command migration-history reconciliation ✅.**
+> The duplicate main-web `CRM_ORIGIN` setting was removed from the backend, CORS fallback, Stripe/registration
+> links, notifications, and Telegram connection allow-list; `DASHBOARD_ORIGIN` is now the single canonical
+> main-web origin. `CRM_DOMAIN` remains intentionally separate as the root-relative PDF/upload asset base.
+> Complete Git-ignored production files now exist for the backend, Prisma, `web`, and `courses-web`; they cover
+> every active example key, contain no local/placeholder URLs, and preserve configured secrets without committing
+> or printing them. The backend production file also adds distinct generated upload/backfill secrets and corrects
+> the Google callback to the canonical `/v2/calendar/google/callback` URL. Migration-history reconciliation is now
+> one idempotent metadata-only command: `npm run db:resolve`. It marks the four baseline migrations applied, skips
+> Prisma `P3008` for already-recorded migrations, fails closed on every other Prisma error, and deliberately does
+> not run deploy/generate/status. Verification: resolver tests **3/3**, dry run clean, full Vitest suite green,
+> `web` production build **44/44 routes**, and `courses-web` production build **8/8 static pages** plus dynamic
+> routes. No production database command was executed.
 >
 > **LATEST (2026-07-29) — Security, profile-only identity, canonical API, uploads, contracts, and courses cutover ✅.**
 > Completed `docs/superpowers/{specs,plans}/2026-07-29-security-profile-only-cutover*`.

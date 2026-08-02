@@ -51,7 +51,7 @@ export function createCheckoutSession({ clientId, clientLeadId, lng }) {
     ],
     // Return the CUSTOMER to the booking website (where /success + /cancel live),
     // NOT the CRM admin app. master used process.env.ORIGIN (the booking site);
-    // the migration mis-pointed these at CRM_ORIGIN (:3001), which has no such pages.
+    // the migration mis-pointed these at the dashboard (:3001), which has no such pages.
     // BOOKING_ORIGIN already includes the `/register` base, so `${BOOKING_ORIGIN}/success`
     // resolves to the site's /register/success (SuccessView) and `/cancel` to /register/cancel.
     success_url: `${process.env.BOOKING_ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${clientId}&clientLeadId=${clientLeadId}&lng=${lng}`,

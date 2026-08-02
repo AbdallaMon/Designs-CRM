@@ -9,15 +9,15 @@ STEPS (run on a machine with DATABASE_URL pointed at PRODUCTION)
 2. Check current state:
      npx prisma migrate status --schema packages/db/prisma/schema.prisma
    Expect the 3 old migrations "applied" and catch_up "not applied".
-3. Mark migrations as applied WITHOUT running their SQL (metadata only):
-     npx prisma migrate resolve --applied 20250118182131_init
-     npx prisma migrate resolve --applied 20250118223321_price_offer_url
-     npx prisma migrate resolve --applied 20250120212545_added_some_e_num
-     npx prisma migrate resolve --applied 20260612040000_catch_up_full_schema
-   (The first three may already be applied; resolve is safe to assert.)
-4. Confirm:
+3. Mark the four baseline migrations as applied WITHOUT running their SQL
+   (idempotent; already-applied migrations are skipped):
+     npm run db:resolve
+4. Confirm the baseline reconciliation, then apply newer additive migrations manually:
      npx prisma migrate status --schema packages/db/prisma/schema.prisma
-   Expect: "Database schema is up to date!"
+     npm run db:deploy
+     npm run db:generate
+     npm run db:status
+   The final status must report: "Database schema is up to date!"
 
 NEVER on production: prisma migrate reset | prisma migrate dev | prisma db push.
 If step 2 reports a CHECKSUM MISMATCH on an old migration, STOP and report — it

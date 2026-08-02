@@ -46,7 +46,6 @@ export async function connectToTelegram(withio) {
       io = new Server(httpServer, {
         cors: {
           origin: [
-            process.env.CRM_ORIGIN,
             process.env.DASHBOARD_ORIGIN,
             process.env.COURSES_ORIGIN,
           ],
