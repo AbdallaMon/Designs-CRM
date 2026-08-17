@@ -39,6 +39,7 @@ export const env = {
   REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
   REDIS_PORT: Number(process.env.REDIS_PORT) || 6379,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
+  DREAMSREGISTERORIGIN: process.env.DREAMSREGISTERORIGIN,
 };
 export const allowedOrigins = [
   process.env.ORIGIN,
@@ -47,4 +48,5 @@ export const allowedOrigins = [
   process.env.PORTFOLIOORIGIN,
   process.env.CONTACTORIGIN,
   process.env.REGISTERPAGEORIGIN,
+  process.env.DREAMSREGISTERORIGIN,
 ];
