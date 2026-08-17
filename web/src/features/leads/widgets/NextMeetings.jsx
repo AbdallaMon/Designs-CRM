@@ -14,7 +14,8 @@ import {
 } from "@mui/material";
 import { InProgressCall } from "@/features/leads/widgets/InProgressCall.jsx";
 import Link from "next/link.js";
-import { hideMoreData } from "@/app/helpers/functions/utility.js";
+import { hideMoreData } from "@/app/helpers/functions/utility.jsx";
+import { REMINDER_TYPES } from "@dms/shared";
 
 export default function NextMeetings({ staff }) {
   const { user } = useAuth();
@@ -55,7 +56,11 @@ function NextMeeting({ meeting }) {
         <Typography variant="body2">
           Reason: {hideMoreData(meeting.reminderReason) || "N/A"}
         </Typography>
-        <InProgressCall call={meeting} type="MEETING" simple={true} />
+        <InProgressCall
+          call={meeting}
+          type={REMINDER_TYPES.MEETING}
+          simple={true}
+        />
         <CardActions>
           <Button
             component={Link}

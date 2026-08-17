@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES } from "@dms/shared";
 import {
   Avatar,
   Box,
@@ -45,7 +46,7 @@ export const WorkStageDialogHeader = ({
           <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
             {lead.client.name[0]}
           </Avatar>
-          {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
+          {(lead.status === LEAD_STATUSES.NEW || lead.status === LEAD_STATUSES.ON_HOLD) && !admin ? (
             <Typography variant="h6" color="text.secondary">
               Lead Preview
             </Typography>

@@ -198,6 +198,12 @@ export const LEAD_AUTHED = [
 // Privileged lead actions such as assigning a lead to another user.
 export const LEAD_ADMIN = [P.LEAD.ASSIGN_OTHER];
 
+// Lead-pool visibility mirrors the former page predicates without authorizing by role
+// in the UI: CONTACT_INITIATOR/SUPER_SALES/admin see non-consulted; every working
+// profile except CONTACT_INITIATOR sees the ON_HOLD claim pool.
+export const LEAD_POOL_NON_CONSULTED = [P.LEAD.NON_CONSULTED_VIEW];
+export const LEAD_POOL_ON_HOLD = [P.LEAD.ON_HOLD_VIEW];
+
 // Site-utility management — ADMIN and SUPER_ADMIN profiles only.
 export const SITE_UTILITY_ADMIN = [
   P.SITE_UTILITY.PDF_CONFIG_VIEW,

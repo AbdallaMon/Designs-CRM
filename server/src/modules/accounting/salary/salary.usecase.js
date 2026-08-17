@@ -97,29 +97,34 @@ async function generateMonthlySalary({
   const startOfMonth = dayjs().startOf("month").toDate();
   const endOfMonth = dayjs().endOf("month").toDate();
 
-  const hasMonthly = await salaryRepository.findMonthlySalaryForMonth({
-    baseSalaryId,
-    startOfMonth,
-    endOfMonth,
-  });
+  return salaryRepository.runInTransaction(async (client) => {
+    await salaryRepository.lockBaseSalaryForUpdate({ baseSalaryId, client });
+    const hasMonthly = await salaryRepository.findMonthlySalaryForMonth({
+      baseSalaryId,
+      startOfMonth,
+      endOfMonth,
+      client,
+    });
 
-  // If monthly salary already exists, throw an error
-  if (hasMonthly) {
-    throw new AppError({ code: accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS, statusCode: 409 });
-  }
-  if (paymentDate) {
-    paymentDate = new Date(paymentDate);
-  }
+    // If monthly salary already exists, throw an error
+    if (hasMonthly) {
+      throw new AppError({ code: accountingMessagesCodes.MONTHLY_SALARY_ALREADY_EXISTS, statusCode: 409 });
+    }
+    if (paymentDate) {
+      paymentDate = new Date(paymentDate);
+    }
 
-  return await salaryRepository.createMonthlySalaryWithOutcome({
-    baseSalaryId,
-    totalHoursWorked,
-    overtimeHours,
-    bonuses,
-    deductions,
-    netSalary,
-    isFulfilled,
-    paymentDate,
+    return salaryRepository.createMonthlySalaryWithOutcome({
+      baseSalaryId,
+      totalHoursWorked,
+      overtimeHours,
+      bonuses,
+      deductions,
+      netSalary,
+      isFulfilled,
+      paymentDate,
+      client,
+    });
   });
 }
 

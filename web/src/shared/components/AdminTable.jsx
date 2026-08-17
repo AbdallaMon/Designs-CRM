@@ -83,6 +83,7 @@ export default function AdminTable({
   editFormButton,
   children,
   rowSx,
+  mergeEditedItem,
 }) {
   const ExtraComponent = extraComponent;
   const theme = useTheme();
@@ -226,6 +227,7 @@ export default function AdminTable({
                       renderFormTitle={renderFormTitle}
                       editFormButton={editFormButton}
                       handleAfterEdit={handleAfterEdit}
+                      mergeEditedItem={mergeEditedItem}
                     />
                   </TableCell>
                 )}

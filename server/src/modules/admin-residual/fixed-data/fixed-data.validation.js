@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 // admin-residual/fixed-data validation. The frozen create/edit services read ONLY
 // `title` + `description`; `.strict()` whitelists exactly those (mass-assignment
@@ -20,7 +21,7 @@ export class FixedDataValidation {
     })
     .strict()
     .refine((b) => b.title !== undefined || b.description !== undefined, {
-      message: "At least one field is required",
+      message: V.AT_LEAST_ONE_FIELD_REQUIRED,
     });
 
   static idParam = z

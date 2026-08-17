@@ -1,3 +1,4 @@
+import { IMAGE_SESSION_STATUSES } from "@dms/shared";
 import React from "react";
 import LanguageSelector from "@/shared/components/utility/LanguageSelector";
 import {
@@ -224,10 +225,10 @@ export function ActionButtons({ session, handleNext, handleBack, disabled }) {
       gap={2}
       justifyContent="space-between"
       flexDirection={
-        session && session.sessionStatus !== "INITIAL" ? "row" : "row-reverse"
+        session && session.sessionStatus !== IMAGE_SESSION_STATUSES.INITIAL ? "row" : "row-reverse"
       }
     >
-      {session && session.sessionStatus !== "INITIAL" && (
+      {session && session.sessionStatus !== IMAGE_SESSION_STATUSES.INITIAL && (
         <ActionButton
           disabled={disabled}
           handleClick={handleBack}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   AppBar,
@@ -20,9 +20,7 @@ import {
 } from "@mui/material";
 import { FiMenu, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import Logout from "@/shared/components/buttons/Logout.jsx";
-import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
 import Link from "next/link";
-import { useAuth } from "@/app/providers/AuthProvider";
 import ProfileSwitcher from "../buttons/ProfileSwitcher";
 
 const Navbar = ({ links }) => {
@@ -31,12 +29,6 @@ const Navbar = ({ links }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const pathname = usePathname();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (loading) setLoading(false);
-  }, []);
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };

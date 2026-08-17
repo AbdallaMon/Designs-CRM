@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -16,6 +16,7 @@ import {
   debounce,
 } from "@mui/material";
 import { FaCheck, FaTimes, FaThumbsUp } from "react-icons/fa";
+import { COURSE_QUESTION_TYPES } from "@dms/shared";
 
 const RenderQuestionContent = ({
   question,
@@ -40,7 +41,7 @@ const RenderQuestionContent = ({
   };
 
   const orderedChoices = [];
-  if (question.type === "ORDERING") {
+    if (question.type === COURSE_QUESTION_TYPES.ORDERING) {
     currentAnswer.selectedAnswers.forEach((answerText) => {
       const choice = question.choices.find((c) => c.text === answerText);
       if (choice) {
@@ -56,12 +57,17 @@ const RenderQuestionContent = ({
   }
 
   const [localText, setLocalText] = useState(currentAnswer?.textAnswer || "");
-  const debouncedSave = useCallback(
-    debounce((value) => {
-      handleChange({ textAnswer: value });
-    }, 500),
-    []
+  const debouncedSave = useMemo(
+    () =>
+      debounce((value) => {
+        if (!isReview) {
+          handleAnswerChange(question.id, { textAnswer: value });
+        }
+      }, 500),
+    [handleAnswerChange, isReview, question.id]
   );
+
+  useEffect(() => () => debouncedSave.clear(), [debouncedSave]);
 
   const handleLocalChange = (e) => {
     setLocalText(e.target.value);
@@ -72,7 +78,7 @@ const RenderQuestionContent = ({
   const isApprovalLoading = approvalLoading[approvalKey];
 
   switch (question.type) {
-    case "MULTIPLE_CHOICE":
+    case COURSE_QUESTION_TYPES.MULTIPLE_CHOICE:
       return (
         <FormControl
           component="fieldset"
@@ -121,7 +127,7 @@ const RenderQuestionContent = ({
         </FormControl>
       );
 
-    case "SINGLE_CHOICE":
+    case COURSE_QUESTION_TYPES.SINGLE_CHOICE:
       return (
         <FormControl
           component="fieldset"
@@ -162,7 +168,7 @@ const RenderQuestionContent = ({
         </FormControl>
       );
 
-    case "TRUE_FALSE":
+    case COURSE_QUESTION_TYPES.TRUE_FALSE:
       return (
         <FormControl
           component="fieldset"
@@ -207,7 +213,7 @@ const RenderQuestionContent = ({
         </FormControl>
       );
 
-    case "TEXT":
+    case COURSE_QUESTION_TYPES.TEXT:
       return (
         <Box dir="rtl">
           {isReview && currentAnswer?.textAnswer && (
@@ -270,7 +276,7 @@ const RenderQuestionContent = ({
         </Box>
       );
 
-    case "ORDERING":
+    case COURSE_QUESTION_TYPES.ORDERING:
       return (
         <FormControl
           component="fieldset"

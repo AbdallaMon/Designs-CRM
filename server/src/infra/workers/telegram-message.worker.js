@@ -6,6 +6,7 @@ import {
   uploadAQueueNote,
 } from "../telegram/telegram-functions.js";
 import { coonnectToTelegramV2 } from "../../modules/telegram/connect.js";
+import { INTEGRATION_ERROR_CODES } from "@dms/shared";
 
 export const telegramMessageWorker = new Worker(
   "telegram-message-queue",
@@ -30,7 +31,7 @@ export const telegramMessageWorker = new Worker(
 );
 
 telegramMessageWorker.on("failed", async (job, err) => {
-  if (err.message.includes("AUTH_KEY_UNREGISTERED")) {
+  if (err.message.includes(INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED)) {
     await coonnectToTelegramV2();
     console.log("Reconnected to Telegram successfully!");
   }

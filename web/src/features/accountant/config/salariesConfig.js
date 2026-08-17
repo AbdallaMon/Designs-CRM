@@ -1,3 +1,4 @@
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export const inputs = [
   {
@@ -10,7 +11,7 @@ export const inputs = [
     pattern: {
       required: {
         value: true,
-        message: "Please enter a Base salary",
+        message: FORM_ERRORS.ENTER_BASE_SALARY,
       },
     },
   },
@@ -24,7 +25,7 @@ export const inputs = [
     pattern: {
       required: {
         value: true,
-        message: "Please enter a Base work hours",
+        message: FORM_ERRORS.ENTER_BASE_WORK_HOURS,
       },
     },
   },
@@ -38,7 +39,7 @@ export const inputs = [
     pattern: {
       required: {
         value: true,
-        message: "Please enter a tax amount",
+        message: FORM_ERRORS.ENTER_TAX_AMOUNT,
       },
     },
   },

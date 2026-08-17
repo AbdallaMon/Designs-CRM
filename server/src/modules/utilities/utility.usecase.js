@@ -1,5 +1,7 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import {
+  LEAD_STATUSES, PROFILE_FAMILIES,
+  PROFILES,
   authMessagesCodes,
   hasAnyPermission,
   PERMISSIONS,
@@ -33,24 +35,24 @@ export class UtilityUsecase {
   #leadScope(authUser) {
     if (
       authUser?.isAdminTier ||
-      authUser?.currentProfileKey === "SUPER_SALES" ||
-      authUser?.currentProfileKey === "ACCOUNTANT" ||
-      authUser?.currentProfileKey === "CONTACT_INITIATOR"
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES ||
+      authUser?.currentProfileKey === PROFILES.ACCOUNTANT ||
+      authUser?.currentProfileKey === PROFILES.CONTACT_INITIATOR
     ) {
       return {};
     }
-    if (authUser?.profileFamily === "DESIGN") {
+    if (authUser?.profileFamily === PROFILE_FAMILIES.DESIGN) {
       return {
         projects: {
           some: { assignments: { some: { userId: Number(authUser.id) } } },
         },
       };
     }
-    if (authUser?.profileFamily === "SALES") {
+    if (authUser?.profileFamily === PROFILE_FAMILIES.SALES) {
       return {
         OR: [
           { userId: Number(authUser.id) },
-          { userId: null, status: "NEW" },
+          { userId: null, status: LEAD_STATUSES.NEW },
         ],
       };
     }
@@ -123,7 +125,7 @@ export class UtilityUsecase {
       return utilityRepository.searchClients({
         query: query.query,
         leadScope:
-          authUser?.isAdminTier || authUser?.currentProfileKey === "ACCOUNTANT"
+          authUser?.isAdminTier || authUser?.currentProfileKey === PROFILES.ACCOUNTANT
             ? null
             : leadScope,
       });

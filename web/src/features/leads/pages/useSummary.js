@@ -4,13 +4,14 @@ import { getData } from "@/app/helpers/functions/getData";
 
 /* ----------------------------------------------------------------------------
  * Single counts source. ONE call to `leads/summary?staffId=<id>`
- * returns `{ new, nonConsulted, stale, calls, meetings }`. These counts feed
+ * returns `{ new, nonConsulted, onHold, calls, meetings }`. These counts feed
  * BOTH the KPI rail and the tab/section badges. Refetches whenever `token`
  * changes (the page bumps it from the refresh button).
  * -------------------------------------------------------------------------- */
 export const EMPTY_SUMMARY = {
   new: 0,
   nonConsulted: 0,
+  onHold: 0,
   stale: 0,
   calls: 0,
   meetings: 0,

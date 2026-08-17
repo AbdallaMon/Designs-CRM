@@ -105,7 +105,7 @@ export default function PdfUtilityFieldCard({
   const handleUploadFile = async (file) => {
     if (!file) return;
     const up = await uploadInChunks(file, setProgress, setOverlay);
-    if (up?.status === 200 && up?.url) setUrl(up.url);
+    if (up?.status === 200 && up?.url) setUrl(up.storageUrl || up.url);
   };
 
   const handleOpen = () => {

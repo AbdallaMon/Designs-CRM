@@ -25,13 +25,21 @@ vi.mock("../payments/payments.stripe.js", () => ({
   listCheckoutSessions: vi.fn(),
   getLeadIdFromUrl: vi.fn(),
   normalizeFromSession: vi.fn(),
+  constructWebhookEvent: vi.fn(),
+  isFulfillableCheckoutSession: vi.fn(
+    (session) =>
+      session?.mode === "payment" &&
+      session?.status === "complete" &&
+      ["paid", "no_payment_required"].includes(session.payment_status),
+  ),
 }));
 vi.mock("../payments/payments.repo.js", () => ({
   paymentsRepository: {
     getLeadWithClient: vi.fn(),
     getLeadPaymentState: vi.fn(),
-    markFullyPaid: vi.fn(),
     saveStripeMetadata: vi.fn(),
+    bindCheckoutSession: vi.fn(),
+    fulfillCheckoutSession: vi.fn(),
     findLeadById: vi.fn(),
   },
 }));
@@ -310,41 +318,61 @@ describe("client payments (legacy /client/payments.js)", () => {
       paymentStatus: "PENDING",
       client: { name: "A", email: "a@x.com" },
     });
-    paymentsRepository.markFullyPaid.mockResolvedValue({});
     paymentsRepository.saveStripeMetadata.mockResolvedValue({});
+    paymentsRepository.fulfillCheckoutSession.mockResolvedValue({
+      state: "fulfilled",
+      lead: {
+        id: 5,
+        paymentStatus: "PENDING",
+        paymentSessionId: "cs_1",
+        client: { name: "A", email: "a@x.com" },
+      },
+    });
   }
 
   it("payment-status: paid session whose metadata.clientLeadId MISMATCHES the supplied id → 403 (IDOR close)", async () => {
     seedPaymentsRepo();
     retrieveCheckoutSession.mockResolvedValue({
       id: "cs_1",
+      mode: "payment",
+      status: "complete",
       payment_status: "paid",
       metadata: { clientLeadId: "999" }, // session really belongs to lead 999
     });
     await expect(
       paymentsUsecase.paymentStatus({ sessionId: "cs_1", clientLeadId: 5, lng: "en" }), // caller claims lead 5
     ).rejects.toMatchObject({ message: CP.PAYMENT_NOT_ALLOWED, statusCode: 403 });
-    expect(paymentsRepository.markFullyPaid).not.toHaveBeenCalled();
+    expect(paymentsRepository.fulfillCheckoutSession).not.toHaveBeenCalled();
   });
 
   it("payment-status: paid + metadata MATCHES → marks the metadata lead paid", async () => {
     seedPaymentsRepo();
     retrieveCheckoutSession.mockResolvedValue({
       id: "cs_1",
+      mode: "payment",
+      status: "complete",
       payment_status: "paid",
       metadata: { clientLeadId: "5" },
     });
     const out = await paymentsUsecase.paymentStatus({ sessionId: "cs_1", clientLeadId: 5, lng: "en" });
     expect(out.paid).toBe(true);
-    expect(paymentsRepository.markFullyPaid).toHaveBeenCalledWith("5", "cs_1");
+    expect(paymentsRepository.fulfillCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ clientLeadId: "5", sessionId: "cs_1" }),
+    );
   });
 
   it("payment-status: unpaid session → { paid:false }, no DB write", async () => {
     seedPaymentsRepo();
-    retrieveCheckoutSession.mockResolvedValue({ id: "cs_1", payment_status: "unpaid" });
+    retrieveCheckoutSession.mockResolvedValue({
+      id: "cs_1",
+      mode: "payment",
+      status: "open",
+      payment_status: "unpaid",
+      metadata: { clientLeadId: "5" },
+    });
     const out = await paymentsUsecase.paymentStatus({ sessionId: "cs_1", clientLeadId: 5 });
     expect(out.paid).toBe(false);
-    expect(paymentsRepository.markFullyPaid).not.toHaveBeenCalled();
+    expect(paymentsRepository.fulfillCheckoutSession).not.toHaveBeenCalled();
   });
 
   it("backfill: wrong secret → 403", () => {

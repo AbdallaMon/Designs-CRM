@@ -1,4 +1,5 @@
 "use client"
+import { PROFILES } from "@dms/shared";
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -42,12 +43,13 @@ const [loading,setLoading]=useState(false)
 const [filters,setFilters]=useState({})
 useEffect(()=>{
 async function getAttempts(){
-  const extra=filters&&filters.staffId?`?userId=${filters.staffId}&`:""
+const extra = filters?.staffId ? `?userId=${filters.staffId}` : "";
   await getDataAndSet({url:`courses/tests/${testId}/attempts${extra}`,setLoading,setData:setAttempts})
 }
 getAttempts()
 },[testId,filters])
   // Handle URL search parameters
+  /* eslint-disable react-hooks/set-state-in-effect -- URL deep links initialize dialog state after hydration. */
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const userIdParam = urlParams.get('userId');
@@ -57,6 +59,7 @@ getAttempts()
       setDialogOpen(true);
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleViewAttempts = (userId) => {
     setSelectedUserId(userId);
@@ -82,11 +85,11 @@ getAttempts()
 
   const getProfileColor = (profileKey) => {
     switch (profileKey) {
-      case 'NORMAL_SALES':
+      case PROFILES.NORMAL_SALES:
         return 'primary';
-      case 'SUPER_SALES':
+      case PROFILES.SUPER_SALES:
         return 'secondary';
-      case 'ADMIN':
+      case PROFILES.ADMIN:
         return 'error';
       default:
         return 'default';

@@ -70,4 +70,21 @@ describe("error handler contract", () => {
       "database password leaked",
     );
   });
+
+  it("delegates instead of writing a second response after headers were sent", () => {
+    const error = new Error("late failure");
+    const res = { ...response(), headersSent: true };
+    const next = vi.fn();
+
+    errorHandler(
+      error,
+      { method: "PUT", originalUrl: "/leads/call-reminders/1" },
+      res,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
 });

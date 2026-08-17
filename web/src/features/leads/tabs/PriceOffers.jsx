@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 import React from "react";
 import {
   alpha,
@@ -218,10 +219,10 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
             onChange={handleChange}
             inputProps={{ "aria-label": "Accept Price Offer" }}
             disabled={
-              !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-              user.profile !== "ADMIN" &&
-              user.profile !== "SUPER_ADMIN" &&
-              user.profile !== "SUPER_SALES"
+              ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+              user.profile !== PROFILES.ADMIN &&
+              user.profile !== PROFILES.SUPER_ADMIN &&
+              user.profile !== PROFILES.SUPER_SALES
             }
           />
         </Box>

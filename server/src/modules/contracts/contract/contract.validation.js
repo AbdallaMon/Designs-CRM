@@ -16,6 +16,7 @@
 //   - drawings: url, fileName
 //   - special items: labelAr, labelEn
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -23,8 +24,13 @@ const idParam = z.coerce.number().int().positive();
 // the stricter ">0 per create payment" rule inside the service (preserved); here we reject
 // the obviously-invalid (NaN / negative) at the edge.
 const money = z.coerce.number().refine((n) => Number.isFinite(n) && n >= 0, {
-  message: "amount must be a finite number >= 0",
+  message: V.NON_NEGATIVE_NUMBER_REQUIRED,
 });
+
+const nullableId = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.coerce.number().int().positive().nullable().optional(),
+);
 
 // A single payment as consumed by createPayments/createContractPayment. Kept permissive
 // for the optional service-driven fields but `.strict()` to block injected columns; the
@@ -34,7 +40,7 @@ const paymentItem = z
     amount: money,
     note: z.string().nullish(),
     condition: z.string().nullish(),
-    conditionId: z.union([z.coerce.number().int(), z.string()]).nullish(),
+    conditionId: nullableId,
     type: z.string().nullish(),
   })
   .strict();
@@ -92,7 +98,7 @@ export class ContractValidation {
       enTitle: z.string().nullish(),
       arName: z.string().nullish(),
       enName: z.string().nullish(),
-      projectGroupId: z.union([z.coerce.number().int(), z.string()]).nullish(),
+      projectGroupId: nullableId,
       payments: z.array(paymentItem).min(1),
       stages: z.array(stageItem).min(1),
       drawings: z.array(drawingItem).optional(),
@@ -109,7 +115,7 @@ export class ContractValidation {
       enTitle: z.string().nullish(),
       arName: z.string().nullish(),
       enName: z.string().nullish(),
-      projectGroupId: z.union([z.coerce.number().int(), z.string()]).nullish(),
+      projectGroupId: nullableId,
     })
     .strict();
 
@@ -120,7 +126,7 @@ export class ContractValidation {
   static updateStage = z
     .object({
       deliveryDays: z.coerce.number().int().nonnegative().optional(),
-      deptDeliveryDays: z.coerce.number().int().nonnegative().optional(),
+      deptDeliveryDays: z.union([z.null(), z.coerce.number().int().nonnegative()]).optional(),
     })
     .strict();
 
@@ -132,7 +138,7 @@ export class ContractValidation {
     .object({
       amount: money.optional(),
       condition: z.string().nullish(),
-      conditionId: z.union([z.coerce.number().int(), z.string()]).nullish(),
+      conditionId: nullableId,
       type: z.string().nullish(),
       note: z.string().nullish(),
     })

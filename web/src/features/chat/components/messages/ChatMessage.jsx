@@ -1,4 +1,5 @@
 "use client";
+import { CHAT_MEMBER_ROLES, CHAT_ROOM_TYPES } from "@dms/shared";
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -82,12 +83,12 @@ export function ChatMessage({
   const isDeleted = Boolean(message.isDeleted);
 
   const isGroupChat =
-    room?.type === "PROJECT_GROUP" ||
-    room?.type === "GROUP" ||
-    room?.type === "STAFF_GROUP";
+    room?.type === CHAT_ROOM_TYPES.PROJECT_GROUP ||
+    room?.type === CHAT_ROOM_TYPES.GROUP ||
+    room?.type === CHAT_ROOM_TYPES.STAFF_GROUP;
 
   const canPin = isGroupChat
-    ? currentUserRole === "ADMIN" || currentUserRole === "MODERATOR"
+    ? currentUserRole === CHAT_MEMBER_ROLES.ADMIN || currentUserRole === CHAT_MEMBER_ROLES.MODERATOR
     : true;
 
   const canDelete = isOwnMessage || isCurrentUserAdmin;

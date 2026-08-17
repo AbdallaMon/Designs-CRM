@@ -1,12 +1,12 @@
 // leads/lead DTO — output shaping + per-record `capabilities.*` (FE rendering hints;
 // the server checkers remain the source of truth). Pure: no Prisma, no side effects.
-import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
+import { LEAD_STATUSES, PROFILES, computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
 
 const P = PERMISSIONS.LEAD;
 
 // Statuses a NON-admin user cannot transition AWAY from (legacy updateClientLeadStatus
 // rule). Used only to derive `canChangeStatus` for the UI; the route still enforces.
-const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = ["FINALIZED", "REJECTED", "ARCHIVED", "ON_HOLD"];
+const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = [LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED, "ARCHIVED", LEAD_STATUSES.ON_HOLD];
 
 /**
  * Decide whether `authUser` writes this lead, mirroring the scope checker:
@@ -21,8 +21,8 @@ function canMutateLead({ record, authUser }) {
 function isFullScope(authUser) {
   return (
     Boolean(authUser?.isAdminTier) ||
-    authUser?.currentProfileKey === "SUPER_SALES" ||
-    authUser?.currentProfileKey === "ACCOUNTANT"
+    authUser?.currentProfileKey === PROFILES.SUPER_SALES ||
+    authUser?.currentProfileKey === PROFILES.ACCOUNTANT
   );
 }
 
@@ -44,7 +44,7 @@ export function computeLeadCapabilities(record, authUser) {
       canAssignToOther: () => hasPermission(permissions, P.ASSIGN_OTHER),
       canAssignSelf: () =>
         hasPermission(permissions, P.ASSIGN_SELF) &&
-        (record?.status === "NEW" || record?.status === "ON_HOLD"),
+        (record?.status === LEAD_STATUSES.NEW || record?.status === LEAD_STATUSES.ON_HOLD),
       canAddCall: () => hasPermission(permissions, P.CALL_MANAGE) && mutable,
       canAddMeeting: () => hasPermission(permissions, P.MEETING_MANAGE) && mutable,
       canAddPriceOffer: () => hasPermission(permissions, P.PRICE_OFFER_MANAGE) && mutable,
@@ -104,7 +104,7 @@ export function filterDealsByContractLevel(clientLeads, filters) {
         return lead.contracts[0].stages?.some((stage) => {
           return (
             stage.title === filters.contractLevel &&
-            stage.stageStatus === "IN_PROGRESS"
+            stage.stageStatus === LEAD_STATUSES.IN_PROGRESS
           );
         });
       }
@@ -124,11 +124,11 @@ export function mapColumnLeadsContractStage(clientLeads, filters) {
         contractZeroStage = lead.contracts[0]?.stages?.find(
           (stage) =>
             stage.title === filters.contractLevel &&
-            stage.stageStatus === "IN_PROGRESS",
+            stage.stageStatus === LEAD_STATUSES.IN_PROGRESS,
         );
       } else {
         contractZeroStage = lead.contracts[0]?.stages?.find(
-          (stage) => stage.stageStatus === "IN_PROGRESS",
+          (stage) => stage.stageStatus === LEAD_STATUSES.IN_PROGRESS,
         );
       }
       lead.contracts[0].stage = contractZeroStage;

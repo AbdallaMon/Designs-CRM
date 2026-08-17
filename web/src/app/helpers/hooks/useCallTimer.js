@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import duration from "dayjs/plugin/duration";
+import { REMINDER_TYPES } from "@dms/shared";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -62,7 +63,7 @@ export function useCallTimer(call, userTimezone = dayjs.tz.guess(), type) {
       return;
     }
 
-    const label = type === "MEETING" ? "Meeting" : "Call";
+  const label = type === REMINDER_TYPES.MEETING ? "Meeting" : "Call";
 
     const updateTime = () => {
       const now = dayjs().tz(userTimezone);

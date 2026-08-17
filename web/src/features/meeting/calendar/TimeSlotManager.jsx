@@ -1,4 +1,5 @@
 "use client";
+import { CALENDAR_VIEW_TYPES, USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -84,11 +85,11 @@ const TimeSlotManager = ({
 
   const generateSlots = async () => {
     if (!startTime || !endTime || !meetingDuration || !breakDuration) {
-      setAlertError("Please fill all fields before generating slots.");
+      setAlertError(FEEDBACK.FILL_ALL_FIELDS_BEFORE_GENERATING_SLOTS);
       return;
     }
-    if (type === "STAFF") {
-      setAlertError("Staff cannot generate slots. Please contact an admin.");
+    if (type === CALENDAR_VIEW_TYPES.STAFF) {
+      setAlertError(FEEDBACK.STAFF_CANNOT_GENERATE_SLOTS);
       return;
     }
 
@@ -142,8 +143,8 @@ const TimeSlotManager = ({
   };
 
   const deleteSlot = async (slotId) => {
-    if (type === "STAFF") {
-      setAlertError("Staff cannot delete slots. Please contact an admin.");
+    if (type === CALENDAR_VIEW_TYPES.STAFF) {
+      setAlertError(FEEDBACK.STAFF_CANNOT_DELETE_SLOTS);
       return;
     }
     const deleteReq = await handleRequestSubmit(
@@ -211,13 +212,13 @@ const TimeSlotManager = ({
       setRerender((prev) => !prev);
     } else {
       setSlots([]);
-      setAlertError("Failed to fetch slots. Please try again.");
+      setAlertError(FEEDBACK.FAILED_TO_FETCH_SLOTS);
     }
   };
 
   const deleteDay = async () => {
-    if (type === "STAFF") {
-      setAlertError("Staff cannot delete slots. Please contact an admin.");
+    if (type === CALENDAR_VIEW_TYPES.STAFF) {
+      setAlertError(FEEDBACK.STAFF_CANNOT_DELETE_SLOTS);
       return;
     }
     const deleteReq = await handleRequestSubmit(
@@ -294,7 +295,7 @@ const TimeSlotManager = ({
         )}
 
         <DialogContent sx={{ p: isMobile ? 2 : 3 }}>
-          {type !== "STAFF" && (
+          {type !== CALENDAR_VIEW_TYPES.STAFF && (
             <Box mb={3}>
               <Typography variant="h6" gutterBottom fontWeight="600">
                 Slot Generation Settings
@@ -346,7 +347,7 @@ const TimeSlotManager = ({
               </Grid>
 
               <Stack direction="row" spacing={2} mt={2}>
-                {type !== "STAFF" && (
+                {type !== CALENDAR_VIEW_TYPES.STAFF && (
                   <Button
                     variant="contained"
                     onClick={generateSlots}
@@ -356,7 +357,7 @@ const TimeSlotManager = ({
                     Generate Slots
                   </Button>
                 )}
-                {!isMultiDate && dayId && type !== "STAFF" && (
+                {!isMultiDate && dayId && type !== CALENDAR_VIEW_TYPES.STAFF && (
                   <Button
                     variant="outlined"
                     onClick={() => setCustomSlotDialog(true)}
@@ -427,7 +428,7 @@ const TimeSlotManager = ({
                                   }}
                                 />
                               </Box>
-                              {type !== "STAFF" && (
+                              {type !== CALENDAR_VIEW_TYPES.STAFF && (
                                 <IconButton
                                   onClick={() => deleteSlot(slot.id)}
                                   disabled={slot.isBooked}
@@ -449,7 +450,7 @@ const TimeSlotManager = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 3, gap: 1 }}>
-          {dayId && type !== "STAFF" && (
+          {dayId && type !== CALENDAR_VIEW_TYPES.STAFF && (
             <Button
               startIcon={<DeleteIcon />}
               color="error"

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 // Site-utility Zod schemas. Framework-agnostic class of static schemas; the
 // `validate` middleware returns 422 + field details on failure.
@@ -41,10 +42,10 @@ export class SiteUtilityValidation {
       labelEn: z.string().min(1).optional(),
     })
     .refine((obj) => Object.keys(obj).length > 0, {
-      message: "At least one field must be provided",
+      message: V.AT_LEAST_ONE_FIELD_REQUIRED,
     });
 
   static idParams = z.object({
-    id: z.coerce.number().int().positive("id must be a positive integer"),
+    id: z.coerce.number().int().positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 }

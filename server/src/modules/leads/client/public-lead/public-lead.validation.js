@@ -11,7 +11,9 @@
 //
 // `lng` is preserved ONLY so the usecase can branch the (now CODE-based) response exactly as
 // legacy did for the duplicate-today / completed guards; no prose is emitted.
+import { validationMessagesCodes as V } from "@dms/shared";
 import { z } from "zod";
+import { publicLeadSourceSchema } from "../public-lead-source.js";
 
 const trimmed = z.string().trim();
 
@@ -24,6 +26,13 @@ const money = z.coerce.number().finite().nonnegative();
 // undefined) so a null is treated as "absent" — the usecase already guards every optional
 // field with a truthy check (`if (body.x)`), so a null is simply not written.
 const optionalTrimmed = trimmed.nullish();
+const publicUploadUrl = z
+  .string()
+  .trim()
+  .regex(
+    /^\/uploads\/public\/public-lead\/[1-9][0-9]*\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9]+\.(png|jpe?g|webp|pdf)$/,
+  )
+  .refine((value) => !value.includes(".."), V.INVALID_PUBLIC_UPLOAD_URL);
 
 // The public website posts the WHOLE form object and uses "" for any field the user
 // skipped (e.g. `email` on the pre-captured path, `emirate` when OUTSIDE the UAE, etc.).
@@ -48,7 +57,6 @@ const baseLeadFields = {
   lng: optionalTrimmed,
   name: trimmed.min(1).nullish(),
   phone: trimmed.min(1).nullish(),
-  email: z.string().trim().email().nullish(),
   category: optionalTrimmed,
   item: optionalTrimmed,
   emirate: optionalTrimmed,
@@ -57,10 +65,11 @@ const baseLeadFields = {
   clientDescription: optionalTrimmed,
   stateOfTheProject: optionalTrimmed,
   discoverySource: optionalTrimmed,
+  source: publicLeadSourceSchema.optional(),
   timeToContact: optionalTrimmed,
   priceOption: optionalTrimmed,
   priceRange: z.array(money).length(2).nullish(),
-  url: optionalTrimmed,
+  url: publicUploadUrl.nullish(),
   notClientPage: z.boolean().nullish(),
 };
 
@@ -70,6 +79,7 @@ export const PublicLeadValidation = {
     z
       .object({
         ...baseLeadFields,
+        url: z.never().optional(),
         name: trimmed.min(1),
         phone: trimmed.min(1),
         email: z.string().trim().email(),
@@ -88,11 +98,15 @@ export const PublicLeadValidation = {
         phone: trimmed.min(1).optional(),
         email: z.string().trim().email(),
         stateOfTheProject: trimmed.optional(),
+        source: publicLeadSourceSchema.optional(),
       })
       .strip(),
   ),
 
-  // POST /new-lead/complete-register/:leadId — completes a draft; body is the rich form.
+  // POST /new-lead/complete-register/:leadId — completes an already identified draft.
+  // Email belongs only to the register step. Completion is capability-bound to the lead
+  // and never reads or updates email, so legacy/replayed `email` keys are stripped instead
+  // of being revalidated after the draft has already accepted the address.
   completeRegister: blankToUndefined(z.object(baseLeadFields).strip()),
 
   // POST /cooperation-requests — partner/cooperation contact form (email only).

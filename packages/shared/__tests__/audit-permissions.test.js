@@ -6,6 +6,8 @@ import {
   PERMISSIONS,
   USER_ROLES,
   ALL_PERMISSIONS,
+  PROFILE_KEYS,
+  PROFILE_PERMISSION_DEFAULTS,
   PROFILES,
   AUDIT_ACTIONS,
   AUDIT_MODULES,
@@ -51,11 +53,11 @@ describe("audit.log.view permission wiring", () => {
   });
 
   it("is present in the ADMIN + SUPER_ADMIN profiles, absent from every other profile", () => {
-    expect(PROFILES.ADMIN).toContain(VIEW);
-    expect(PROFILES.SUPER_ADMIN).toContain(VIEW);
-    for (const key of Object.keys(PROFILES)) {
-      if (key === "ADMIN" || key === "SUPER_ADMIN") continue;
-      expect(PROFILES[key]).not.toContain(VIEW);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.ADMIN]).toContain(VIEW);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.SUPER_ADMIN]).toContain(VIEW);
+    for (const key of PROFILE_KEYS) {
+      if (key === PROFILES.ADMIN || key === PROFILES.SUPER_ADMIN) continue;
+      expect(PROFILE_PERMISSION_DEFAULTS[key]).not.toContain(VIEW);
     }
   });
 });

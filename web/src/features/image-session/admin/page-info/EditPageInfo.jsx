@@ -1,6 +1,7 @@
 import { OpenItemDialog } from "@/features/image-session/admin/shared/OpenItemDialog.jsx";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import { EditTitleAndDescriptionFields } from "@/features/image-session/admin/shared/EditTitleAndDescription.jsx";
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export function EditPageInfo({ onUpdate, pageInfo }) {
   const { languages } = useLanguage();
@@ -13,7 +14,7 @@ export function EditPageInfo({ onUpdate, pageInfo }) {
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
     const allFilledDesc = languages.every((lng) =>
@@ -22,7 +23,7 @@ export function EditPageInfo({ onUpdate, pageInfo }) {
     if (!allFilledDesc) {
       return {
         error: true,
-        message: "Please fill all descripitons in all languages",
+        message: FORM_ERRORS.FILL_ALL_DESCRIPTIONS,
       };
     }
     return { error: false };
@@ -31,7 +32,7 @@ export function EditPageInfo({ onUpdate, pageInfo }) {
     <OpenItemDialog
       component={EditPageInfoForm}
       name={"Page info"}
-      slug={"image-session/page-info"}
+      slug="page-info"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       type="EDIT"

@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import bullmqConnection from "../redis/bullmq.connection.js";
 import { createChannelAndAddUsers } from "../telegram/telegram-functions.js";
 import { coonnectToTelegramV2 } from "../../modules/telegram/connect.js";
+import { INTEGRATION_ERROR_CODES } from "@dms/shared";
 
 export const telegramChannelWorker = new Worker(
   "telegram-channel-queue",
@@ -15,7 +16,7 @@ export const telegramChannelWorker = new Worker(
 );
 
 telegramChannelWorker.on("failed", async (job, err) => {
-  if (err.message.includes("AUTH_KEY_UNREGISTERED")) {
+  if (err.message.includes(INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED)) {
     await coonnectToTelegramV2();
     console.log("Reconnected to Telegram successfully!");
   }

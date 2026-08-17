@@ -14,6 +14,7 @@ import { FiPhone, FiClock, FiFileText } from "react-icons/fi";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { SEVERITY_PALETTE } from "@/features/leads/cockpit/config/cockpitActions.jsx";
 import { getMyDaySignalConfig } from "@/features/my-day/config/myDayCopy.jsx";
+import { MY_DAY_FAMILIES } from "@dms/shared";
 
 // Section a SALES lead links to, given its issues (calls tab when a call is overdue).
 function salesHref(item) {
@@ -196,7 +197,7 @@ export default function TargetQueueContent({ userId, focus }) {
     );
   }
 
-  const isSales = data.family === "SALES";
+  const isSales = data.family === MY_DAY_FAMILIES.SALES;
   // Which row to scroll to for a given focus: first overdue-call row / first stale row.
   const focusMatch = (item) => {
     if (focus === "overdue") return item.flags?.overdueCalls > 0;

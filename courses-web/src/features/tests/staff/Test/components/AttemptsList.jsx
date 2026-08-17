@@ -47,7 +47,7 @@ const AttemptsList = ({
 
     {attempts.length === 0 ? (
       <Alert severity="info">
-        No attempts yet. Select "Start a new attempt" to begin.
+        No attempts yet. Select &quot;Start a new attempt&quot; to begin.
       </Alert>
     ) : (
       <List>

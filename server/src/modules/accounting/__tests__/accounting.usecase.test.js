@@ -47,7 +47,9 @@ import {
   USER_ROLES,
   authMessagesCodes,
   accountingMessagesCodes,
+  generalMessagesCodes,
 } from "@dms/shared";
+import { validate } from "../../../shared/middlewares/validate.middleware.js";
 
 import { PaymentUsecase } from "../payment/payment.usecase.js";
 import { PaymentValidation } from "../payment/payment.validation.js";
@@ -149,6 +151,28 @@ describe("accounting money validation", () => {
     const r = PaymentValidation.pay.safeParse({ amount: "150.5", issuedDate: "2026-06-01" });
     expect(r.success).toBe(true);
     expect(r.data.amount).toBe(150.5);
+  });
+
+  it.each(["not-a-date", "2026-02-30", "2026-13-01", new Date("invalid")])(
+    "payment pay: rejects invalid issuedDate %s at the Zod boundary",
+    (issuedDate) => {
+      const r = PaymentValidation.pay.safeParse({ amount: 10, issuedDate });
+      expect(r.success).toBe(false);
+      expect(r.error.issues[0].message).toBe(generalMessagesCodes.VALIDATION_ERROR);
+    },
+  );
+
+  it("payment pay: invalid issuedDate reaches the API boundary as VALIDATION_ERROR", () => {
+    const req = { body: { amount: 10, issuedDate: "2026-02-30" } };
+    const next = vi.fn();
+
+    validate(PaymentValidation.pay)(req, {}, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(next.mock.calls[0][0]).toMatchObject({
+      message: generalMessagesCodes.VALIDATION_ERROR,
+      statusCode: 422,
+    });
   });
 
   it("payment change-status: rejects a level outside the enum", () => {

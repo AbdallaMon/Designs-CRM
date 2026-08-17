@@ -1,4 +1,5 @@
 "use client";
+import { CONTRACT_STATUSES } from "@dms/shared";
 
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import {
@@ -64,7 +65,7 @@ export default function LeadContractList({
     });
     if (req && updateOuterContract) {
       updateOuterContract(
-        req.data.find((c) => c.status === "IN_PROGRESS" && c.amount > 0)?.id ||
+        req.data.find((c) => c.status === CONTRACT_STATUSES.IN_PROGRESS && c.amount > 0)?.id ||
           null
       );
     }

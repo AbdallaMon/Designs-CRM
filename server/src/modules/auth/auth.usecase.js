@@ -1,5 +1,6 @@
 import { HashService } from "../../infra/security/hash.js";
 import { JwtService } from "../../infra/security/jwt.js";
+import { AuthSessionService } from "../../infra/security/auth-session.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { AuthRepository } from "./auth.repo.js";
 import { AuthSchema } from "./auth.dto.js";
@@ -63,14 +64,15 @@ class AuthUseCase {
     };
 
     const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(authenticatedUser));
-    const refreshToken = JwtService.signRefresh({ id: user.id });
+    const refreshToken = await AuthSessionService.issueRefreshToken({ id: user.id });
 
     return { user: AuthSchema.toMe(authenticatedUser), accessToken, refreshToken };
   }
   static async refreshTokens(token) {
     if (!token) throw new AppError({ code: authMessagesCodes.REFRESH_TOKEN_MISSING, statusCode: 401 });
 
-    const decoded = JwtService.verifyRefresh(token);
+    const session = await AuthSessionService.consumeRefreshToken(token);
+    const decoded = session.payload;
     const user = await AuthRepository.findById(decoded.id);
 
     if (!user || !user.isActive)
@@ -89,7 +91,11 @@ class AuthUseCase {
     const accessToken = JwtService.signAccess(
       AuthSchema.toTokenPayload({ ...user, currentProfileId }),
     );
-    const refreshToken = JwtService.signRefresh({ id: user.id });
+    const refreshToken = await AuthSessionService.issueRefreshToken({
+      id: user.id,
+      familyId: session.familyId,
+      sessionVersion: session.sessionVersion,
+    });
 
     return { accessToken, refreshToken };
   }
@@ -99,7 +105,7 @@ class AuthUseCase {
    * actually hold. Persists the new current, audits it, and re-mints the token
    * pair so the new profile's permissions take effect immediately.
    */
-  static async switchProfile({ authUser, profileId }) {
+  static async switchProfile({ authUser, profileId, refreshToken = null }) {
     const user = await AuthRepository.findById(authUser.id);
     if (!user || !user.isActive) throw new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 });
 
@@ -111,6 +117,9 @@ class AuthUseCase {
     const resolved = profileCache.resolve(targetId);
     if (!resolved) throw new AppError({ code: authMessagesCodes.PROFILE_NOT_FOUND, statusCode: 404 });
 
+    const session = refreshToken
+      ? await AuthSessionService.consumeRefreshToken(refreshToken)
+      : null;
     await AuthRepository.setCurrentProfile(user.id, targetId);
     await authAuditRepository.record({
       actorUserId: user.id,
@@ -136,15 +145,28 @@ class AuthUseCase {
       permissionsByModule: resolved.permissionsByModule,
     };
     const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(freshUser));
-    const refreshToken = JwtService.signRefresh({ id: user.id });
+    const nextRefreshToken = await AuthSessionService.issueRefreshToken({
+      id: user.id,
+      familyId: session?.familyId,
+      sessionVersion: session?.sessionVersion,
+    });
 
-    return { user: AuthSchema.toMe(freshUser), accessToken, refreshToken };
+    return {
+      user: AuthSchema.toMe(freshUser),
+      accessToken,
+      refreshToken: nextRefreshToken,
+    };
   }
+  static async logout(refreshToken) {
+    await AuthSessionService.revokeRefreshToken(refreshToken);
+    return null;
+  }
+
   static async requestPasswordReset(email) {
     const user = await AuthRepository.findByEmail(email);
     if (!user || !user.isActive) return; // silent — don't leak email existence
 
-    const resetToken = JwtService.signReset({ id: user.id });
+    const resetToken = await AuthSessionService.issuePasswordResetToken(user.id);
     const resetEmail = AuthEmails.resetEmail(resetToken);
     await sendEmail({
       to: user.email,
@@ -155,7 +177,7 @@ class AuthUseCase {
   }
   static async resetPassword(token, newPassword) {
     if (!token) throw new AppError({ code: authMessagesCodes.RESET_TOKEN_MISSING, statusCode: 400 });
-    const decoded = JwtService.verifyReset(token);
+    const decoded = await AuthSessionService.verifyPasswordResetToken(token);
     const user = await AuthRepository.findById(decoded.id);
     if (!user || !user.isActive)
       throw new AppError({ code: authMessagesCodes.UNAUTHORIZED, statusCode: 401 });
@@ -168,7 +190,10 @@ class AuthUseCase {
       throw new AppError({ code: authMessagesCodes.PASSWORD_MUST_DIFFER, statusCode: 400 });
 
     const hashedPassword = await HashService.hash(newPassword);
-    return await AuthRepository.changePassword(hashedPassword, user.id);
+    await AuthSessionService.consumePasswordResetToken(token);
+    await AuthSessionService.invalidateUserSessions(user.id);
+    await AuthRepository.changePassword(hashedPassword, user.id);
+    return null;
   }
 }
 

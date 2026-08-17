@@ -4,6 +4,7 @@ import {
 } from "@/shared/components/feedback/loaders/toast/ToastUpdate";
 import { toast } from "react-toastify";
 import { apiRequest } from "./apiClient";
+import { generalMessagesCodes } from "@dms/shared";
 
 export async function uploadInChunks(file, setProgress, setOverlay) {
   const toastId = toast.loading("Uploading");
@@ -31,13 +32,16 @@ export async function uploadInChunks(file, setProgress, setOverlay) {
       });
       const envelope = await response.json();
       if (!response.ok) {
-        throw new Error(envelope?.message || "FILE_UPLOAD_ERROR");
+        throw new Error(envelope?.message || generalMessagesCodes.FILE_UPLOAD_ERROR);
       }
       const payload = envelope?.data ?? envelope;
       if (payload.url) {
         finalPayload = {
-          url: payload.url,
-          thumbnailUrl: payload.thumbnailUrl || null,
+          storageUrl: payload.url,
+          url: payload.accessUrl || payload.url,
+          storageThumbnailUrl: payload.thumbnailUrl || null,
+          thumbnailUrl:
+            payload.thumbnailAccessUrl || payload.thumbnailUrl || null,
           fileName: payload.fileName || file.name,
           fileSize: payload.fileSize || file.size,
           fileMimeType: payload.fileMimeType || file.type || null,

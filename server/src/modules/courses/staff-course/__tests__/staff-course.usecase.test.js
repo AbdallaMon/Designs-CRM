@@ -1,22 +1,45 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// DI-removal: the usecase now calls the directly-imported repo singleton and the
-// notifications module (via a lazy import). Mock both seams — the notifier stub replaces
-// the `notifyAttemptFailed` dependency the constructor used to inject.
 vi.mock("../staff-course.repo.js", () => ({
   staffCourseRepository: {
+    listPublishedCourses: vi.fn(),
+    getPublishedCourse: vi.fn(),
+    countPreviewableLessons: vi.fn(),
+    countPublishedCourseTests: vi.fn(),
+    listCompletedLessonIds: vi.fn(),
+    listCompletedTestIds: vi.fn(),
+    listTestAttemptsForCourse: vi.fn(),
+    getPreviewableLesson: vi.fn(),
+    getLessonAccess: vi.fn(),
+    listPreviousHomeworkLessons: vi.fn(),
+    listCompletedLessonIdsIn: vi.fn(),
+    listLessonsWithPublishedTests: vi.fn(),
+    findPassedAttempt: vi.fn(),
+    listHomeworks: vi.fn(),
+    createHomework: vi.fn(),
+    listHomeworkTypes: vi.fn(),
+    findCourseProgress: vi.fn(),
+    createCourseProgress: vi.fn(),
+    findCompletedLesson: vi.fn(),
+    createCompletedLesson: vi.fn(),
+    lockCourseForUpdate: vi.fn(),
+    getPublishedTestWithRelations: vi.fn(),
+    listTestQuestions: vi.fn(),
+    listUserAttempts: vi.fn(),
+    getUserAttempt: vi.fn(),
     getAttemptOwner: vi.fn(),
+    getAttemptOwnerForUpdate: vi.fn(),
+    lockTestForUpdate: vi.fn(),
+    getLastUserAttemptForUpdate: vi.fn(),
+    createAttempt: vi.fn(),
     getQuestionTestId: vi.fn(),
     findExistingAnswer: vi.fn(),
     deleteSelectedAnswers: vi.fn(),
     updateUserAnswer: vi.fn(),
     createUserAnswer: vi.fn(),
-    getTestById: vi.fn(),
-    runTransaction: vi.fn(),
-    getLastUserAttemptForUpdate: vi.fn(),
-    createAttempt: vi.fn(),
     getAttemptForScoring: vi.fn(),
     updateAttemptScore: vi.fn(),
+    runTransaction: vi.fn(),
   },
 }));
 
@@ -24,335 +47,456 @@ vi.mock("../../../../infra/notifications/index.js", () => ({
   attemptFailedByUser: vi.fn(),
 }));
 
-import { staffCourseUsecase } from "../staff-course.usecase.js";
-import { staffCourseRepository } from "../staff-course.repo.js";
+import { coursesMessagesCodes, generalMessagesCodes } from "@dms/shared";
 import { attemptFailedByUser } from "../../../../infra/notifications/index.js";
-import { AppError } from "../../../../shared/errors/AppError.js";
-import { coursesMessagesCodes } from "@dms/shared";
+import {
+  COURSE_ROLE_BY_PROFILE_KEY,
+  courseRoleForAuthUser,
+} from "../course-profile-role.js";
+import { staffCourseRepository as repo } from "../staff-course.repo.js";
+import { staffCourseUsecase as usecase } from "../staff-course.usecase.js";
+
+const AUTH_USER = { id: 7, currentProfileKey: "NORMAL_SALES", permissions: [] };
+
+const validQuestion = (overrides = {}) => ({
+  id: 1,
+  type: "SINGLE_CHOICE",
+  question: "Question?",
+  choices: [
+    { id: 1, text: "A", value: "A", isCorrect: true, order: 1 },
+    { id: 2, text: "B", value: "B", isCorrect: false, order: 2 },
+  ],
+  ...overrides,
+});
+
+const validCourseTest = (overrides = {}) => ({
+  id: 9,
+  published: true,
+  attemptLimit: 2,
+  timeLimit: 60,
+  course: { id: 20, title: "Course" },
+  lesson: null,
+  questions: [validQuestion()],
+  ...overrides,
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // M1: createAttempt runs inside repository.runTransaction; default it to run inline
-  // with a fake tx client so the limit-check + insert path is exercised.
-  staffCourseRepository.runTransaction.mockImplementation((fn) => fn("TX"));
+  repo.runTransaction.mockImplementation((fn) => fn("TX"));
+  repo.listPublishedCourses.mockResolvedValue([]);
+  repo.getPublishedCourse.mockResolvedValue({ id: 20 });
+  repo.countPreviewableLessons.mockResolvedValue(1);
+  repo.countPublishedCourseTests.mockResolvedValue(1);
+  repo.listCompletedLessonIds.mockResolvedValue([]);
+  repo.listCompletedTestIds.mockResolvedValue([]);
+  repo.listTestAttemptsForCourse.mockResolvedValue([]);
+  repo.getPreviewableLesson.mockResolvedValue({ id: 3, courseId: 20, order: 1 });
+  repo.getLessonAccess.mockResolvedValue({ id: 1 });
+  repo.listPreviousHomeworkLessons.mockResolvedValue([]);
+  repo.listCompletedLessonIdsIn.mockResolvedValue([]);
+  repo.listLessonsWithPublishedTests.mockResolvedValue([]);
+  repo.getPublishedTestWithRelations.mockResolvedValue(validCourseTest());
+  repo.lockTestForUpdate.mockResolvedValue({ id: 9 });
+  repo.getLastUserAttemptForUpdate.mockResolvedValue(null);
+  repo.createAttempt.mockResolvedValue({ id: 10, testId: 9, userId: 7 });
+  repo.getQuestionTestId.mockResolvedValue({ id: 1, testId: 9 });
+  repo.findExistingAnswer.mockResolvedValue(null);
+  repo.createUserAnswer.mockResolvedValue({ id: 100 });
+  repo.updateUserAnswer.mockResolvedValue({ id: 100 });
+  repo.findCourseProgress.mockResolvedValue({ id: 40 });
+  repo.findCompletedLesson.mockResolvedValue(null);
+  repo.createCompletedLesson.mockResolvedValue({ id: 50, lessonId: 3 });
 });
 
-describe("StaffCourseUsecase.checkIfUserCanAccessAttempt (scope / IDOR gate)", () => {
-  it("returns the attempt row when it belongs to the caller", async () => {
-    const attempt = { id: 5, userId: 7 };
-    staffCourseRepository.getAttemptOwner.mockResolvedValue(attempt);
-
-    const result = await staffCourseUsecase.checkIfUserCanAccessAttempt({
-      attemptId: 5,
-      authUserId: 7,
+describe("active profile to CourseRole mapping", () => {
+  it("maps every active profile explicitly and never reads a legacy role flag", () => {
+    expect(COURSE_ROLE_BY_PROFILE_KEY).toEqual({
+      ADMIN: "ADMIN",
+      SUPER_ADMIN: "SUPER_ADMIN",
+      NORMAL_SALES: "STAFF",
+      PRIMARY_SALES: "STAFF",
+      SUPER_SALES: "STAFF",
+      ACCOUNTANT: "ACCOUNTANT",
+      DESIGNER_3D: "THREE_D_DESIGNER",
+      DESIGNER_2D: "TWO_D_DESIGNER",
+      EXECUTOR_2D: "TWO_D_EXECUTOR",
+      CONTACT_INITIATOR: null,
     });
-    expect(result).toBe(attempt);
+    expect(
+      courseRoleForAuthUser({
+        currentProfileKey: "NORMAL_SALES",
+        role: "ADMIN",
+        isPrimary: true,
+        isSuperSales: true,
+      }),
+    ).toBe("STAFF");
   });
 
-  it("THROWS 404 ATTEMPT_NOT_FOUND when the attempt does not exist", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue(null);
+  it.each(Object.entries(COURSE_ROLE_BY_PROFILE_KEY))(
+    "%s applies the same visibility to list, detail, and lesson (%s)",
+    async (profileKey, courseRole) => {
+      const authUser = { id: 7, currentProfileKey: profileKey };
+      if (!courseRole) {
+        await expect(usecase.listCourses({ authUser })).resolves.toEqual([]);
+        await expect(
+          usecase.getCourse({ courseId: 20, userId: 7, authUser }),
+        ).resolves.toBeNull();
+        await expect(
+          usecase.getLesson({ lessonId: 3, courseId: 20, userId: 7, authUser }),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: coursesMessagesCodes.COURSE_ACCESS_DENIED,
+        });
+        return;
+      }
 
-    await expect(
-      staffCourseUsecase.checkIfUserCanAccessAttempt({ attemptId: 99, authUserId: 7 }),
-    ).rejects.toMatchObject({
-      statusCode: 404,
-      message: coursesMessagesCodes.ATTEMPT_NOT_FOUND,
-    });
-  });
-
-  it("THROWS 403 ATTEMPT_ACCESS_DENIED for another user's attempt", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({ id: 5, userId: 1 });
-
-    const promise = staffCourseUsecase.checkIfUserCanAccessAttempt({
-      attemptId: 5,
-      authUserId: 7,
-    });
-    await expect(promise).rejects.toBeInstanceOf(AppError);
-    await expect(promise).rejects.toMatchObject({
-      statusCode: 403,
-      message: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED,
-    });
-  });
+      await usecase.listCourses({ skip: 0, take: 10, authUser });
+      await usecase.getCourse({ courseId: 20, userId: 7, authUser });
+      await usecase.getLesson({ lessonId: 3, courseId: 20, userId: 7, authUser });
+      expect(repo.listPublishedCourses).toHaveBeenLastCalledWith(
+        expect.objectContaining({ courseRole }),
+      );
+      expect(repo.getPublishedCourse).toHaveBeenLastCalledWith(
+        expect.objectContaining({ courseRole }),
+      );
+      expect(repo.getPreviewableLesson).toHaveBeenLastCalledWith(
+        expect.objectContaining({ courseRole, courseId: 20, lessonId: 3 }),
+      );
+    },
+  );
 });
 
-describe("StaffCourseUsecase.checkIfUserCanMutateAttempt (C1/C2 write-scope gate)", () => {
-  it("returns the attempt row when it belongs to the caller", async () => {
-    const attempt = { id: 5, userId: 7, testId: 9, endTime: null };
-    staffCourseRepository.getAttemptOwner.mockResolvedValue(attempt);
-
-    const result = await staffCourseUsecase.checkIfUserCanMutateAttempt({
-      attemptId: 5,
-      authUserId: 7,
-    });
-    expect(result).toBe(attempt);
-  });
-
-  it("THROWS 404 ATTEMPT_NOT_FOUND when the attempt does not exist", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue(null);
-
-    await expect(
-      staffCourseUsecase.checkIfUserCanMutateAttempt({ attemptId: 99, authUserId: 7 }),
-    ).rejects.toMatchObject({
-      statusCode: 404,
-      message: coursesMessagesCodes.ATTEMPT_NOT_FOUND,
-    });
-  });
-
-  it("THROWS 403 ATTEMPT_ACCESS_DENIED for another user's attempt (the IDOR block)", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({ id: 5, userId: 1, testId: 9 });
-
-    const promise = staffCourseUsecase.checkIfUserCanMutateAttempt({
-      attemptId: 5,
-      authUserId: 7,
-    });
-    await expect(promise).rejects.toBeInstanceOf(AppError);
-    await expect(promise).rejects.toMatchObject({
-      statusCode: 403,
-      message: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED,
-    });
-  });
-});
-
-describe("StaffCourseUsecase.submitAnswer (C1 owner / H1 terminal / H2 binding)", () => {
-  const baseAnswer = { textAnswer: "x", selectedAnswers: ["A"] };
-
-  it("OWNER submitting a valid same-test question SUCCEEDS (legitimate use preserved)", async () => {
-    const created = { id: 100 };
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({ id: 5, userId: 7, testId: 9, endTime: null });
-    staffCourseRepository.getQuestionTestId.mockResolvedValue({ id: 3, testId: 9 });
-    staffCourseRepository.findExistingAnswer.mockResolvedValue(null);
-    staffCourseRepository.createUserAnswer.mockResolvedValue(created);
-
-    const result = await staffCourseUsecase.submitAnswer({
-      answer: baseAnswer,
-      attemptId: 5,
-      questionId: 3,
+describe("learner access gates", () => {
+  it("removes choices.isCorrect from every learner question response", async () => {
+    repo.listTestQuestions.mockResolvedValue([
+      validQuestion({ choices: [{ id: 1, text: "A", isCorrect: true }] }),
+    ]);
+    const questions = await usecase.getUserTestQuestions({
       testId: 9,
-      authUserId: 7,
+      userId: 7,
+      authUser: AUTH_USER,
     });
-    expect(result).toBe(created);
-    expect(staffCourseRepository.createUserAnswer).toHaveBeenCalledTimes(1);
+    expect(questions[0].choices[0]).not.toHaveProperty("isCorrect");
   });
 
-  it("THROWS 403 when a NON-OWNER submits an answer (C1 IDOR)", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({ id: 5, userId: 1, testId: 9, endTime: null });
+  it.each(["getUserTest", "getUserTestQuestions", "getUserAttempts"])(
+    "denies direct %s calls when the published test is outside profile scope",
+    async (method) => {
+      repo.getPublishedTestWithRelations.mockResolvedValue(null);
+      await expect(
+        usecase[method]({ testId: 9, userId: 7, authUser: AUTH_USER }),
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: coursesMessagesCodes.COURSE_ACCESS_DENIED,
+      });
+    },
+  );
 
-    await expect(
-      staffCourseUsecase.submitAnswer({
-        answer: baseAnswer,
-        attemptId: 5,
-        questionId: 3,
-        testId: 9,
-        authUserId: 7,
+  it("requires LessonAccess for direct lesson-test reads", async () => {
+    repo.getPublishedTestWithRelations.mockResolvedValue(
+      validCourseTest({
+        course: null,
+        lesson: { id: 3, courseId: 20, order: 1 },
       }),
+    );
+    repo.getLessonAccess.mockResolvedValue(null);
+    await expect(
+      usecase.getUserTest({ testId: 9, userId: 7, authUser: AUTH_USER }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED,
+      message: coursesMessagesCodes.LESSON_ACCESS_DENIED,
     });
-    expect(staffCourseRepository.createUserAnswer).not.toHaveBeenCalled();
   });
 
-  it("THROWS 400 QUESTION_TEST_MISMATCH when the question belongs to another test (H2)", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({ id: 5, userId: 7, testId: 9, endTime: null });
-    staffCourseRepository.getQuestionTestId.mockResolvedValue({ id: 3, testId: 42 });
-
+  it("requires prior lesson completion and tests", async () => {
+    repo.listPreviousHomeworkLessons.mockResolvedValue([{ id: 2 }]);
     await expect(
-      staffCourseUsecase.submitAnswer({
-        answer: baseAnswer,
+      usecase.getUserTest({ testId: 9, userId: 7, authUser: AUTH_USER }),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message: coursesMessagesCodes.PREVIOUS_LESSONS_INCOMPLETE,
+    });
+  });
+
+  it("rejects forged attempt/test binding before returning an attempt", async () => {
+    repo.getAttemptOwner.mockResolvedValue({ id: 5, userId: 7, testId: 9 });
+    await expect(
+      usecase.getUserAttempt({
         attemptId: 5,
-        questionId: 3,
+        testId: 10,
+        userId: 7,
+        authUser: AUTH_USER,
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: coursesMessagesCodes.QUESTION_TEST_MISMATCH,
+    });
+  });
+
+  it.each(["markLessonAsCompleted", "createHomework"])(
+    "rejects a forged courseId/lessonId on %s",
+    async (method) => {
+      repo.getPreviewableLesson.mockResolvedValue(null);
+      await expect(
+        usecase[method]({
+          lessonId: 3,
+          courseId: 999,
+          userId: 7,
+          authUser: AUTH_USER,
+          data: { url: "x", type: "VIDEO" },
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        message: coursesMessagesCodes.LESSON_NOT_FOUND,
+      });
+      expect(repo.createHomework).not.toHaveBeenCalled();
+      expect(repo.createCompletedLesson).not.toHaveBeenCalled();
+    },
+  );
+});
+
+function installParentLock(methodName) {
+  let tail = Promise.resolve();
+  repo[methodName].mockImplementation(async ({ client }) => {
+    let release;
+    const previous = tail;
+    tail = new Promise((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    client.release = release;
+    return { id: 1 };
+  });
+  repo.runTransaction.mockImplementation(async (fn) => {
+    const tx = {};
+    try {
+      return await fn(tx);
+    } finally {
+      tx.release?.();
+    }
+  });
+}
+
+describe("transactional duplicate prevention", () => {
+  it("serializes concurrent first attempts by locking the Test row", async () => {
+    installParentLock("lockTestForUpdate");
+    let lastAttempt = null;
+    repo.getPublishedTestWithRelations.mockResolvedValue(
+      validCourseTest({ attemptLimit: 1 }),
+    );
+    repo.getLastUserAttemptForUpdate.mockImplementation(async () => lastAttempt);
+    repo.createAttempt.mockImplementation(async ({ data }) => {
+      lastAttempt = { ...data };
+      return { id: 10, ...data };
+    });
+
+    const results = await Promise.allSettled([
+      usecase.createAttempt({ testId: 9, userId: 7, authUser: AUTH_USER }),
+      usecase.createAttempt({ testId: 9, userId: 7, authUser: AUTH_USER }),
+    ]);
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((result) => result.status === "rejected").reason).toMatchObject({
+      message: coursesMessagesCodes.ATTEMPT_LIMIT_REACHED,
+    });
+    expect(repo.createAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates one CourseProgress and one CompletedLesson under concurrent completion", async () => {
+    installParentLock("lockCourseForUpdate");
+    let progress = null;
+    let completed = null;
+    repo.findCourseProgress.mockImplementation(async () => progress);
+    repo.createCourseProgress.mockImplementation(async () => {
+      progress = { id: 40 };
+      return progress;
+    });
+    repo.findCompletedLesson.mockImplementation(async () => completed);
+    repo.createCompletedLesson.mockImplementation(async () => {
+      completed = { id: 50, lessonId: 3 };
+      return completed;
+    });
+
+    const results = await Promise.all([
+      usecase.markLessonAsCompleted({
+        lessonId: 3,
+        courseId: 20,
+        userId: 7,
+        authUser: AUTH_USER,
+      }),
+      usecase.markLessonAsCompleted({
+        lessonId: 3,
+        courseId: 20,
+        userId: 7,
+        authUser: AUTH_USER,
+      }),
+    ]);
+    expect(results).toEqual([completed, completed]);
+    expect(repo.createCourseProgress).toHaveBeenCalledTimes(1);
+    expect(repo.createCompletedLesson).toHaveBeenCalledTimes(1);
+  });
+
+  it("serializes answers on the attempt row and atomically replaces the existing answer", async () => {
+    installParentLock("getAttemptOwnerForUpdate");
+    repo.getAttemptOwnerForUpdate.mockImplementation(async ({ client }) => {
+      let release;
+      const previous = repo.__answerTail ?? Promise.resolve();
+      repo.__answerTail = new Promise((resolve) => {
+        release = resolve;
+      });
+      await previous;
+      client.release = release;
+      return {
+        id: 5,
+        userId: 7,
+        testId: 9,
+        startTime: new Date(),
+        endTime: null,
+      };
+    });
+    let existing = null;
+    repo.findExistingAnswer.mockImplementation(async () => existing);
+    repo.createUserAnswer.mockImplementation(async () => {
+      existing = { id: 100, selectedAnswers: [{ value: "A" }] };
+      return existing;
+    });
+    repo.updateUserAnswer.mockImplementation(async () => existing);
+
+    await Promise.all([
+      usecase.submitAnswer({
+        answer: { selectedAnswers: ["A"] },
+        attemptId: 5,
+        questionId: 1,
         testId: 9,
         authUserId: 7,
+        authUser: AUTH_USER,
       }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      message: coursesMessagesCodes.QUESTION_TEST_MISMATCH,
-    });
-    expect(staffCourseRepository.createUserAnswer).not.toHaveBeenCalled();
-  });
-
-  it("THROWS 400 QUESTION_TEST_MISMATCH when the route :testId != the attempt's test (H2)", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({ id: 5, userId: 7, testId: 9, endTime: null });
-
-    await expect(
-      staffCourseUsecase.submitAnswer({
-        answer: baseAnswer,
+      usecase.submitAnswer({
+        answer: { selectedAnswers: ["B"] },
         attemptId: 5,
-        questionId: 3,
-        testId: 1, // mismatched route test id
+        questionId: 1,
+        testId: 9,
         authUserId: 7,
+        authUser: AUTH_USER,
       }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      message: coursesMessagesCodes.QUESTION_TEST_MISMATCH,
-    });
-    expect(staffCourseRepository.createUserAnswer).not.toHaveBeenCalled();
+    ]);
+    expect(repo.createUserAnswer).toHaveBeenCalledTimes(1);
+    expect(repo.updateUserAnswer).toHaveBeenCalledTimes(1);
+    expect(repo.deleteSelectedAnswers).toHaveBeenCalledWith(
+      expect.objectContaining({ userAnswerId: 100 }),
+    );
   });
+});
 
-  it("THROWS 409 ATTEMPT_ALREADY_ENDED when submitting to a finalized attempt (H1)", async () => {
-    staffCourseRepository.getAttemptOwner.mockResolvedValue({
+describe("time limits and safe scoring", () => {
+  it("rejects answers after the server-side time limit", async () => {
+    repo.getAttemptOwnerForUpdate.mockResolvedValue({
       id: 5,
       userId: 7,
       testId: 9,
-      endTime: new Date(),
+      startTime: new Date(Date.now() - 2 * 60 * 1000),
+      endTime: null,
     });
-
+    repo.getPublishedTestWithRelations.mockResolvedValue(
+      validCourseTest({ timeLimit: 1 }),
+    );
     await expect(
-      staffCourseUsecase.submitAnswer({
-        answer: baseAnswer,
+      usecase.submitAnswer({
+        answer: { selectedAnswers: ["A"] },
         attemptId: 5,
-        questionId: 3,
+        questionId: 1,
         testId: 9,
         authUserId: 7,
+        authUser: AUTH_USER,
       }),
     ).rejects.toMatchObject({
       statusCode: 409,
       message: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED,
     });
-    expect(staffCourseRepository.createUserAnswer).not.toHaveBeenCalled();
+    expect(repo.createUserAnswer).not.toHaveBeenCalled();
   });
-});
 
-describe("StaffCourseUsecase.createAttempt (attempt-limit invariant + M1 atomicity)", () => {
-  it("THROWS 400 ATTEMPT_LIMIT_REACHED when count >= limit", async () => {
-    staffCourseRepository.getTestById.mockResolvedValue({ id: 1, attemptLimit: 2 });
-    staffCourseRepository.getLastUserAttemptForUpdate.mockResolvedValue({ attemptCount: 2, attemptLimit: 2 });
-
+  it("rejects zero-question tests at take time", async () => {
+    repo.getPublishedTestWithRelations.mockResolvedValue(
+      validCourseTest({ questions: [] }),
+    );
     await expect(
-      staffCourseUsecase.createAttempt({ testId: 1, userId: 7 }),
+      usecase.getUserTest({ testId: 9, userId: 7, authUser: AUTH_USER }),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: coursesMessagesCodes.ATTEMPT_LIMIT_REACHED,
+      message: generalMessagesCodes.BAD_REQUEST,
     });
-    expect(staffCourseRepository.createAttempt).not.toHaveBeenCalled();
-    // The lock-read happened inside the transaction (TOCTOU-safe path).
-    expect(staffCourseRepository.getLastUserAttemptForUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ testId: 1, userId: 7, client: "TX" }),
+  });
+
+  it.each([
+    validQuestion({
+      type: "MULTIPLE_CHOICE",
+      choices: [
+        { text: "A", isCorrect: false },
+        { text: "B", isCorrect: false },
+      ],
+    }),
+    validQuestion({
+      type: "ORDERING",
+      choices: [
+        { text: "A", order: 1 },
+        { text: "B", order: 1 },
+      ],
+    }),
+  ])("rejects invalid questions at take time", async (question) => {
+    repo.getPublishedTestWithRelations.mockResolvedValue(
+      validCourseTest({ questions: [question] }),
     );
-  });
-
-  it("creates the next attempt (count+1, max limit) when under the limit", async () => {
-    const created = { id: 10 };
-    staffCourseRepository.getTestById.mockResolvedValue({ id: 1, attemptLimit: 3 });
-    staffCourseRepository.getLastUserAttemptForUpdate.mockResolvedValue({ attemptCount: 1, attemptLimit: 2 });
-    staffCourseRepository.createAttempt.mockResolvedValue(created);
-
-    const result = await staffCourseUsecase.createAttempt({ testId: 1, userId: 7 });
-    expect(result).toBe(created);
-    expect(staffCourseRepository.createAttempt).toHaveBeenCalledWith({
-      client: "TX",
-      data: expect.objectContaining({
-        testId: 1,
-        userId: 7,
-        attemptCount: 2,
-        attemptLimit: 3, // max(last.attemptLimit=2, test.attemptLimit=3)
-      }),
+    await expect(
+      usecase.getUserTest({ testId: 9, userId: 7, authUser: AUTH_USER }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: generalMessagesCodes.BAD_REQUEST,
     });
   });
-});
 
-describe("StaffCourseUsecase.endAttempt (scoring math ported 1:1)", () => {
-  it("scores a fully-correct single-choice attempt as 100 / passed", async () => {
+  it("never persists a NaN score and scores a valid answer", async () => {
     const attempt = {
-      id: 1,
+      id: 5,
       testId: 9,
       userId: 7,
       attemptCount: 1,
       attemptLimit: 2,
-      test: { questions: [{ id: 1 }] },
+      endTime: new Date(),
+      test: { questions: [validQuestion()] },
       answers: [
         {
           isApproved: false,
-          question: {
-            type: "SINGLE_CHOICE",
-            choices: [{ text: "A", isCorrect: true }],
-          },
+          question: validQuestion(),
           selectedAnswers: [{ value: "A" }],
         },
       ],
     };
-    staffCourseRepository.getAttemptForScoring.mockResolvedValue(attempt);
-    staffCourseRepository.updateAttemptScore.mockResolvedValue(undefined);
-
-    const result = await staffCourseUsecase.endAttempt({ attemptId: 1 });
+    repo.getAttemptOwnerForUpdate.mockResolvedValue({ id: 5 });
+    repo.getAttemptForScoring.mockResolvedValue(attempt);
+    const result = await usecase.endAttempt({ attemptId: 5, reScore: true });
     expect(result).toEqual({ score: 100, passed: true });
-    expect(staffCourseRepository.updateAttemptScore).toHaveBeenCalledWith(
-      expect.objectContaining({ attemptId: 1, score: 100, passed: true }),
+    expect(repo.updateAttemptScore).toHaveBeenCalledWith(
+      expect.objectContaining({ score: 100, passed: true, client: "TX" }),
     );
+    expect(Number.isFinite(result.score)).toBe(true);
     expect(attemptFailedByUser).not.toHaveBeenCalled();
   });
 
-  it("notifies on a fully-consumed FAILED attempt (count >= limit)", async () => {
-    const attempt = {
-      id: 2,
+  it("rejects zero-question scoring instead of dividing by zero", async () => {
+    repo.getAttemptOwnerForUpdate.mockResolvedValue({ id: 5 });
+    repo.getAttemptForScoring.mockResolvedValue({
+      id: 5,
       testId: 9,
       userId: 7,
-      attemptCount: 2,
-      attemptLimit: 2,
-      test: { questions: [{ id: 1 }] },
-      answers: [
-        {
-          question: {
-            type: "SINGLE_CHOICE",
-            choices: [{ text: "A", isCorrect: true }],
-          },
-          selectedAnswers: [{ value: "B" }], // wrong → score 0 → failed
-        },
-      ],
-    };
-    staffCourseRepository.getAttemptForScoring.mockResolvedValue(attempt);
-    staffCourseRepository.updateAttemptScore.mockResolvedValue(undefined);
-
-    const result = await staffCourseUsecase.endAttempt({ attemptId: 2 });
-    expect(result).toEqual({ score: 0, passed: false });
-    expect(attemptFailedByUser).toHaveBeenCalledWith({ testId: 9, userId: 7 });
-  });
-
-  it("REJECTS a staff re-end of a finalized attempt with 409 (H1)", async () => {
-    const attempt = {
-      id: 3,
-      testId: 9,
-      userId: 7,
-      attemptCount: 1,
-      attemptLimit: 2,
-      endTime: new Date(), // already finalized
-      test: { questions: [{ id: 1 }] },
+      test: { questions: [] },
       answers: [],
-    };
-    staffCourseRepository.getAttemptForScoring.mockResolvedValue(attempt);
-
-    // Staff path: no reScore flag → guard fires.
-    await expect(staffCourseUsecase.endAttempt({ attemptId: 3 })).rejects.toMatchObject({
-      statusCode: 409,
-      message: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED,
     });
-    expect(staffCourseRepository.updateAttemptScore).not.toHaveBeenCalled();
-  });
-
-  it("ALLOWS the admin re-score path on a finalized attempt via reScore:true (H1)", async () => {
-    const attempt = {
-      id: 4,
-      testId: 9,
-      userId: 7,
-      attemptCount: 1,
-      attemptLimit: 2,
-      endTime: new Date(), // finalized — staff would be blocked
-      test: { questions: [{ id: 1 }] },
-      answers: [
-        {
-          isApproved: true,
-          question: { type: "TEXT", choices: [] },
-          selectedAnswers: [],
-        },
-      ],
-    };
-    staffCourseRepository.getAttemptForScoring.mockResolvedValue(attempt);
-    staffCourseRepository.updateAttemptScore.mockResolvedValue(undefined);
-
-    const result = await staffCourseUsecase.endAttempt({ attemptId: 4, reScore: true });
-    expect(result).toEqual({ score: 100, passed: true });
-    expect(staffCourseRepository.updateAttemptScore).toHaveBeenCalledWith(
-      expect.objectContaining({ attemptId: 4, score: 100, passed: true }),
-    );
+    await expect(
+      usecase.endAttempt({ attemptId: 5, reScore: true }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: generalMessagesCodes.BAD_REQUEST,
+    });
+    expect(repo.updateAttemptScore).not.toHaveBeenCalled();
   });
 });

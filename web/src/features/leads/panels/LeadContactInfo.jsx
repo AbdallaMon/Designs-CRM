@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES } from "@dms/shared";
 import { Box, Grid, Typography, useTheme } from "@mui/material";
 import { InfoCard } from "@/features/leads/core/InfoCard.jsx";
 import { EmailRedirect, WhatsAppRedirect } from "@/features/leads/core/Utility.jsx";
@@ -7,43 +8,30 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import dayjs from "dayjs";
 import { BsPerson } from "react-icons/bs";
 import { EditFieldButton } from "@/shared/components/common/EditFieldButton.jsx";
+import { usePermission } from "@/app/hooks/usePermission.js";
+import { ADMIN_RESIDUAL_CODES } from "@/app/helpers/permissionCodes.js";
+import { applyLeadFieldUpdate } from "./leadFieldState.js";
 export function LeadContactInfo({ lead, setleads, setLead }) {
   const { user } = useAuth();
 
   const admin = checkIfAdmin(user);
   const theme = useTheme();
-  function onUpdate(item, type, data) {
-    const update = type
-      ? {
-          [type]: { ...lead[type], [item]: data[item] },
-        }
-      : {
-          [item]: data[item],
-        };
-    if (setLead) {
-      setLead((oldLead) => ({
-        ...oldLead,
-        update,
-      }));
-    }
-    if (setleads) {
-      setleads((oldLeads) =>
-        oldLeads.map((l) => {
-          if (l.id === lead.id) {
-            return {
-              ...lead,
-              update,
-            };
-          } else {
-            return l;
-          }
-        })
-      );
-    }
+  const { hasPermission } = usePermission();
+  const canEditClient = hasPermission(ADMIN_RESIDUAL_CODES.CLIENT_EDIT);
+
+  function onUpdate(field, updatedEntity) {
+    applyLeadFieldUpdate({
+      leadId: lead.id,
+      field,
+      section: "client",
+      updatedEntity,
+      setLead,
+      setLeads: setleads,
+    });
   }
   return (
     <>
-      {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
+      {(lead.status === LEAD_STATUSES.NEW || lead.status === LEAD_STATUSES.ON_HOLD) && !admin ? (
         ""
       ) : (
         <>
@@ -59,11 +47,12 @@ export function LeadContactInfo({ lead, setleads, setLead }) {
               >
                 <Box>
                   <EditFieldButton
+                    canEdit={canEditClient}
                     path={`admin/client/update/${lead.client.id}`}
                     reqType="PUT"
                     field="name"
                     onUpdate={(data) => {
-                      onUpdate("name", "Client", data);
+                      onUpdate("name", data);
                     }}
                   >
                     <Typography color="text.secondary" variant="caption">
@@ -75,11 +64,12 @@ export function LeadContactInfo({ lead, setleads, setLead }) {
                 </Box>
                 <Box width="100%">
                   <EditFieldButton
+                    canEdit={canEditClient}
                     path={`admin/client/update/${lead.client.id}`}
                     reqType="PUT"
                     field="phone"
                     onUpdate={(data) => {
-                      onUpdate("phone", "Client", data);
+                      onUpdate("phone", data);
                     }}
                   >
                     <WhatsAppRedirect lead={lead} />

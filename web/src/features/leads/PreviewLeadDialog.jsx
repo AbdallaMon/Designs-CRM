@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES, PROFILES } from "@dms/shared";
 import React, { useState } from "react";
 import {
   KanbanBeginerLeadsStatus,
@@ -7,9 +8,9 @@ import {
 import {
   checkIfPrimaryStaff,
   enumToKeyValueArray,
-} from "@/app/helpers/functions/utility.js";
+} from "@/app/helpers/functions/utility.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import { FinalizeModal } from "@/features/leads/widgets/FinalizeModal.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
@@ -79,7 +80,7 @@ const LeadContent = ({
   };
 
   const handleMenuClose = async (value) => {
-    if (value === "FINALIZED") {
+    if (value === LEAD_STATUSES.FINALIZED) {
       setCurrentId(lead.id);
       setFinalizeModel(true);
       return;
@@ -111,7 +112,7 @@ const LeadContent = ({
   const handleConvertLead = async () => {
     if (admin) return;
     const request = await handleRequestSubmit(
-      { status: "ON_HOLD" },
+      { status: LEAD_STATUSES.ON_HOLD },
       setLoading,
       `leads/${lead.id}/actions/change-status`,
       false,
@@ -123,17 +124,17 @@ const LeadContent = ({
     // guard in PreviewLead takes over (shows the "no access" screen) and bump the
     // board — no full-page reload.
     if (request.status === 200) {
-      if (setLead) setLead((old) => ({ ...old, status: "ON_HOLD" }));
-      details?.refreshKanban?.("ON_HOLD");
+      if (setLead) setLead((old) => ({ ...old, status: LEAD_STATUSES.ON_HOLD }));
+      details?.refreshKanban?.(LEAD_STATUSES.ON_HOLD);
     }
   };
 
   if (!lead) return;
 
   const leadStatus = enumToKeyValueArray(
-    ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-      user.profile !== "PRIMARY_SALES" &&
-      user.profile !== "SUPER_SALES"
+    [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+      user.profile !== PROFILES.PRIMARY_SALES &&
+      user.profile !== PROFILES.SUPER_SALES
       ? KanbanBeginerLeadsStatus
       : KanbanLeadsStatus,
   );
@@ -237,7 +238,7 @@ const LeadContent = ({
 
       {/* Status Menu — kept in lockstep with the header's status control: gated on the
           backend `canChangeStatus` capability when present (parity-safe), else shown. */}
-      {lead.status !== "NEW" &&
+      {lead.status !== LEAD_STATUSES.NEW &&
         (lead.capabilities ? lead.capabilities.canChangeStatus : true) && (
           <StatusMenu
             open={open}

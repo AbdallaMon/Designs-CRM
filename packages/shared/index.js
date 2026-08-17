@@ -11,3 +11,4 @@ export * from "./constants/access/profile-permission-blocks.js";
 export * from "./constants/access/navigation.js";
 export * from "./constants/access/profiles.js";
 export * from "./constants/access/audit-actions.js";
+export * from "./constants/domain/application.constants.js";

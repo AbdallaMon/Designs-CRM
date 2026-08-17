@@ -29,7 +29,7 @@ export function EditSessionItem({
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
 
@@ -54,7 +54,7 @@ export function EditSessionItem({
       component={EditMaterialForm}
       name={name}
       modelType={modelType}
-      slug={`image-session/${slug}`}
+      slug={slug}
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       awaitCheck={true}
@@ -103,3 +103,4 @@ function EditMaterialForm({ data, setData, initialData, modelType }) {
     </>
   );
 }
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";

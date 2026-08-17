@@ -2,6 +2,7 @@ import { OpenItemDialog } from "@/features/image-session/admin/shared/OpenItemDi
 import { CreateTitleOrDesc } from "@/features/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import { Box, FormControl, InputLabel, MenuItem, Select } from "@mui/material";
+import { PAGE_INFO_TYPES, FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export function CreatePageInfo({ onUpdate }) {
   const { languages } = useLanguage();
@@ -14,13 +15,13 @@ export function CreatePageInfo({ onUpdate }) {
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
     if (!data.type) {
       return {
         error: true,
-        message: "Please select a type",
+        message: FORM_ERRORS.SELECT_TYPE,
       };
     }
     const allFilledDesc = languages.every((lng) =>
@@ -29,7 +30,7 @@ export function CreatePageInfo({ onUpdate }) {
     if (!allFilledDesc) {
       return {
         error: true,
-        message: "Please fill all descripitons in all languages",
+        message: FORM_ERRORS.FILL_ALL_DESCRIPTIONS,
       };
     }
     return { error: false };
@@ -38,7 +39,7 @@ export function CreatePageInfo({ onUpdate }) {
     <OpenItemDialog
       component={CreatePageInfoForm}
       name={"Page info"}
-      slug={"image-session/page-info"}
+      slug="page-info"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       type="CREATE"
@@ -68,7 +69,7 @@ function CreatePageInfoForm({ data, setData, setValid }) {
 }
 
 export const PageInfoTypeSelector = ({ value, setData }) => {
-  const types = ["BEFORE_PATTERN", "BEFORE_MATERIAL", "BEFORE_STYLE"];
+  const types = [PAGE_INFO_TYPES.BEFORE_PATTERN, PAGE_INFO_TYPES.BEFORE_MATERIAL, PAGE_INFO_TYPES.BEFORE_STYLE];
 
   const handleChange = (event) => {
     const type = event.target.value;

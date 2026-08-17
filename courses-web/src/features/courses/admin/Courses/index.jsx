@@ -19,6 +19,7 @@ import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import CourseCard from "./components/CourseCard";
 import EditCourseDialog from "./components/EditCourseDialog";
+import { coursePayload } from "@/app/helpers/contracts/coursePayloads";
 
 export default function CourseAdminPage() {
   const [courses, setCourses] = useState([]);
@@ -66,17 +67,19 @@ export default function CourseAdminPage() {
   };
 
   const handleSaveEdit = async () => {
+    if (!editForm.title.trim()) return;
+    let imageUrl = editForm.imageUrl;
     if (editForm.file) {
       const fileUpload = await uploadInChunks(
         editForm.file,
         setProgress,
         setOverlay
       );
-      editForm.imageUrl = fileUpload.url;
+      if (!fileUpload.url) return;
+      imageUrl = fileUpload.url;
     }
-    delete editForm.file;
     const req = await handleRequestSubmit(
-      editForm,
+      coursePayload({ ...editForm, imageUrl }),
       setToastLoading,
       `courses/${selectedCourse.id}`,
       false,

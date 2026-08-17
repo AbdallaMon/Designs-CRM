@@ -38,6 +38,7 @@ import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay"
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { pdfPayload } from "@/app/helpers/contracts/coursePayloads";
 
 // Enhanced PDFs Section Component
 const PDFsSection = ({ courseId, lessonId }) => {
@@ -69,7 +70,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
   const handleAddPdf = async () => {
     if (newPdf.url.trim()) {
       const req = await handleRequestSubmit(
-        newPdf,
+        pdfPayload(newPdf),
         setToastLoading,
         `courses/${courseId}/lessons/${lessonId}/pdfs`,
         false,
@@ -105,7 +106,7 @@ const PDFsSection = ({ courseId, lessonId }) => {
 
   const handleUpdatePdf = async () => {
     const req = await handleRequestSubmit(
-      editData,
+      pdfPayload(editData),
       setToastLoading,
       `courses/${courseId}/lessons/${lessonId}/pdfs/${editingId}`,
       false,

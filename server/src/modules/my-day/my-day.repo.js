@@ -1,3 +1,4 @@
+import { CONTRACT_SESSION_STATUSES, CALL_REMINDER_STATUSES, LEAD_STATUSES, MY_DAY_URGENCY, PROFILES } from "@dms/shared";
 // my-day repository — Prisma I/O ONLY (no business rules, no AppError). Two surfaces:
 //   1. Personal-queue inputs: the caller's OWN designer assignments (the sales queue
 //      reuses leadRepository.findCockpitBundlesForUser — not duplicated here).
@@ -17,21 +18,21 @@ import { DELIVERY_SOON_HOURS } from "../leads/lead/lead.workstage-cockpit.js";
 // Deals actively being worked in the pipeline. Excludes raw NEW (an unworked lead) and
 // every terminal/parked status.
 export const ACTIVE_DEAL_STATUSES = Object.freeze([
-  "IN_PROGRESS",
-  "INTERESTED",
-  "NEEDS_IDENTIFIED",
-  "NEGOTIATING",
+  CALL_REMINDER_STATUSES.IN_PROGRESS,
+  LEAD_STATUSES.INTERESTED,
+  LEAD_STATUSES.NEEDS_IDENTIFIED,
+  LEAD_STATUSES.NEGOTIATING,
 ]);
 
 // A salesperson's current lead workload (compared to User.maxLeadsCounts). Includes NEW
 // (an assigned-but-unworked lead still counts toward the cap) plus the active-deal set.
-export const ACTIVE_LEAD_STATUSES = Object.freeze(["NEW", ...ACTIVE_DEAL_STATUSES]);
+export const ACTIVE_LEAD_STATUSES = Object.freeze([LEAD_STATUSES.NEW, ...ACTIVE_DEAL_STATUSES]);
 
 // Designer/executor roles whose active-project load the team lens surfaces.
 export const DESIGNER_PROFILE_KEYS = Object.freeze([
-  "DESIGNER_3D",
-  "DESIGNER_2D",
-  "EXECUTOR_2D",
+  PROFILES.DESIGNER_3D,
+  PROFILES.DESIGNER_2D,
+  PROFILES.EXECUTOR_2D,
 ]);
 
 // Project.status is a FREE-FORM String (not an enum). A project is "active" when its status
@@ -90,7 +91,7 @@ class MyDayRepository {
     endOfDay.setHours(23, 59, 59, 999);
     const where = {
       userId: Number(userId),
-      status: "IN_PROGRESS",
+      status: CALL_REMINDER_STATUSES.IN_PROGRESS,
       time: { not: null, lte: endOfDay },
     };
     const select = {
@@ -116,7 +117,7 @@ class MyDayRepository {
   // hours via the pure poolTouchSeverity helper — no threshold here).
   unclaimedPoolLeads({ take = 50 } = {}) {
     return prisma.clientLead.findMany({
-      where: { userId: null, status: "NEW" },
+      where: { userId: null, status: LEAD_STATUSES.NEW },
       orderBy: { createdAt: "asc" },
       take,
       select: { id: true, createdAt: true, client: { select: { name: true } } },
@@ -158,8 +159,8 @@ class MyDayRepository {
         userId: { not: null },
         status: { in: [...ACTIVE_DEAL_STATUSES] },
         updatedAt: { lt: cutoff },
-        callReminders: { none: { status: "IN_PROGRESS", time: { gte: now } } },
-        meetingReminders: { none: { status: "IN_PROGRESS", time: { gte: now } } },
+        callReminders: { none: { status: CALL_REMINDER_STATUSES.IN_PROGRESS, time: { gte: now } } },
+        meetingReminders: { none: { status: CALL_REMINDER_STATUSES.IN_PROGRESS, time: { gte: now } } },
       },
     });
   }
@@ -167,7 +168,7 @@ class MyDayRepository {
   unclaimedAgingCount(now) {
     const cutoff = new Date(now.getTime() - UNCLAIMED_NEW_DAYS * MS_PER_DAY);
     return prisma.clientLead.count({
-      where: { userId: null, status: "NEW", createdAt: { lt: cutoff } },
+      where: { userId: null, status: LEAD_STATUSES.NEW, createdAt: { lt: cutoff } },
     });
   }
 
@@ -175,7 +176,7 @@ class MyDayRepository {
     return prisma.callReminder.groupBy({
       by: ["userId"],
       _count: { _all: true },
-      where: { status: "IN_PROGRESS", time: { lt: now } },
+      where: { status: CALL_REMINDER_STATUSES.IN_PROGRESS, time: { lt: now } },
     });
   }
 
@@ -184,7 +185,7 @@ class MyDayRepository {
   signingStalled(now, take = 20) {
     const cutoff = new Date(now.getTime() - UNSIGNED_CONTRACT_DAYS * MS_PER_DAY);
     return prisma.contract.findMany({
-      where: { sessionStatus: "SIGNING", createdAt: { lt: cutoff } },
+      where: { sessionStatus: CONTRACT_SESSION_STATUSES.SIGNING, createdAt: { lt: cutoff } },
       select: {
         id: true,
         clientLeadId: true,
@@ -229,7 +230,7 @@ class MyDayRepository {
     return prisma.deliverySchedule.findMany({
       where: {
         deliveryAt: { lt: soonCutoff },
-        stage: { stageStatus: { not: "COMPLETED" } },
+        stage: { stageStatus: { not: MY_DAY_URGENCY.COMPLETED } },
       },
       select: {
         id: true,
@@ -305,8 +306,8 @@ class MyDayRepository {
         userId: Number(userId),
         status: { in: [...ACTIVE_DEAL_STATUSES] },
         updatedAt: { lt: cutoff },
-        callReminders: { none: { status: "IN_PROGRESS", time: { gte: now } } },
-        meetingReminders: { none: { status: "IN_PROGRESS", time: { gte: now } } },
+        callReminders: { none: { status: CALL_REMINDER_STATUSES.IN_PROGRESS, time: { gte: now } } },
+        meetingReminders: { none: { status: CALL_REMINDER_STATUSES.IN_PROGRESS, time: { gte: now } } },
       },
       select: { id: true, status: true, updatedAt: true, client: { select: { name: true } } },
       orderBy: { updatedAt: "asc" },
@@ -317,7 +318,7 @@ class MyDayRepository {
   // call hangs off so the row can link to `/dashboard/deals/:leadId?tab=calls`.
   overdueCallsForRep(userId, now) {
     return prisma.callReminder.findMany({
-      where: { userId: Number(userId), status: "IN_PROGRESS", time: { lt: now } },
+      where: { userId: Number(userId), status: CALL_REMINDER_STATUSES.IN_PROGRESS, time: { lt: now } },
       select: {
         id: true,
         time: true,
@@ -334,7 +335,7 @@ class MyDayRepository {
     const cutoff = new Date(now.getTime() - UNSIGNED_CONTRACT_DAYS * MS_PER_DAY);
     return prisma.contract.findMany({
       where: {
-        sessionStatus: "SIGNING",
+        sessionStatus: CONTRACT_SESSION_STATUSES.SIGNING,
         createdAt: { lt: cutoff },
         clientLead: { userId: Number(userId) },
       },
@@ -353,7 +354,7 @@ class MyDayRepository {
   unclaimedAgingLeads(now, take = 50) {
     const cutoff = new Date(now.getTime() - UNCLAIMED_NEW_DAYS * MS_PER_DAY);
     return prisma.clientLead.findMany({
-      where: { userId: null, status: "NEW", createdAt: { lt: cutoff } },
+      where: { userId: null, status: LEAD_STATUSES.NEW, createdAt: { lt: cutoff } },
       select: { id: true, createdAt: true, client: { select: { name: true } } },
       orderBy: { createdAt: "asc" },
       take,

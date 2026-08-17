@@ -14,6 +14,24 @@ function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function isWithin(root, target) {
+  const relative = path.relative(root, target);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function assertSafeWriteTarget(root, finalPath) {
+  const realRoot = fs.realpathSync(root);
+  const realParent = fs.realpathSync(path.dirname(finalPath));
+  if (!isWithin(realRoot, realParent)) throw new Error("Storage path escapes its root");
+  try {
+    if (fs.lstatSync(finalPath).isSymbolicLink()) {
+      throw new Error("Symbolic-link storage targets are not allowed");
+    }
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
 function sanitizeRelativeSegment(value = "") {
   return value
     .replace(/\\/g, "/")
@@ -57,6 +75,7 @@ class LocalDiskStorageProvider {
     const finalPath = path.join(this.uploadDir, ...storageKey.split("/"));
 
     ensureDir(path.dirname(finalPath));
+    assertSafeWriteTarget(this.uploadDir, finalPath);
 
     return {
       uniqueFilename,
@@ -99,6 +118,7 @@ class LocalDiskStorageProvider {
       fileSize: Buffer.byteLength(buffer),
       fileUrl: this.getPublicUrl(storageKey),
       thumbnailUrl: this.getThumbnailUrl(thumbnailKey),
+      finalPath,
     };
   }
 
@@ -140,6 +160,7 @@ class LocalDiskStorageProvider {
     try {
       const thumbnailPath = path.join(this.thumbsDir, ...storageKey.split("/"));
       ensureDir(path.dirname(thumbnailPath));
+      assertSafeWriteTarget(this.thumbsDir, thumbnailPath);
       await sharp(finalPath)
         .resize(200, 200, { fit: "inside" })
         .toFile(thumbnailPath);
@@ -160,6 +181,9 @@ class LocalDiskStorageProvider {
     ensureDir(tmpDir);
 
     const chunkPath = path.join(tmpDir, `${sessionId}.part${chunkIndex}`);
+    await fs.promises.unlink(chunkPath).catch((error) => {
+      if (error?.code !== "ENOENT") throw error;
+    });
     await fs.promises.rename(sourcePath, chunkPath);
 
     return {
@@ -167,6 +191,58 @@ class LocalDiskStorageProvider {
       chunkPath,
       chunkIndex,
     };
+  }
+
+  async saveBufferAs(buffer, storageKey, options = {}) {
+    const safeKey = sanitizeRelativeSegment(storageKey);
+    if (!safeKey || safeKey !== String(storageKey || "").replace(/\\/g, "/")) {
+      throw new Error("Invalid storage key");
+    }
+    const root = path.resolve(this.uploadDir);
+    const finalPath = path.resolve(root, ...safeKey.split("/"));
+    if (finalPath !== root && !finalPath.startsWith(`${root}${path.sep}`)) {
+      throw new Error("Invalid storage target");
+    }
+    ensureDir(path.dirname(finalPath));
+    assertSafeWriteTarget(this.uploadDir, finalPath);
+    await fs.promises.writeFile(finalPath, buffer);
+
+    const fileMimeType = mime.lookup(safeKey) || null;
+    const thumbnailKey =
+      options.createThumbnail === true
+        ? await this.createThumbnailIfImage(finalPath, safeKey, fileMimeType)
+        : null;
+    return {
+      storageKey: safeKey,
+      fileMimeType,
+      thumbnailKey,
+      fileSize: Buffer.byteLength(buffer),
+      fileUrl: this.getPublicUrl(safeKey),
+      thumbnailUrl: this.getThumbnailUrl(thumbnailKey),
+      finalPath,
+    };
+  }
+
+  async getChunkPartsTotalSize({
+    uploadSessionId,
+    totalChunks,
+    excludeChunkIndex = null,
+    tmpDir = this.tempDir,
+  }) {
+    const sessionId = sanitizeRelativeSegment(uploadSessionId);
+    if (!sessionId || !Number.isInteger(totalChunks) || totalChunks < 1) return 0;
+
+    let totalBytes = 0;
+    for (let index = 0; index < totalChunks; index += 1) {
+      if (index === excludeChunkIndex) continue;
+      const chunkPath = path.join(tmpDir, `${sessionId}.part${index}`);
+      try {
+        totalBytes += (await fs.promises.stat(chunkPath)).size;
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
+    }
+    return totalBytes;
   }
 
   async mergeChunkParts({
@@ -240,6 +316,7 @@ class LocalDiskStorageProvider {
       fileSize: stat.size,
       fileUrl: this.getPublicUrl(storageKey),
       thumbnailUrl: this.getThumbnailUrl(thumbnailKey),
+      finalPath,
     };
   }
 
@@ -262,6 +339,50 @@ class LocalDiskStorageProvider {
     }
 
     await Promise.all(deletes);
+  }
+
+  async deleteStoredFile({ finalPath, thumbnailKey = null }) {
+    if (finalPath) await fs.promises.unlink(finalPath).catch(() => {});
+    if (thumbnailKey) {
+      const thumbnailPath = path.join(this.thumbsDir, ...thumbnailKey.split("/"));
+      await fs.promises.unlink(thumbnailPath).catch(() => {});
+    }
+  }
+
+  async resolveStoredFile(storageKey) {
+    const safeKey = sanitizeRelativeSegment(storageKey);
+    if (!safeKey || safeKey !== String(storageKey || "").replace(/\\/g, "/")) {
+      return null;
+    }
+
+    const root = path.resolve(this.uploadDir);
+    const finalPath = path.resolve(root, ...safeKey.split("/"));
+    if (finalPath !== root && !finalPath.startsWith(`${root}${path.sep}`)) return null;
+
+    try {
+      const fileInfo = await fs.promises.lstat(finalPath);
+      if (fileInfo.isSymbolicLink()) return null;
+      const [realRoot, realFinalPath] = await Promise.all([
+        fs.promises.realpath(root),
+        fs.promises.realpath(finalPath),
+      ]);
+      if (!isWithin(realRoot, realFinalPath)) return null;
+      const stat = await fs.promises.stat(realFinalPath);
+      if (!stat.isFile()) return null;
+      return {
+        finalPath: realFinalPath,
+        filename: path.basename(realFinalPath),
+        fileMimeType: mime.lookup(realFinalPath) || "application/octet-stream",
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async readStoredFile(storageKey) {
+    const stored = await this.resolveStoredFile(storageKey);
+    if (!stored) return null;
+    return { ...stored, buffer: await fs.promises.readFile(stored.finalPath) };
   }
 
   async tryMakeThumbnail(finalPath, uniqueFilename) {

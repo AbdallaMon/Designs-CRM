@@ -9,7 +9,7 @@
 // sibling module makes them independently testable.
 import dayjs from "dayjs";
 import { AppError } from "../../shared/errors/AppError.js";
-import { dashboardMessagesCodes } from "@dms/shared";
+import { EMIRATES, LEAD_STATUSES, dashboardMessagesCodes } from "@dms/shared";
 import {
   getCommissionByUserId,
   reverseCommissions,
@@ -46,47 +46,47 @@ export async function getKeyMetrics(searchParams) {
     });
     const totalRevenue = totalRevenueResult._sum.amount || 0;
     const avgLeadValueResult = await dashboardRepository.aggregateLeadAvgPrice({
-      where: { status: { in: ["FINALIZED", "ARCHIVED"] }, ...staffFilter },
+      where: { status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] }, ...staffFilter },
     });
     const averageProjectValue = avgLeadValueResult._avg.averagePrice
       ? parseFloat(avgLeadValueResult._avg.averagePrice.toFixed(2))
       : 0;
 
     const successLeadsCount = await dashboardRepository.countLeads({
-      where: { status: { in: ["FINALIZED", "ARCHIVED"] }, ...staffFilter },
+      where: { status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] }, ...staffFilter },
     });
     const newLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "NEW", ...staffFilter },
+      where: { status: LEAD_STATUSES.NEW, ...staffFilter },
     });
     const inProgressLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "IN_PROGRESS", ...staffFilter },
+      where: { status: LEAD_STATUSES.IN_PROGRESS, ...staffFilter },
     });
     const interestedLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "INTERESTED", ...staffFilter },
+      where: { status: LEAD_STATUSES.INTERESTED, ...staffFilter },
     });
     const needsIdentifiedLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "NEEDS_IDENTIFIED", ...staffFilter },
+      where: { status: LEAD_STATUSES.NEEDS_IDENTIFIED, ...staffFilter },
     });
     const negotiatingLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "NEGOTIATING", ...staffFilter },
+      where: { status: LEAD_STATUSES.NEGOTIATING, ...staffFilter },
     });
     const rejectedLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "REJECTED", ...staffFilter },
+      where: { status: LEAD_STATUSES.REJECTED, ...staffFilter },
     });
     const finalizedLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "FINALIZED", ...staffFilter },
+      where: { status: LEAD_STATUSES.FINALIZED, ...staffFilter },
     });
     const convertedLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "CONVERTED", ...staffFilter },
+      where: { status: LEAD_STATUSES.CONVERTED, ...staffFilter },
     });
     const onHoldLeadCounts = await dashboardRepository.countLeads({
-      where: { status: "ON_HOLD", ...staffFilter },
+      where: { status: LEAD_STATUSES.ON_HOLD, ...staffFilter },
     });
     const archivedLeadCounts = await dashboardRepository.countLeads({
       where: { status: "ARCHIVED", ...staffFilter },
     });
     const nonSuccessLeadsCount = await dashboardRepository.countLeads({
-      where: { ...staffFilter, status: { in: ["CONVERTED", "ON_HOLD", "REJECTED"] } },
+      where: { ...staffFilter, status: { in: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.REJECTED] } },
     });
 
     let leadsCounts;
@@ -200,7 +200,7 @@ export async function getMonthlyPerformanceData(searchParams) {
         const finalizedLeads = await dashboardRepository.countLeads({
           where: {
             createdAt: { gte: start, lte: end },
-            status: "FINALIZED",
+            status: LEAD_STATUSES.FINALIZED,
             ...staffFilter,
           },
         });
@@ -209,7 +209,7 @@ export async function getMonthlyPerformanceData(searchParams) {
           where: {
             createdAt: { gte: start, lte: end },
             ...staffFilter,
-            status: { in: ["CONVERTED", "ON_HOLD", "REJECTED"] },
+            status: { in: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.REJECTED] },
           },
         });
 
@@ -217,7 +217,7 @@ export async function getMonthlyPerformanceData(searchParams) {
           where: {
             createdAt: { gte: start, lte: end },
             ...staffFilter,
-            status: "FINALIZED",
+            status: LEAD_STATUSES.FINALIZED,
           },
         });
 
@@ -251,13 +251,13 @@ export async function getEmiratesAnalytics(searchParams) {
   const staffFilter = userFilter;
   try {
     const emirates = [
-      "DUBAI",
-      "ABU_DHABI",
-      "SHARJAH",
-      "AJMAN",
-      "UMM_AL_QUWAIN",
-      "RAS_AL_KHAIMAH",
-      "FUJAIRAH",
+      EMIRATES.DUBAI,
+      EMIRATES.ABU_DHABI,
+      EMIRATES.SHARJAH,
+      EMIRATES.AJMAN,
+      EMIRATES.UMM_AL_QUWAIN,
+      EMIRATES.RAS_AL_KHAIMAH,
+      EMIRATES.FUJAIRAH,
     ];
 
     const currentStart = dayjs().subtract(1, "month").startOf("month").toDate();
@@ -300,7 +300,7 @@ export async function getEmiratesAnalytics(searchParams) {
             emirate,
             ...staffFilter,
             createdAt: { gte: currentStart, lte: currentEnd },
-            status: "FINALIZED",
+            status: LEAD_STATUSES.FINALIZED,
           },
         });
 
@@ -309,7 +309,7 @@ export async function getEmiratesAnalytics(searchParams) {
             emirate,
             ...staffFilter,
             createdAt: { gte: currentStart, lte: currentEnd },
-            status: "FINALIZED",
+            status: LEAD_STATUSES.FINALIZED,
           },
         });
         const totalPrice = totalPriceResult._sum.averagePrice || 0;
@@ -359,14 +359,14 @@ export async function getLeadsMonthlyOverview(searchParams) {
   const staffFilter = buildStaffFilter(searchParams);
 
   const INSIDE_LIST = [
-    "DUBAI",
-    "ABU_DHABI",
-    "SHARJAH",
-    "AJMAN",
-    "UMM_AL_QUWAIN",
-    "RAS_AL_KHAIMAH",
-    "FUJAIRAH",
-    "KHOR_FAKKAN",
+    EMIRATES.DUBAI,
+    EMIRATES.ABU_DHABI,
+    EMIRATES.SHARJAH,
+    EMIRATES.AJMAN,
+    EMIRATES.UMM_AL_QUWAIN,
+    EMIRATES.RAS_AL_KHAIMAH,
+    EMIRATES.FUJAIRAH,
+    EMIRATES.KHOR_FAKKAN,
   ];
 
   const [
@@ -390,7 +390,7 @@ export async function getLeadsMonthlyOverview(searchParams) {
       where: {
         ...staffFilter,
         createdAt: { gte: start, lte: end },
-        emirate: "OUTSIDE",
+        emirate: EMIRATES.OUTSIDE,
       },
     }),
     dashboardRepository.countLeads({
@@ -403,7 +403,7 @@ export async function getLeadsMonthlyOverview(searchParams) {
     dashboardRepository.countLeads({
       where: {
         ...staffFilter,
-        status: "FINALIZED",
+        status: LEAD_STATUSES.FINALIZED,
         finalizedDate: { gte: start, lte: end },
       },
     }),
@@ -428,7 +428,7 @@ export async function getLeadsMonthlyOverview(searchParams) {
       ...staffFilter,
       createdAt: { gte: start, lte: end },
       emirate: { in: INSIDE_LIST },
-      status: "FINALIZED",
+      status: LEAD_STATUSES.FINALIZED,
     },
   });
 
@@ -454,7 +454,7 @@ export async function getLeadsMonthlyOverview(searchParams) {
     where: {
       ...staffFilter,
       createdAt: { gte: start, lte: end },
-      emirate: "OUTSIDE",
+      emirate: EMIRATES.OUTSIDE,
     },
   });
 
@@ -463,8 +463,8 @@ export async function getLeadsMonthlyOverview(searchParams) {
     where: {
       ...staffFilter,
       createdAt: { gte: start, lte: end },
-      emirate: "OUTSIDE",
-      status: "FINALIZED",
+      emirate: EMIRATES.OUTSIDE,
+      status: LEAD_STATUSES.FINALIZED,
     },
   });
 
@@ -493,7 +493,7 @@ export async function getLeadsMonthlyOverview(searchParams) {
     by: ["emirate"],
     where: {
       ...staffFilter,
-      status: "FINALIZED",
+      status: LEAD_STATUSES.FINALIZED,
       finalizedDate: { gte: start, lte: end },
       emirate: { in: INSIDE_LIST },
     },
@@ -507,9 +507,9 @@ export async function getLeadsMonthlyOverview(searchParams) {
     by: ["country"],
     where: {
       ...staffFilter,
-      status: "FINALIZED",
+      status: LEAD_STATUSES.FINALIZED,
       finalizedDate: { gte: start, lte: end },
-      emirate: "OUTSIDE",
+      emirate: EMIRATES.OUTSIDE,
     },
   });
 
@@ -566,7 +566,7 @@ export async function getPerformanceMetrics(searchParams) {
     const success = await dashboardRepository.countLeads({
       where: {
         ...staffFilter,
-        status: "FINALIZED",
+        status: LEAD_STATUSES.FINALIZED,
         updatedAt: { gte: weekStart, lte: weekEnd },
       },
     });

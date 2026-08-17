@@ -1,5 +1,6 @@
 import { AppError } from "../errors/AppError.js";
 import { JwtService } from "../../infra/security/jwt.js";
+import { CsrfService } from "../../infra/security/csrf.js";
 import { profileCache } from "../../infra/auth/profile-cache.js";
 import { AuthUseCase } from "../../modules/auth/auth.usecase.js";
 import {
@@ -57,6 +58,7 @@ class AuthMiddleware {
             newRefresh,
             JwtService.cookies.refresh,
           );
+        CsrfService.issue(req, res);
         payload = JwtService.verifyAccess(newAccess);
       } catch (err) {
         // Refresh token missing/expired/invalid, or the user is gone/inactive.
@@ -93,6 +95,23 @@ class AuthMiddleware {
     } catch (err) {
       return next(err);
     }
+  }
+
+  static optionalAuth(req, res, next) {
+    const hasSessionCookie = Boolean(
+      req.cookies?.[AUTH_COOKIE_NAME] ||
+        req.cookies?.[AUTH_REFRESH_TOKEN_COOKIE_NAME],
+    );
+    if (!hasSessionCookie) return next();
+
+    return AuthMiddleware.requireAuth(req, res, (error) => {
+      if (!error) return next();
+      if (error instanceof AppError && [401, 403].includes(error.statusCode)) {
+        req.auth = null;
+        return next();
+      }
+      return next(error);
+    });
   }
 
   /**

@@ -1,3 +1,6 @@
+import { socketErrorEnvelope } from "./socket-error.js";
+import { requireSocketRoom } from "./socket-room-access.js";
+
 /**
  * Typing indicator handlers.
  *
@@ -9,8 +12,9 @@ export function registerTypingHandlers(
   { ctx, typingTimeouts, usecase },
 ) {
   socket.on("user:typing", async (data) => {
-    const { roomId, user, client } = data;
+    const { roomId } = data;
     if (!roomId) return;
+    if (!requireSocketRoom(socket, ctx, roomId)) return;
 
     const timeoutKey = ctx.clientId
       ? `${ctx.clientId}_${roomId}_client`
@@ -20,16 +24,19 @@ export function registerTypingHandlers(
       clearTimeout(typingTimeouts.get(timeoutKey));
     }
 
-    await usecase
-      .emitTyping({
+    try {
+      await usecase.emitTyping({
         socket,
         roomId,
         userId: ctx.userId,
         clientId: ctx.clientId,
-        user,
-        client,
-      })
-      .catch(console.error);
+        user: ctx.kind === "staff" ? ctx.actor : null,
+        client: ctx.kind === "client" ? ctx.actor : null,
+      });
+    } catch (error) {
+      socket.emit("error", socketErrorEnvelope(error));
+      return;
+    }
 
     const timeout = setTimeout(async () => {
       await usecase
@@ -38,8 +45,8 @@ export function registerTypingHandlers(
           roomId,
           userId: ctx.userId,
           clientId: ctx.clientId,
-          user,
-          client,
+          user: ctx.kind === "staff" ? ctx.actor : null,
+          client: ctx.kind === "client" ? ctx.actor : null,
         })
         .catch(console.error);
       typingTimeouts.delete(timeoutKey);
@@ -48,9 +55,10 @@ export function registerTypingHandlers(
     typingTimeouts.set(timeoutKey, timeout);
   });
 
-  socket.on("user:stop_typing", (data) => {
+  socket.on("user:stop_typing", async (data) => {
     const { roomId } = data;
     if (!roomId) return;
+    if (!requireSocketRoom(socket, ctx, roomId)) return;
 
     const timeoutKey = ctx.clientId
       ? `${ctx.clientId}_${roomId}_client`
@@ -61,10 +69,17 @@ export function registerTypingHandlers(
       typingTimeouts.delete(timeoutKey);
     }
 
-    socket.to(`room:${roomId}`).emit("user:stop_typing", {
-      userId: ctx.userId,
-      clientId: ctx.clientId,
-      roomId,
-    });
+    try {
+      await usecase.emitStopTyping({
+        socket,
+        roomId,
+        userId: ctx.userId,
+        clientId: ctx.clientId,
+        user: ctx.kind === "staff" ? ctx.actor : null,
+        client: ctx.kind === "client" ? ctx.actor : null,
+      });
+    } catch (error) {
+      socket.emit("error", socketErrorEnvelope(error));
+    }
   });
 }

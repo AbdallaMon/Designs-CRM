@@ -12,34 +12,48 @@ export async function getCommissionByUserId(userId) {
   const userIdNumber = parseInt(userId, 10);
   const eligibleLeads = await commissionsRepository.findEligibleLeads(userIdNumber);
   for (const lead of eligibleLeads) {
-    const existingCommission = await commissionsRepository.findExistingCommission({
-      leadId: lead.id,
-      userId: userIdNumber,
-    });
+    await commissionsRepository.runInTransaction(async (client) => {
+      await commissionsRepository.lockLeadForCommission({ leadId: lead.id, client });
+      const eligibleLead = await commissionsRepository.findEligibleLeadById({
+        leadId: lead.id,
+        userId: userIdNumber,
+        client,
+      });
+      if (!eligibleLead) return;
 
-    if (!existingCommission && lead.averagePrice) {
-      const commissionAmount = parseFloat(lead.averagePrice) * 0.05;
-
-      await commissionsRepository.createCommission({
-        data: {
-          userId: userIdNumber,
-          leadId: lead.id,
-          amount: commissionAmount,
-          amountPaid: 0,
-          isCleared: false,
-        },
+      const existingCommission = await commissionsRepository.findExistingCommission({
+        leadId: lead.id,
+        userId: userIdNumber,
+        client,
       });
 
-      await commissionsRepository.markLeadCommissionCleared(lead.id);
-    }
+      if (!existingCommission && eligibleLead.averagePrice) {
+        const commissionAmount = parseFloat(eligibleLead.averagePrice) * 0.05;
+
+        await commissionsRepository.createCommission({
+          data: {
+            userId: userIdNumber,
+            leadId: lead.id,
+            amount: commissionAmount,
+            amountPaid: 0,
+            isCleared: false,
+          },
+          client,
+        });
+
+        await commissionsRepository.markLeadCommissionCleared({ leadId: lead.id, client });
+      }
+    });
   }
   const commissions = await commissionsRepository.findCommissionsByUserId(userIdNumber);
   return commissions;
 }
 
 export async function reverseCommissions() {
-  await commissionsRepository.deleteReversibleCommissions();
-  await commissionsRepository.resetUnclearedLeads();
+  await commissionsRepository.runInTransaction(async (client) => {
+    await commissionsRepository.deleteReversibleCommissions({ client });
+    await commissionsRepository.resetUnclearedLeads({ client });
+  });
 }
 
 export async function updateCommission({ commissionId, amount }) {
@@ -49,25 +63,35 @@ export async function updateCommission({ commissionId, amount }) {
     throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_AMOUNT_INVALID, statusCode: 400 });
   }
 
-  const commission = await commissionsRepository.findCommissionById(commissionIdNumber);
-  if (!commission) {
-    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_NOT_FOUND, statusCode: 404 });
-  }
-  const remainingAmount =
-    parseFloat(commission.amount) - parseFloat(commission.amountPaid);
+  return commissionsRepository.runInTransaction(async (client) => {
+    await commissionsRepository.lockCommissionForUpdate({
+      commissionId: commissionIdNumber,
+      client,
+    });
+    const commission = await commissionsRepository.findCommissionById({
+      id: commissionIdNumber,
+      client,
+    });
+    if (!commission) {
+      throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_NOT_FOUND, statusCode: 404 });
+    }
+    const remainingAmount =
+      parseFloat(commission.amount) - parseFloat(commission.amountPaid);
 
-  if (paymentAmount > remainingAmount) {
-    throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_PAYMENT_EXCEEDS_REMAINING, statusCode: 400 });
-  }
-  const newAmountPaid = parseFloat(commission.amountPaid) + paymentAmount;
+    if (paymentAmount > remainingAmount) {
+      throw new AppError({ code: adminResidualMessagesCodes.COMMISSION_PAYMENT_EXCEEDS_REMAINING, statusCode: 400 });
+    }
+    const newAmountPaid = parseFloat(commission.amountPaid) + paymentAmount;
 
-  const isCleared = newAmountPaid >= parseFloat(commission.amount);
-  await commissionsRepository.updateCommissionPayment({
-    id: commissionIdNumber,
-    amountPaid: newAmountPaid,
-    isCleared: isCleared,
+    const isCleared = newAmountPaid >= parseFloat(commission.amount);
+    await commissionsRepository.updateCommissionPayment({
+      id: commissionIdNumber,
+      amountPaid: newAmountPaid,
+      isCleared: isCleared,
+      client,
+    });
+    return commissionsRepository.findCommissionById({ id: commissionIdNumber, client });
   });
-  return await commissionsRepository.findCommissionById(commissionIdNumber);
 }
 
 export async function createCommissionByAdmin({

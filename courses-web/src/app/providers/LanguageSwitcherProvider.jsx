@@ -31,11 +31,13 @@ export default function LanguageSwitcherProvider({
 
   useEffect(() => {
     if (typeof window !== "undefined" && !dontChecklocalStorage) {
+      // Keep the server default stable, then hydrate the URL/stored preference.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLang(
         searchParams.get("lng") || window.localStorage.getItem("lng") || "ar"
       );
     }
-  }, []);
+  }, [dontChecklocalStorage, searchParams]);
   return (
     <LanguageSwitcherContext.Provider value={{ changeLanguage, lng }}>
       <Box

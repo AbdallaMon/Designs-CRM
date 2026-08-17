@@ -1,4 +1,9 @@
 import {
+  NOTIFICATION_CONTENT_TYPES,
+  NOTIFICATION_TYPES,
+  PROFILES,
+} from "@dms/shared";
+import {
   dashboardLink,
   dealsLink,
   threeDworkStageLink,
@@ -8,6 +13,9 @@ import {
 } from "../../config/links.js";
 import { createNotification } from "../../../modules/notifications/notification.usecase.js";
 import { userRepository } from "../../../modules/users/user/user.repo.js";
+
+const ADMIN_PROFILE_KEYS = [PROFILES.ADMIN, PROFILES.SUPER_ADMIN];
+const SALES_PROFILE_KEYS = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES];
 
 export async function convertALeadNotification(lead) {
   const user = await userRepository.getUserDetailsWithSpecificFields(lead.userId);
@@ -23,10 +31,10 @@ export async function convertALeadNotification(lead) {
     false,
     notificationHtml,
     null,
-    "LEAD_STATUS_CHANGE",
+    NOTIFICATION_TYPES.LEAD_STATUS_CHANGE,
     "Lead on hold",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     lead.userId,
   );
@@ -50,10 +58,10 @@ Deal <a href="${dealsLink + convertedLead.id}" >#${
     false,
     notificationHtml,
     null,
-    "LEAD_TRANSFERRED",
+    NOTIFICATION_TYPES.LEAD_TRANSFERRED,
     "Lead transferred",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     newClientLead.userId,
   );
@@ -74,14 +82,14 @@ export async function assignLeadNotification(
     </div>`;
 
   await createNotification(
-    null,
+    Number(userId),
     true,
     notificationHtml,
     null,
-    "LEAD_TRANSFERRED",
+    NOTIFICATION_TYPES.LEAD_TRANSFERRED,
     "Lead transferred",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     Number(userId),
   );
@@ -102,10 +110,10 @@ export async function assignMultipleLeadsNotification(leadIds, userId) {
     true,
     notificationHtml,
     null,
-    "LEAD_TRANSFERRED",
+    NOTIFICATION_TYPES.LEAD_TRANSFERRED,
     "Leads transferred",
     true,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     Number(userId),
   );
@@ -131,10 +139,10 @@ export async function assignWorkStageNotification(
     false,
     notificationHtml,
     null,
-    "LEAD_TRANSFERRED",
+    NOTIFICATION_TYPES.LEAD_TRANSFERRED,
     "Lead transferred",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     Number(userId),
   );
@@ -165,10 +173,12 @@ export async function updateLeadStatusNotification(
     true,
     notificationHtml,
     null,
-    type ? "LEAD_STATUS_CHANGE" : "LEAD_UPDATED",
+    type
+      ? NOTIFICATION_TYPES.LEAD_STATUS_CHANGE
+      : NOTIFICATION_TYPES.LEAD_UPDATED,
     "Lead updated",
     sendToAdmin,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     staffId,
   );
@@ -203,10 +213,12 @@ export async function updateWorkStageStatusNotification(
     !isAdmin,
     notificationHtml,
     null,
-    type ? "LEAD_STATUS_CHANGE" : "LEAD_UPDATED",
+    type
+      ? NOTIFICATION_TYPES.LEAD_STATUS_CHANGE
+      : NOTIFICATION_TYPES.LEAD_UPDATED,
     "Lead updated",
     true,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     staffId,
   );
@@ -230,14 +242,16 @@ export async function newLeadNotification(leadId, client, isAdmin) {
     "NEW_LEAD",
     "New lead",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     leadId,
+    null,
+    ADMIN_PROFILE_KEYS,
+    true,
   );
 }
 
 export async function newClientLeadNotification(leadId, client, isAdmin) {
   const leadHref = `${dealsLink + leadId}`;
-  console.log(leadHref, "leadhref");
   const notificationHtml = `<div>
        <strong>New Client submit initial form</strong> <a href="${leadHref}" >#${leadId}</a> 
        <div class="sub-text">
@@ -254,8 +268,11 @@ export async function newClientLeadNotification(leadId, client, isAdmin) {
     "NEW_LEAD",
     "New lead",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     leadId,
+    null,
+    ADMIN_PROFILE_KEYS,
+    true,
   );
 }
 
@@ -277,8 +294,36 @@ export async function newLeadCompletedNotification(leadId, client, isAdmin) {
     "NEW_LEAD",
     "New lead",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     leadId,
+    null,
+    ADMIN_PROFILE_KEYS,
+    true,
+  );
+}
+
+export async function consultedLeadNotification(leadId) {
+  const leadHref = `${dealsLink + leadId}`;
+  const notificationHtml = `<div>
+       <strong>New consulted lead</strong> <a href="${leadHref}" >#${leadId}</a>
+       <div class="sub-text">
+       Initial consultation is complete. This lead is ready for sales.
+</div>
+    </div>`;
+
+  await createNotification(
+    null,
+    false,
+    notificationHtml,
+    null,
+    "NEW_LEAD",
+    "New consulted lead",
+    false,
+    NOTIFICATION_CONTENT_TYPES.HTML,
+    leadId,
+    null,
+    SALES_PROFILE_KEYS,
+    true,
   );
 }
 
@@ -300,7 +345,7 @@ export async function leadPaymentSuccessed(leadId) {
     "PAYMENT_STATUS_UPDATED",
     "Payment process done successfully",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     leadId,
   );
 }
@@ -320,14 +365,14 @@ export async function finalizedLeadCreated(leadId, userId, type = "THREE_D") {
     "NEW_LEAD",
     "New Lead finalized",
     true,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     null,
     type === "TWO_D"
-      ? ["DESIGNER_2D"]
+      ? [PROFILES.DESIGNER_2D]
       : type === "TWO_D_EXACUTER"
-        ? ["EXECUTOR_2D"]
-        : ["DESIGNER_3D", "ACCOUNTANT"],
+        ? [PROFILES.EXECUTOR_2D]
+        : [PROFILES.DESIGNER_3D, PROFILES.ACCOUNTANT],
     true,
   );
 }

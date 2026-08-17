@@ -36,7 +36,7 @@ export function ColorPalletes({
   const containerRef = useRef(null);
   async function getColorsPalletes() {
     await getCachedStepData({
-      url: `client/image-session/colors?lng=${lng}&`,
+      url: `client/image-session/colors?lng=${lng}&token=${encodeURIComponent(session.token)}`,
       setLoading,
       setData: setColors,
     });

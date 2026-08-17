@@ -87,7 +87,6 @@ export async function generateImageSessionPdf({
     const contentWidth = pageWidth - margin * 2;
     const headerHeight = 75;
     const footerHeight = 55;
-    const borderWidth = 2;
     let marginY = 20;
 
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -147,39 +146,9 @@ export async function generateImageSessionPdf({
     //   return containerStartX + containerWidth - textWidth;
     // };
 
-    // Draw page border and frame
-    const drawPageBorder = (isWide = false) => {
-      const width = page.getWidth();
-      const height = page.getHeight();
-      const contentWidth = width - margin * 2;
-      const borderTopY = marginY + headerHeight;
-
-      // Outer border frame
-      page.drawRectangle({
-        x: margin - borderWidth,
-        y: marginY - borderWidth,
-        width: contentWidth + borderWidth * 2,
-        height: height - borderTopY - marginY + borderWidth * 2,
-        borderColor: colors.borderColor,
-        borderWidth: borderWidth,
-        color: undefined,
-      });
-
-      // Inner shadow frame
-      page.drawRectangle({
-        x: margin,
-        y: marginY,
-        width: contentWidth,
-        height: height - borderTopY - marginY,
-        borderColor: colors.shadowColor,
-        borderWidth: 1,
-        color: undefined,
-      });
-    };
-
     // Full-page background (SiteUtility.pdfFrame) is drawn per page via the shared
     // drawFullBackgroundImage(page, pdfDoc, backgroundUrl) — replacing the old
-    // per-page banner header. Drawn BEFORE the border/content so it sits behind them.
+    // per-page banner header. Drawn before content so it remains the only page frame.
 
     // Draw fixed footerf
     const drawFixedFooter = (
@@ -189,25 +158,6 @@ export async function generateImageSessionPdf({
     ) => {
       const pageW = page.getWidth();
       const contentWidth = pageW - margin * 2;
-
-      // Footer background
-      page.drawRectangle({
-        x: margin,
-        y: marginY,
-        width: contentWidth,
-        height: footerHeight,
-        color: colors.accentBg,
-        borderColor: colors.borderColor,
-        borderWidth: 1,
-      });
-
-      // Footer separator line
-      page.drawLine({
-        start: { x: margin, y: marginY + footerHeight },
-        end: { x: margin + contentWidth, y: marginY + footerHeight },
-        thickness: 2,
-        color: colors.primary,
-      });
 
       // Prepare footer texts
       const generatedLabel = "Generated:";
@@ -287,15 +237,7 @@ export async function generateImageSessionPdf({
     const drawIntroPage = async () => {
       try {
         // Load and draw full-page image (SiteUtility.introPage, with shared default)
-        const imageBuffer = await fetchImageBuffer(introUrl);
-        const embeddedImage = await pdfDoc.embedPng(imageBuffer);
-
-        page.drawImage(embeddedImage, {
-          x: 0,
-          y: 0,
-          width: pageWidth,
-          height: pageHeight,
-        });
+        await drawFullBackgroundImage(page, pdfDoc, introUrl);
       } catch (err) {
         console.warn("Intro image load error:", err.message);
       }
@@ -745,8 +687,6 @@ export async function generateImageSessionPdf({
       if (availableSpace < requiredSpace) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-        drawPageBorder();
-        // drawFixedFooter();
         y = pageHeight - headerHeight - marginY - 20;
         return true;
       }
@@ -933,8 +873,6 @@ export async function generateImageSessionPdf({
     // Create second page for content
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-    drawPageBorder();
-    // drawFixedFooter();
     y = pageHeight - headerHeight - marginY - 20;
 
     // Draw style
@@ -969,8 +907,6 @@ export async function generateImageSessionPdf({
 
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-    drawPageBorder();
-    // drawFixedFooter();
     y = pageHeight - headerHeight - marginY - 20;
 
     // Draw materials
@@ -1009,7 +945,6 @@ export async function generateImageSessionPdf({
           page = pdfDoc.addPage(pageSize);
 
           await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-          drawPageBorder(isWide);
 
           let img;
           try {
@@ -1158,7 +1093,6 @@ export async function generateImageSessionPdf({
       // 🔹 Set up a new full page
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-      drawPageBorder();
       y = pageHeight - headerHeight - marginY - 20;
 
       const frameX = margin;
@@ -1253,7 +1187,6 @@ export async function generateImageSessionPdf({
     if (signatureUrl) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-      drawPageBorder();
 
       const columnGap = 40;
       const columnWidth = (contentWidth - columnGap) / 2;

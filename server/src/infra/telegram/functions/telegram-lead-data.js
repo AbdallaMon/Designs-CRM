@@ -1,3 +1,4 @@
+import { LEAD_STATUSES } from "@dms/shared";
 import { getTeleClient } from "../connect-to-telegram.js";
 import prisma from "../../prisma/prisma.js";
 import { telegramChannelQueue } from "../../queues/telegram-channel.queue.js";
@@ -13,7 +14,7 @@ import {
 export async function getLeadsWithOutChannel() {
   const clientLeads = await prisma.clientLead.findMany({
     where: {
-      status: { in: ["FINALIZED", "ARCHIVED"] },
+      status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] },
       OR: [{ telegramChannel: null }, { telegramLink: null }],
     },
   });
@@ -130,12 +131,10 @@ export async function createFile({
     await newFileUploaded(clientLeadId, data, userId);
   }
   await updateLead(clientLeadId);
-  console.log("file created?");
   return { ...file, name, url, description, isUserFile: userId !== null };
 }
 
 export async function createNote({ clientLeadId, userId, content }) {
-  console.log(content, "content");
   if (!content.trim()) {
     throw new Error("Note content cannot be empty.");
   }

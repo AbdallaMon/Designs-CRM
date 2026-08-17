@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -33,7 +34,7 @@ export default function BulkConvertLeadsModal({
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
-        url: "users/all-users?profile=NORMAL_SALES&",
+        url: `users/all-users?profile=${PROFILES.NORMAL_SALES}`,
         setLoading: setLoadingUsers,
       });
       if (usersRequest && usersRequest.status === 200) {

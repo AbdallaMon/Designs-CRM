@@ -1,6 +1,10 @@
 import dayjs from "dayjs";
 import { dealsLink } from "../../config/links.js";
 import { createNotification } from "../../../modules/notifications/notification.usecase.js";
+import {
+  NOTIFICATION_CONTENT_TYPES,
+  NOTIFICATION_TYPES,
+} from "@dms/shared";
 
 export async function newNoteNotification(leadId, content, userId) {
   const notificationHtml = `<div>
@@ -15,10 +19,10 @@ export async function newNoteNotification(leadId, content, userId) {
     false,
     notificationHtml,
     null,
-    "NEW_NOTE",
+    NOTIFICATION_TYPES.NEW_NOTE,
     "New note",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     userId,
   );
@@ -41,10 +45,10 @@ export async function newCallNotification(leadId, callReminder) {
     false,
     notificationHtml,
     null,
-    "CALL_REMINDER_CREATED",
+    NOTIFICATION_TYPES.CALL_REMINDER_CREATED,
     "New call reminder",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     callReminder.userId,
   );
@@ -69,10 +73,10 @@ export async function newMeetingNotification(leadId, meetingReminder) {
     false,
     notificationHtml,
     null,
-    "CALL_REMINDER_CREATED",
+    NOTIFICATION_TYPES.CALL_REMINDER_CREATED,
     "New meeting reminder",
     true,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     meetingReminder.userId,
   );
@@ -92,10 +96,10 @@ export async function newPriceOffer(leadId, priceOffer) {
     false,
     notificationHtml,
     null,
-    "PRICE_OFFER_SUBMITTED",
+    NOTIFICATION_TYPES.PRICE_OFFER_SUBMITTED,
     "New price offer",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     priceOffer.user.id,
   );
@@ -120,10 +124,10 @@ export async function newFileUploaded(leadId, file, userId) {
     false,
     notificationHtml,
     null,
-    "NEW_FILE",
+    NOTIFICATION_TYPES.NEW_FILE,
     "New file upload",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     Number(userId),
   );
@@ -149,10 +153,10 @@ export async function updateCallNotification(leadId, callReminder, userId) {
     false,
     notificationHtml,
     null,
-    "CALL_REMINDER_STATUS",
+    NOTIFICATION_TYPES.CALL_REMINDER_STATUS,
     "Call reminder status changed",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     Number(userId),
   );
@@ -182,10 +186,10 @@ export async function updateMettingNotification(
     true,
     notificationHtml,
     null,
-    "CALL_REMINDER_STATUS",
+    NOTIFICATION_TYPES.CALL_REMINDER_STATUS,
     "Meeting reminder status changed",
     false,
-    "HTML",
+    NOTIFICATION_CONTENT_TYPES.HTML,
     null,
     Number(userId),
   );

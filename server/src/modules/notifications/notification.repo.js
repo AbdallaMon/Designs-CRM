@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 // notifications repository — Prisma I/O ONLY (no business rules, no AppError).
 //
 // Ported from the legacy `getNotifications` / `markLatestNotificationsAsRead`
@@ -72,14 +73,14 @@ class NotificationRepository {
   // (former utilities/legacy/utility.js). The fan-out orchestration lives in the usecase.
   findFirstAdmin() {
     return prisma.user.findFirst({
-      where: { currentProfile: { key: "ADMIN" } },
+      where: { currentProfile: { key: PROFILES.ADMIN } },
       select: { id: true },
     });
   }
 
   findSubAdmins() {
     return prisma.user.findMany({
-      where: { currentProfile: { key: "SUPER_ADMIN" } },
+      where: { currentProfile: { key: PROFILES.SUPER_ADMIN } },
       select: { id: true },
     });
   }
@@ -101,11 +102,11 @@ class NotificationRepository {
         currentProfile: {
           key: {
             in: [
-              "NORMAL_SALES",
-              "PRIMARY_SALES",
-              "SUPER_SALES",
-              "ADMIN",
-              "SUPER_ADMIN",
+              PROFILES.NORMAL_SALES,
+              PROFILES.PRIMARY_SALES,
+              PROFILES.SUPER_SALES,
+              PROFILES.ADMIN,
+              PROFILES.SUPER_ADMIN,
             ],
           },
         },

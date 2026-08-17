@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import { IoMdCall } from "react-icons/io";
 import { MdOutlineGroups } from "react-icons/md";
 import { CallResultDialog } from "@/features/leads/dialogs/CallsDialog.jsx";
+import { REMINDER_TYPES } from "@dms/shared";
 
 export default function AgendaRail({ agenda, onRefresh }) {
   const theme = useTheme();
@@ -34,7 +35,7 @@ export default function AgendaRail({ agenda, onRefresh }) {
       ) : (
         <Stack spacing={1} sx={{ mt: 0.5 }}>
           {agenda.map((row) => {
-            const isMeeting = row.kind === "MEETING";
+            const isMeeting = row.kind === REMINDER_TYPES.MEETING;
             const color = row.overdue ? theme.palette.error.main : theme.palette.primary.main;
             return (
               <Stack
@@ -63,7 +64,9 @@ export default function AgendaRail({ agenda, onRefresh }) {
                 {row.overdue && <Chip size="small" color="error" label="Overdue" />}
                 <CallResultDialog
                   call={{ id: row.id }}
-                  reminderType={isMeeting ? "MEETING" : "CALL"}
+                  reminderType={
+                    isMeeting ? REMINDER_TYPES.MEETING : REMINDER_TYPES.CALL
+                  }
                   onUpdate={onRefresh}
                   text="Log outcome"
                 />

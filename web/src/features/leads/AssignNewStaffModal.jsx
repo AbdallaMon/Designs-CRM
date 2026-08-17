@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -29,6 +30,7 @@ export function AssignNewStaffModal({
   // in-detail overflow menu keeps its original "Convert lead" wording (same action).
   triggerLabel = "Convert lead",
   title = "Convert lead to new staff",
+  submitLabel = "Convert",
 }) {
   const [userId, setUserId] = useState("");
   const [open, setOpen] = useState(false);
@@ -42,7 +44,10 @@ export function AssignNewStaffModal({
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
-        url: "users/all-users?profile=NORMAL_SALES&",
+        url: `users/all-users?profile=${[
+          PROFILES.NORMAL_SALES,
+          PROFILES.PRIMARY_SALES,
+        ].join(",")}`,
         setLoading,
       });
       if (usersRequest && usersRequest.status === 200) {
@@ -52,7 +57,7 @@ export function AssignNewStaffModal({
     if (open && isAdmin) {
       getUsers();
     }
-  }, [open, lead]);
+  }, [isAdmin, open]);
 
   const handleChange = (event) => {
     setUserId(event.target.value);
@@ -102,11 +107,11 @@ export function AssignNewStaffModal({
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mt: 1 }}>
-            <InputLabel id="designer-label">Select Staff</InputLabel>
+            <InputLabel id="staff-label">Select Staff</InputLabel>
             <Select
-              labelId="designer-label"
+              labelId="staff-label"
               value={userId}
-              label="Select Designer"
+              label="Select Staff"
               onChange={handleChange}
             >
               {users?.map((user) => (
@@ -120,7 +125,7 @@ export function AssignNewStaffModal({
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained" color={"primary"}>
-            Convert
+            {submitLabel}
           </Button>
         </DialogActions>
       </Dialog>

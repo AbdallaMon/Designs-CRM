@@ -6,13 +6,14 @@ import { Box, Container, lighten } from "@mui/material";
 
 import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import CreateModal from "@/shared/components/models/CreateModal.jsx";
 import { columns, inputs, userColor } from "@/features/users/pages/users/config.jsx";
 import UserRowActions from "@/features/users/pages/users/UserRowActions.jsx";
 import UsersPageHeader from "@/features/users/pages/users/UsersPageHeader.jsx";
 import UsersLegend from "@/features/users/pages/users/UsersLegend.jsx";
 import { ProfileManagerDialog } from "@/features/users/ProfileManagerDialog.jsx";
+import { mergeUserManagementRow } from "@/features/users/user-management-state.js";
 
 export default function UsersPage() {
   // The user just created — assign their profiles right away (dialog auto-opens).
@@ -87,6 +88,7 @@ export default function UsersPage() {
           backgroundColor: lighten(userColor(user), 0.95),
         })}
         editHref={"users"}
+        mergeEditedItem={mergeUserManagementRow}
         extraComponent={({ item }) => (
           <UserRowActions item={item} setData={setData} banAUser={banAUser} />
         )}

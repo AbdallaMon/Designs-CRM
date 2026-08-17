@@ -169,33 +169,33 @@ export const NAVIGATION = [
       },
       {
         label: "Modifcation stage",
-        href: "/dashboard/modification",
+        href: "/dashboard/work-stages/modification",
         allowedProfiles: [P.DESIGNER_3D],
       },
       {
         label: "Archived projects",
-        href: "/dashboard/archived",
+        href: "/dashboard/projects/archived",
         allowedProfiles: [P.DESIGNER_3D],
       },
       // ── TWO_D_DESIGNER sub-list (master twoDLinks "Work stages") ──
       {
         label: "Plan study department",
-        href: "/dashboard/study",
+        href: "/dashboard/work-stages/study",
         allowedProfiles: [P.DESIGNER_2D],
       },
       {
         label: "Final plan department",
-        href: "/dashboard/final-plan",
+        href: "/dashboard/work-stages/final-plan",
         allowedProfiles: [P.DESIGNER_2D],
       },
       {
         label: "Quantity calcualtion department",
-        href: "/dashboard/quantity",
+        href: "/dashboard/work-stages/quantity",
         allowedProfiles: [P.DESIGNER_2D],
       },
       {
         label: "Archived projects",
-        href: "/dashboard/archived",
+        href: "/dashboard/projects/archived",
         allowedProfiles: [P.DESIGNER_2D],
       },
     ],

@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES } from "@dms/shared";
 // Config-driven section registry for the lead / deal detail.
 //
 // This replaces the old fragile system where each tab lived at a HARD-CODED numeric
@@ -219,7 +220,7 @@ export const LEAD_SECTIONS = [
     group: "delivery",
     icon: <MdUpdate size={18} />,
     visible: (ctx) =>
-      ctx.lead.status === "FINALIZED" && ctx.perms.hasPermission(LEAD_CODES.UPDATES_VIEW),
+      ctx.lead.status === LEAD_STATUSES.FINALIZED && ctx.perms.hasPermission(LEAD_CODES.UPDATES_VIEW),
     render: (ctx) => <UpdatesList clientLeadId={ctx.lead.id} />,
   },
   {

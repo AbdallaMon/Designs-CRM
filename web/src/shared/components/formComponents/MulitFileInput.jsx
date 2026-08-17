@@ -10,6 +10,7 @@ import {
   InputAdornment,
 } from "@mui/material";
 import { MdAttachFile } from "react-icons/md";
+import { formatNamedFileSizeExceedsLimit } from "@dms/shared";
 
 export default function MultiFileInput({
   input,
@@ -37,7 +38,7 @@ export default function MultiFileInput({
 
     for (let file of files) {
       if (file.size > MAX_FILE_SIZE) {
-        setError(`File "${file.name}" exceeds the 80MB limit.`);
+        setError(formatNamedFileSizeExceedsLimit(file.name, "80MB"));
         return;
       }
       validFiles.push(file);

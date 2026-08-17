@@ -1,5 +1,6 @@
 // features/Kanban/staff/StaffLeadsKanbanBoard.jsx
 "use client";
+import { KANBAN_VIEW_TYPES, PROFILES } from "@dms/shared";
 import React, { useState } from "react";
 
 import dayjs from "dayjs";
@@ -18,9 +19,9 @@ const StaffLeadsKanbanBoard = ({ staffId }) => {
   const { user } = useAuth();
   const [filters, setFilters] = useState();
   const statusArray = Object.keys(
-    ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-    user.profile !== "PRIMARY_SALES" &&
-    user.profile !== "SUPER_SALES"
+    [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+    user.profile !== PROFILES.PRIMARY_SALES &&
+    user.profile !== PROFILES.SUPER_SALES
       ? KanbanBeginerLeadsStatus
       : KanbanLeadsStatus
   );
@@ -41,7 +42,7 @@ const StaffLeadsKanbanBoard = ({ staffId }) => {
     <KanbanBoard
       links={links}
       statusArray={statusArray}
-      type="STAFF"
+      type={KANBAN_VIEW_TYPES.STAFF}
       reRenderColumns={reRenderColumns}
       setReRenderColumns={setReRenderColumns}
       staffId={staffId}

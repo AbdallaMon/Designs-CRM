@@ -22,6 +22,13 @@ export class UserController {
     return userUsecase.checkIfUserCanMutateProfile({ userId: req.params.userId, authUser: req.auth });
   }
 
+  checkIfUserCanManageUser(req) {
+    return userUsecase.checkIfUserCanManageUser({
+      userId: req.params.userId,
+      authUser: req.auth,
+    });
+  }
+
   // ── directory (broad authed pick-lists) ──────────────────────────────────────
   async getDirectory(req, res) {
     const data = await userUsecase.getDirectory({ query: req.query, authUser: req.auth });
@@ -80,7 +87,7 @@ export class UserController {
 
   // ── DB-relational profiles (admin assign/remove + list) ──────────────────────
   async listProfiles(req, res) {
-    const data = await userUsecase.listAssignableProfiles();
+    const data = await userUsecase.listAssignableProfiles({ authUser: req.auth });
     return ok(res, data, userMessagesCodes.USER_PROFILES_FETCHED, TK);
   }
 

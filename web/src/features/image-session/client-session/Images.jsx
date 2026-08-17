@@ -40,7 +40,7 @@ export function Images({
     await getCachedStepData({
       url: `client/image-session/images?styleId=${
         session.styleId
-      }&spaceIds=${spaceIds.join(",")}&`,
+       }&spaceIds=${spaceIds.join(",")}&token=${encodeURIComponent(session.token)}`,
       setLoading,
       setData: setImages,
     });

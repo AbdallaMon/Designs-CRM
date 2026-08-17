@@ -1,8 +1,14 @@
 "use client";
+import {
+  LEAD_CATEGORIES,
+  LEAD_LOCATIONS,
+  PUBLIC_UPLOAD_PURPOSES,
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+} from "@dms/shared";
 import { useLanguageContext } from "@/app/providers/LanguageProvider.jsx";
 import React, { useEffect, useRef, useState } from "react";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import {
   Autocomplete,
   Box,
@@ -34,6 +40,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import "dayjs/locale/en-gb";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 export function FinalSelectionForm({
   category,
@@ -56,6 +63,16 @@ export function FinalSelectionForm({
     </LocalizationProvider>
   );
 }
+async function getDefaultCountryCode(location, signal) {
+  const defaultCountry = "AE";
+  if (location === LEAD_LOCATIONS.INSIDE_UAE) return defaultCountry;
+  const response = await fetch("https://geolocation-db.com/json/", { signal });
+  const data = await response.json();
+  return data?.country_code && data.country_code !== "Not found"
+    ? data.country_code
+    : defaultCountry;
+}
+
 export function DesignLeadForm({ category, item, location, notClientPage }) {
   const { translate, lng } = useLanguageContext();
 
@@ -73,6 +90,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
   });
   const [renderSuccess, setRenderSuccess] = useState(false);
   const [clientLead, setClientLead] = useState(null);
+  const [funnelDraft, setFunnelDraft] = useState(null);
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
   const { setProgress, setOverlay } = useUploadContext();
@@ -107,62 +125,71 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
   const handleSelectPriceChange = (e) => {
     setFormData((prev) => ({ ...prev, priceOption: e.target.value }));
   };
-  async function getDefaultCountryCode() {
-    const defaultCountry = "AE";
-    if (location === "INSIDE_UAE") {
-      return defaultCountry;
-    } else {
-      const response = await fetch("https://geolocation-db.com/json/");
-      const data = await response.json();
-      if (data?.country_code === "Not found") {
-        return defaultCountry;
-      }
-      return data?.country_code || defaultCountry;
-    }
-  }
   useEffect(() => {
-    getDefaultCountryCode().then((code) => {
-      setDefaultCountry(code);
-    });
-  }, []);
+    const controller = new AbortController();
+    getDefaultCountryCode(location, controller.signal)
+      .then((code) => setDefaultCountry(code))
+      .catch((error) => {
+        if (error.name !== "AbortError") setDefaultCountry("AE");
+      });
+    return () => controller.abort();
+  }, [location]);
   const handleSubmit = async () => {
+    const source = window.location.origin;
     const { name, phone, priceRange, file, emirate, priceOption, email } =
       formData;
     if (!matchIsValidTel(phone)) {
-      setAlertError(translate("Invalid phone"));
+      setAlertError(translate(FEEDBACK.INVALID_PHONE));
       return;
     }
     if (
       !name ||
       !phone ||
       !email ||
-      (!emirate && location === "INSIDE_UAE") ||
-      (location === "INSIDE_UAE" &&
+      (!emirate && location === LEAD_LOCATIONS.INSIDE_UAE) ||
+      (location === LEAD_LOCATIONS.INSIDE_UAE &&
         priceRange[0] === 0 &&
         priceRange[1] === 0 &&
         !priceOption)
     ) {
-      setAlertError(translate("Please fill all the fields."));
+      setAlertError(translate(FEEDBACK.FILL_ALL_FIELDS));
       return;
     }
-    if (location !== "INSIDE_UAE" && !formData.country) {
-      setAlertError(translate("Please fill all the fields."));
+    if (location !== LEAD_LOCATIONS.INSIDE_UAE && !formData.country) {
+      setAlertError(translate(FEEDBACK.FILL_ALL_FIELDS));
       return;
     }
     if (formData.file) {
       let uploadOptions;
+      let registeredDraft = funnelDraft;
       if (!notClientPage) {
+        if (!registeredDraft) {
+          registeredDraft = await handleRequestSubmit(
+            { email, name, phone, source },
+            setLoading,
+            "client/new-lead/register",
+            false,
+            translate("Preparing request")
+          );
+          if (registeredDraft?.data?.capabilityToken) {
+            setFunnelDraft(registeredDraft);
+          }
+        }
+        const funnelToken = registeredDraft?.data?.capabilityToken;
+        if (![200, 201].includes(registeredDraft?.status) || !funnelToken) return;
+
         const capability = await handleRequestSubmit(
-          { purpose: "PUBLIC_LEAD", subject: email },
+          { purpose: PUBLIC_UPLOAD_PURPOSES.PUBLIC_LEAD, funnelToken },
           setLoading,
           "files/client/capabilities",
           false,
           translate("Preparing upload")
         );
-        if (capability?.status !== 200 || !capability?.data?.token) return;
+        if (![200, 201].includes(capability?.status) || !capability?.data?.token)
+          return;
         uploadOptions = {
           publicAccess: {
-            purpose: "PUBLIC_LEAD",
+            purpose: PUBLIC_UPLOAD_PURPOSES.PUBLIC_LEAD,
             token: capability.data.token,
           },
         };
@@ -183,15 +210,46 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
           lng,
           location,
           notClientPage,
+          source,
         };
-        const request = await handleRequestSubmit(
-          data,
-          setLoading,
-          notClientPage ? "admin/new-lead" : "client/new-lead",
-          false,
-          translate("Submitting")
-        );
-        if (request.status === 200) {
+        let request;
+        if (notClientPage) {
+          request = await handleRequestSubmit(
+            data,
+            setLoading,
+            "admin/new-lead",
+            false,
+            translate("Submitting")
+          );
+        } else {
+          setLoading(true);
+          try {
+            const response = await apiRequest(
+              `client/new-lead/complete-register/${registeredDraft.data.id}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-funnel-token": registeredDraft.data.capabilityToken,
+                },
+                body: JSON.stringify(data),
+              }
+            );
+            const envelope = await response.json();
+            request = { ...envelope, status: response.status };
+            if (!response.ok) {
+              setAlertError(
+                translate(envelope?.message || FEEDBACK.SUBMIT_REQUEST_FAILED),
+              );
+            }
+          } catch {
+            request = { status: 500 };
+            setAlertError(translate(FEEDBACK.SUBMIT_REQUEST_FAILED));
+          } finally {
+            setLoading(false);
+          }
+        }
+        if ([200, 201].includes(request.status)) {
           setRenderSuccess(true);
           setClientLead(request.data);
         }
@@ -204,6 +262,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
         lng,
         location,
         notClientPage,
+        source,
       };
       const request = await handleRequestSubmit(
         data,
@@ -212,7 +271,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
         false,
         translate("Submitting")
       );
-      if (request.status === 200) {
+      if ([200, 201].includes(request.status)) {
         setRenderSuccess(true);
         setClientLead(request.data);
       }
@@ -343,7 +402,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                 }}
               />
 
-              {location === "INSIDE_UAE" && (
+              {location === LEAD_LOCATIONS.INSIDE_UAE && (
                 <>
                   <FormControl fullWidth variant="outlined">
                     <InputLabel id="emirate-label">
@@ -457,7 +516,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                   />
                 </>
               )}
-              {location === "INSIDE_UAE" ? (
+              {location === LEAD_LOCATIONS.INSIDE_UAE ? (
                 <>
                   <MobileDateTimePicker
                     label={translate(
@@ -520,19 +579,14 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
 function ConsultLeadForm({ category }) {
   const { lng } = useLanguageContext();
   useEffect(() => {
-    function redirectToPage() {
-      window.setTimeout(() => {
-        window.location.href = `https://decorstores.ltd/${
-          lng === "en" ? lng : ""
-        }/products/consultation-with-engineer-ahmed`;
-      }, 500);
-    }
-
-    // Call the function when the component mounts
-    if (category && category === "CONSULTATION") {
-      redirectToPage();
-    }
-  }, [category]);
+    if (category !== LEAD_CATEGORIES.CONSULTATION) return;
+    const timer = window.setTimeout(() => {
+      window.location.href = `https://decorstores.ltd/${
+        lng === "en" ? lng : ""
+      }/products/consultation-with-engineer-ahmed`;
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [category, lng]);
 
   return (
     <Box
@@ -653,7 +707,7 @@ export function SuccessPage({ lng, clientLead, notClientPage }) {
         window.location.href = `/register/checkout?leadId=${clientLead.id}&clientId=${clientLead.clientId}&lng=${lng}`;
       }
     }
-  }, [lng, clientLead]);
+  }, [lng, clientLead, notClientPage]);
   return <></>;
   return (
     <Box

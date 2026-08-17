@@ -9,19 +9,12 @@ import { SectionCard } from "@/features/contracts/client/sections/primitives.jsx
 export default function DrawingsSection({ session, lng }) {
   const drawings = session?.drawings || [];
   const has = drawings.length > 0;
-  const defaultDrawingUrl = window.location.origin + "/default-drawing.jpg";
-  if (!has) {
-    return;
-    drawings.push({
-      fileName: lng === "ar" ? "مخطط افتراضي" : "Default Drawing",
-      url: defaultDrawingUrl,
-    });
-  }
+  if (!has) return null;
   return (
     <SectionCard title={FIXED_TEXT.titles.drawings[lng]} dense>
       <Grid container spacing={2}>
         {drawings.map((d) => (
-          <Grid size={{ md: 4 }}>
+          <Grid key={d.id ?? `${d.url}-${d.fileName || "drawing"}`} size={{ md: 4 }}>
             <Card variant="outlined">
               <CardHeader
                 title={d.fileName || (lng === "ar" ? "مخطط" : "Drawing")}

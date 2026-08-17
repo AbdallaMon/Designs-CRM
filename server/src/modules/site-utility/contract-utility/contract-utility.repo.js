@@ -37,6 +37,14 @@ export class ContractUtilityRepository {
     return (client ?? prisma).contractUtility.create({ data });
   }
 
+  upsertUtility({ id, create, update = {}, client } = {}) {
+    return (client ?? prisma).contractUtility.upsert({
+      where: { id },
+      create,
+      update,
+    });
+  }
+
   updateUtility({ id, data, client } = {}) {
     return (client ?? prisma).contractUtility.update({ where: { id }, data });
   }

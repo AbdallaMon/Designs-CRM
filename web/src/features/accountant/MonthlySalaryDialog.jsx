@@ -14,6 +14,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import {
   EmployeeInformationPanel,
   MonthlyInformationPanel,
@@ -110,15 +111,15 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
 
   const handleSubmit = async () => {
     if (!(parseFloat(formData.totalHoursWorked) > 0)) {
-      setAlertError("Total hours worked must be greater than 0");
+      setAlertError(FEEDBACK.TOTAL_HOURS_MUST_BE_POSITIVE);
       return;
     }
     if (!(parseFloat(formData.netSalary) > 0)) {
-      setAlertError("Net salary must be greater than 0");
+      setAlertError(FEEDBACK.NET_SALARY_MUST_BE_POSITIVE);
       return;
     }
     if (!formData.paymentDate) {
-      setAlertError("Please select a payment date");
+      setAlertError(FEEDBACK.SELECT_PAYMENT_DATE);
       return;
     }
     const request = await handleRequestSubmit(

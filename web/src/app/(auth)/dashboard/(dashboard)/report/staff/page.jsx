@@ -140,7 +140,7 @@ const StaffReportFilters = () => {
                       </Typography>
 
                       <Grid container spacing={3}>
-                          <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                               <Box sx={{ display: 'flex', gap: 2,flexDirection:{xs:"column",md:"row"} }}>
                                   <DatePicker
                                         label="Start Date"
@@ -157,7 +157,7 @@ const StaffReportFilters = () => {
                               </Box>
                           </Grid>
 
-                          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                            <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                               <Button
                                     variant="outlined"
                                     startIcon={<MdRefresh />}
@@ -182,25 +182,25 @@ const StaffReportFilters = () => {
                             <Card sx={{ mb: 3, p: 3, boxShadow: 3 }}>
                                 <Typography variant="h6" sx={{ mb: 3, color: 'secondary.main' }}>Overall Summary</Typography>
                                 <Grid container spacing={3}>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%', bgcolor: "background.default" }}>
                                             <Typography variant="subtitle2" color="textSecondary">Total Staff</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>{reportData.summary.totalStaff}</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%', bgcolor: "background.default" }}>
                                             <Typography variant="subtitle2" color="textSecondary">Total Revenue</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>{reportData.summary.totalRevenue.toLocaleString()} AED</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%', bgcolor: "background.default" }}>
                                             <Typography variant="subtitle2" color="textSecondary">Avg Success Rate</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>{reportData.summary.averageSuccessRate.toFixed(2)}%</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%', bgcolor: "background.default" }}>
                                             <Typography variant="subtitle2" color="textSecondary">Conversion Rate</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>

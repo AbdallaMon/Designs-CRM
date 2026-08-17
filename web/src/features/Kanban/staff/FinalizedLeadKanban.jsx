@@ -1,4 +1,5 @@
 "use client";
+import { KANBAN_VIEW_TYPES } from "@dms/shared";
 import React, { useState } from "react";
 
 import dayjs from "dayjs";
@@ -21,7 +22,7 @@ const FinalizedLeadKanban = ({ staffId }) => {
     <>
       <KanbanBoard
         statusArray={statusArray}
-        type="CONTRACTLEVELS"
+        type={KANBAN_VIEW_TYPES.CONTRACT_LEVELS}
         reRenderColumns={reRenderColumns}
         setReRenderColumns={setReRenderColumns}
         staffId={staffId}

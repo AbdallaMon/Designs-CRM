@@ -23,6 +23,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import { DUBAI_TZ, toMiddayUTC } from "@/features/work-stages/utility/ProjectDeliverySchedule.jsx";
 
 function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
@@ -42,7 +43,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
 
   const handleSubmit = async () => {
     if (!value) {
-      setAlertError("Please select a delivery date.");
+      setAlertError(FEEDBACK.SELECT_DELIVERY_DATE);
       return;
     }
     const deliveryAtUtc = toMiddayUTC(value, DUBAI_TZ); // 12:00 in Dubai -> UTC Date

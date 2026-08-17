@@ -1,3 +1,4 @@
+import { WORK_STAGE_STATUSES } from "@dms/shared";
 import { widthOf, pickFontsForText, isRTL, ASCII_RE } from "../contract-pdf-context.js";
 import { getRTLTextX, reText, splitTextIntoLines, isArabicText, formatNumber } from "../../../../infra/pdf/pdf-helpers.js";
 import { FIXED_TEXT, STAGE_PROGRESS, CONTRACT_LEVELSENUM, STAGE_STATUS_LABEL } from "../witten-blocks-data.js";
@@ -23,7 +24,7 @@ export async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
   for (const s of baseStages) {
     const included = stagesMap.has(s.order);
     const data = stagesMap.get(s.order) || {};
-    const statusKey = data?.stageStatus || "NOT_STARTED";
+    const statusKey = data?.stageStatus || WORK_STAGE_STATUSES.NOT_STARTED;
     const statusLabel = STAGE_STATUS_LABEL?.[lng]?.[statusKey] || statusKey;
     const deliveryDays = data?.deliveryDays;
 

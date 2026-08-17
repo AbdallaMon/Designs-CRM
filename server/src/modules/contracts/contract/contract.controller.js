@@ -5,7 +5,7 @@
 // :contractId/child routes — and runs the leads-module checker before any read/write).
 // Path ids are authoritative over body ids.
 import { ok, created } from "../../../shared/http/response.js";
-import { contractsMessagesCodes, messagesNames } from "@dms/shared";
+import { CONTRACT_PAYMENT_STATUSES, contractsMessagesCodes, messagesNames } from "@dms/shared";
 import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { contractUsecase } from "./contract.usecase.js";
 
@@ -52,7 +52,7 @@ class ContractController {
     const data = await contractUsecase.getGroupedPayments({
       page: req.query.page ?? 1,
       limit: req.query.limit ?? 10,
-      status: req.query.status ?? "DUE",
+      status: req.query.status ?? CONTRACT_PAYMENT_STATUSES.DUE,
       authUser: req.auth,
     });
     return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENTS_FETCHED, TK);
@@ -99,6 +99,7 @@ class ContractController {
 
   async updatePayment(req, res) {
     const data = await contractUsecase.updatePayment({
+      contractId: req.params.contractId,
       paymentId: req.params.paymentId,
       newPayment: req.body,
       authUser: req.auth,
@@ -107,12 +108,17 @@ class ContractController {
   }
 
   async deletePayment(req, res) {
-    const data = await contractUsecase.deletePayment({ paymentId: req.params.paymentId, authUser: req.auth });
+    const data = await contractUsecase.deletePayment({
+      contractId: req.params.contractId,
+      paymentId: req.params.paymentId,
+      authUser: req.auth,
+    });
     return ok(res, data, contractsMessagesCodes.CONTRACT_PAYMENT_DELETED, TK);
   }
 
   async updatePaymentStatus(req, res) {
     const data = await contractUsecase.updatePaymentStatus({
+      contractId: req.params.contractId,
       paymentId: req.params.paymentId,
       status: req.body.status,
       authUser: req.auth,
@@ -123,6 +129,7 @@ class ContractController {
 
   async updatePaymentAmounts(req, res) {
     const data = await contractUsecase.updatePaymentAmounts({
+      contractId: req.params.contractId,
       paymentId: req.params.paymentId,
       amountLost: req.body.amountLost,
       amountReceived: req.body.amountReceived,
@@ -144,6 +151,7 @@ class ContractController {
 
   async updateDrawing(req, res) {
     const data = await contractUsecase.updateDrawing({
+      contractId: req.params.contractId,
       drawId: req.params.drawId,
       newDrawing: req.body,
       authUser: req.auth,
@@ -152,7 +160,11 @@ class ContractController {
   }
 
   async deleteDrawing(req, res) {
-    const data = await contractUsecase.deleteDrawing({ drawId: req.params.drawId, authUser: req.auth });
+    const data = await contractUsecase.deleteDrawing({
+      contractId: req.params.contractId,
+      drawId: req.params.drawId,
+      authUser: req.auth,
+    });
     return ok(res, data, contractsMessagesCodes.CONTRACT_DRAWING_DELETED, TK);
   }
 
@@ -168,6 +180,7 @@ class ContractController {
 
   async updateSpecialItem(req, res) {
     const data = await contractUsecase.updateSpecialItem({
+      contractId: req.params.contractId,
       specialItemId: req.params.itemId,
       newSpecialItem: req.body,
       authUser: req.auth,
@@ -176,7 +189,11 @@ class ContractController {
   }
 
   async deleteSpecialItem(req, res) {
-    const data = await contractUsecase.deleteSpecialItem({ specialItemId: req.params.itemId, authUser: req.auth });
+    const data = await contractUsecase.deleteSpecialItem({
+      contractId: req.params.contractId,
+      specialItemId: req.params.itemId,
+      authUser: req.auth,
+    });
     return ok(res, data, contractsMessagesCodes.CONTRACT_SPECIAL_ITEM_DELETED, TK);
   }
 }

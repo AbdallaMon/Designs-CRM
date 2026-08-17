@@ -1,5 +1,6 @@
 // pages/dashboard.js
 "use client";
+import { PROFILES } from "@dms/shared";
 
 import React, { useEffect, useState } from "react";
 import { Grid, Typography, Box } from "@mui/material";
@@ -18,7 +19,7 @@ import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoa
 import { getData } from "@/app/helpers/functions/getData";
 import LeadsMonthlyOverviewSingle from "@/features/dashboard/LeadsMonthlyOverviewSingle.jsx";
 
-const Dashboard = ({ staff, staffId, userProfile = "NORMAL_SALES" }) => {
+const Dashboard = ({ staff, staffId, userProfile = PROFILES.NORMAL_SALES }) => {
   const [profile, setProfile] = useState(userProfile);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -60,7 +61,7 @@ const Dashboard = ({ staff, staffId, userProfile = "NORMAL_SALES" }) => {
           <UserProfile id={staffId} />
         </>
       )}
-      {profile === "DESIGNER_3D" || profile === "DESIGNER_2D" ? (
+      {profile === PROFILES.DESIGNER_3D || profile === PROFILES.DESIGNER_2D ? (
         <DesignerDashboard staff={staff} staffId={staffId} />
       ) : (
         <Grid container spacing={4}>

@@ -40,9 +40,11 @@ export default function LanguageProvider({
   }
   useEffect(() => {
     if (typeof window !== "undefined" && !dontChecklocalStorage) {
+      // Keep the server default stable, then hydrate the user's stored preference.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLang(window.localStorage.getItem("lng") || "ar");
     }
-  }, []);
+  }, [dontChecklocalStorage]);
   return (
     <LanguageContext.Provider value={{ translate, changeLanguage, lng }}>
       <CacheProvider value={lng === "ar" ? cacheRtl : defaultCache}>

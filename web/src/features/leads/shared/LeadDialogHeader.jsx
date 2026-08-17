@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES, PROFILES } from "@dms/shared";
 import {
   Avatar,
   Box,
@@ -71,7 +72,7 @@ export const LeadDialogHeader = ({
     : theme.palette.common.black;
 
   const isAnonymous =
-    (lead.status === "NEW" || lead.status === "ON_HOLD") && !admin;
+    (lead.status === LEAD_STATUSES.NEW || lead.status === LEAD_STATUSES.ON_HOLD) && !admin;
   const statusColor = statusColors[lead.status] || theme.palette.primary.main;
 
   // Prefer the backend-computed capability (permission code + object scope + workflow
@@ -80,11 +81,11 @@ export const LeadDialogHeader = ({
   // legacy role rule for payloads without capabilities (e.g. the work-stage preview).
   // A NEW lead never exposes a change control.
   const canChangeStatus =
-    lead.status !== "NEW" &&
+    lead.status !== LEAD_STATUSES.NEW &&
     (lead.capabilities
       ? Boolean(lead.capabilities.canChangeStatus)
-      : user.profile !== "ACCOUNTANT");
-  const showStartDeal = lead.status === "NEW" && !admin;
+      : user.profile !== PROFILES.ACCOUNTANT);
+  const showStartDeal = lead.status === LEAD_STATUSES.NEW && !admin;
 
   // Small reusable meta pill for the identity row
   const MetaPill = ({ icon, children }) => (
@@ -264,7 +265,7 @@ export const LeadDialogHeader = ({
               />
             )}
 
-            {(admin || ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) && currentContract && (
+            {(admin || [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile)) && currentContract && (
               <Chip
                 icon={<IoMdContract style={{ fontSize: 14 }} />}
                 label={CONTRACT_LEVELS[currentContract.contractLevel]}
@@ -282,7 +283,7 @@ export const LeadDialogHeader = ({
               />
             )}
 
-            {(admin || ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) && lead.paymentStatus && (
+            {(admin || [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile)) && lead.paymentStatus && (
               <Chip
                 label={`Payment: ${PaymentStatus[lead.paymentStatus] || lead.paymentStatus}`}
                 color="primary"
@@ -292,7 +293,7 @@ export const LeadDialogHeader = ({
               />
             )}
 
-            {lead.status === "FINALIZED" && lead.averagePrice && (
+            {lead.status === LEAD_STATUSES.FINALIZED && lead.averagePrice && (
               <Chip
                 label={`Final Price: ${lead.averagePrice}`}
                 color="success"
@@ -345,7 +346,7 @@ export const LeadDialogHeader = ({
 
           <ClientImageSessionManager clientLeadId={lead.id} />
 
-          {lead.status !== "NEW" && (
+          {lead.status !== LEAD_STATUSES.NEW && (
             <UpdateInitialConsultButton
               clientLead={lead}
               onSuccess={(updated) =>

@@ -17,6 +17,7 @@ import { useState } from "react";
 import { MdEdit, MdSave, MdCancel } from "react-icons/md";
 
 export function EditFieldButton({
+  canEdit = true,
   path,
   children,
   reqType = "PUT",
@@ -48,6 +49,8 @@ export function EditFieldButton({
       setIsEditing(false);
     }
   }
+
+  if (!canEdit) return children;
 
   if (isEditing) {
     return (

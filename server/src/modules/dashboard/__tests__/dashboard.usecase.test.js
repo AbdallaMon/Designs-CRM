@@ -185,6 +185,12 @@ describe("DashboardUsecase scope (IDOR-class fix)", () => {
     });
   }
 
+  it("SUPER_SALES sends the supervisor signal to lead-status processing", async () => {
+    const { usecase, legacy } = makeUsecase();
+    await usecase.getLeadsStatus({ query: {}, authUser: authFor(USER_ROLES.SUPER_SALES, 7) });
+    expect(legacy.getDashboardLeadStatusData).toHaveBeenCalledWith({}, true);
+  });
+
   it("scope branching uses the active profile and ignores a forged query role", async () => {
     const { usecase, legacy } = makeUsecase();
     await usecase.getKeyMetrics({

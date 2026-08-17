@@ -1,4 +1,5 @@
 "use client";
+import { CHAT_MEMBER_ROLES, CHAT_ROOM_TYPES } from "@dms/shared";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -68,7 +69,7 @@ export default function ChatSettings({
   const isAdmin =
     checkIfAdmin(user) ||
     room?.createdBy?.id === user.id ||
-    currentMember?.role === "MODERATOR";
+    currentMember?.role === CHAT_MEMBER_ROLES.MODERATOR;
   const owner = room?.createdBy?.id === user.id;
   const isGroupManagedByAdmin = room ? checkIfAdmin(room?.createdBy) : false;
 
@@ -86,8 +87,8 @@ export default function ChatSettings({
   }
   if (
     (isGroupManagedByAdmin && !isAdmin) ||
-    room?.type === "STAFF_TO_STAFF" ||
-    (room?.type === "GROUP" && !owner) ||
+    room?.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF ||
+    (room?.type === CHAT_ROOM_TYPES.GROUP && !owner) ||
     !currentMember
   ) {
     return null;

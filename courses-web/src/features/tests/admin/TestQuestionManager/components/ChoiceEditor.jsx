@@ -104,4 +104,6 @@ const ChoiceEditor = React.memo(
   }
 );
 
+ChoiceEditor.displayName = "ChoiceEditor";
+
 export default ChoiceEditor;

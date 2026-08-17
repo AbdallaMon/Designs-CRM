@@ -1,3 +1,4 @@
+import { IMAGE_SESSION_STATUSES } from "@dms/shared";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 
 // --- Static-catalog cache -------------------------------------------------
@@ -8,18 +9,24 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 // so a revisited step renders instantly with no loader flash. The cache lives
 // for the lifetime of the SPA session and resets on a hard reload.
 const stepDataCache = new Map();
+const STEP_CACHE_TTL_MS = 45 * 60 * 1000;
 
 export async function getCachedStepData({ url, setData, setLoading }) {
-  if (stepDataCache.has(url)) {
-    setData(stepDataCache.get(url));
+  const cached = stepDataCache.get(url);
+  if (cached?.expiresAt > Date.now()) {
+    setData(cached.data);
     setLoading?.(false);
     return;
   }
+  stepDataCache.delete(url);
   await getDataAndSet({
     url,
     setLoading,
     setData: (data) => {
-      stepDataCache.set(url, data);
+      stepDataCache.set(url, {
+        data,
+        expiresAt: Date.now() + STEP_CACHE_TTL_MS,
+      });
       setData(data);
     },
   });
@@ -27,47 +34,47 @@ export async function getCachedStepData({ url, setData, setLoading }) {
 
 export const sessionStatusFlow = {
   INITIAL: {
-    next: "PREVIEW_COLOR_PATTERN",
+    next: IMAGE_SESSION_STATUSES.PREVIEW_COLOR_PATTERN,
     back: null,
   },
   PREVIEW_COLOR_PATTERN: {
-    next: "SELECTED_COLOR_PATTERN",
-    back: "INITIAL",
+    next: IMAGE_SESSION_STATUSES.SELECTED_COLOR_PATTERN,
+    back: IMAGE_SESSION_STATUSES.INITIAL,
   },
   SELECTED_COLOR_PATTERN: {
-    next: "PREVIEW_MATERIAL",
-    back: "PREVIEW_COLOR_PATTERN",
+    next: IMAGE_SESSION_STATUSES.PREVIEW_MATERIAL,
+    back: IMAGE_SESSION_STATUSES.PREVIEW_COLOR_PATTERN,
   },
   PREVIEW_MATERIAL: {
-    next: "SELECTED_MATERIAL",
-    back: "SELECTED_COLOR_PATTERN",
+    next: IMAGE_SESSION_STATUSES.SELECTED_MATERIAL,
+    back: IMAGE_SESSION_STATUSES.SELECTED_COLOR_PATTERN,
   },
   SELECTED_MATERIAL: {
-    next: "PREVIEW_STYLE",
-    back: "PREVIEW_MATERIAL",
+    next: IMAGE_SESSION_STATUSES.PREVIEW_STYLE,
+    back: IMAGE_SESSION_STATUSES.PREVIEW_MATERIAL,
   },
   PREVIEW_STYLE: {
-    next: "SELECTED_STYLE",
-    back: "SELECTED_MATERIAL",
+    next: IMAGE_SESSION_STATUSES.SELECTED_STYLE,
+    back: IMAGE_SESSION_STATUSES.SELECTED_MATERIAL,
   },
   SELECTED_STYLE: {
-    next: "PREVIEW_IMAGES",
-    back: "PREVIEW_STYLE",
+    next: IMAGE_SESSION_STATUSES.PREVIEW_IMAGES,
+    back: IMAGE_SESSION_STATUSES.PREVIEW_STYLE,
   },
   PREVIEW_IMAGES: {
-    next: "SELECTED_IMAGES",
-    back: "SELECTED_STYLE",
+    next: IMAGE_SESSION_STATUSES.SELECTED_IMAGES,
+    back: IMAGE_SESSION_STATUSES.SELECTED_STYLE,
   },
   SELECTED_IMAGES: {
-    next: "PDF_GENERATED",
-    back: "PREVIEW_IMAGES",
+    next: IMAGE_SESSION_STATUSES.PDF_GENERATED,
+    back: IMAGE_SESSION_STATUSES.PREVIEW_IMAGES,
   },
   PDF_GENERATED: {
-    next: "SUBMITTED",
-    back: "SELECTED_IMAGES",
+    next: IMAGE_SESSION_STATUSES.SUBMITTED,
+    back: IMAGE_SESSION_STATUSES.SELECTED_IMAGES,
   },
   SUBMITTED: {
     next: null,
-    back: "PDF_GENERATED",
+    back: IMAGE_SESSION_STATUSES.PDF_GENERATED,
   },
 };

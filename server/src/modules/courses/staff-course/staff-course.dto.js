@@ -42,3 +42,12 @@ export function decorateStaffCourseDetail(course, ctx) {
   if (!course) return null;
   return { ...course, capabilities: computeStaffCourseCapabilities(ctx) };
 }
+
+export function sanitizeLearnerQuestions(questions) {
+  return (questions || []).map((question) => ({
+    ...question,
+    choices: (question.choices || []).map(({ isCorrect: _isCorrect, ...choice }) =>
+      choice,
+    ),
+  }));
+}

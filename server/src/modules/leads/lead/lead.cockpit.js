@@ -1,3 +1,9 @@
+import {
+  CONTRACT_SESSION_STATUSES, CALL_REMINDER_STATUSES, CONTRACT_PAYMENT_STATUSES, LEAD_COCKPIT_ACTION_KINDS, LEAD_STATUSES, WORK_STAGE_STATUSES, LEAD_COCKPIT_RULE_SETS,
+  PROFILES,
+  REMINDER_TYPES,
+  SALES_STAGE_TYPES,
+} from "@dms/shared";
 // leads/lead — pure "next-best-action" cockpit rules engine.
 //
 // `computeCockpit(bundle, now) → { health, actions }`. This function is PURE:
@@ -18,52 +24,52 @@
 // synthetic "NOT_INITIATED" state (no SalesStage rows yet) is represented as
 // `currentStage: null` / `stageIndex: -1`, NOT as a member of this array.
 const STAGE_ORDER = [
-  "INITIAL_CONTACT",
-  "SOCIAL_MEDIA_CHECK",
-  "WHATSAPP_QA",
-  "MEETING_BOOKED",
-  "CLIENT_INFO_UPLOADED",
-  "CONSULTATION_BOOKED",
-  "FOLLOWUP_AFTER_MEETING",
-  "HANDLE_OBJECTIONS",
-  "DEAL_CLOSED",
-  "AFTER_SALES_FOLLOWUP",
+  SALES_STAGE_TYPES.INITIAL_CONTACT,
+  SALES_STAGE_TYPES.SOCIAL_MEDIA_CHECK,
+  SALES_STAGE_TYPES.WHATSAPP_QA,
+  SALES_STAGE_TYPES.MEETING_BOOKED,
+  SALES_STAGE_TYPES.CLIENT_INFO_UPLOADED,
+  SALES_STAGE_TYPES.CONSULTATION_BOOKED,
+  SALES_STAGE_TYPES.FOLLOWUP_AFTER_MEETING,
+  SALES_STAGE_TYPES.HANDLE_OBJECTIONS,
+  SALES_STAGE_TYPES.DEAL_CLOSED,
+  SALES_STAGE_TYPES.AFTER_SALES_FOLLOWUP,
 ];
 
 // `isTerminal` (health flag): the deal is closed/won/lost — the FE shows the "closed" summary.
-const TERMINAL_STATUSES = ["FINALIZED", "CONVERTED", "REJECTED", "ARCHIVED"];
+const TERMINAL_STATUSES = [LEAD_STATUSES.FINALIZED, LEAD_STATUSES.CONVERTED, LEAD_STATUSES.REJECTED, "ARCHIVED"];
 
 // Action-silent statuses: a lost/dead deal gets NO actions at all.
-const DEAD_STATUSES = ["REJECTED", "ARCHIVED"];
+const DEAD_STATUSES = [LEAD_STATUSES.REJECTED, "ARCHIVED"];
 
 // Closed-won: the sales FUNNEL rules are suppressed (no "advance to social-media check" on a
 // finalized deal — the §0 bug), but the CONTRACT signals still run.
-const CLOSED_WON = ["FINALIZED", "CONVERTED"];
+const CLOSED_WON = [LEAD_STATUSES.FINALIZED, LEAD_STATUSES.CONVERTED];
 
 // Profile → which rule set to emit. SALES is the default (back-compat + a missing profileKey).
 const PROFILE_TO_RULESET = {
-  NORMAL_SALES: "SALES",
-  PRIMARY_SALES: "SALES",
-  SUPER_SALES: "SALES",
-  CONTACT_INITIATOR: "SALES",
-  ADMIN: "SALES", // admins see the sales view for now (WORK_STAGE_BLOCKED is a later add)
-  SUPER_ADMIN: "SALES",
-  ACCOUNTANT: "ACCOUNTANT", // rules added in Phase 2
+  [PROFILES.NORMAL_SALES]: LEAD_COCKPIT_RULE_SETS.SALES,
+  [PROFILES.PRIMARY_SALES]: LEAD_COCKPIT_RULE_SETS.SALES,
+  [PROFILES.SUPER_SALES]: LEAD_COCKPIT_RULE_SETS.SALES,
+  [PROFILES.CONTACT_INITIATOR]: LEAD_COCKPIT_RULE_SETS.SALES,
+  [PROFILES.ADMIN]: LEAD_COCKPIT_RULE_SETS.SALES, // admins see the sales view for now
+  [PROFILES.SUPER_ADMIN]: LEAD_COCKPIT_RULE_SETS.SALES,
+  [PROFILES.ACCOUNTANT]: LEAD_COCKPIT_RULE_SETS.ACCOUNTANT,
 };
 
 // Deal is actively being worked (chasing a touch / advancing the stage makes sense).
 const ACTIVE_STATUSES = [
-  "IN_PROGRESS",
-  "INTERESTED",
-  "NEEDS_IDENTIFIED",
-  "NEGOTIATING",
+  LEAD_STATUSES.IN_PROGRESS,
+  LEAD_STATUSES.INTERESTED,
+  LEAD_STATUSES.NEEDS_IDENTIFIED,
+  LEAD_STATUSES.NEGOTIATING,
 ];
 
 // Early funnel statuses at which SPIN discovery should already be complete.
-const EARLY_STATUSES = ["NEW", "IN_PROGRESS", "INTERESTED", "NEEDS_IDENTIFIED"];
+const EARLY_STATUSES = [LEAD_STATUSES.NEW, LEAD_STATUSES.IN_PROGRESS, LEAD_STATUSES.INTERESTED, LEAD_STATUSES.NEEDS_IDENTIFIED];
 
 // Statuses at which a price offer is expected to have been sent.
-const PRICE_OFFER_STATUSES = ["INTERESTED", "NEEDS_IDENTIFIED", "NEGOTIATING"];
+const PRICE_OFFER_STATUSES = [LEAD_STATUSES.INTERESTED, LEAD_STATUSES.NEEDS_IDENTIFIED, LEAD_STATUSES.NEGOTIATING];
 
 const SEVERITY_RANK = { critical: 0, warning: 1, info: 2 };
 
@@ -169,10 +175,10 @@ function firstContract(bundle) {
 // Contract work-stage progress (LEVEL_1..7). `currentLevel` = the IN_PROGRESS stage's title.
 function contractStageProgress(stages) {
   const list = arr(stages);
-  const inProgress = list.find((s) => s.stageStatus === "IN_PROGRESS");
+  const inProgress = list.find((s) => s.stageStatus === LEAD_STATUSES.IN_PROGRESS);
   return {
     currentLevel: inProgress?.title ?? null,
-    levelsDone: list.filter((s) => s.stageStatus === "COMPLETED").length,
+    levelsDone: list.filter((s) => s.stageStatus === WORK_STAGE_STATUSES.COMPLETED).length,
     levelsTotal: list.length,
   };
 }
@@ -182,13 +188,13 @@ function contractStageProgress(stages) {
 function nextTouch(bundle, now) {
   const candidates = [];
   for (const c of arr(bundle.callReminders)) {
-    if (c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now) {
-      candidates.push({ kind: "CALL", at: toDate(c.time) });
+    if (c.status === LEAD_STATUSES.IN_PROGRESS && c.time != null && toDate(c.time) >= now) {
+      candidates.push({ kind: REMINDER_TYPES.CALL, at: toDate(c.time) });
     }
   }
   for (const m of arr(bundle.meetingReminders)) {
-    if (m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now) {
-      candidates.push({ kind: "MEETING", at: toDate(m.time) });
+    if (m.status === LEAD_STATUSES.IN_PROGRESS && m.time != null && toDate(m.time) >= now) {
+      candidates.push({ kind: REMINDER_TYPES.MEETING, at: toDate(m.time) });
     }
   }
   if (!candidates.length) return null;
@@ -238,7 +244,7 @@ function computeHealth(bundle, now) {
 // A ContractPayment row is date-overdue when it is DUE and its dueDate has passed.
 function overduePayments(pays, now) {
   return pays.filter(
-    (p) => p.status === "DUE" && p.dueDate != null && toDate(p.dueDate) < now,
+    (p) => p.status === CONTRACT_PAYMENT_STATUSES.DUE && p.dueDate != null && toDate(p.dueDate) < now,
   );
 }
 
@@ -250,12 +256,12 @@ function paymentHealth(contract, now) {
     ? overdue.map((p) => toDate(p.dueDate)).reduce((a, b) => (a < b ? a : b))
     : null;
   return {
-    outstandingCount: pays.filter((p) => p.status === "DUE").length,
-    hasDue: pays.some((p) => p.status === "DUE"),
+    outstandingCount: pays.filter((p) => p.status === CONTRACT_PAYMENT_STATUSES.DUE).length,
+    hasDue: pays.some((p) => p.status === CONTRACT_PAYMENT_STATUSES.DUE),
     downpaymentReceived: pays.some(
       (p) =>
         p.paymentCondition === "SIGNATURE" &&
-        (p.status === "RECEIVED" || p.status === "TRANSFERRED"),
+        (p.status === CONTRACT_PAYMENT_STATUSES.RECEIVED || p.status === CONTRACT_PAYMENT_STATUSES.TRANSFERRED),
     ),
     overdueCount: overdue.length,
     oldestOverdueDays: oldestDue ? daysBetween(oldestDue, now) : null,
@@ -272,7 +278,7 @@ function computeAccountantActions(bundle, now) {
   const sigDue = payments.find(
     (p) =>
       p.paymentCondition === "SIGNATURE" &&
-      (p.status === "DUE" || p.status === "NOT_DUE"),
+      (p.status === CONTRACT_PAYMENT_STATUSES.DUE || p.status === CONTRACT_PAYMENT_STATUSES.NOT_DUE),
   );
   if (sigDue) {
     actions.push(
@@ -281,7 +287,7 @@ function computeAccountantActions(bundle, now) {
         "critical",
         {},
         {
-          kind: "OPEN_PAYMENT",
+          kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_PAYMENT,
           capability: "canAddPayment",
           tabKey: "payments",
         },
@@ -301,7 +307,7 @@ function computeAccountantActions(bundle, now) {
         "critical",
         { count: overdue.length, overdueDays: daysBetween(oldest, now) },
         {
-          kind: "OPEN_PAYMENT",
+          kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_PAYMENT,
           capability: "canAddPayment",
           tabKey: "payments",
         },
@@ -312,7 +318,7 @@ function computeAccountantActions(bundle, now) {
   const overdueSet = new Set(overdue);
   const otherDue = payments.filter(
     (p) =>
-      p.status === "DUE" &&
+      p.status === CONTRACT_PAYMENT_STATUSES.DUE &&
       p.paymentCondition !== "SIGNATURE" &&
       !overdueSet.has(p),
   );
@@ -323,7 +329,7 @@ function computeAccountantActions(bundle, now) {
         "warning",
         { count: otherDue.length },
         {
-          kind: "OPEN_PAYMENT",
+          kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_PAYMENT,
           capability: "canAddPayment",
           tabKey: "payments",
         },
@@ -351,7 +357,7 @@ function computeSalesActions(bundle, now, health, status) {
     // 1. CALL_OVERDUE (critical) — an active call reminder is in the past.
     const overdueCalls = callReminders.filter(
       (c) =>
-        c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) < now,
+        c.status === LEAD_STATUSES.IN_PROGRESS && c.time != null && toDate(c.time) < now,
     );
     if (overdueCalls.length) {
       const mostOverdueAt = overdueCalls
@@ -366,7 +372,7 @@ function computeSalesActions(bundle, now, health, status) {
             mostOverdueAt: mostOverdueAt.toISOString(),
             overdueDays: daysBetween(mostOverdueAt, now),
           },
-          { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+          { kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_CALL, capability: "canAddCall", tabKey: "calls" },
         ),
       );
     }
@@ -374,7 +380,7 @@ function computeSalesActions(bundle, now, health, status) {
     // 2. MEETING_OVERDUE (critical) — an active meeting reminder is in the past.
     const overdueMeetings = meetingReminders.filter(
       (m) =>
-        m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) < now,
+        m.status === LEAD_STATUSES.IN_PROGRESS && m.time != null && toDate(m.time) < now,
     );
     if (overdueMeetings.length) {
       const mostOverdueAt = overdueMeetings
@@ -390,7 +396,7 @@ function computeSalesActions(bundle, now, health, status) {
             overdueDays: daysBetween(mostOverdueAt, now),
           },
           {
-            kind: "OPEN_MEETING",
+            kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_MEETING,
             capability: "canAddMeeting",
             tabKey: "meetings",
           },
@@ -412,7 +418,7 @@ function computeSalesActions(bundle, now, health, status) {
           "DISCOVERY_INCOMPLETE",
           "warning",
           { unansweredCount: unansweredDiscovery.length },
-          { kind: "GOTO_TAB", capability: null, tabKey: "analysis" },
+          { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: "analysis" },
         ),
       );
     }
@@ -425,7 +431,7 @@ function computeSalesActions(bundle, now, health, status) {
           "OBJECTION_UNHANDLED",
           "warning",
           { count: unhandledObjections },
-          { kind: "GOTO_TAB", capability: null, tabKey: "analysis" },
+          { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: "analysis" },
         ),
       );
     }
@@ -438,7 +444,7 @@ function computeSalesActions(bundle, now, health, status) {
           "warning",
           {},
           {
-            kind: "OPEN_PRICE_OFFER",
+            kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_PRICE_OFFER,
             capability: "canAddPriceOffer",
             tabKey: "priceOffers",
           },
@@ -452,11 +458,11 @@ function computeSalesActions(bundle, now, health, status) {
     // more specific LEAD_STALE (it carries the age) and SUPPRESS NO_UPCOMING_TOUCH.
     const hasFutureCall = callReminders.some(
       (c) =>
-        c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now,
+        c.status === LEAD_STATUSES.IN_PROGRESS && c.time != null && toDate(c.time) >= now,
     );
     const hasFutureMeeting = meetingReminders.some(
       (m) =>
-        m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now,
+        m.status === LEAD_STATUSES.IN_PROGRESS && m.time != null && toDate(m.time) >= now,
     );
     const noScheduledTouch =
       !hasFutureCall && !hasFutureMeeting && ACTIVE_STATUSES.includes(status);
@@ -475,7 +481,7 @@ function computeSalesActions(bundle, now, health, status) {
           "LEAD_STALE",
           "warning",
           { daysSinceActivity },
-          { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+          { kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_CALL, capability: "canAddCall", tabKey: "calls" },
         ),
       );
     } else if (noScheduledTouch) {
@@ -485,7 +491,7 @@ function computeSalesActions(bundle, now, health, status) {
           "NO_UPCOMING_TOUCH",
           "warning",
           {},
-          { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+          { kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_CALL, capability: "canAddCall", tabKey: "calls" },
         ),
       );
     }
@@ -498,7 +504,7 @@ function computeSalesActions(bundle, now, health, status) {
       bundle.assignedAt != null &&
       health.stageIndex < 0 &&
       ACTIVE_STATUSES.includes(status) &&
-      !callReminders.some((c) => c.status === "DONE")
+      !callReminders.some((c) => c.status === CALL_REMINDER_STATUSES.DONE)
     ) {
       const hoursSinceAssigned = Math.floor(
         (now.getTime() - toDate(bundle.assignedAt).getTime()) / MS_PER_HOUR,
@@ -509,7 +515,7 @@ function computeSalesActions(bundle, now, health, status) {
             "FIRST_TOUCH_SLA",
             hoursSinceAssigned >= FIRST_TOUCH_CRIT_HOURS ? "critical" : "warning",
             { hoursSinceAssigned },
-            { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+            { kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_CALL, capability: "canAddCall", tabKey: "calls" },
           ),
         );
       }
@@ -534,7 +540,7 @@ function computeSalesActions(bundle, now, health, status) {
             "OFFER_AWAITING_DECISION",
             "warning",
             { daysSinceOffer, offerCount: priceOffers.length },
-            { kind: "GOTO_TAB", capability: null, tabKey: "priceOffers" },
+            { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: "priceOffers" },
           ),
         );
       }
@@ -556,7 +562,7 @@ function computeSalesActions(bundle, now, health, status) {
           "critical",
           { count: overdue.length, overdueDays: daysBetween(oldest, now) },
           {
-            kind: "OPEN_PAYMENT",
+            kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_PAYMENT,
             capability: "canAddPayment",
             tabKey: "payments",
           },
@@ -566,19 +572,19 @@ function computeSalesActions(bundle, now, health, status) {
 
     // SIGNING_AWAITED (warning) — the contract is out for signing (real sessionStatus,
     // not the old accepted-offer proxy).
-    if (contract.sessionStatus === "SIGNING") {
+    if (contract.sessionStatus === CONTRACT_SESSION_STATUSES.SIGNING) {
       actions.push(
         action(
           "SIGNING_AWAITED",
           "warning",
           {},
-          { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
+          { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: "contracts" },
         ),
       );
     }
-    if (contract.status === "COMPLETED") {
+    if (contract.status === WORK_STAGE_STATUSES.COMPLETED) {
       const afterSalesDone = arr(bundle.salesStages).some(
-        (s) => s.stage === "AFTER_SALES_FOLLOWUP",
+        (s) => s.stage === SALES_STAGE_TYPES.AFTER_SALES_FOLLOWUP,
       );
       if (!afterSalesDone) {
         // AFTER_SALES_DUE (info) — delivery done, after-sales follow-up not yet logged.
@@ -588,7 +594,7 @@ function computeSalesActions(bundle, now, health, status) {
             "info",
             {},
             {
-              kind: "OPEN_STATUS",
+              kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_STATUS,
               capability: "canChangeStatus",
               tabKey: null,
             },
@@ -601,7 +607,7 @@ function computeSalesActions(bundle, now, health, status) {
             "CONTRACT_COMPLETED",
             "info",
             {},
-            { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
+            { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: "contracts" },
           ),
         );
       }
@@ -618,7 +624,7 @@ function computeSalesActions(bundle, now, health, status) {
               levelsDone: p.levelsDone,
               levelsTotal: p.levelsTotal,
             },
-            { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
+            { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: "contracts" },
           ),
         );
       }
@@ -640,7 +646,7 @@ function computeSalesActions(bundle, now, health, status) {
         "ADVANCE_STAGE",
         "info",
         { currentStage: health.currentStage, nextStage: health.nextStage },
-        { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null },
+        { kind: LEAD_COCKPIT_ACTION_KINDS.OPEN_STATUS, capability: "canChangeStatus", tabKey: null },
       ),
     );
   }
@@ -672,11 +678,12 @@ export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
     return { health, actions: [] };
   }
 
-  const ruleSet = PROFILE_TO_RULESET[profileKey] ?? "SALES";
+  const ruleSet =
+    PROFILE_TO_RULESET[profileKey] ?? LEAD_COCKPIT_RULE_SETS.SALES;
   let actions = [];
-  if (ruleSet === "SALES") {
+  if (ruleSet === LEAD_COCKPIT_RULE_SETS.SALES) {
     actions = computeSalesActions(bundle, now, health, status);
-  } else if (ruleSet === "ACCOUNTANT") {
+  } else if (ruleSet === PROFILES.ACCOUNTANT) {
     actions = computeAccountantActions(bundle, now);
   }
 

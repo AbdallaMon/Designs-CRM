@@ -1,3 +1,4 @@
+import { EMIRATES } from "@dms/shared";
 import { Alert, Snackbar, Typography } from "@mui/material";
 import React, { useState } from "react";
 
@@ -13,7 +14,7 @@ export function WhatsAppRedirect({ lead }) {
     let formattedPhone = phone.trim();
 
     // If lead is OUTSIDE UAE, assume number is already formatted
-    if (emirates === "OUTSIDE") {
+    if (emirates === EMIRATES.OUTSIDE) {
       return formattedPhone.startsWith("+")
         ? formattedPhone
         : `+${formattedPhone}`;

@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 import React, { useState } from "react";
 import {
   alpha,
@@ -113,7 +114,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
 
   // Defense-in-depth: the section is hidden via leadSections `visible()` when not allowed,
   // so this branch should not normally render — kept as a guard, now a calm empty state.
-  if (!isAdmin && !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) {
+  if (!isAdmin && ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile)) {
     return (
       <TabSection icon={<MdAnalytics />} title="Client Analysis">
         <EmptyState
@@ -140,9 +141,9 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
           </ToolCard>
         </Grid>
 
-        {["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-        user.profile !== "PRIMARY_SALES" &&
-        user.profile !== "SUPER_SALES" ? null : (
+        {[PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+        user.profile !== PROFILES.PRIMARY_SALES &&
+        user.profile !== PROFILES.SUPER_SALES ? null : (
           <Grid size={{ xs: 12, md: 6 }}>
             <ToolCard
               icon={<MdTouchApp />}

@@ -18,7 +18,14 @@ describe("Telegram controller contract", () => {
 
   it("returns a coded success envelope for auth init", async () => {
     vi.spyOn(TelegramAuthusecase, "initTelegramAuth").mockResolvedValue({
-      data: { status: "INIT" },
+      data: {
+        phoneNumber: "+971500000000",
+        teleStatus: "AWAIT_CODE",
+        phoneCodeHash: "secret-code-hash",
+        code: "12345",
+        password: "secret-password",
+        sessionString: "secret-session",
+      },
       message: adminResidualMessagesCodes.TELEGRAM_AUTH_INITIATED,
     });
     const res = response();
@@ -32,8 +39,35 @@ describe("Telegram controller contract", () => {
       success: true,
       message:
         adminResidualMessagesCodes.TELEGRAM_AUTH_INITIATED,
-      data: { status: "INIT" },
+      data: {
+        phoneNumber: "+971500000000",
+        teleStatus: "AWAIT_CODE",
+      },
       translationKey: "adminResidualMessages",
     });
+    expect(JSON.stringify(res.json.mock.calls)).not.toMatch(
+      /secret-code-hash|12345|secret-password|secret-session/,
+    );
+  });
+
+  it("returns only the current status fields used by the profile UI", async () => {
+    vi.spyOn(TelegramAuthusecase, "getActiveAuth").mockResolvedValue({
+      phoneNumber: "+971500000000",
+      status: "CONNECTED",
+      apiHash: "secret-api-hash",
+      sessionString: "secret-session",
+      lastError: "provider error with secret-token",
+    });
+    const res = response();
+
+    await TelegramController.getCurrentTelegramAuth({}, res);
+
+    expect(res.json.mock.calls[0][0].data).toEqual({
+      phoneNumber: "+971500000000",
+      status: "CONNECTED",
+    });
+    expect(JSON.stringify(res.json.mock.calls)).not.toMatch(
+      /secret-api-hash|secret-session|secret-token/,
+    );
   });
 });

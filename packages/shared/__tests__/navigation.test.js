@@ -70,16 +70,16 @@ describe("Work stages sub-links match master exactly (labels + hrefs + order)", 
   it("THREE_D_DESIGNER work-stages sub-links", () => {
     expect(subOf({ profile: "DESIGNER_3D" }, "/dashboard/work-stages")).toEqual([
       { label: "3D Work stage", href: "/dashboard/work-stages" },
-      { label: "Modifcation stage", href: "/dashboard/modification" },
-      { label: "Archived projects", href: "/dashboard/archived" },
+      { label: "Modifcation stage", href: "/dashboard/work-stages/modification" },
+      { label: "Archived projects", href: "/dashboard/projects/archived" },
     ]);
   });
   it("TWO_D_DESIGNER work-stages sub-links", () => {
     expect(subOf({ profile: "DESIGNER_2D" }, "/dashboard/work-stages")).toEqual([
-      { label: "Plan study department", href: "/dashboard/study" },
-      { label: "Final plan department", href: "/dashboard/final-plan" },
-      { label: "Quantity calcualtion department", href: "/dashboard/quantity" },
-      { label: "Archived projects", href: "/dashboard/archived" },
+      { label: "Plan study department", href: "/dashboard/work-stages/study" },
+      { label: "Final plan department", href: "/dashboard/work-stages/final-plan" },
+      { label: "Quantity calcualtion department", href: "/dashboard/work-stages/quantity" },
+      { label: "Archived projects", href: "/dashboard/projects/archived" },
     ]);
   });
   it("TWO_D_EXECUTOR work-stage has NO sub-links (direct link)", () => {
@@ -182,8 +182,8 @@ const MASTER = {
       href: "/dashboard/work-stages",
       subLinks: [
         { label: "3D Work stage", href: "/dashboard/work-stages" },
-        { label: "Modifcation stage", href: "/dashboard/modification" },
-        { label: "Archived projects", href: "/dashboard/archived" },
+        { label: "Modifcation stage", href: "/dashboard/work-stages/modification" },
+        { label: "Archived projects", href: "/dashboard/projects/archived" },
       ],
     },
   ],
@@ -193,10 +193,10 @@ const MASTER = {
       label: "Work stages",
       href: "/dashboard/work-stages",
       subLinks: [
-        { label: "Plan study department", href: "/dashboard/study" },
-        { label: "Final plan department", href: "/dashboard/final-plan" },
-        { label: "Quantity calcualtion department", href: "/dashboard/quantity" },
-        { label: "Archived projects", href: "/dashboard/archived" },
+        { label: "Plan study department", href: "/dashboard/work-stages/study" },
+        { label: "Final plan department", href: "/dashboard/work-stages/final-plan" },
+        { label: "Quantity calcualtion department", href: "/dashboard/work-stages/quantity" },
+        { label: "Archived projects", href: "/dashboard/projects/archived" },
       ],
     },
   ],

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Radio,
@@ -17,6 +17,15 @@ import {
 } from "@mui/material";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { MdArrowDownward, MdArrowUpward } from "react-icons/md";
+import { COURSE_QUESTION_TYPES } from "@dms/shared";
+
+function choiceSortKey(choice, questionId) {
+  const value = `${questionId}:${choice.id}:${choice.text}`;
+  return [...value].reduce(
+    (hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0,
+    0
+  );
+}
 
 const RenderQuestionContent = ({
   question,
@@ -29,18 +38,23 @@ const RenderQuestionContent = ({
   const currentAnswer = isReview
     ? reviewAnswers?.[question.id]
     : userAnswers[question.id];
-  let [saved, setSaved] = useState(false);
   const handleChange = (answer) => {
     if (!isReview) {
       handleAnswerChange(question.id, answer);
     }
   };
 
-  const getOrderedChoices = () => {
-    if (
-      currentAnswer?.selectedAnswers &&
-      currentAnswer.selectedAnswers.length > 0
-    ) {
+  const initialOrderedChoices = useMemo(
+    () =>
+      [...question.choices].sort(
+        (a, b) =>
+          choiceSortKey(a, question.id) - choiceSortKey(b, question.id)
+      ),
+    [question.choices, question.id]
+  );
+
+  const orderedChoices = (() => {
+    if (currentAnswer?.selectedAnswers?.length > 0) {
       const orderedChoices = [];
       currentAnswer.selectedAnswers.forEach((answerText) => {
         const choice = question.choices.find((c) => c.text === answerText);
@@ -56,23 +70,35 @@ const RenderQuestionContent = ({
       });
 
       return orderedChoices;
-    } else if (!isReview) {
-      const newChoices = [...question.choices].sort(() => Math.random() - 0.5);
-      if (!saved) {
-        handleChange({ selectedAnswers: newChoices.map((c) => c.text) });
-        setSaved(true);
-      }
-      return newChoices;
     }
-    {
+    if (isReview) {
       return [...question.choices].sort(
         (a, b) => (a.order || 0) - (b.order || 0)
       );
     }
-  };
+    return initialOrderedChoices;
+  })();
+
+  useEffect(() => {
+    if (
+      question.type === COURSE_QUESTION_TYPES.ORDERING &&
+      !isReview &&
+      !currentAnswer?.selectedAnswers?.length
+    ) {
+      handleAnswerChange(question.id, {
+        selectedAnswers: initialOrderedChoices.map((choice) => choice.text),
+      });
+    }
+  }, [
+    currentAnswer?.selectedAnswers?.length,
+    handleAnswerChange,
+    initialOrderedChoices,
+    isReview,
+    question.id,
+    question.type,
+  ]);
 
   const moveChoice = (currentIndex, direction) => {
-    const orderedChoices = getOrderedChoices();
     const newChoices = [...orderedChoices];
     const targetIndex =
       direction === "up" ? currentIndex - 1 : currentIndex + 1;
@@ -90,12 +116,17 @@ const RenderQuestionContent = ({
   };
 
   const [localText, setLocalText] = useState(currentAnswer?.textAnswer || "");
-  const debouncedSave = useCallback(
-    debounce((value) => {
-      handleChange({ textAnswer: value });
-    }, 500),
-    [userAnswers]
+  const debouncedSave = useMemo(
+    () =>
+      debounce((value) => {
+        if (!isReview) {
+          handleAnswerChange(question.id, { textAnswer: value });
+        }
+      }, 500),
+    [handleAnswerChange, isReview, question.id]
   );
+
+  useEffect(() => () => debouncedSave.clear(), [debouncedSave]);
 
   const handleLocalChange = (e) => {
     setLocalText(e.target.value);
@@ -103,7 +134,7 @@ const RenderQuestionContent = ({
   };
 
   switch (question.type) {
-    case "MULTIPLE_CHOICE":
+    case COURSE_QUESTION_TYPES.MULTIPLE_CHOICE:
       return (
         <FormControl component="fieldset" fullWidth disabled={isReview}>
           <FormLabel component="legend">Select all that apply:</FormLabel>
@@ -149,7 +180,7 @@ const RenderQuestionContent = ({
         </FormControl>
       );
 
-    case "SINGLE_CHOICE":
+    case COURSE_QUESTION_TYPES.SINGLE_CHOICE:
       return (
         <FormControl component="fieldset" fullWidth disabled={isReview}>
           <FormLabel component="legend">Select one:</FormLabel>
@@ -187,7 +218,7 @@ const RenderQuestionContent = ({
         </FormControl>
       );
 
-    case "TRUE_FALSE":
+    case COURSE_QUESTION_TYPES.TRUE_FALSE:
       return (
         <FormControl component="fieldset" fullWidth disabled={isReview}>
           <FormLabel component="legend">True or false:</FormLabel>
@@ -225,7 +256,7 @@ const RenderQuestionContent = ({
         </FormControl>
       );
 
-    case "TEXT":
+    case COURSE_QUESTION_TYPES.TEXT:
       return (
         <TextField
           fullWidth
@@ -238,9 +269,7 @@ const RenderQuestionContent = ({
         />
       );
 
-    case "ORDERING":
-      const orderedChoices = getOrderedChoices();
-
+    case COURSE_QUESTION_TYPES.ORDERING:
       return (
         <FormControl component="fieldset" fullWidth disabled={isReview}>
           <FormLabel component="legend">

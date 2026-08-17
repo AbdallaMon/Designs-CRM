@@ -1,7 +1,7 @@
 // projects/project DTO — output shaping + per-record `capabilities.*` (FE rendering
 // hints; the server checkers remain the source of truth). Pure: no Prisma, no side
 // effects.
-import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
+import { PROFILES, computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
 import { PROJECT_TYPES, LOCKED_FROM_STATUSES_FOR_NON_ADMIN } from "./project.constants.js";
 
 const P = PERMISSIONS;
@@ -47,7 +47,7 @@ export function sortProjectsByTypeOrder(projects, order = PROJECT_TYPES) {
 
 function isFullScope(authUser) {
   return (
-    authUser?.currentProfileKey === "SUPER_SALES" ||
+    authUser?.currentProfileKey === PROFILES.SUPER_SALES ||
     Boolean(authUser?.isAdminTier)
   );
 }

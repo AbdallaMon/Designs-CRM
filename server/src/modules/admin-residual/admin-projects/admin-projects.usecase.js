@@ -1,3 +1,4 @@
+import { LEAD_STATUSES } from "@dms/shared";
 // admin-residual/admin-projects usecase — orchestration only.
 //
 // OVERLAP FINDING (reported): the v2 projects module does NOT expose either of these.
@@ -30,7 +31,7 @@ export async function getAdminProjects(searchParams, limit, skip) {
     where.id = Number(searchParams.id);
   }
   where.status = {
-    notIn: ["ARCHIVED", "NEW"],
+    notIn: ["ARCHIVED", LEAD_STATUSES.NEW],
   };
   const clientLeads = await adminProjectsRepository.findAdminProjects({
     where,

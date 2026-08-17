@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 // projects/update usecase — business logic / orchestration. Prisma NEVER appears here
 // (only repo + the shared project-scope usecase). Behavior ported 1:1 from legacy
 // (routes/shared/updates.js, services/main/shared/updateServices.js). The heavy update
@@ -131,7 +132,10 @@ export const updateOperations = {
 
 class UpdateUsecase {
   isAdminUser(authUser) {
-    return Boolean(authUser?.isAdminTier);
+    return (
+      Boolean(authUser?.isAdminTier) ||
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES
+    );
   }
 
   // ── object-scope: gate on the parent clientLead's project assignment ─────────────

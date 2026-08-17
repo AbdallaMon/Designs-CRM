@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES, PROFILES } from "@dms/shared";
 import { useState } from "react";
 import {
   Box,
@@ -101,9 +102,9 @@ export const MoreActionsMenu = ({
         <Divider />
         {/* Convert Lead Action - Staff Only */}
         {!admin &&
-          ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-          lead.status !== "FINALIZED" &&
-          lead.status !== "NEW" && (
+          [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+          lead.status !== LEAD_STATUSES.FINALIZED &&
+          lead.status !== LEAD_STATUSES.NEW && (
             <MenuItem
               onClick={() => {
                 setOpenConfirm(true);
@@ -119,7 +120,7 @@ export const MoreActionsMenu = ({
         {isPage &&
           user.id !== lead.userId &&
           !admin &&
-          user.profile !== "ACCOUNTANT" && (
+          user.profile !== PROFILES.ACCOUNTANT && (
             <MenuItem
               onClick={() => {
                 createADeal(lead);
@@ -203,10 +204,10 @@ export const MoreActionsMenu = ({
         ]}
 
         {/* Payment Actions - Finalized/Archived Only */}
-        {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && [
-          (["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) ||
-            user.profile === "SUPER_ADMIN" ||
-            user.profile === "ADMIN") &&
+        {(lead.status === LEAD_STATUSES.FINALIZED || lead.status === "ARCHIVED") && [
+          ([PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) ||
+            user.profile === PROFILES.SUPER_ADMIN ||
+            user.profile === PROFILES.ADMIN) &&
             (!payments || payments?.length < 1) && (
               <MenuItem
                 key="add-payment"

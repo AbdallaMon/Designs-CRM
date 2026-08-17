@@ -29,6 +29,13 @@ export class AdminLeadsRepository {
     return client.clientLead.create({ data });
   }
 
+  findLeadInitialConsult({ leadId }) {
+    return prisma.clientLead.findUnique({
+      where: { id: Number(leadId) },
+      select: { initialConsult: true },
+    });
+  }
+
   // ── excel bulk-import helpers (used by the createLeadFromExcelData orchestration) ──
   findLastClient({ client = prisma } = {}) {
     return client.client.findFirst({ orderBy: { id: "desc" } });

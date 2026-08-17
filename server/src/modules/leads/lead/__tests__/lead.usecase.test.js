@@ -8,7 +8,11 @@ vi.mock("../../../../infra/audit/record-action.js", () => ({
 
 // The lead repo singleton — mocked so `changeStatus`'s fallback status read is inert.
 vi.mock("../lead.repo.js", () => ({
-  leadRepository: { findLeadStatus: vi.fn() },
+  leadRepository: {
+    findLeadStatus: vi.fn(),
+    findNextCalls: vi.fn(),
+    findNextMeetings: vi.fn(),
+  },
   LeadRepository: class {},
 }));
 
@@ -40,6 +44,7 @@ vi.mock("../lead.sub-resources.usecase.js", () => ({
 
 import { recordAction } from "../../../../infra/audit/record-action.js";
 import { leadUsecase } from "../lead.usecase.js";
+import { leadRepository } from "../lead.repo.js";
 import { updateClientLeadStatus } from "../lead.assign-status.usecase.js";
 import { createPriceOffer, createCallReminder } from "../lead.sub-resources.usecase.js";
 
@@ -116,5 +121,39 @@ describe("LeadUsecase semantic audit events", () => {
         clientLeadId: 12,
       }),
     );
+  });
+});
+
+describe("LeadUsecase transferred reminder queues", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    leadRepository.findNextCalls.mockResolvedValue({ items: [], total: 0 });
+    leadRepository.findNextMeetings.mockResolvedValue({ items: [], total: 0 });
+  });
+
+  it.each([
+    ["calls", "listCalls", "findNextCalls"],
+    ["meetings", "listMeetings", "findNextMeetings"],
+  ])("scopes %s to reminders created by staff OR attached to their current leads", async (
+    _label,
+    method,
+    repositoryMethod,
+  ) => {
+    await leadUsecase[method]({
+      query: { staffId: "8" },
+      skip: 0,
+      limit: 10,
+      page: 1,
+    });
+
+    const { where, countWhere } = leadRepository[repositoryMethod].mock.calls[0][0];
+    const expectedScope = [
+      { userId: 8 },
+      { clientLead: { userId: 8 } },
+    ];
+    expect(where.OR).toEqual(expectedScope);
+    expect(countWhere.OR).toEqual(expectedScope);
+    expect(where.clientLead).not.toHaveProperty("userId");
+    expect(countWhere.clientLead).not.toHaveProperty("userId");
   });
 });

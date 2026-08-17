@@ -1,13 +1,13 @@
 // accounting/payment DTO — output shaping + per-record `capabilities.*` (FE rendering
 // hints; the route guards remain the source of truth). Pure: no Prisma, no side effects.
-import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
+import { PAYMENT_STATUSES, computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
 
 const P = PERMISSIONS.ACCOUNTING;
 
 // A fully-paid payment cannot be paid again or marked overdue (legacy processPayment /
 // markPaymentAsOverdue throw on FULLY_PAID). Surface that to the UI.
 function isFullyPaid(record) {
-  return record?.status === "FULLY_PAID";
+  return record?.status === PAYMENT_STATUSES.FULLY_PAID;
 }
 
 /** Capabilities for a single payment record (list row or detail). */

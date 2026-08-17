@@ -11,7 +11,7 @@
 // inside `_processPayment` (amount > 0, amount <= pending, not-already-fully-paid) are
 // PRESERVED untouched — no rounding/arithmetic is re-implemented.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { accountingMessagesCodes } from "@dms/shared";
+import { PAYMENT_STATUSES, accountingMessagesCodes } from "@dms/shared";
 import { paymentRepository } from "./payment.repo.js";
 
 class PaymentUsecase {
@@ -25,60 +25,69 @@ class PaymentUsecase {
     if (issuedDate === "1970-01-01T00:00:00.000Z") {
       throw new AppError({ code: accountingMessagesCodes.PAYMENT_DATE_REQUIRED, statusCode: 400 });
     }
-    const payment = await paymentRepository.findPayment({ id: paymentId });
+    return paymentRepository.runInTransaction(async (client) => {
+      await paymentRepository.lockPaymentForUpdate({ id: paymentId, client });
+      const payment = await paymentRepository.findPayment({ id: paymentId, client });
 
-    if (!payment) {
-      throw new AppError({ code: accountingMessagesCodes.PAYMENT_NOT_FOUND, statusCode: 404 });
-    }
-    if (
-      payment.status === "FULLY_PAID" &&
-      payment.amountPaid === payment.amount
-    ) {
-      throw new AppError({ code: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID, statusCode: 409 });
-    }
-    const pendingAmount = payment.amount - (payment.amountPaid || 0);
+      if (!payment) {
+        throw new AppError({ code: accountingMessagesCodes.PAYMENT_NOT_FOUND, statusCode: 404 });
+      }
+      if (payment.status === PAYMENT_STATUSES.FULLY_PAID && payment.amountPaid === payment.amount) {
+        throw new AppError({
+          code: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID,
+          statusCode: 409,
+        });
+      }
+      const pendingAmount = payment.amount - (payment.amountPaid || 0);
 
-    if (amount > pendingAmount) {
-      throw new AppError({ code: accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING, statusCode: 400 });
-    }
+      if (amount > pendingAmount) {
+        throw new AppError({
+          code: accountingMessagesCodes.PAYMENT_AMOUNT_EXCEEDS_PENDING,
+          statusCode: 400,
+        });
+      }
 
-    if (amount <= 0) {
-      throw new AppError({ code: accountingMessagesCodes.PAYMENT_AMOUNT_INVALID, statusCode: 400 });
-    }
+      if (amount <= 0) {
+        throw new AppError({ code: accountingMessagesCodes.PAYMENT_AMOUNT_INVALID, statusCode: 400 });
+      }
 
-    const newAmountPaid = Number(payment.amountPaid || 0) + Number(amount);
-    const isFullyPaid = newAmountPaid >= payment.amount;
+      const newAmountPaid = Number(payment.amountPaid || 0) + Number(amount);
+      const isFullyPaid = newAmountPaid >= payment.amount;
 
-    const newPayment = await paymentRepository.updatePaymentAmounts({
-      id: payment.id,
-      amountPaid: newAmountPaid,
-      status:
-        payment.status === "OVERDUE" && !isFullyPaid
-          ? "OVERDUE"
-          : isFullyPaid
-          ? "FULLY_PAID"
-          : "PENDING",
-      amountLeft: payment.amount - newAmountPaid,
-      // paymentLevel: getNextPaymentLevel(payment.paymentLevel),
+      const newPayment = await paymentRepository.updatePaymentAmounts({
+        id: payment.id,
+        amountPaid: newAmountPaid,
+        status:
+          payment.status === PAYMENT_STATUSES.OVERDUE && !isFullyPaid
+            ? PAYMENT_STATUSES.OVERDUE
+            : isFullyPaid
+            ? PAYMENT_STATUSES.FULLY_PAID
+            : PAYMENT_STATUSES.PENDING,
+        amountLeft: payment.amount - newAmountPaid,
+        client,
+        // paymentLevel: getNextPaymentLevel(payment.paymentLevel),
+      });
+
+      const invoice = await paymentRepository.createInvoice({
+        paymentId: payment.id,
+        amount: amount,
+        issuedDate: issuedDate,
+        client,
+      });
+      await paymentRepository.createInvoiceNote({
+        attachment: file,
+        invoiceId: invoice.id,
+        userId: Number(userId),
+        client,
+      });
+      return {
+        ...newPayment,
+        amountPaid: newAmountPaid,
+        status: newPayment.status,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceId: invoice.id,
+      };
     });
-
-    const invoice = await paymentRepository.createInvoice({
-      paymentId: payment.id,
-      amount: amount,
-      issuedDate: issuedDate,
-    });
-    const note = await paymentRepository.createInvoiceNote({
-      attachment: file,
-      invoiceId: invoice.id,
-      userId: Number(userId),
-    });
-    return {
-      ...newPayment,
-      amountPaid: newAmountPaid,
-      status: isFullyPaid ? "FULLY_PAID" : "PENDING",
-      invoiceNumber: invoice.invoiceNumber,
-      invoiceId: invoice.id,
-    };
   }
 
   // Formerly legacy markPaymentAsOverdue. Guards throw the exact legacy strings.
@@ -89,7 +98,7 @@ class PaymentUsecase {
       throw new AppError({ code: accountingMessagesCodes.PAYMENT_NOT_FOUND, statusCode: 404 });
     }
 
-    if (payment.status === "FULLY_PAID") {
+    if (payment.status === PAYMENT_STATUSES.FULLY_PAID) {
       throw new AppError({ code: accountingMessagesCodes.PAYMENT_ALREADY_FULLY_PAID, statusCode: 409 });
     }
 

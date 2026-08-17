@@ -7,11 +7,15 @@ import { sendToAdmins } from "../../../shared/notifications/notification.service
 import { getTelegramManager } from "../manager/telegram.manager.js";
 import { TELEGRAM_CONSTANTS } from "../telegram.constant.js";
 import { TelegramAuthCache } from "./telegram.cache.js";
-import { mapTelegramStatus } from "./telegram.dto.js";
+import {
+  mapTelegramAuthStepToDTO,
+  mapTelegramStatus,
+} from "./telegram.dto.js";
 import { TelegramAuthEmails } from "./telegram.emails.js";
 import { telegramAuthRepo } from "./telegram.repo.js";
+import { integrationCredentialEncryption } from "../../../infra/security/integration-credential-encryption.js";
 import {
-  adminResidualMessagesCodes,
+  TELEGRAM_CONNECTION_STATUSES, adminResidualMessagesCodes,
   messagesNames,
 } from "@dms/shared";
 
@@ -20,9 +24,38 @@ const TK = messagesNames.adminResidualMessages;
 export class TelegramAuthusecase {
   static #CACHE_PREFIX = "telegram:auth:";
   static #cacheKey = (phone) => `${TelegramAuthusecase.#CACHE_PREFIX}${phone}`;
+  static #decryptStoredConnection(stored) {
+    if (!stored) return null;
+    const { encryptedCredential, ...connection } = stored;
+    if (!encryptedCredential) return connection;
+    const credentials = integrationCredentialEncryption.decrypt({
+      ciphertext: encryptedCredential.ciphertext,
+      metadata: encryptedCredential,
+    });
+    return {
+      ...connection,
+      apiId: credentials.apiId ?? null,
+      apiHash: credentials.apiHash ?? null,
+      sessionString: credentials.sessionString ?? null,
+    };
+  }
+
+  static #encryptCredentials({ apiId, apiHash, sessionString }) {
+    return integrationCredentialEncryption.encrypt({
+      apiId: apiId == null ? null : String(apiId),
+      apiHash: apiHash ?? null,
+      sessionString: sessionString ?? null,
+    });
+  }
+
+  static async #readStoredConnection() {
+    const stored = await telegramAuthRepo.getMainConnection();
+    return this.#decryptStoredConnection(stored);
+  }
+
   static async getActiveAuth(checkHealth = true) {
     try {
-      const telegramData = await telegramAuthRepo.getMainConnection();
+      const telegramData = await this.#readStoredConnection();
       if (checkHealth && telegramData?.sessionString) {
         const telegramManager = getTelegramManager();
         await telegramManager.setConfig({
@@ -41,17 +74,21 @@ export class TelegramAuthusecase {
       return telegramData;
     } catch (e) {
       if (e instanceof AppError) throw e;
-      const reauthEmail = TelegramAuthEmails.reAuthAlert();
-      await sendToAdmins({
-        content: reauthEmail.html,
-        type: NOTIFICATION_TYPES.TELEGRAM_REAUTH_NEEDED,
-        isEmailOnly: true,
-        options: {
-          contentType: CONTENT_TYPES.HTML,
-          emailSubject: reauthEmail.subject,
-        },
-      });
-      await telegramAuthRepo.markNotifiedOfDisconnection();
+      try {
+        const reauthEmail = TelegramAuthEmails.reAuthAlert();
+        await sendToAdmins({
+          content: reauthEmail.html,
+          type: NOTIFICATION_TYPES.TELEGRAM_REAUTH_NEEDED,
+          isEmailOnly: true,
+          options: {
+            contentType: CONTENT_TYPES.HTML,
+            emailSubject: reauthEmail.subject,
+          },
+        });
+        await telegramAuthRepo.markNotifiedOfDisconnection();
+      } catch {
+        // Notification failure must not expose a provider error through this API.
+      }
       throw new AppError({
         code: adminResidualMessagesCodes.TELEGRAM_CONNECTION_FAILED,
         statusCode: 503,
@@ -66,10 +103,10 @@ export class TelegramAuthusecase {
     status,
     updatedByUserId,
   }) {
+    const encrypted = this.#encryptCredentials({ apiId, apiHash, sessionString });
     return await telegramAuthRepo.upsertMainConnection({
-      apiId,
-      apiHash,
-      sessionString,
+      ciphertext: encrypted.ciphertext,
+      metadata: encrypted.metadata,
       status,
       updatedByUserId,
     });
@@ -77,11 +114,19 @@ export class TelegramAuthusecase {
   static async #handleTelegramAuthSuccess({ key }) {
     const telegramManager = getTelegramManager();
     const connectionString = telegramManager.getSessionString();
+    const connection = await this.#readStoredConnection();
+    const encrypted = this.#encryptCredentials({
+      apiId: connection?.apiId,
+      apiHash: connection?.apiHash,
+      sessionString: connectionString,
+    });
 
-    await telegramAuthRepo.updateMainConnectionFields({
+    await telegramAuthRepo.replaceEncryptedCredentials({
+      connectionId: connection.id,
+      ciphertext: encrypted.ciphertext,
+      metadata: encrypted.metadata,
       fieldsToUpdate: {
-        sessionString: connectionString,
-        status: "CONNECTED",
+        status: TELEGRAM_CONNECTION_STATUSES.CONNECTED,
       },
     });
     await TelegramAuthCache.deleteCurrentTeleStatus({ key });
@@ -90,7 +135,6 @@ export class TelegramAuthusecase {
     try {
       const key = this.#cacheKey(phoneNumber);
       const telegramManager = getTelegramManager();
-      console.log(telegramManager, "telegramManager");
       await TelegramAuthCache.deleteCurrentTeleStatus({ key });
       const sendCodeViaAppRequest = await telegramManager.sendCode(phoneNumber);
 
@@ -101,7 +145,7 @@ export class TelegramAuthusecase {
       await telegramAuthRepo.updateMainConnectionFields({
         fieldsToUpdate: {
           phoneNumber,
-          status: "DISCONNECTED",
+          status: TELEGRAM_CONNECTION_STATUSES.DISCONNECTED,
         },
       });
       await TelegramAuthCache.createNewTeleStatus({
@@ -110,7 +154,7 @@ export class TelegramAuthusecase {
         expireIn: 60 * 60,
       });
       return {
-        data,
+        data: mapTelegramAuthStepToDTO(data),
         message: adminResidualMessagesCodes.TELEGRAM_AUTH_INITIATED,
       };
     } catch (error) {
@@ -135,15 +179,20 @@ export class TelegramAuthusecase {
     const teleCache = await TelegramAuthCache.getCurrentTeleStatus({
       key,
     });
+    if (!teleCache?.phoneCodeHash) {
+      throw new AppError({
+        code: adminResidualMessagesCodes.TELEGRAM_CODE_EXPIRED,
+        statusCode: 401,
+        translationKey: TK,
+      });
+    }
     const telegramManager = getTelegramManager();
 
-    const verifyCode = await telegramManager.verifyCode({
+    await telegramManager.verifyCode({
       phoneNumber: phoneNumber,
       phoneCodeHash: teleCache.phoneCodeHash,
       phoneCode: code,
     });
-    console.log(verifyCode, "verifyCode");
-
     const data = mapTelegramStatus({
       data: {
         ...teleCache,
@@ -174,6 +223,7 @@ export class TelegramAuthusecase {
     return data;
   }
   static async #handleVerifyCodeError(error, phoneNumber) {
+    if (error instanceof AppError) throw error;
     if (error?.errorMessage === "SESSION_PASSWORD_NEEDED") {
       const data = await this.#sendPasswordNeeded(phoneNumber);
       return {
@@ -206,13 +256,11 @@ export class TelegramAuthusecase {
   static async verifyCode({ phoneNumber, code }) {
     try {
       const data = await this.#checkIfValidOTPCode(phoneNumber, code);
-      console.log("OTP code verified successfully for phone number:", data);
       return {
-        data,
+        data: mapTelegramAuthStepToDTO(data),
         message: adminResidualMessagesCodes.TELEGRAM_CODE_VERIFIED,
       };
     } catch (error) {
-      console.error("Error verifying Telegram code:", error);
       return await this.#handleVerifyCodeError(error, phoneNumber);
     }
   }
@@ -228,7 +276,7 @@ export class TelegramAuthusecase {
         key: this.#cacheKey(phoneNumber),
       });
       return {
-        data,
+        data: mapTelegramAuthStepToDTO(data),
         message: adminResidualMessagesCodes.TELEGRAM_PASSWORD_VERIFIED,
       };
     } catch (error) {

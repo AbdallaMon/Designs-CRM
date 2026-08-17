@@ -13,6 +13,9 @@ vi.mock("../../../infra/audit/auth-audit.repo.js", () => ({
 vi.mock("../../../infra/security/jwt.js", () => ({
   JwtService: { signAccess: vi.fn(() => "AT"), signRefresh: vi.fn(() => "RT") },
 }));
+vi.mock("../../../infra/security/auth-session.js", () => ({
+  AuthSessionService: { issueRefreshToken: vi.fn(async () => "RT") },
+}));
 
 import { AuthUseCase } from "../auth.usecase.js";
 import { AuthRepository } from "../auth.repo.js";

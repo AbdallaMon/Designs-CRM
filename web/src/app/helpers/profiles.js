@@ -1,26 +1,23 @@
-// Browser mirror of the canonical active-profile families. Authorization and
-// presentation derive from profile keys only; database role fields are never used.
-export const PROFILE_FAMILY_BY_KEY = {
-  ADMIN: "ADMIN",
-  SUPER_ADMIN: "ADMIN",
-  NORMAL_SALES: "SALES",
-  PRIMARY_SALES: "SALES",
-  SUPER_SALES: "SALES",
-  ACCOUNTANT: "FINANCE",
-  DESIGNER_3D: "DESIGN",
-  DESIGNER_2D: "DESIGN",
-  EXECUTOR_2D: "DESIGN",
-  CONTACT_INITIATOR: "SALES",
-};
+import {
+  PROFILE_FAMILIES,
+  PROFILE_FAMILY_BY_KEY,
+} from "@dms/shared";
+
+export { PROFILE_FAMILY_BY_KEY };
 
 export const FAMILY_META = {
-  SALES: { label: "Sales", order: 1 },
-  DESIGN: { label: "Design", order: 2 },
-  FINANCE: { label: "Finance", order: 3 },
-  ADMIN: { label: "Admin", order: 4 },
+  [PROFILE_FAMILIES.SALES]: { label: "Sales", order: 1 },
+  [PROFILE_FAMILIES.DESIGN]: { label: "Design", order: 2 },
+  [PROFILE_FAMILIES.FINANCE]: { label: "Finance", order: 3 },
+  [PROFILE_FAMILIES.ADMIN]: { label: "Admin", order: 4 },
 };
 
-export const FAMILY_ORDER = ["SALES", "DESIGN", "FINANCE", "ADMIN"];
+export const FAMILY_ORDER = [
+  PROFILE_FAMILIES.SALES,
+  PROFILE_FAMILIES.DESIGN,
+  PROFILE_FAMILIES.FINANCE,
+  PROFILE_FAMILIES.ADMIN,
+];
 
 export function profileKeysOf(user) {
   const held = (user?.userProfiles ?? [])

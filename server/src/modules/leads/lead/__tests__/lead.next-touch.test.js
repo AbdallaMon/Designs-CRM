@@ -41,7 +41,13 @@ import {
 } from "../lead.sub-resources.usecase.js";
 
 const OWNER = { id: 7, role: "STAFF" };
-const REMINDER = { id: 1, userId: 7, clientLeadId: 5, user: { id: 7 } };
+const REMINDER = {
+  id: 1,
+  userId: 7,
+  clientLeadId: 5,
+  user: { id: 7 },
+  clientLead: { userId: 8 },
+};
 const UPDATED = { id: 1, time: new Date(), status: "DONE", clientLeadId: 5, userId: 7 };
 
 function seed({ leadStatus = "IN_PROGRESS", hasFuture = false } = {}) {
@@ -126,9 +132,33 @@ describe("updateCallReminderStatus — next-touch enforcement", () => {
     ).resolves.toBeTruthy();
   });
 
-  it("ownership guard unchanged: someone else's reminder → 403 for non-admins", async () => {
+  it("allows the transferred lead's current owner to update an existing call", async () => {
     await expect(
-      updateCallReminderStatus({ reminderId: 1, currentUser: { id: 99, role: "STAFF" }, status: "DONE" }),
+      updateCallReminderStatus({
+        reminderId: 1,
+        currentUser: { id: 8, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
+        status: "IN_PROGRESS",
+      }),
+    ).resolves.toBeTruthy();
+  });
+
+  it("allows SUPER_SALES full lead scope even though it is not an admin-tier profile", async () => {
+    await expect(
+      updateCallReminderStatus({
+        reminderId: 1,
+        currentUser: { id: 99, currentProfileKey: "SUPER_SALES", isAdminTier: false },
+        status: "IN_PROGRESS",
+      }),
+    ).resolves.toBeTruthy();
+  });
+
+  it("denies a non-privileged user who is neither reminder creator nor current lead owner", async () => {
+    await expect(
+      updateCallReminderStatus({
+        reminderId: 1,
+        currentUser: { id: 99, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
+        status: "IN_PROGRESS",
+      }),
     ).rejects.toMatchObject({ statusCode: 403 });
   });
 });
@@ -148,6 +178,16 @@ describe("updateMeetingReminderStatus — same enforcement", () => {
         status: "DONE",
         meetingResult: "ok",
         noFollowUp: { reason: "deal paused by client" },
+      }),
+    ).resolves.toBeTruthy();
+  });
+
+  it("allows the transferred lead's current owner to update an existing meeting", async () => {
+    await expect(
+      updateMeetingReminderStatus({
+        reminderId: 1,
+        currentUser: { id: 8, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
+        status: "IN_PROGRESS",
       }),
     ).resolves.toBeTruthy();
   });

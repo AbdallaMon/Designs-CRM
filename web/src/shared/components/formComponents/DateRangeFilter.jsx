@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, TextField, IconButton } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -27,10 +27,6 @@ const DateRangeFilter = ({
   );
 
   useEffect(() => {
-    applyFilters();
-  }, [range]);
-
-  const applyFilters = () => {
     if (!range.start && !range.end) return;
 
     setFilters((prevFilters) =>
@@ -47,9 +43,9 @@ const DateRangeFilter = ({
               startDate: null,
               endDate: null,
             },
-          }
+        }
     );
-  };
+  }, [dateKey, range, setFilters]);
 
   const handleClearRange = () => {
     setRange({ start: null, end: null });
@@ -67,7 +63,7 @@ const DateRangeFilter = ({
             label={startLabel || "Start Date"}
             value={range.start}
             onChange={(newValue) => setRange({ ...range, start: newValue })}
-            renderInput={(params) => <TextField {...params} fullWidth />}
+            slotProps={{ textField: { fullWidth: true } }}
             format="DD/MM/YYYY"
           />
 
@@ -75,7 +71,7 @@ const DateRangeFilter = ({
             label={endLabel || "End Date"}
             value={range.end}
             onChange={(newValue) => setRange({ ...range, end: newValue })}
-            renderInput={(params) => <TextField {...params} fullWidth />}
+            slotProps={{ textField: { fullWidth: true } }}
             format="DD/MM/YYYY"
           />
 

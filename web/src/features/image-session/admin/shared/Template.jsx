@@ -7,7 +7,6 @@ import {
   FormControlLabel,
   Button,
   Slider,
-  TextField,
   Grid,
   Paper,
   Dialog,
@@ -235,8 +234,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
     isArchived: false,
     blurValue: 2,
     colorsLayout: "vertical",
-    backgroundImage:
-      "https://panel.dreamstudiio.com/uploads/26c284e5-d1b0-4047-87fe-74d77f80844e.jpg",
+    backgroundImage: "",
     overlayColor: "#000000",
     overlayOpacity: 0.3,
     borderRadius: type === "COLOR_PATTERN" ? "0px" : "0px",
@@ -312,18 +310,25 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
   const handleTemplateChange = useCallback((field, value) => {
     setTemplate((prev) => ({ ...prev, [field]: value }));
   }, []);
-  useEffect(() => {
-    if (file) {
-      handleImageUpload();
-    }
-  }, [file]);
-  const handleImageUpload = async () => {
+  const handleImageUpload = useCallback(async () => {
+    if (!file?.file) return;
     const fileUpload = await uploadInChunks(file.file, setProgress, setOverlay);
     if (fileUpload.status === 200) {
       setFile(null);
       handleTemplateChange("backgroundImage", fileUpload.url);
     }
-  };
+  }, [file, handleTemplateChange, setOverlay, setProgress]);
+  useEffect(() => {
+    let active = true;
+    if (file) {
+      queueMicrotask(() => {
+        if (active) handleImageUpload();
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [file, handleImageUpload]);
 
   const handleSave = async () => {
     const templateData = {
@@ -379,7 +384,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
     if (savedTemplate) {
       try {
         const templateData = JSON.parse(savedTemplate);
-        handleLoad(templateData);
+        queueMicrotask(() => handleLoad(templateData));
       } catch (error) {
         console.error("Error loading saved template:", error);
       }
@@ -506,16 +511,6 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
                     setData={setFile}
                   />
                 </Box>
-
-                <TextField
-                  label="Or Enter Image URL"
-                  value={template.backgroundImage || ""}
-                  onChange={(e) =>
-                    handleTemplateChange("backgroundImage", e.target.value)
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                />
               </Box>
               <ColorPicker
                 label="Background Color"

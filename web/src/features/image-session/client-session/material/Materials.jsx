@@ -39,7 +39,7 @@ export function Materials({
 
   async function getMaterials() {
     await getCachedStepData({
-      url: `client/image-session/materials?lng=${lng}&`,
+      url: `client/image-session/materials?lng=${lng}&token=${encodeURIComponent(session.token)}`,
       setLoading,
       setData: setMaterials,
     });

@@ -5,6 +5,7 @@ import {
   withProjectDetailCapabilities,
   computeProjectCapabilities,
 } from "../project/project.dto.js";
+import { computeTaskCapabilities } from "../task/task.dto.js";
 
 // DI was removed: the controller now calls the imported `projectUsecase` singleton
 // directly, so the old `new ProjectController(usecase)` injection becomes a module mock.
@@ -37,6 +38,12 @@ const assignedDesigner = {
   currentProfileKey: "DESIGNER_3D",
   isAdminTier: false,
   permissions: DESIGNER_PERMS,
+};
+const superSales = {
+  id: 2,
+  currentProfileKey: "SUPER_SALES",
+  isAdminTier: false,
+  permissions: [...ADMIN_PERMS, P.TASK.EDIT],
 };
 const otherDesigner = {
   id: 7,
@@ -102,6 +109,16 @@ describe("computeProjectCapabilities (single project row)", () => {
     const project = { id: 10, status: "In Progress", assignments: [{ user: { id: 4 } }] };
     expect(computeProjectCapabilities(project, assignedDesigner).canEdit).toBe(true);
     expect(computeProjectCapabilities(project, otherDesigner).canEdit).toBe(false);
+  });
+
+  it("SUPER_SALES has full project scope and the admin workflow lock behavior", () => {
+    const project = { id: 10, status: "Completed", assignments: [] };
+    expect(computeProjectCapabilities(project, superSales)).toMatchObject({
+      canEdit: true,
+      canEditStatus: true,
+      canAssignDesigner: true,
+    });
+    expect(computeTaskCapabilities({ status: "DONE" }, superSales).canEdit).toBe(true);
   });
 });
 

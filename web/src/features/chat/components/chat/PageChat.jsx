@@ -4,6 +4,7 @@ import React from "react";
 import { Box, Paper } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { CreateGroupDialog } from "@/features/chat/components/dialogs/index.js";
+import { CHAT_VIEW_MODES } from "@dms/shared";
 
 export function RenderPageChat({
   isMobile,
@@ -50,7 +51,8 @@ export function RenderPageChat({
                 flexDirection: "column",
                 borderRadius: 3,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                display: viewMode === "LIST" ? "block" : "none",
+                display:
+                  viewMode === CHAT_VIEW_MODES.LIST ? "block" : "none",
               }}
             >
               {renderChatRoomsList()}
@@ -58,7 +60,7 @@ export function RenderPageChat({
           </Box>
           {/* )} */}
 
-          {viewMode === "CHAT" && (
+          {viewMode === CHAT_VIEW_MODES.CHAT && (
             <Box sx={{ flex: 1, p: 0 }}>{renderChatWindow()}</Box>
           )}
         </Box>
@@ -98,7 +100,7 @@ export function RenderPageChat({
         fetchRooms={fetchRooms}
         onCreated={(room) => {
           setSelectedRoomId(room.id);
-          if (isMobile) setViewMode("CHAT");
+          if (isMobile) setViewMode(CHAT_VIEW_MODES.CHAT);
           if (type === "page") router.replace(`?roomId=${room.id}`);
         }}
       />{" "}

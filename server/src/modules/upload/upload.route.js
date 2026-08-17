@@ -7,11 +7,20 @@ import { UploadMiddleware } from "./upload.middleware.js";
 import { uploadSchemas } from "./upload.validation.js";
 import { PERMISSIONS } from "@dms/shared";
 import {
+  assetContentLimiter,
   publicUploadCapabilityLimiter,
   publicUploadLimiter,
 } from "./upload.rate-limiter.js";
 
 const uploadRouter = Router();
+
+uploadRouter.get(
+  "/content/*",
+  assetContentLimiter,
+  validate(uploadSchemas.contentAccessQuery, "query"),
+  AuthMiddleware.requireSpecialChecker(uploadController.authorizeContent),
+  asyncHandler(uploadController.serveContent),
+);
 
 // Authed upload endpoints: require auth + the upload permission code (granted to
 // every role today). The `/client/*` endpoints below stay PUBLIC — do not gate.

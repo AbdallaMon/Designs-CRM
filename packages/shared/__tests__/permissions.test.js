@@ -8,14 +8,14 @@ import {
   hasPermission,
   PERMISSIONS,
   PROFILE_KEYS,
-  PROFILES,
+  PROFILE_PERMISSION_DEFAULTS,
 } from "../index.js";
 
 describe("profile permissions", () => {
   it("maps every active profile to permission codes", () => {
     for (const profile of PROFILE_KEYS) {
-      expect(Array.isArray(PROFILES[profile])).toBe(true);
-      expect(PROFILES[profile].length).toBeGreaterThan(0);
+      expect(Array.isArray(PROFILE_PERMISSION_DEFAULTS[profile])).toBe(true);
+      expect(PROFILE_PERMISSION_DEFAULTS[profile].length).toBeGreaterThan(0);
     }
   });
 

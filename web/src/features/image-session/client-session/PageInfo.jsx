@@ -32,7 +32,7 @@ const PageInfoComponent = ({
   useEffect(() => {
     const loadPageInfo = async () => {
       await getCachedStepData({
-        url: `client/image-session/page-info?type=${type}&lng=${lng}&`,
+        url: `client/image-session/page-info?type=${type}&lng=${lng}&token=${encodeURIComponent(session.token)}`,
         setData: setPageInfo,
         setLoading,
       });

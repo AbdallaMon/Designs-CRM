@@ -1,16 +1,22 @@
 // Idempotent catalog seed for the DB-relational permission model.
 //   PermissionCode  ← ALL_PERMISSIONS
 //   Profile         ← PROFILE_META
-//   ProfilePermission ← the code-defined PROFILES map (diff-synced per profile)
+//   ProfilePermission ← PROFILE_PERMISSION_DEFAULTS (diff-synced per profile)
 // Upsert-only; safe to run on production (no truncation, no reset). The code
 // constants remain the single source; re-running makes the DB match them exactly.
 //
 // Registered as `prisma.seed` in packages/db/package.json and runnable directly:
 //   node packages/db/prisma/seed.js
 import prisma from "../prisma.client.js";
-import { ALL_PERMISSIONS, PROFILE_META, PROFILES, splitPermissionCode } from "@dms/shared";
+import {
+  ALL_PERMISSIONS,
+  PROFILE_PERMISSION_DEFAULTS,
+  PROFILE_META,
+  PROFILES,
+  splitPermissionCode,
+} from "@dms/shared";
 
-export const ADMIN_TIER_PROFILE_KEYS = ["ADMIN", "SUPER_ADMIN"];
+export const ADMIN_TIER_PROFILE_KEYS = [PROFILES.ADMIN, PROFILES.SUPER_ADMIN];
 
 // ── Bootstrap admin ────────────────────────────────────────────────────────────
 // Default credentials for the first-run admin. Only used when the DB has NO admin-tier
@@ -40,11 +46,14 @@ export async function seedAdminUser({ prisma: db }) {
   if (existingAdmin) return { created: false, reason: "admin-exists" };
 
   const email = process.env.SEED_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
-  const takenByEmail = await db.user.findUnique({ where: { email }, select: { id: true } });
+  const takenByEmail = await db.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
   if (takenByEmail) return { created: false, reason: "email-taken", email };
 
   const adminProfile = await db.profile.findUnique({
-    where: { key: "ADMIN" },
+    where: { key: PROFILES.ADMIN },
     select: { id: true },
   });
 
@@ -52,7 +61,8 @@ export async function seedAdminUser({ prisma: db }) {
     data: {
       email,
       name: process.env.SEED_ADMIN_NAME || DEFAULT_ADMIN_NAME,
-      password: process.env.SEED_ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_PASSWORD_HASH,
+      password:
+        process.env.SEED_ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_PASSWORD_HASH,
       isActive: true,
       ...(adminProfile ? { currentProfileId: adminProfile.id } : {}),
     },
@@ -61,18 +71,28 @@ export async function seedAdminUser({ prisma: db }) {
 
   if (adminProfile) {
     await db.userProfile.upsert({
-      where: { userId_profileId: { userId: user.id, profileId: adminProfile.id } },
+      where: {
+        userId_profileId: { userId: user.id, profileId: adminProfile.id },
+      },
       update: {},
       create: { userId: user.id, profileId: adminProfile.id },
     });
   }
 
-  return { created: true, userId: user.id, email: user.email, linkedProfile: Boolean(adminProfile) };
+  return {
+    created: true,
+    userId: user.id,
+    email: user.email,
+    linkedProfile: Boolean(adminProfile),
+  };
 }
 
 // Pure — build the catalog rows from the shared constants (unit-testable, no DB).
 export function buildCatalog() {
-  const codes = ALL_PERMISSIONS.map((code) => ({ code, module: splitPermissionCode(code).module }));
+  const codes = ALL_PERMISSIONS.map((code) => ({
+    code,
+    module: splitPermissionCode(code).module,
+  }));
   const profiles = Object.entries(PROFILE_META).map(([key, m]) => ({
     key,
     label: m.label,
@@ -81,7 +101,7 @@ export function buildCatalog() {
     isAssignable: m.isAssignable ?? true,
   }));
   const links = [];
-  for (const [profileKey, codeList] of Object.entries(PROFILES))
+  for (const [profileKey, codeList] of Object.entries(PROFILE_PERMISSION_DEFAULTS))
     for (const code of codeList) links.push({ profileKey, code });
   return { codes, profiles, links };
 }
@@ -90,7 +110,11 @@ export async function seedCatalog({ prisma: db }) {
   const { codes, profiles, links } = buildCatalog();
 
   for (const c of codes)
-    await db.permissionCode.upsert({ where: { code: c.code }, update: { module: c.module }, create: c });
+    await db.permissionCode.upsert({
+      where: { code: c.code },
+      update: { module: c.module },
+      create: c,
+    });
   for (const p of profiles)
     await db.profile.upsert({
       where: { key: p.key },
@@ -104,10 +128,14 @@ export async function seedCatalog({ prisma: db }) {
     });
 
   const codeId = new Map(
-    (await db.permissionCode.findMany({ select: { id: true, code: true } })).map((r) => [r.code, r.id]),
+    (
+      await db.permissionCode.findMany({ select: { id: true, code: true } })
+    ).map((r) => [r.code, r.id]),
   );
   const profId = new Map(
-    (await db.profile.findMany({ select: { id: true, key: true } })).map((r) => [r.key, r.id]),
+    (await db.profile.findMany({ select: { id: true, key: true } })).map(
+      (r) => [r.key, r.id],
+    ),
   );
 
   // Desired code-id set per profile-id.
@@ -125,16 +153,28 @@ export async function seedCatalog({ prisma: db }) {
   let linksRemoved = 0;
   for (const [pid, desired] of desiredByProfile) {
     const existing = new Set(
-      (await db.profilePermission.findMany({ where: { profileId: pid }, select: { permissionCodeId: true } }))
-        .map((r) => r.permissionCodeId),
+      (
+        await db.profilePermission.findMany({
+          where: { profileId: pid },
+          select: { permissionCodeId: true },
+        })
+      ).map((r) => r.permissionCodeId),
     );
     const toAdd = [...desired].filter((c) => !existing.has(c));
     const toRemove = [...existing].filter((c) => !desired.has(c));
     if (toAdd.length || toRemove.length) {
       await db.$transaction([
-        ...toAdd.map((cid) => db.profilePermission.create({ data: { profileId: pid, permissionCodeId: cid } })),
+        ...toAdd.map((cid) =>
+          db.profilePermission.create({
+            data: { profileId: pid, permissionCodeId: cid },
+          }),
+        ),
         ...(toRemove.length
-          ? [db.profilePermission.deleteMany({ where: { profileId: pid, permissionCodeId: { in: toRemove } } })]
+          ? [
+              db.profilePermission.deleteMany({
+                where: { profileId: pid, permissionCodeId: { in: toRemove } },
+              }),
+            ]
           : []),
       ]);
     }
@@ -142,17 +182,32 @@ export async function seedCatalog({ prisma: db }) {
     linksRemoved += toRemove.length;
   }
 
-  return { codes: codes.length, profiles: profiles.length, linksAdded, linksRemoved };
+  return {
+    codes: codes.length,
+    profiles: profiles.length,
+    linksAdded,
+    linksRemoved,
+  };
 }
 
-const invokedDirectly = process.argv[1] && process.argv[1].replace(/\\/g, "/").endsWith("prisma/seed.js");
+const invokedDirectly =
+  process.argv[1] &&
+  process.argv[1].replace(/\\/g, "/").endsWith("prisma/seed.js");
 if (invokedDirectly) {
   (async () => {
     const r = await seedCatalog({ prisma });
-    console.log(`✅ Seed: ${r.codes} codes, ${r.profiles} profiles, +${r.linksAdded}/-${r.linksRemoved} links`);
+    console.log(
+      `✅ Seed: ${r.codes} codes, ${r.profiles} profiles, +${r.linksAdded}/-${r.linksRemoved} links`,
+    );
     const a = await seedAdminUser({ prisma });
-    if (a.created) console.log(`✅ Bootstrap admin created: ${a.email} (id ${a.userId}, profile-linked=${a.linkedProfile})`);
-    else console.log(`ℹ️  Bootstrap admin skipped (${a.reason}${a.email ? `: ${a.email}` : ""})`);
+    if (a.created)
+      console.log(
+        `✅ Bootstrap admin created: ${a.email} (id ${a.userId}, profile-linked=${a.linkedProfile})`,
+      );
+    else
+      console.log(
+        `ℹ️  Bootstrap admin skipped (${a.reason}${a.email ? `: ${a.email}` : ""})`,
+      );
     await prisma.$disconnect();
   })().catch(async (e) => {
     console.error("❌ Seed failed:", e);

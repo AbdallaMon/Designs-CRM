@@ -1,4 +1,5 @@
 "use client";
+import { MY_DAY_SIGNAL_TYPES, MY_DAY_URGENCY } from "@dms/shared";
 // The personal queue list. Fetches /my-day (or /my-day/users/:id when userId is passed —
 // the supervisor drill-down reuses this component read-only inside the drawer).
 import { useCallback, useEffect, useState } from "react";
@@ -11,7 +12,7 @@ import { getMyDaySignalConfig } from "@/features/my-day/config/myDayCopy.jsx";
 import AgendaRail from "@/features/my-day/AgendaRail.jsx";
 
 function itemHref(item) {
-  if (item.kind === "WORK_STAGE") return `/dashboard/work-stages/${item.leadId}`;
+  if (item.kind === MY_DAY_SIGNAL_TYPES.WORK_STAGE) return `/dashboard/work-stages/${item.leadId}`;
   const tabKey = item.signals?.[0]?.cta?.tabKey;
   const section = tabKey ? GOTO_SECTION[tabKey] || tabKey : null;
   return section ? `/dashboard/deals/${item.leadId}?tab=${section}` : `/dashboard/deals/${item.leadId}`;
@@ -84,7 +85,7 @@ export default function MyWorkQueue({ userId }) {
     const color = theme.palette[paletteKey].main;
     return (
       <Box
-        key={`${item.kind}-${item.kind === "WORK_STAGE" ? item.projectId : item.leadId}`}
+        key={`${item.kind}-${item.kind === MY_DAY_SIGNAL_TYPES.WORK_STAGE ? item.projectId : item.leadId}`}
         sx={{
           display: "flex",
           alignItems: "center",
@@ -114,10 +115,10 @@ export default function MyWorkQueue({ userId }) {
                 }
               />
             )}
-            {item.health?.paymentFlag === "OVERDUE" && (
+            {item.health?.paymentFlag === MY_DAY_URGENCY.OVERDUE && (
               <Chip size="small" color="error" variant="outlined" label="Payment overdue" />
             )}
-            {item.health?.paymentFlag === "DUE" && (
+            {item.health?.paymentFlag === MY_DAY_URGENCY.DUE && (
               <Chip size="small" color="warning" variant="outlined" label="Payment due" />
             )}
           </Stack>

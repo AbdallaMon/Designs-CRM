@@ -28,6 +28,8 @@ function multerCode(error) {
 }
 
 export function errorHandler(err, req, res, next) {
+  if (res.headersSent) return next(err);
+
   console.error("Error caught by errorHandler:", err);
 
   if (err instanceof AppError) {

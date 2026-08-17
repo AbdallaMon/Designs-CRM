@@ -1,8 +1,8 @@
 // client-portal/payments — Stripe gateway. The Stripe SDK calls are lifted VERBATIM from the
 // legacy `routes/client/payments.js` route (which had them inline). 🔒 DO NOT alter the
 // checkout-session creation or the retrieve/expand list — the payment behavior is frozen.
-// There is NO webhook/signature handling in this flow (the legacy route had none); nothing
-// about signature verification is touched.
+// Webhook verification is additive and deliberately lives beside the Stripe client so the
+// usecase never parses or trusts an unsigned event payload.
 import Stripe from "stripe";
 import { first } from "./payments.dto.js";
 
@@ -70,6 +70,27 @@ export function retrieveCheckoutSession(sessionId) {
       "payment_intent.latest_charge.payment_method_details",
     ],
   });
+}
+
+export function constructWebhookEvent(rawBody, signature) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    const error = new Error("STRIPE_WEBHOOK_SECRET is required");
+    error.code = "STRIPE_WEBHOOK_SECRET_MISSING";
+    throw error;
+  }
+  if (!Buffer.isBuffer(rawBody) || !signature) {
+    throw new Error("Invalid Stripe webhook payload");
+  }
+  return getStripe().webhooks.constructEvent(rawBody, signature, webhookSecret);
+}
+
+export function isFulfillableCheckoutSession(session) {
+  return (
+    session?.mode === "payment" &&
+    session?.status === "complete" &&
+    ["paid", "no_payment_required"].includes(session.payment_status)
+  );
 }
 
 // ─── Backfill maintenance Stripe reads (relocated VERBATIM from the legacy

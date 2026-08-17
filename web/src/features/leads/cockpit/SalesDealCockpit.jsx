@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_COCKPIT_ACTION_KINDS } from "@dms/shared";
 // SalesDealCockpit — the "next-best-action" strip on the deal-detail screen.
 //
 // Sits between the deal header and the workspace. It answers "what do I do next on this
@@ -167,7 +168,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
     if (!cfg) return null;
     const kind = action.cta?.kind;
     switch (kind) {
-      case "OPEN_CALL":
+      case LEAD_COCKPIT_ACTION_KINDS.OPEN_CALL:
         return (
           <NewCallDialog
             lead={lead}
@@ -178,7 +179,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
             <CtaText color={color}>{cfg.ctaLabel}</CtaText>
           </NewCallDialog>
         );
-      case "OPEN_MEETING":
+      case LEAD_COCKPIT_ACTION_KINDS.OPEN_MEETING:
         return (
           <NewClientMeetingDialog
             lead={lead}
@@ -189,7 +190,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
             <CtaText color={color}>{cfg.ctaLabel}</CtaText>
           </NewClientMeetingDialog>
         );
-      case "OPEN_PRICE_OFFER":
+      case LEAD_COCKPIT_ACTION_KINDS.OPEN_PRICE_OFFER:
         return (
           <AddPriceOffers
             lead={lead}
@@ -199,7 +200,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
             <CtaText color={color}>{cfg.ctaLabel}</CtaText>
           </AddPriceOffers>
         );
-      case "OPEN_PAYMENT":
+      case LEAD_COCKPIT_ACTION_KINDS.OPEN_PAYMENT:
         return (
           <AddPayments
             lead={lead}
@@ -210,7 +211,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
             setOldPayments={refresh()}
           />
         );
-      case "OPEN_STATUS":
+      case LEAD_COCKPIT_ACTION_KINDS.OPEN_STATUS:
         return (
           <>
             <CtaButton
@@ -229,7 +230,7 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
             />
           </>
         );
-      case "GOTO_TAB":
+      case LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB:
         return (
           <CtaButton
             color={color}

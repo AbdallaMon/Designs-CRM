@@ -1,4 +1,5 @@
 "use client";
+import { KANBAN_VIEW_TYPES } from "@dms/shared";
 import React, { useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -78,7 +79,7 @@ const KanbanBoard = ({
             filters={
               !isNotStaff ? (
                 <>
-                  {type !== "CONTRACTLEVELS" && (
+                  {type !== KANBAN_VIEW_TYPES.CONTRACT_LEVELS && (
                     <>
                       <Box sx={{ width: { xs: "100%", md: "auto" }, flexShrink: 0 }}>
                         <DateRangeFilter

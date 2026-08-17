@@ -213,6 +213,18 @@ export class AdminCourseRepository {
     return (client ?? prisma).test.findUnique({ where: { id } });
   }
 
+  getTestForPublishing({ id, client } = {}) {
+    return (client ?? prisma).test.findUnique({
+      where: { id },
+      include: {
+        questions: {
+          orderBy: { order: "asc" },
+          include: { choices: true },
+        },
+      },
+    });
+  }
+
   getTestQuestionsOrdered({ testId, client } = {}) {
     return (client ?? prisma).test.findUnique({
       where: { id: testId },

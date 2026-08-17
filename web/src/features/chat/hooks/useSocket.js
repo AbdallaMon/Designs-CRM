@@ -30,7 +30,7 @@ export function useSocket(handlers = {}) {
       "call:initiated": "onCallInitiated",
       "call:ended": "onCallEnded",
       "room:updated": "onRoomUpdatedEvent",
-      "chat:error": "onChatError",
+      error: "onChatError",
 
       notification: "onNotification",
       "notification:user_typing": "onTypingNotification",

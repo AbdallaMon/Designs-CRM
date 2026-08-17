@@ -13,7 +13,9 @@ vi.mock("../../../infra/pdf/pdf-helpers.js", async (importOriginal) => {
 });
 
 let generateContractPdf;
+let fetchImageBuffer;
 beforeAll(async () => {
+  ({ fetchImageBuffer } = await import("../../../infra/pdf/pdf-helpers.js"));
   ({ generateContractPdf } = await import(
     "../services/generate-contract-pdf.js"
   ));
@@ -91,6 +93,7 @@ describe("generateContractPdf (structural smoke)", () => {
     expect(bytes).toBeInstanceOf(Uint8Array);
     expect(Buffer.from(bytes.slice(0, 4)).toString()).toBe("%PDF");
     expect(bytes.length).toBeGreaterThan(1000);
+    expect(fetchImageBuffer).toHaveBeenCalledWith("/Pdf-intro.png");
   });
 
   // Regression guard: level clauses (matched by `level`) and stage clauses (all rows)

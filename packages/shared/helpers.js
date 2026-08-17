@@ -8,12 +8,16 @@
 
 import { splitPermissionCode } from "./constants/access/permissions.constants.js";
 import { NAVIGATION, NAVIGATION_PERMISSION_ACTIONS } from "./constants/access/navigation.js";
-import { PROFILES, resolveProfileKey } from "./constants/access/profiles.js";
+import {
+  PROFILE_PERMISSION_DEFAULTS,
+  resolveProfileKey,
+} from "./constants/access/profiles.js";
 
 /**
  * Compute a user's EFFECTIVE permissions, resolved via their PROFILE.
  *
- * Effective = the resolved profile's codes (see `resolveProfileKey`/`PROFILES`).
+ * Effective = the resolved profile's codes (see `resolveProfileKey` and
+ * `PROFILE_PERMISSION_DEFAULTS`).
  * Profiles are the sole source of authorization.
  *
  * Pure & unit-testable: no DB, no side effects.
@@ -26,7 +30,7 @@ export function getEffectivePermissions(user) {
   if (!user) return { permissions: [], permissionsByModule: {} };
 
   const profileKey = resolveProfileKey(user);
-  const set = new Set(profileKey ? PROFILES[profileKey] : []);
+  const set = new Set(profileKey ? PROFILE_PERMISSION_DEFAULTS[profileKey] : []);
   return buildPermissionsByModule(Array.from(set));
 }
 

@@ -23,6 +23,8 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { coursePayload } from "@/app/helpers/contracts/coursePayloads";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 function CreateCourseDialog({ open, onClose, onCourseCreate }) {
   const [formData, setFormData] = useState({
@@ -40,7 +42,7 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
 
   const validateForm = () => {
     if (!formData.title.trim()) {
-      setAlertError("Course title is required");
+      setAlertError(FEEDBACK.COURSE_TITLE_REQUIRED);
       return false;
     }
 
@@ -57,17 +59,18 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    let imageUrl = formData.imageUrl || null;
     if (formData.file) {
       const fileUpload = await uploadInChunks(
         formData.file,
         setProgress,
         setOverlay
       );
-      formData.imageUrl = fileUpload.url;
+      if (!fileUpload.url) return;
+      imageUrl = fileUpload.url;
     }
-    delete formData.file;
     const req = await handleRequestSubmit(
-      formData,
+      coursePayload({ ...formData, imageUrl }),
       setToastLoading,
       "courses",
       false,
@@ -96,7 +99,7 @@ function CreateCourseDialog({ open, onClose, onCourseCreate }) {
         <DialogTitle>Access Denied</DialogTitle>
         <DialogContent>
           <Alert severity="error">
-            You don't have permission to create courses. Only administrators can
+            You do not have permission to create courses. Only administrators can
             perform this action.
           </Alert>
         </DialogContent>

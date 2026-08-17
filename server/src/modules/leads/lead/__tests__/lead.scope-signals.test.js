@@ -17,14 +17,15 @@ vi.mock("../lead.assign-status.usecase.js", () => ({
 import { LeadUsecase } from "../lead.usecase.js";
 import { leadRepository } from "../lead.repo.js";
 import { getClientLeadsByDateRange } from "../lead.assign-status.usecase.js";
+import { authMessagesCodes, PERMISSIONS } from "@dms/shared";
 
 const uc = new LeadUsecase();
 
 describe("LeadUsecase profile scope signals", () => {
-  it("isAdminUser reads only the derived admin-tier signal", () => {
+  it("treats the active SUPER_SALES profile as a lead workflow supervisor", () => {
     expect(uc.isAdminUser({ currentProfileKey: "ADMIN", isAdminTier: true })).toBe(true);
     expect(uc.isAdminUser({ currentProfileKey: "SUPER_ADMIN", isAdminTier: true })).toBe(true);
-    expect(uc.isAdminUser({ currentProfileKey: "SUPER_SALES", isAdminTier: false })).toBe(false);
+    expect(uc.isAdminUser({ currentProfileKey: "SUPER_SALES", isAdminTier: false })).toBe(true);
     expect(uc.isAdminUser({ currentProfileKey: "NORMAL_SALES", isAdminTier: false })).toBe(false);
     expect(uc.isAdminUser({ role: "ADMIN", isAdminTier: false })).toBe(false);
   });
@@ -37,6 +38,39 @@ describe("LeadUsecase profile scope signals", () => {
       currentProfileKey: "CONTACT_INITIATOR",
       includeContactInitiator: true,
     })).toBe(true);
+  });
+
+  it("only exposes consulted unassigned NEW leads through the staff claimable pool", () => {
+    const where = leadRepository.buildAuthUserLeadWhere({
+      authUser: { id: 7, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
+      where: { id: 42 },
+      mode: "view",
+    });
+
+    expect(where.AND).toContainEqual({
+      OR: [
+        { userId: 7 },
+        { userId: null, status: "NEW", initialConsult: true },
+      ],
+    });
+  });
+
+  it.each([
+    ["non-consulted", { noConsulted: "true" }],
+    ["on-hold", { assignedOverdue: "true" }],
+  ])("rejects the %s pool when its explicit view permission is missing", async (_pool, query) => {
+    await expect(
+      uc.listLeads({
+        query,
+        authUser: { id: 7, permissions: [PERMISSIONS.LEAD.LIST] },
+        page: 1,
+        limit: 10,
+        skip: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: authMessagesCodes.PERMISSION_DENIED,
+      statusCode: 403,
+    });
   });
 });
 
@@ -51,9 +85,10 @@ describe("deals() super-sales scope (#6 regression)", () => {
       query: {},
       authUser: { id: 5, currentProfileKey: "SUPER_SALES", isAdminTier: false },
     });
-    const { searchParams } = getClientLeadsByDateRange.mock.calls[0][0];
+    const { searchParams, isAdmin } = getClientLeadsByDateRange.mock.calls[0][0];
     expect(searchParams.userId).toBeUndefined();
     expect(searchParams.selfId).toBeUndefined();
+    expect(isAdmin).toBe(true);
   });
 
   it("DOES self-scope a NORMAL_SALES profile user", async () => {
@@ -61,8 +96,9 @@ describe("deals() super-sales scope (#6 regression)", () => {
       query: {},
       authUser: { id: 7, currentProfileKey: "NORMAL_SALES", isAdminTier: false },
     });
-    const { searchParams } = getClientLeadsByDateRange.mock.calls[0][0];
+    const { searchParams, isAdmin } = getClientLeadsByDateRange.mock.calls[0][0];
     expect(searchParams.userId).toBe(7);
     expect(searchParams.selfId).toBe(7);
+    expect(isAdmin).toBe(false);
   });
 });

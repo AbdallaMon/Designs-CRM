@@ -6,6 +6,7 @@
 // session by passing a raw `id`. The generate-pdf flow takes the token from
 // `sessionData.arToken` (legacy shape preserved) and is the ONLY field that selects the
 // session.
+import { CONTRACT_SESSION_STATUSES, validationMessagesCodes as V } from "@dms/shared";
 import { z } from "zod";
 
 // SSRF hardening for the PUBLIC generate-pdf surface. The frozen builder does
@@ -27,11 +28,11 @@ const SIGNATURE_URL = z
       !v.includes("://") && // no embedded scheme (http:// etc.)
       !v.startsWith("//") && // no protocol-relative / host hijack
       !v.includes("@"), // no userinfo@host trick
-    { message: "INVALID_SIGNATURE_URL" }
+    { message: V.INVALID_SIGNATURE_URL }
   );
 
 // ContractSessionStatus enum — packages/db/prisma/schema.prisma l.351-355.
-const SESSION_STATUS = z.enum(["INITIAL", "SIGNING", "REGISTERED"]);
+const SESSION_STATUS = z.enum([CONTRACT_SESSION_STATUSES.INITIAL, CONTRACT_SESSION_STATUSES.SIGNING, CONTRACT_SESSION_STATUSES.REGISTERED]);
 
 export class ClientContractValidation {
   // GET /session?token=...

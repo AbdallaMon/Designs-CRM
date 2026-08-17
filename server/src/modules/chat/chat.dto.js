@@ -1,4 +1,4 @@
-import { PERMISSIONS, computeCapabilities, hasPermission } from "@dms/shared";
+import { CHAT_MEMBER_ROLES, CHAT_ROOM_TYPES, PERMISSIONS, computeCapabilities, hasPermission } from "@dms/shared";
 
 // ── Per-record capabilities ───────────────────────────────────────────────────
 // Computed in the DTO (decision #3: mandatory on scoped responses) so the FE can
@@ -10,20 +10,20 @@ const ROOM_CAPABILITY_RULES = {
   canEdit: ({ permissions, record, authUserId, selfMember }) =>
     hasPermission(permissions, PERMISSIONS.CHAT.ROOM_EDIT) &&
     (record.createdById === authUserId ||
-      selfMember?.role === "ADMIN" ||
-      selfMember?.role === "MODERATOR" ||
-      record.type === "STAFF_TO_STAFF"),
+      selfMember?.role === CHAT_MEMBER_ROLES.ADMIN ||
+      selfMember?.role === CHAT_MEMBER_ROLES.MODERATOR ||
+      record.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF),
   canDelete: ({ permissions, record, selfMember }) =>
     hasPermission(permissions, PERMISSIONS.CHAT.ROOM_DELETE) &&
-    selfMember?.role === "ADMIN" &&
-    record.type !== "STAFF_TO_STAFF" &&
-    record.type !== "PROJECT_GROUP",
+    selfMember?.role === CHAT_MEMBER_ROLES.ADMIN &&
+    record.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF &&
+    record.type !== CHAT_ROOM_TYPES.PROJECT_GROUP,
   canManageMembers: ({ permissions, selfMember }) =>
     hasPermission(permissions, PERMISSIONS.CHAT.MEMBER_MANAGE) &&
-    (selfMember?.role === "ADMIN" || selfMember?.role === "MODERATOR"),
+    (selfMember?.role === CHAT_MEMBER_ROLES.ADMIN || selfMember?.role === CHAT_MEMBER_ROLES.MODERATOR),
   canManageClient: ({ permissions, record, selfMember }) =>
     hasPermission(permissions, PERMISSIONS.CHAT.MEMBER_MANAGE) &&
-    (selfMember?.role === "ADMIN" || selfMember?.role === "MODERATOR") &&
+    (selfMember?.role === CHAT_MEMBER_ROLES.ADMIN || selfMember?.role === CHAT_MEMBER_ROLES.MODERATOR) &&
     Boolean(record.clientLead || record.clientLeadId),
   canSendMessage: ({ permissions, record }) =>
     hasPermission(permissions, PERMISSIONS.CHAT.MESSAGE_SEND) &&
@@ -148,7 +148,7 @@ export function buildRoomInclude(userId) {
       where: {
         isDeleted: false,
         OR: [
-          { room: { type: "STAFF_TO_STAFF" } },
+          { room: { type: CHAT_ROOM_TYPES.STAFF_TO_STAFF } },
           ...(userId ? [{ userId: Number(userId) }] : []),
         ],
       },

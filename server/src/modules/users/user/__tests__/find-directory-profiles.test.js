@@ -71,6 +71,31 @@ describe("findDirectory — assigned profiles are the sole source of truth", () 
     expect(found).toEqual([designer]);
   });
 
+  it("matches the union of comma-separated assigned profiles", async () => {
+    const primarySales = {
+      id: 10,
+      currentProfile: { key: "ACCOUNTANT" },
+      userProfiles: [
+        { profile: { key: "ACCOUNTANT" } },
+        { profile: { key: "PRIMARY_SALES" } },
+      ],
+    };
+    findMany.mockImplementation(async ({ where }) =>
+      matchesProfileWhere(primarySales, where) ? [primarySales] : [],
+    );
+
+    const found = await userRepository.findDirectory({
+      searchParams: { profile: "NORMAL_SALES,PRIMARY_SALES" },
+      currentUser: admin,
+    });
+
+    expect(whereOf().OR).toEqual([
+      { userProfiles: { some: { profile: { key: "NORMAL_SALES" } } } },
+      { userProfiles: { some: { profile: { key: "PRIMARY_SALES" } } } },
+    ]);
+    expect(found).toEqual([primarySales]);
+  });
+
   it("does not offer a 3D-only designer for a 2D profile search", async () => {
     const designer = {
       id: 8,
@@ -109,6 +134,28 @@ describe("findDirectory — assigned profiles are the sole source of truth", () 
     expect(whereOf().OR).toEqual([
       { userProfiles: { some: { profile: { key: "DESIGNER_3D" } } } },
       { userProfiles: { some: { profile: { key: "DESIGNER_2D" } } } },
+    ]);
+  });
+
+  it("lets SUPER_SALES honor requested sales profiles without exposing non-sales profiles", async () => {
+    await userRepository.findDirectory({
+      searchParams: { profile: "NORMAL_SALES,PRIMARY_SALES" },
+      currentUser: {
+        id: 12,
+        currentProfileKey: "SUPER_SALES",
+        isAdminTier: false,
+      },
+    });
+
+    expect(findUnique).not.toHaveBeenCalled();
+    expect(whereOf().AND).toEqual([
+      {
+        OR: [
+          { userProfiles: { some: { profile: { key: "NORMAL_SALES" } } } },
+          { userProfiles: { some: { profile: { key: "PRIMARY_SALES" } } } },
+        ],
+      },
+      { userProfiles: { some: { profile: { family: "SALES" } } } },
     ]);
   });
 });

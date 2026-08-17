@@ -1,32 +1,156 @@
-// calendar/google repository — Prisma I/O ONLY. The Google OAuth/token logic lives in the
-// legacy googleCalendar service (getAuthUrl / handleOAuthCallback / disconnectGoogleCalendar
-// / isGoogleCalendarConnected) and is invoked from the usecase via lazy adapters — that
-// service owns ALL token handling and is behavior-frozen. The ONLY direct Prisma here is the
-// connection-STATUS read that the legacy `/status` route performed inline.
-//
-// SECURITY: this select reads googleRefreshToken SOLELY so the usecase can derive the
-// `connected` boolean (Boolean(refreshToken) — presence of a stored refresh token means an
-// established Google connection). The raw token NEVER escapes the usecase: the usecase maps
-// this row to { connected, calendarId, tokenExpired } and drops the token before it reaches
-// the response/dto. The token value is never returned from `/status` and never logged.
-// (googleCalendarId / googleTokenExpiresAt are non-secret connection metadata.)
-// Note: the frozen schema has NO `googleCalendarConnected` column — connection state is
-// derived from googleRefreshToken presence, not stored as a flag.
 import prisma from "../../../infra/prisma/prisma.js";
+
+const ENCRYPTION_METADATA_SELECT = {
+  algorithm: true,
+  keyVersion: true,
+  dataIv: true,
+  dataAuthTag: true,
+  wrappedDataKey: true,
+  keyIv: true,
+  keyAuthTag: true,
+};
+
+const GOOGLE_CREDENTIAL_STORAGE_SELECT = {
+  googleEncryptedCredential: {
+    select: { ciphertext: true, ...ENCRYPTION_METADATA_SELECT },
+  },
+  googleRefreshToken: true,
+  googleAccessToken: true,
+  googleTokenExpiresAt: true,
+  googleCalendarId: true,
+};
+
+async function inTransaction(client, work) {
+  if (client) return work(client);
+  return prisma.$transaction(work);
+}
 
 class GoogleCalendarRepository {
   model = prisma.user;
 
-  // Legacy GET /google/status — connection metadata + refresh-token presence (token used
-  // ONLY by the usecase to derive `connected`; never returned/logged).
+  findCredentialStorage({ userId, client }) {
+    return (client ?? prisma).user.findUnique({
+      where: { id: Number(userId) },
+      select: GOOGLE_CREDENTIAL_STORAGE_SELECT,
+    });
+  }
+
   findConnectionStatus({ userId }) {
     return prisma.user.findUnique({
       where: { id: Number(userId) },
       select: {
+        googleEncryptedCredential: { select: { id: true } },
         googleRefreshToken: true,
         googleCalendarId: true,
         googleTokenExpiresAt: true,
       },
+    });
+  }
+
+  findCalendarIdentity({ userId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: { googleCalendarId: true },
+    });
+  }
+
+  replaceEncryptedCredentials({
+    userId,
+    ciphertext,
+    metadata,
+    tokenExpiresAt,
+    calendarId,
+    client,
+  }) {
+    return inTransaction(client, async (tx) => {
+      const user = await tx.user.update({
+        where: { id: Number(userId) },
+        data: {
+          googleRefreshToken: null,
+          googleAccessToken: null,
+          googleTokenExpiresAt: tokenExpiresAt,
+          googleCalendarId: calendarId,
+        },
+        select: { id: true },
+      });
+      await tx.googleEncryptedCredential.upsert({
+        where: { userId: Number(userId) },
+        create: { userId: Number(userId), ciphertext, ...metadata },
+        update: { ciphertext, ...metadata },
+      });
+      return user;
+    });
+  }
+
+  updateCalendarIdentity({ userId, calendarId, googleEmail }) {
+    return prisma.user.update({
+      where: { id: Number(userId) },
+      data: { googleCalendarId: calendarId, googleEmail },
+    });
+  }
+
+  clearCredentials({ userId, client }) {
+    return inTransaction(client, async (tx) => {
+      const user = await tx.user.update({
+        where: { id: Number(userId) },
+        data: {
+          googleRefreshToken: null,
+          googleAccessToken: null,
+          googleTokenExpiresAt: null,
+          googleCalendarId: null,
+          googleEmail: null,
+        },
+        select: { id: true },
+      });
+      await tx.googleEncryptedCredential.deleteMany({
+        where: { userId: Number(userId) },
+      });
+      return user;
+    });
+  }
+
+  listLegacyCredentials({ cursor, take = 100 }) {
+    return prisma.user.findMany({
+      where: {
+        googleEncryptedCredential: { is: null },
+        OR: [
+          { googleRefreshToken: { not: null } },
+          { googleAccessToken: { not: null } },
+        ],
+      },
+      orderBy: { id: "asc" },
+      take,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: {
+        id: true,
+        googleRefreshToken: true,
+        googleAccessToken: true,
+      },
+    });
+  }
+
+  backfillLegacyCredentials({ userId, ciphertext, metadata }) {
+    return prisma.$transaction(async (tx) => {
+      const result = await tx.user.updateMany({
+        where: {
+          id: Number(userId),
+          OR: [
+            { googleRefreshToken: { not: null } },
+            { googleAccessToken: { not: null } },
+          ],
+        },
+        data: {
+          googleRefreshToken: null,
+          googleAccessToken: null,
+        },
+      });
+      if (result.count !== 1) return false;
+      await tx.googleEncryptedCredential.upsert({
+        where: { userId: Number(userId) },
+        create: { userId: Number(userId), ciphertext, ...metadata },
+        update: { ciphertext, ...metadata },
+      });
+      return true;
     });
   }
 }

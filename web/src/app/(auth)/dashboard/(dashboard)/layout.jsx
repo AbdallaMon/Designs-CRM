@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -53,6 +54,7 @@ import ProfileDialog from "@/features/users/profile/ProfileDialog.jsx";
 import Logout from "@/shared/components/buttons/Logout.jsx";
 import SocketProvider from "@/app/providers/SocketProvider";
 import ChatWidget from "@/features/chat/components/chat/ChatWidget";
+import { resolveCurrentPage } from "./resolveCurrentPage.js";
 
 const SIDENAV_COLLAPSED_KEY = "sidenav-collapsed";
 
@@ -158,7 +160,7 @@ function groupLinks(links) {
 
 // Roles whose legacy "Dashboard" top-level link renders FiTarget instead of
 // FiGrid (threeDLinks / twoDLinks in the pre-change arrays above).
-const DASHBOARD_TARGET_PROFILES = new Set(["DESIGNER_3D", "DESIGNER_2D"]);
+const DASHBOARD_TARGET_PROFILES = new Set([PROFILES.DESIGNER_3D, PROFILES.DESIGNER_2D]);
 
 // Resolve the client-only icon for a top-level nav tab by `key`, honoring the
 // one role-dependent exception: the "dashboard" key renders FiTarget for
@@ -203,29 +205,6 @@ function mapNavigationTab(tab, profile) {
 // sidebar from RouteGuard and pinned nav to a stale role.
 function resolveLinks(user) {
   return (user?.navigationTabs ?? []).map((tab) => mapNavigationTab(tab, user?.profile));
-}
-
-// Mirror SideNav's matching so the AppBar title agrees with the active nav item.
-function matchLink(link, pathname) {
-  if (link.active) return pathname.includes(link.active);
-  return pathname === link.href;
-}
-
-// Resolve the current page into { section, page } from the role's nav links.
-// `section` is the parent group name (only when matching a subLink), so the
-// AppBar can render a 2-level breadcrumb like "Work stages › All projects".
-function resolveCurrentPage(links, pathname) {
-  let fallback = null;
-  for (const link of links) {
-    if (link.subLinks?.length) {
-      const sub = link.subLinks.find((s) => matchLink(s, pathname));
-      if (sub) return { section: link.name, page: sub.name };
-      if (matchLink(link, pathname)) fallback = { section: null, page: link.name };
-    } else if (matchLink(link, pathname)) {
-      return { section: null, page: link.name };
-    }
-  }
-  return fallback;
 }
 
 // Prefer the active profile's own label (from /auth/me profiles[]); fall back to the
@@ -357,7 +336,14 @@ export default function Layout({ children }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(SIDENAV_COLLAPSED_KEY);
-    if (stored != null) setCollapsed(stored === "true");
+    if (stored == null) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setCollapsed(stored === "true");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleToggleCollapsed = (next) => {
@@ -378,7 +364,7 @@ export default function Layout({ children }) {
       window.localStorage.setItem("redirect", window.location.pathname);
       router.push("/login");
     }
-  }, [validatingAuth]);
+  }, [isLoggedIn, router, validatingAuth]);
   if (!user || !user.profile) return null;
 
   const links = resolveLinks(user);

@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 // notifications usecase — business logic / orchestration. Prisma NEVER appears here
 // (only repo calls). Behavior is ported 1:1 from the legacy handlers
 // (routes/utility/utility.js + routes/shared/utilities.js) and the legacy
@@ -82,7 +83,7 @@ export async function createNotification(
   contentType = "TEXT",
   clientLeadId,
   staffId,
-  profileKeys = ["NORMAL_SALES"],
+  profileKeys = [PROFILES.NORMAL_SALES],
   specificProfiles,
 ) {
   await getNotificationQueue().add("deliver", {
@@ -112,7 +113,7 @@ export async function deliverNotification({
   contentType = "TEXT",
   clientLeadId,
   staffId,
-  profileKeys = ["NORMAL_SALES"],
+  profileKeys = [PROFILES.NORMAL_SALES],
   specificProfiles,
 }) {
   let subAdmins = [];

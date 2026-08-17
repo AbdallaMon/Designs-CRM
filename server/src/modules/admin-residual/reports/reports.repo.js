@@ -3,6 +3,7 @@
 // (the `include`/`where` shapes) from the legacy `admin-services.js` god-file. The `where`
 // is built by the usecase from the request filters and handed in; the summary/row shaping
 // lives in reports.dto.js.
+import { PROFILE_FAMILIES } from "@dms/shared";
 import prisma from "../../../infra/prisma/prisma.js";
 
 export class ReportsRepository {
@@ -46,7 +47,7 @@ export class ReportsRepository {
         isActive: true,
         currentProfile: {
           profile: {
-            family: "SALES",
+              family: PROFILE_FAMILIES.SALES,
           },
         },
       },

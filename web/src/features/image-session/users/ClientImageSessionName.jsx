@@ -12,6 +12,7 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { FiCheck, FiEdit2, FiX } from "react-icons/fi";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 function ClientImageSessionName({
   name = "",
@@ -42,13 +43,13 @@ function ClientImageSessionName({
 
   const handleSave = async () => {
     if (!value.trim()) {
-      setAlertError("Name cannot be empty");
+      setAlertError(FEEDBACK.NAME_CANNOT_BE_EMPTY);
       return;
     }
     const trimmed = value.trim();
 
     if (trimmed === originalRef.current.trim()) {
-      setAlertError("No changes made");
+      setAlertError(FEEDBACK.NO_CHANGES_MADE);
       return;
     }
     const req = await handleRequestSubmit(

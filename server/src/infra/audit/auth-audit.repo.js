@@ -9,13 +9,13 @@
 // and runs OUTSIDE any transaction, so the mirror can never break the auth op. The
 // original `AuthAuditLog` write is unchanged.
 import prisma from "@dms/db";
-import { AUDIT_MODULES } from "@dms/shared";
+import { AUDIT_ACTIONS, AUDIT_MODULES } from "@dms/shared";
 import { recordAction } from "./record-action.js";
 
 export const AUTH_AUDIT_ACTIONS = {
-  PROFILE_SWITCH: "PROFILE_SWITCH",
-  PROFILE_ASSIGN: "PROFILE_ASSIGN",
-  PROFILE_REMOVE: "PROFILE_REMOVE",
+  PROFILE_SWITCH: AUDIT_ACTIONS.PROFILE_SWITCH,
+  PROFILE_ASSIGN: AUDIT_ACTIONS.PROFILE_ASSIGN,
+  PROFILE_REMOVE: AUDIT_ACTIONS.PROFILE_REMOVE,
 };
 
 export const authAuditRepository = {

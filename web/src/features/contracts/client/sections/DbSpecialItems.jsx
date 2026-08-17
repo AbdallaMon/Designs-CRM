@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { List, ListItem, ListItemText, useTheme } from "@mui/material";
+import { List, ListItem, ListItemText } from "@mui/material";
 import { SectionCard } from "@/features/contracts/client/sections/primitives.jsx";
 
 export default function DbSpecialItems({ session, lng }) {
@@ -12,8 +12,7 @@ export default function DbSpecialItems({ session, lng }) {
 
   if (!items.length) return null;
 
-  // Always show all items (no collapse), and slightly lighter background
-  const theme = useTheme();
+  // Always show all items (no collapse).
   return (
     <SectionCard title={lng === "ar" ? "بنود خاصة" : "Special Terms"} dense>
       <List dense>

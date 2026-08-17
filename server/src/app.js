@@ -7,7 +7,8 @@ import {
   errorHandler,
 } from "./shared/errors/error-handler.js";
 import v2Routes from "./shared/routes.js";
-import { env } from "./config/env.js";
+import { authCsrfProtection } from "./shared/middlewares/auth-csrf.middleware.js";
+import { normalizeAssetReferencesInBody } from "./shared/middlewares/asset-reference.middleware.js";
 
 const app = express();
 
@@ -15,29 +16,26 @@ const app = express();
 // Must run before all route middleware.
 // 1. Fixes duplicated Origin headers injected by some reverse proxies (e.g. OpenLiteSpeed)
 app.use(fixDuplicateOrigin);
-// 2. Apply CORS policy
+app.use(cookieParser());
+app.use(authCsrfProtection);
+// Apply CORS after CSRF so browser-origin denials use the standard envelope.
 app.use(cors(corsOptions));
 
 // ─── Body parsing ─────────────────────────────────────────────────────────────
+// Stripe signature verification requires the exact bytes before express.json mutates them.
+app.use(
+  "/v2/client/stripe/webhook",
+  express.raw({ type: "application/json" }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(normalizeAssetReferencesInBody);
 
 // ─── Static files ─────────────────────────────────────────────────────────────
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 // ─── Error handling ───────────────────────────────────────────────────────────
-
-// ─── Static uploads (local dev only) ─────────────────────────────────────────
-if (env.ISLOCAL) {
-  app.use(
-    "/uploads",
-    express.static("C:/home/dreamstudiio.com/public_html/uploads"),
-  );
-} else {
-  app.use("/uploads", express.static(env.UPLOADS_PATH));
-}
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 // Canonical modular API surface.

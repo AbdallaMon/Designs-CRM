@@ -1,3 +1,5 @@
+import { PAGE_INFO_TYPES, SALES_STAGE_TYPES } from "@dms/shared";
+
 export const NotificationType = {
   NEW_LEAD: "New Lead",
   LEAD_ASSIGNED: "Lead Assigned",
@@ -125,9 +127,9 @@ export const MediaType = {
 };
 
 export const PageInfoType = {
-  BEFORE_PATTERN: "BEFORE_PATTERN",
-  BEFORE_MATERIAL: "BEFORE_MATERIAL",
-  BEFORE_STYLE: "BEFORE_STYLE",
+  BEFORE_PATTERN: PAGE_INFO_TYPES.BEFORE_PATTERN,
+  BEFORE_MATERIAL: PAGE_INFO_TYPES.BEFORE_MATERIAL,
+  BEFORE_STYLE: PAGE_INFO_TYPES.BEFORE_STYLE,
 };
 
 export const personalityEnum = {
@@ -143,46 +145,46 @@ export const meetingTypes = [
 ];
 
 export const salesStageEnum = [
-  { key: "NOT_INITIATED", label: "لم يبدأ بعد", color: "#f5f5f5" },
-  { key: "INITIAL_CONTACT", label: "اتصال مبدائي بالعميل", color: "#e3f2fd" },
+  { key: SALES_STAGE_TYPES.NOT_INITIATED, label: "لم يبدأ بعد", color: "#f5f5f5" },
+  { key: SALES_STAGE_TYPES.INITIAL_CONTACT, label: "اتصال مبدائي بالعميل", color: "#e3f2fd" },
   {
-    key: "SOCIAL_MEDIA_CHECK",
+    key: SALES_STAGE_TYPES.SOCIAL_MEDIA_CHECK,
     label: "محاولة الحصول علي احد صفحات شخصية للعميل من خلال سوشيال ميديا",
     color: "#e8f5e8",
   },
   {
-    key: "WHATSAPP_QA",
+    key: SALES_STAGE_TYPES.WHATSAPP_QA,
     label: "اجابة عن اسئلة العميل من خلال واتس اب",
     color: "#fff3e0",
   },
   {
-    key: "MEETING_BOOKED",
+    key: SALES_STAGE_TYPES.MEETING_BOOKED,
     label: "حجز اجتماع مع العميل لشرحة الية العمل واستخدام اسلوب SPIN",
     color: "#fce4ec",
   },
   {
-    key: "CLIENT_INFO_UPLOADED",
+    key: SALES_STAGE_TYPES.CLIENT_INFO_UPLOADED,
     label: "رفع ملفات وملخص اجوبة العميل علي السيستم",
     color: "#f3e5f5",
   },
   {
-    key: "CONSULTATION_BOOKED",
+    key: SALES_STAGE_TYPES.CONSULTATION_BOOKED,
     label: "حجز موعد مع استشاري تصميم",
     color: "#e0f2f1",
   },
   {
-    key: "FOLLOWUP_AFTER_MEETING",
+    key: SALES_STAGE_TYPES.FOLLOWUP_AFTER_MEETING,
     label: "تواصل مع العميل بعد الاجتماع",
     color: "#fff8e1",
   },
   {
-    key: "HANDLE_OBJECTIONS",
+    key: SALES_STAGE_TYPES.HANDLE_OBJECTIONS,
     label: "تعامل مع اعتراضات العميل",
     color: "#ffebee",
   },
-  { key: "DEAL_CLOSED", label: "اغلاق الصفقة", color: "#e8f5e8" },
+  { key: SALES_STAGE_TYPES.DEAL_CLOSED, label: "اغلاق الصفقة", color: "#e8f5e8" },
   {
-    key: "AFTER_SALES_FOLLOWUP",
+    key: SALES_STAGE_TYPES.AFTER_SALES_FOLLOWUP,
     label: "متابعة العميل ما بعد البيع",
     color: "#e3f2fd",
   },

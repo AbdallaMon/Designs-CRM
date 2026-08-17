@@ -20,6 +20,7 @@ import DeleteModelButton from "@/shared/components/common/DeleteModelButton.jsx"
 
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 import { AddExtraService } from "@/features/leads/dialogs/AddExtraService.jsx";
 import { SectionToolbar } from "@/features/leads/shared/SectionToolbar.jsx";
@@ -159,7 +160,7 @@ export function OurCostAndContractorCost({ lead, setLead }) {
 
   const handleUpload = async (file, type) => {
     if (!file) {
-      setAlertError("Please select a file.");
+      setAlertError(FEEDBACK.SELECT_FILE);
       return;
     }
 

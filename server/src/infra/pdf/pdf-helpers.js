@@ -10,6 +10,11 @@ const __filename = fileURLToPath(import.meta.url);
 import "dayjs/locale/ar.js";
 import "dayjs/locale/en.js";
 import dayjs from "dayjs";
+import { LocalStorageProvider } from "../upload/local-disk-storage.provider.js";
+import {
+  isTrustedAssetOrigin,
+  storageKeyFromUploadReference,
+} from "../upload/upload-reference.js";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(__dirname, "./fonts/Amiri-Regular.ttf");
 const fontBoldPath = path.join(__dirname, "./fonts/Ya-ModernPro-Bold.otf");
@@ -50,6 +55,7 @@ function toAbsoluteAssetUrl(url) {
   if (/^https?:\/\//i.test(url)) return url; // already absolute
   if (url.startsWith("/")) {
     const base = (
+      process.env.IMAGE_DOMAIN ||
       process.env.CRM_DOMAIN ||
       process.env.SERVER_URL ||
       ""
@@ -59,6 +65,24 @@ function toAbsoluteAssetUrl(url) {
   return url;
 }
 
+function assertTrustedRemoteAssetUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Invalid remote asset URL");
+  }
+  if (
+    !["http:", "https:"].includes(parsed.protocol) ||
+    parsed.username ||
+    parsed.password ||
+    !isTrustedAssetOrigin(parsed.href)
+  ) {
+    throw new Error(`Remote asset origin is not trusted: ${parsed.origin}`);
+  }
+  return parsed.href;
+}
+
 export async function fetchImageBuffer(url, options = {}) {
   const {
     retries = 3,
@@ -66,7 +90,14 @@ export async function fetchImageBuffer(url, options = {}) {
     timeoutMs = 15000, // Default timeout for each fetch attempt
   } = options;
 
-  url = toAbsoluteAssetUrl(url);
+  const storageKey = storageKeyFromUploadReference(url);
+  if (storageKey) {
+    const stored = await LocalStorageProvider.readStoredFile(storageKey);
+    if (!stored) throw new Error(`Could not load stored image: ${storageKey}`);
+    return compressImageBuffer(stored.buffer);
+  }
+
+  url = assertTrustedRemoteAssetUrl(toAbsoluteAssetUrl(url));
   const errors = [];
 
   for (let i = 0; i < retries; i++) {
@@ -75,7 +106,7 @@ export async function fetchImageBuffer(url, options = {}) {
       // Set a timeout for the fetch request
       const id = setTimeout(() => controller.abort(), timeoutMs);
 
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch(url, { signal: controller.signal, redirect: "error" });
       clearTimeout(id); // Clear the timeout if the fetch completes
 
       if (!res.ok) {
@@ -146,12 +177,19 @@ export async function validatePdfSignatureImage(url, { timeoutMs = 15000 } = {})
   ) {
     return "SIGNATURE_INVALID_PATH";
   }
-  const absolute = toAbsoluteAssetUrl(url);
+  const storageKey = storageKeyFromUploadReference(url);
+  if (storageKey) {
+    const stored = await LocalStorageProvider.readStoredFile(storageKey);
+    if (!stored) throw new Error(`Could not load stored image: ${storageKey}`);
+    return validateSignatureBuffer(stored.buffer);
+  }
+
+  const absolute = assertTrustedRemoteAssetUrl(toAbsoluteAssetUrl(url));
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   let buffer;
   try {
-    const res = await fetch(absolute, { signal: controller.signal });
+    const res = await fetch(absolute, { signal: controller.signal, redirect: "error" });
     if (!res.ok) {
       throw new Error(`HTTP Error ${res.status}: ${res.statusText} for ${absolute}`);
     }

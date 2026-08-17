@@ -3,6 +3,7 @@
 import { InputAdornment, TextField } from "@mui/material";
 import { FaLock, FaMobileAlt, FaSms } from "react-icons/fa";
 import { MuiTelInput, matchIsValidTel } from "mui-tel-input";
+import { TELEGRAM_AUTH_STATES } from "@dms/shared";
 
 export default function RenderTelegramAuthInput({
   currentTelegramAuthStep,
@@ -10,9 +11,9 @@ export default function RenderTelegramAuthInput({
   setFormData,
 }) {
   if (
-    currentTelegramAuthStep === "INIT" ||
+    currentTelegramAuthStep === TELEGRAM_AUTH_STATES.INIT ||
     !currentTelegramAuthStep ||
-    currentTelegramAuthStep === "PHONE_NUMBER"
+    currentTelegramAuthStep === TELEGRAM_AUTH_STATES.PHONE_NUMBER
   ) {
     return (
       <MuiTelInput
@@ -41,7 +42,7 @@ export default function RenderTelegramAuthInput({
       />
     );
   }
-  if (currentTelegramAuthStep === "AWAIT_CODE") {
+  if (currentTelegramAuthStep === TELEGRAM_AUTH_STATES.AWAIT_CODE) {
     return (
       <TextField
         label="Verification Code"
@@ -63,9 +64,10 @@ export default function RenderTelegramAuthInput({
     );
   }
   if (
-    currentTelegramAuthStep === "REQUIRE_PASSWORD" ||
-    currentTelegramAuthStep === "AWAIT_TO_REWRITE_2FA_PASSWORD" ||
-    currentTelegramAuthStep === "AWAIT_PASSWORD"
+    currentTelegramAuthStep === TELEGRAM_AUTH_STATES.REQUIRE_PASSWORD ||
+    currentTelegramAuthStep ===
+      TELEGRAM_AUTH_STATES.AWAIT_TO_REWRITE_2FA_PASSWORD ||
+    currentTelegramAuthStep === TELEGRAM_AUTH_STATES.AWAIT_PASSWORD
   ) {
     return (
       <TextField

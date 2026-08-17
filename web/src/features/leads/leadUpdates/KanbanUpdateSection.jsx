@@ -1,11 +1,12 @@
 import { Box, Typography } from "@mui/material";
+import { LEAD_STATUSES, KANBAN_VIEW_TYPES, WORK_DEPARTMENTS } from "@dms/shared";
 import { CreateUpdateModal } from "@/features/leads/leadUpdates/CreateUpdate.jsx";
 import LeadListModal from "@/features/leads/leadUpdates/LeadListModal.jsx";
 import { UpdateCard } from "@/features/leads/leadUpdates/UpdateCard.jsx";
 
 export function KanbanUpdateSection({
   lead,
-  currentUserDepartment = "STAFF",
+  currentUserDepartment = WORK_DEPARTMENTS.STAFF,
   setleads,
   setRerenderColumns,
   reRenderColumns,
@@ -13,9 +14,9 @@ export function KanbanUpdateSection({
 }) {
   function onUpdate(newUpdate) {
     if (setRerenderColumns) {
-      if (type === "CONTRACTLEVELS") {
+      if (type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) {
         const currentLevel = lead.contracts?.find(
-          (c) => c.status === "IN_PROGRESS"
+          (c) => c.status === LEAD_STATUSES.IN_PROGRESS
         )?.contractLevel;
         console.log(currentLevel, "currentLevel");
         if (currentLevel) {
@@ -26,7 +27,7 @@ export function KanbanUpdateSection({
         } else {
           window.location.reload();
         }
-      } else if (currentUserDepartment === "STAFF") {
+      } else if (currentUserDepartment === WORK_DEPARTMENTS.STAFF) {
         setRerenderColumns((prev) => ({
           ...prev,
           [lead.status]: !prev[lead.status],
@@ -61,7 +62,7 @@ export function KanbanUpdateSection({
       );
     }
   }
-  if (lead.status !== "FINALIZED") return null;
+  if (lead.status !== LEAD_STATUSES.FINALIZED) return null;
 
   return (
     <Box>

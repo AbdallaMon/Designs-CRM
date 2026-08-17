@@ -21,8 +21,13 @@ import { BsPlus } from "react-icons/bs";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import { IoMdCall } from "react-icons/io";
+import {
+  CALL_REMINDER_STATUSES,
+  REMINDER_TYPES,
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+} from "@dms/shared";
 import dayjs from "dayjs";
 
 import utc from "dayjs/plugin/utc";
@@ -37,11 +42,11 @@ export const CallResultDialog = ({
   type = "button",
   children,
   setCallReminders,
-  reminderType = "CALL",
+  reminderType = REMINDER_TYPES.CALL,
   onUpdate,
 }) => {
   const [result, setResult] = useState("");
-  const [status, setStatus] = useState("DONE");
+  const [status, setStatus] = useState(CALL_REMINDER_STATUSES.DONE);
   const [open, setOpen] = useState(false);
   // Next-step plan (backend "required with escape": closing the LAST touchpoint on an
   // active lead 422s unless the next touch is scheduled or a no-follow-up reason given).
@@ -64,32 +69,35 @@ export const CallResultDialog = ({
   }
 
   const changeCallStatus = async () => {
-    if (!result.trim() && status === "DONE") {
-      setAlertError("Write the result of the call");
+    if (!result.trim() && status === CALL_REMINDER_STATUSES.DONE) {
+      setAlertError(FEEDBACK.WRITE_CALL_RESULT);
       return;
     }
     const requestedData = {
       userId: user.id,
       status,
     };
-    if (reminderType === "MEETING") {
+    if (reminderType === REMINDER_TYPES.MEETING) {
       requestedData.meetingResult = result;
     } else {
       requestedData.callResult = result;
     }
     if (followUpMode === "SCHEDULE_CALL" || followUpMode === "SCHEDULE_MEETING") {
       if (!nextTime) {
-        setAlertError("Pick a time for the next touchpoint");
+      setAlertError(FEEDBACK.PICK_NEXT_TOUCHPOINT);
         return;
       }
       requestedData.next = {
-        type: followUpMode === "SCHEDULE_MEETING" ? "MEETING" : "CALL",
+          type:
+            followUpMode === "SCHEDULE_MEETING"
+              ? REMINDER_TYPES.MEETING
+              : REMINDER_TYPES.CALL,
         time: dayjs(nextTime).utc().toISOString(),
         reason: nextReason || undefined,
       };
     } else if (followUpMode === "NO_FOLLOW_UP") {
       if (noFollowUpReason.trim().length < 3) {
-        setAlertError("Write why no follow-up is needed");
+      setAlertError(FEEDBACK.WRITE_NO_FOLLOWUP_REASON);
         return;
       }
       requestedData.noFollowUp = { reason: noFollowUpReason.trim() };
@@ -99,7 +107,9 @@ export const CallResultDialog = ({
       requestedData,
       setLoading,
       `leads/${
-        reminderType === "MEETING" ? "meeting-reminders" : "call-reminders"
+        reminderType === REMINDER_TYPES.MEETING
+          ? "meeting-reminders"
+          : "call-reminders"
       }/${call.id}`,
       false,
       "Updating",
@@ -122,7 +132,7 @@ export const CallResultDialog = ({
         setleads((oldLeads) =>
           oldLeads.map((l) => {
             if (l.id === lead.id) {
-              if (reminderType === "MEETING") {
+      if (reminderType === REMINDER_TYPES.MEETING) {
                 l.meetingReminders = [
                   request.data,
                   ...l.meetingReminders?.filter(
@@ -202,11 +212,11 @@ export const CallResultDialog = ({
                     setStatus(e.target.value);
                   }}
                 >
-                  <MenuItem value="DONE">Done</MenuItem>
-                  <MenuItem value="MISSED">Missed</MenuItem>
+                  <MenuItem value={CALL_REMINDER_STATUSES.DONE}>Done</MenuItem>
+                  <MenuItem value={CALL_REMINDER_STATUSES.MISSED}>Missed</MenuItem>
                 </Select>
               </FormControl>
-              {status === "DONE" && (
+              {status === CALL_REMINDER_STATUSES.DONE && (
                 <TextField
                   autoFocus
                   label="Result"
@@ -287,7 +297,7 @@ export const CallResultDialog = ({
               onClick={changeCallStatus}
               variant="contained"
               color="primary"
-              disabled={!result.trim() && status === "DONE"}
+              disabled={!result.trim() && status === CALL_REMINDER_STATUSES.DONE}
               sx={{ textTransform: "none", fontWeight: 600, px: 3 }}
             >
               Update
@@ -315,7 +325,8 @@ export const NewCallDialog = ({
   function handleOpen() {
     setOpen(true);
   }
-  const reminderName = reminderType === "MEETING" ? "Meeting" : "Call";
+  const reminderName =
+    reminderType === REMINDER_TYPES.MEETING ? "Meeting" : "Call";
   function onClose() {
     setCallData({ time: "", reminderReason: "" });
     setOpen(false);
@@ -329,7 +340,9 @@ export const NewCallDialog = ({
       },
       setLoading,
       `leads/${lead.id}/${
-        reminderType === "MEETING" ? "meeting-reminders" : "call-reminders"
+        reminderType === REMINDER_TYPES.MEETING
+          ? "meeting-reminders"
+          : "call-reminders"
       }`,
       false,
       "Creating"
@@ -342,7 +355,7 @@ export const NewCallDialog = ({
         setleads((oldLeads) =>
           oldLeads.map((l) => {
             if (l.id === lead.id) {
-              if (reminderType === "MEETING") {
+      if (reminderType === REMINDER_TYPES.MEETING) {
                 l.meetingReminders = request.data.latestTwo;
               } else {
                 l.callReminders = request.data.latestTwo;

@@ -1,15 +1,28 @@
+import { LEAD_STATUSES } from "@dms/shared";
 // admin-residual/commissions repository — Prisma I/O ONLY (no business math, no throws). The
 // reads/writes are decomposed VERBATIM from the legacy `admin-services.js` god-file; the
 // eligibility scan / 5%-seeding orchestration and the balance arithmetic stay in the usecase.
 import prisma from "../../../infra/prisma/prisma.js";
 
 export class CommissionsRepository {
+  runInTransaction(work) {
+    return prisma.$transaction(work);
+  }
+
+  lockLeadForCommission({ leadId, client }) {
+    return client.$queryRaw`SELECT id FROM ClientLead WHERE id = ${leadId} FOR UPDATE`;
+  }
+
+  lockCommissionForUpdate({ commissionId, client }) {
+    return client.$queryRaw`SELECT id FROM Commission WHERE id = ${commissionId} FOR UPDATE`;
+  }
+
   // ── getCommissionByUserId reads/writes ──────────────────────────────────────────
   findEligibleLeads(userIdNumber) {
     return prisma.clientLead.findMany({
       where: {
         userId: userIdNumber,
-        status: { in: ["FINALIZED", "ARCHIVED"] },
+        status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] },
         commissionCleared: false,
         averagePrice: {
           not: null,
@@ -18,8 +31,20 @@ export class CommissionsRepository {
     });
   }
 
-  findExistingCommission({ leadId, userId }) {
-    return prisma.commission.findFirst({
+  findEligibleLeadById({ leadId, userId, client }) {
+    return (client ?? prisma).clientLead.findFirst({
+      where: {
+        id: leadId,
+        userId,
+        status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] },
+        commissionCleared: false,
+        averagePrice: { not: null },
+      },
+    });
+  }
+
+  findExistingCommission({ leadId, userId, client }) {
+    return (client ?? prisma).commission.findFirst({
       where: {
         leadId,
         userId,
@@ -27,12 +52,12 @@ export class CommissionsRepository {
     });
   }
 
-  createCommission({ data }) {
-    return prisma.commission.create({ data });
+  createCommission({ data, client }) {
+    return (client ?? prisma).commission.create({ data });
   }
 
-  markLeadCommissionCleared(leadId) {
-    return prisma.clientLead.update({
+  markLeadCommissionCleared({ leadId, client }) {
+    return (client ?? prisma).clientLead.update({
       where: { id: leadId },
       data: { commissionCleared: true },
     });
@@ -68,22 +93,22 @@ export class CommissionsRepository {
   }
 
   // ── reverseCommissions writes ────────────────────────────────────────────────────
-  deleteReversibleCommissions() {
-    return prisma.commission.deleteMany({
+  deleteReversibleCommissions({ client } = {}) {
+    return (client ?? prisma).commission.deleteMany({
       where: {
         lead: {
           status: {
-            notIn: ["FINALIZED", "ARCHIVED"],
+            notIn: [LEAD_STATUSES.FINALIZED, "ARCHIVED"],
           },
         },
       },
     });
   }
 
-  resetUnclearedLeads() {
-    return prisma.clientLead.updateMany({
+  resetUnclearedLeads({ client } = {}) {
+    return (client ?? prisma).clientLead.updateMany({
       where: {
-        status: { in: ["FINALIZED", "ARCHIVED"] },
+        status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] },
         commissionCleared: { not: false },
         commissions: {
           none: {},
@@ -96,14 +121,14 @@ export class CommissionsRepository {
   }
 
   // ── updateCommission reads/writes ────────────────────────────────────────────────
-  findCommissionById(commissionIdNumber) {
-    return prisma.commission.findUnique({
-      where: { id: commissionIdNumber },
+  findCommissionById({ id, client }) {
+    return (client ?? prisma).commission.findUnique({
+      where: { id },
     });
   }
 
-  updateCommissionPayment({ id, amountPaid, isCleared }) {
-    return prisma.commission.update({
+  updateCommissionPayment({ id, amountPaid, isCleared, client }) {
+    return (client ?? prisma).commission.update({
       where: { id },
       data: {
         amountPaid,

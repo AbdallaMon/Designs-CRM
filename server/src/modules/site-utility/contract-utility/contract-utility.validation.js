@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CONTRACT_LEVELS, validationMessagesCodes as V } from "@dms/shared";
 
 // Contract-utility Zod schemas. Framework-agnostic class of static schemas; the
 // `validate` middleware returns 422 + field details on failure.
@@ -7,18 +8,8 @@ import { z } from "zod";
 // the model columns exactly and use `.strict()` so unknown keys are rejected
 // (mass-assignment hardening — `contractUtilityId`, ids, etc. are server-derived).
 
-// ContractLevel enum values (schema.prisma — FROZEN). Kept inline (single source:
-// the schema) because the shared package does not export it; validated against the
-// real enum so an invalid level returns 422 before touching Prisma.
-export const CONTRACT_LEVELS = [
-  "LEVEL_1",
-  "LEVEL_2",
-  "LEVEL_3",
-  "LEVEL_4",
-  "LEVEL_5",
-  "LEVEL_6",
-  "LEVEL_7",
-];
+// ContractLevel enum values mirror the frozen Prisma enum through @dms/shared.
+export const CONTRACT_LEVEL_VALUES = Object.values(CONTRACT_LEVELS);
 
 const orderField = z.coerce.number().int().min(0).optional();
 
@@ -27,7 +18,7 @@ export class ContractUtilityValidation {
     clauseId: z.coerce
       .number()
       .int()
-      .positive("clauseId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   // ── Obligations (ContractUtility singleton) ──────────────────────────────────
@@ -67,7 +58,7 @@ export class ContractUtilityValidation {
     })
     .strict()
     .refine((o) => Object.keys(o).length > 0, {
-      message: "At least one field must be provided",
+      message: V.AT_LEAST_ONE_FIELD_REQUIRED,
     });
 
   // ── Special clauses ──────────────────────────────────────────────────────────
@@ -90,13 +81,13 @@ export class ContractUtilityValidation {
     })
     .strict()
     .refine((o) => Object.keys(o).length > 0, {
-      message: "At least one field must be provided",
+      message: V.AT_LEAST_ONE_FIELD_REQUIRED,
     });
 
   // ── Level clauses ────────────────────────────────────────────────────────────
   static createLevelClauseSchema = z
     .object({
-      level: z.enum(CONTRACT_LEVELS),
+      level: z.enum(CONTRACT_LEVEL_VALUES),
       textAr: z.string(),
       textEn: z.string().nullable().optional(),
       order: orderField,
@@ -106,7 +97,7 @@ export class ContractUtilityValidation {
 
   static updateLevelClauseSchema = z
     .object({
-      level: z.enum(CONTRACT_LEVELS).optional(),
+      level: z.enum(CONTRACT_LEVEL_VALUES).optional(),
       textAr: z.string().optional(),
       textEn: z.string().nullable().optional(),
       order: orderField,
@@ -114,6 +105,6 @@ export class ContractUtilityValidation {
     })
     .strict()
     .refine((o) => Object.keys(o).length > 0, {
-      message: "At least one field must be provided",
+      message: V.AT_LEAST_ONE_FIELD_REQUIRED,
     });
 }

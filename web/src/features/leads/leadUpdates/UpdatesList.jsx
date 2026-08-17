@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { WORK_DEPARTMENTS } from "@dms/shared";
 import {
   Box,
   Button,
@@ -21,7 +22,10 @@ import { TabLoading } from "@/features/leads/shared/TabLoading.jsx";
 import { EmptyState } from "@/features/leads/shared/EmptyState.jsx";
 
 // Main Updates List Component
-const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
+const UpdatesList = ({
+  clientLeadId,
+  currentUserDepartment = WORK_DEPARTMENTS.STAFF,
+}) => {
   const [updates, setUpdates] = useState([]);
   const [filter, setFilter] = useState("notArchived");
   const [departmentFilter, setDepartmentFilter] = useState("");
@@ -174,7 +178,9 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
               (shared) => shared.type === currentUserDepartment
             );
             const adminSharedUpdate = isAdmin
-              ? update.sharedSettings.find((shared) => shared.type === "ADMIN")
+              ? update.sharedSettings.find(
+                  (shared) => shared.type === WORK_DEPARTMENTS.ADMIN,
+                )
               : null;
             const isArchived = canManageDepartments
               ? adminSharedUpdate

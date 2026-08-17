@@ -5,6 +5,10 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
+import {
+  LEAD_STATUSES, USER_FEEDBACK_MESSAGES as FEEDBACK,
+  leadsMessagesCodes,
+} from "@dms/shared";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import {
   Alert,
@@ -23,7 +27,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { LeadDetailsProvider } from "@/features/leads/context/LeadDetailsContext.jsx";
 import { useLeadViewPreferences } from "@/features/leads/hooks/useLeadViewPreferences.js";
@@ -74,6 +78,7 @@ export const PreviewLead = ({
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const [errorInfo, setErrorInfo] = useState(null);
+  const requestSequence = useRef(0);
   const { user } = useAuth();
   const { hasPermission } = usePermission();
   const { setLoading: setToastLoading } = useToastContext() || {};
@@ -82,23 +87,31 @@ export const PreviewLead = ({
   const LeadContent = leadContent;
 
   async function getALeadDetails() {
-    if (open) {
-      const leadDetails = await getData({
-        url,
+    const requestId = ++requestSequence.current;
+    if (!open) {
+      setLead(null);
+      setErrorInfo(null);
+      return;
+    }
 
-        // url: `leads/projects/designers/${id}?type=${type}&`,
-        setLoading,
+    setLead(null);
+    setErrorInfo(null);
+    const leadDetails = await getData({
+      url,
+
+      // url: `leads/projects/designers/${id}?type=${type}&`,
+      setLoading,
+    });
+    if (requestId !== requestSequence.current) return;
+
+    if (leadDetails && leadDetails.status === 200) {
+      setLead(leadDetails.data);
+    } else {
+      setLead(null);
+      setErrorInfo({
+        code: leadDetails?.message || null,
+        message: leadDetails?.error?.message || null,
       });
-      if (leadDetails && leadDetails.status === 200) {
-        setLead(leadDetails.data);
-        setErrorInfo(null);
-      } else if (leadDetails) {
-        // getData attaches `error` (resolved message + redirect meta) on non-2xx.
-        setErrorInfo({
-          code: leadDetails.message || null,
-          message: leadDetails.error?.message || null,
-        });
-      }
     }
   }
 
@@ -131,7 +144,7 @@ export const PreviewLead = ({
   };
   // if(!lead)return
   if (loading) return <></>;
-  if (lead?.status === "CONVERTED" && lead.previousLeadId) {
+  if (lead?.status === LEAD_STATUSES.CONVERTED && lead.previousLeadId) {
     <Container maxWidth="md" sx={{ mb: 3 }}>
       <Alert
         severity="info"
@@ -200,13 +213,13 @@ export const PreviewLead = ({
   if (
     (!loading && !lead) ||
     (!loading &&
-      (lead?.status === "CONVERTED" ||
-        (lead.status === "ON_HOLD" && user.id === lead.userId)))
+      (lead?.status === LEAD_STATUSES.CONVERTED ||
+        (lead.status === LEAD_STATUSES.ON_HOLD && user.id === lead.userId)))
   ) {
     const resolvedErrorMessage =
       errorInfo?.message ||
-      "You are not allowed to access this page or the lead doesn't exist";
-    const canClaim = errorInfo?.code === "LEAD_CLAIM_REQUIRED";
+      FEEDBACK.LEAD_ACCESS_DENIED_OR_MISSING;
+    const canClaim = errorInfo?.code === leadsMessagesCodes.LEAD_CLAIM_REQUIRED;
     const body = (
       <Box
         sx={{

@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { InProgressCall } from "@/features/leads/widgets/InProgressCall.jsx";
 import Link from "next/link.js";
-import { hideMoreData } from "@/app/helpers/functions/utility.js";
+import { hideMoreData } from "@/app/helpers/functions/utility.jsx";
 
 export default function NextCalls({ staff, designer = false }) {
   const { user } = useAuth();

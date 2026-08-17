@@ -35,6 +35,7 @@ import TelegramAuth from "@/features/users/profile/TelegramAuth.jsx";
 import GoogleRedirectStatus from "@/features/users/profile/GoogleRedirectStatus.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { TELEGRAM_CODES } from "@/app/helpers/permissionCodes";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 export default function ProfileDialog({ open, onClose, userId }) {
   const { loading, setLoading } = useToastContext();
@@ -65,10 +66,11 @@ export default function ProfileDialog({ open, onClose, userId }) {
   const [inlineError, setInlineError] = useState("");
 
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState(null);
 
   const isGoogleConnected = useMemo(() => {
-    return Boolean(profile?.googleEmail || profile?.googleConnected);
-  }, [profile]);
+    return Boolean(googleStatus?.connected);
+  }, [googleStatus]);
 
   const resetInline = useCallback(() => {
     setInlineSuccess("");
@@ -77,8 +79,6 @@ export default function ProfileDialog({ open, onClose, userId }) {
 
   const refetchProfile = useCallback(async () => {
     if (!userId) return;
-
-    resetInline();
 
     const req = await getData({
       setLoading,
@@ -96,15 +96,31 @@ export default function ProfileDialog({ open, onClose, userId }) {
       return;
     }
 
-    setInlineError(req?.data?.message || "Failed to load profile.");
-  }, [userId, setLoading, resetInline]);
+    setInlineError(req?.message || FEEDBACK.PROFILE_LOAD_FAILED);
+  }, [userId, setLoading]);
+
+  const refetchGoogleStatus = useCallback(async () => {
+    const req = await getData({
+      setLoading,
+      url: "calendar/google/status",
+    });
+
+    if (req?.status === 200) {
+      setGoogleStatus(req.data);
+      return req.data;
+    }
+
+    setGoogleStatus(null);
+    return null;
+  }, [setLoading]);
 
   // open => fetch
   useEffect(() => {
     if (!open) return;
-    refetchProfile();
+    resetInline();
+    Promise.all([refetchProfile(), refetchGoogleStatus()]);
     setIsEditingAvatar(false);
-  }, [open, refetchProfile]);
+  }, [open, refetchGoogleStatus, refetchProfile, resetInline]);
 
   // ✅ listen to success/error coming from google callback
   useEffect(() => {
@@ -117,12 +133,12 @@ export default function ProfileDialog({ open, onClose, userId }) {
 
     if (google === "success") {
       setInlineSuccess(googleMsg || "Google connected successfully.");
-      refetchProfile();
+      Promise.all([refetchProfile(), refetchGoogleStatus()]);
     }
 
     if (google === "error") {
       setInlineError(
-        googleMsg || "Google connection failed. Please try again.",
+        googleMsg || FEEDBACK.GOOGLE_CONNECTION_FAILED,
       );
     }
 
@@ -132,8 +148,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
     router.replace(
       `${pathname}${next.toString() ? `?${next.toString()}` : ""}`,
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, pathname, refetchGoogleStatus, refetchProfile, router, searchParams]);
 
   const onUploadChange = useCallback((key, value) => {
     if (key === "profilePicture") setProfilePicture(value);
@@ -166,7 +181,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
       return;
     }
 
-    setInlineError(req?.data?.message || "Failed to update profile.");
+    setInlineError(req?.message || FEEDBACK.PROFILE_UPDATE_FAILED);
   }, [
     userId,
     name,
@@ -201,13 +216,14 @@ export default function ProfileDialog({ open, onClose, userId }) {
 
     if (req?.status === 200) {
       setInlineSuccess("Google connected.");
-      refetchProfile();
+      await Promise.all([refetchProfile(), refetchGoogleStatus()]);
     } else {
-      setInlineError(req?.data?.message || "Failed to connect Google.");
+      setInlineError(req?.message || FEEDBACK.GOOGLE_CONNECT_FAILED);
+      await refetchGoogleStatus();
     }
 
     setGoogleLoading(false);
-  }, [userId, setLoading, refetchProfile, resetInline]);
+  }, [userId, setLoading, refetchGoogleStatus, refetchProfile, resetInline]);
 
   const onGoogleDisconnect = useCallback(async () => {
     if (!userId) return;
@@ -227,13 +243,13 @@ export default function ProfileDialog({ open, onClose, userId }) {
 
     if (req?.status === 200) {
       setInlineSuccess("Google disconnected.");
-      refetchProfile();
+      await Promise.all([refetchProfile(), refetchGoogleStatus()]);
     } else {
-      setInlineError(req?.data?.message || "Failed to disconnect Google.");
+      setInlineError(req?.message || FEEDBACK.GOOGLE_DISCONNECT_FAILED);
     }
 
     setGoogleLoading(false);
-  }, [userId, setLoading, refetchProfile, resetInline]);
+  }, [userId, setLoading, refetchGoogleStatus, refetchProfile, resetInline]);
 
   const headerRight = (
     <IconButton onClick={onClose} size="small">

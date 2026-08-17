@@ -4,6 +4,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import AccountantKanbanBoard from "@/features/Kanban/accountant/AccountantKanbanBoard";
 import { FaCheckCircle, FaCube, FaExclamationCircle } from "react-icons/fa";
+import { PAYMENT_STATUSES } from "@dms/shared";
 
 export default function AccountantLanding() {
   const { setLoading } = useToastContext();
@@ -45,7 +46,7 @@ export default function AccountantLanding() {
       statusArray={Object.keys(PaymentLevels)}
       links={links}
       moveCard={moveCard}
-      status="NOT_PAID"
+      status={PAYMENT_STATUSES.NOT_PAID}
     />
   );
 }

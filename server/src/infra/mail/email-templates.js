@@ -4,10 +4,24 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import advancedFormat from "dayjs/plugin/advancedFormat.js";
 import dotenv from "dotenv";
+import { buildAssetAccessUrl } from "../upload/asset-access.js";
+import { env } from "../../config/env.js";
+import { REMINDER_TYPES } from "@dms/shared";
 dotenv.config();
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
+
+export function formatReminderTimeRemaining(time, now = Date.now()) {
+  const scheduledAt = new Date(time).getTime();
+  const currentTime = new Date(now).getTime();
+  const remainingMs = scheduledAt - currentTime;
+  if (!Number.isFinite(remainingMs) || remainingMs <= 0) return "Soon";
+
+  const remainingHours = Math.max(1, Math.round(remainingMs / 3_600_000));
+  return `${remainingHours} ${remainingHours === 1 ? "Hour" : "Hours"}`;
+}
+
 export async function sendEmailToClient({
   clientName,
   clientEmail,
@@ -15,7 +29,9 @@ export async function sendEmailToClient({
   token,
 }) {
   const sessionPageUrl = `${process.env.DASHBOARD_ORIGIN}/image-session?token=${token}`;
-  const pdfDownloadUrl = pdfUrl;
+  const pdfDownloadUrl = buildAssetAccessUrl(pdfUrl, {
+    ttlSeconds: env.ASSET_EMAIL_URL_TTL_SECONDS,
+  });
 
   const clientHtml = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
@@ -69,6 +85,9 @@ export async function sendEmailForStaff({
   pdfDownloadUrl,
   token,
 }) {
+  pdfDownloadUrl = buildAssetAccessUrl(pdfDownloadUrl, {
+    ttlSeconds: env.ASSET_EMAIL_URL_TTL_SECONDS,
+  });
   const staffHtml = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
@@ -172,18 +191,12 @@ export async function sendReminderToUser({
   userEmail,
   userName,
   time,
-  type = "MEETING",
+  type = REMINDER_TYPES.MEETING,
   clientLeadId,
-  timeLabel = "15min",
 }) {
-  const label = type === "MEETING" ? "Meeting" : "Call";
+  const label = type === REMINDER_TYPES.MEETING ? "Meeting" : "Call";
   const callDetails = "Scheduled " + label;
-  const minutesLabel =
-    {
-      "15min": "15 Minutes",
-      "4h": "4 Hours",
-      "12h": "12 Hours",
-    }[timeLabel] || "Soon";
+  const minutesLabel = formatReminderTimeRemaining(time);
 
   const userTimezone = "Asia/Dubai";
   const formattedTime = dayjs(time)
@@ -234,15 +247,9 @@ export async function sendReminderToClient({
   userTimezone = "Asia/Dubai",
   type,
   time,
-  timeLabel = "15min",
 }) {
-  const label = type === "MEETING" ? "Meeting" : "Call";
-  const minutesLabel =
-    {
-      "15min": "15 Minutes",
-      "4h": "4 Hours",
-      "12h": "12 Hours",
-    }[timeLabel] || "Soon";
+  const label = type === REMINDER_TYPES.MEETING ? "Meeting" : "Call";
+  const minutesLabel = formatReminderTimeRemaining(time);
   const callDetails = "Scheduled " + label;
 
   const formattedTime = dayjs(time)

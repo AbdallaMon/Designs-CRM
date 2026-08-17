@@ -21,6 +21,7 @@
     "install:server": "npm install --workspace=server && npm install --workspace=packages/db && npm install --workspace=packages/shared",
     "install:server_db": "npm install --workspace=packages/db && npm install --workspace=server",
     "install:all": "npm install",
+    "postinstall": "node scripts/patch-exceljs-uuid-range.mjs",
     "dev:courses": "npm run dev -w courses-web",
     "dev:web": "npm run dev -w web",
     "dev:server": "npm run dev -w server",
@@ -36,12 +37,36 @@
     "db:migrate": "prisma migrate dev --schema packages/db/prisma/schema.prisma",
     "db:deploy": "prisma migrate deploy --schema packages/db/prisma/schema.prisma",
     "db:status": "prisma migrate status --schema packages/db/prisma/schema.prisma",
+    "db:deploy:production": "node --env-file=server/.env.production node_modules/prisma/build/index.js migrate deploy --schema packages/db/prisma/schema.prisma",
+    "db:status:production": "node --env-file=server/.env.production node_modules/prisma/build/index.js migrate status --schema packages/db/prisma/schema.prisma",
     "db:diff": "prisma migrate diff --from-schema-datasource packages/db/prisma/schema.prisma --to-schema-datamodel packages/db/prisma/schema.prisma --script",
     "db:seed": "npm run seed -w @dms/db",
+    "db:seed:production": "node --env-file=server/.env.production packages/db/prisma/seed.js",
+    "db:migrate:users": "node --env-file=server/.env.production packages/db/scripts/migrate-users-to-profiles.js",
     "db:studio": "prisma studio --schema packages/db/prisma/schema.prisma",
+    "env:check": "node scripts/audit-env-examples.mjs",
+    "contracts:check": "node scripts/audit-shared-contracts.mjs",
+    "env:check:production": "node --env-file=server/.env.production scripts/audit-production-readiness.mjs",
+    "uploads:normalize": "node --env-file=server/.env.production scripts/normalize-upload-references.mjs",
+    "uploads:normalize:local": "node --env-file=server/.env scripts/normalize-upload-references.mjs",
+    "uploads:copy": "node --env-file=server/.env.production scripts/copy-upload-storage.mjs",
+    "lint:web": "npm run lint -w web",
+    "lint:courses": "npm run lint -w courses-web",
+    "lint": "npm run lint:web && npm run lint:courses",
     "test": "vitest run"
   },
+  "overrides": {
+    "exceljs@4.4.0": {
+      "uuid": "11.1.1"
+    }
+  },
   "devDependencies": {
-    "vitest": "^2.1.9"
+    "@babel/parser": "7.29.7",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "jspdf": "4.2.1",
+    "sharp": "0.35.3",
+    "swiper": "14.1.0"
   }
 }

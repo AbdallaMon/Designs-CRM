@@ -43,7 +43,7 @@ const CourseOverview = ({
             No Access Yet
           </Typography>
           <Typography variant="body2">
-            You don't have permission to access any lessons in this course.
+            You do not have permission to access any lessons in this course.
             Please contact your instructor.
           </Typography>
         </Alert>

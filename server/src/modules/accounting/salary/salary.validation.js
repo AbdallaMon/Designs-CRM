@@ -4,16 +4,17 @@
 // monthly-salary uniqueness) are PRESERVED untouched. Lists stay permissive (legacy read
 // a `filters` JSON string + arbitrary searchParams).
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
 // >= 0 money (salaries/tax/hours may legitimately be zero in legacy after flooring).
 const nonNegativeNumber = z.coerce.number().refine((n) => Number.isFinite(n) && n >= 0, {
-  message: "must be a non-negative number",
+  message: V.NON_NEGATIVE_NUMBER_REQUIRED,
 });
 // strictly positive (base salary / work hours / net salary must be meaningful).
 const positiveNumber = z.coerce.number().refine((n) => Number.isFinite(n) && n > 0, {
-  message: "must be a positive number",
+  message: V.POSITIVE_NUMBER_REQUIRED,
 });
 
 export class SalaryValidation {

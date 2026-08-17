@@ -11,15 +11,18 @@
 // usecase spreads `...tokenData` AFTER `...body`, so the verified-token ids always win, and
 // the default strip drops those keys from req.body before they ever reach the usecase.
 import { z } from "zod";
+import { CALENDAR_SLOT_TYPES } from "@dms/shared";
 
 // The selected slot is an object the FE echoes back (it carries startTime + id + type). The
-// service reads selectedSlot.startTime / .id / .type; validate the shape loosely but require
-// the consumed fields. `type === "MOCK"` is a sentinel the service branches on.
+// The server loads the authoritative slot time by id. MOCK is never a bookable slot type.
 const selectedSlotSchema = z
   .object({
-    id: z.coerce.number().int().positive().optional(),
-    startTime: z.union([z.string().min(1), z.date()]),
-    type: z.string().optional(),
+    id: z.coerce.number().int().positive(),
+    startTime: z.union([z.string().min(1), z.date()]).optional(),
+      type: z
+        .string()
+        .refine((value) => value !== CALENDAR_SLOT_TYPES.MOCK)
+        .optional(),
   })
   .passthrough(); // the FE may echo extra slot fields (endTime, userTimezone, ...) — harmless
 
@@ -29,6 +32,7 @@ export class ClientCalendarValidation {
   // session object without a 422 (parity with master, which had no /book validation).
   static book = z.object({
     selectedSlot: selectedSlotSchema,
+    selectedDate: z.union([z.string().min(1), z.date()]),
     selectedTimezone: z.string().min(1).optional(),
   });
 }

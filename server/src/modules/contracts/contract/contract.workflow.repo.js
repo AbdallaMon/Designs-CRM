@@ -2,7 +2,8 @@ import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { assignProjectToUser } from "../../projects/project/project.usecase.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { contractsMessagesCodes } from "@dms/shared";
+import { CONTRACT_LEVELS, CONTRACT_PAYMENT_STATUSES, WORK_STAGE_STATUSES, PROFILES, contractsMessagesCodes } from "@dms/shared";
+const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 export const stageLevelStartProject = {
   LEVEL_3: "2D_Study",
   LEVEL_4: "3D_Designer",
@@ -16,19 +17,19 @@ export const stageLevelRelatedProject = {
   LEVEL_5: "2D_Quantity_Calculation",
 };
 const projectTypeForStageLevel = {
-  "2D_Study": "LEVEL_2",
-  "3D_Designer": "LEVEL_3",
-  "2D_Final_Plans": "LEVEL_4",
-  "2D_Quantity_Calculation": "LEVEL_5",
+  "2D_Study": CONTRACT_LEVELS.LEVEL_2,
+  "3D_Designer": CONTRACT_LEVELS.LEVEL_3,
+  "2D_Final_Plans": CONTRACT_LEVELS.LEVEL_4,
+  "2D_Quantity_Calculation": CONTRACT_LEVELS.LEVEL_5,
 };
 export const STAGE_PREV_LEVELS_MAP = {
   LEVEL_1: null,
-  LEVEL_2: ["LEVEL_1"],
-  LEVEL_3: ["LEVEL_2", "LEVEL_1"],
-  LEVEL_4: ["LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL_5: ["LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL_6: ["LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL_7: ["LEVEL_6", "LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_2: [CONTRACT_LEVELS.LEVEL_1],
+  LEVEL_3: [CONTRACT_LEVELS.LEVEL_2, CONTRACT_LEVELS.LEVEL_1],
+  LEVEL_4: [CONTRACT_LEVELS.LEVEL_3, CONTRACT_LEVELS.LEVEL_2, CONTRACT_LEVELS.LEVEL_1],
+  LEVEL_5: [CONTRACT_LEVELS.LEVEL_4, CONTRACT_LEVELS.LEVEL_3, CONTRACT_LEVELS.LEVEL_2, CONTRACT_LEVELS.LEVEL_1],
+  LEVEL_6: [CONTRACT_LEVELS.LEVEL_5, CONTRACT_LEVELS.LEVEL_4, CONTRACT_LEVELS.LEVEL_3, CONTRACT_LEVELS.LEVEL_2, CONTRACT_LEVELS.LEVEL_1],
+  LEVEL_7: [CONTRACT_LEVELS.LEVEL_6, CONTRACT_LEVELS.LEVEL_5, CONTRACT_LEVELS.LEVEL_4, CONTRACT_LEVELS.LEVEL_3, CONTRACT_LEVELS.LEVEL_2, CONTRACT_LEVELS.LEVEL_1],
 };
 export async function getLeadContractList({ leadId }) {
   const where = {
@@ -44,7 +45,7 @@ export async function getLeadContractList({ leadId }) {
   });
   for (const contract of contracts) {
     const currentStage = contract.stages.find(
-      (s) => s.stageStatus === "IN_PROGRESS"
+      (s) => s.stageStatus === WORK_STAGE_STATUSES.IN_PROGRESS
     );
     contract.level = currentStage ? currentStage.title : null;
   }
@@ -77,32 +78,31 @@ async function validateStages(stages) {
     throw new AppError({ code: contractsMessagesCodes.CONTRACT_STAGE_DAYS_INVALID, statusCode: 400 });
 }
 export async function createContract({ payload }) {
-  try {
-    const {
-      clientLeadId,
-      drawings,
-      payments,
-      projectGroupId,
-      specialItems,
-      stages,
-      title,
-      enTitle,
-      arName,
-      enName,
-    } = payload;
+  const {
+    clientLeadId,
+    drawings,
+    payments,
+    projectGroupId,
+    specialItems,
+    stages,
+    title,
+    enTitle,
+  } = payload;
 
-    const taxRate = 5;
-    await validatePayments(payments);
-    await validateStages(stages);
-    const amount = payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0
-    );
-    const totalAmount =
-      amount != null && taxRate != null
-        ? (Number(amount) + (Number(amount) * Number(taxRate)) / 100).toFixed(2)
-        : 0;
-    const contract = await prisma.contract.create({
+  const taxRate = 5;
+  await validatePayments(payments);
+  await validateStages(stages);
+  const amount = payments.reduce(
+    (sum, payment) => sum + Number(payment.amount),
+    0
+  );
+  const totalAmount =
+    amount != null && taxRate != null
+      ? (Number(amount) + (Number(amount) * Number(taxRate)) / 100).toFixed(2)
+      : 0;
+
+  return prisma.$transaction(async (db) => {
+    const contract = await db.contract.create({
       data: {
         clientLeadId: Number(clientLeadId),
         title,
@@ -117,12 +117,14 @@ export async function createContract({ payload }) {
       },
     });
     const firstPaymentId = await createPayments({
+      db,
       payments,
       projectGroupId,
       clientLeadId,
       contractId: contract.id,
     });
     await createStages({
+      db,
       stages,
       projectGroupId,
       paymentId: firstPaymentId,
@@ -130,44 +132,44 @@ export async function createContract({ payload }) {
       contractId: contract.id,
     });
 
-    if (drawings && drawings.length > 0) {
-      await createDrawings({ drawings, contractId: contract.id });
+    if (drawings?.length) {
+      await createDrawings({ db, drawings, contractId: contract.id });
     }
-    if (specialItems && specialItems.length > 0) {
-      await createSpecialItems({ specialItems, contractId: contract.id });
+    if (specialItems?.length) {
+      await createSpecialItems({ db, specialItems, contractId: contract.id });
     }
-    if (payload.oldContractId && payload.markOldAsCancelled) {
-      await markContractAsCancelled({
-        contractId: Number(payload.oldContractId),
-      });
-    }
-    if (arName || enName) {
-      const client = await prisma.client.findFirst({
+    if (payload.oldContractId != null && payload.markOldAsCancelled) {
+      const cancelled = await db.contract.updateMany({
         where: {
-          clientLeads: {
-            some: {
-              id: Number(clientLeadId),
-            },
-          },
+          id: Number(payload.oldContractId),
+          clientLeadId: Number(clientLeadId),
         },
+        data: { status: "CANCELLED" },
       });
-      await prisma.client.update({
+      if (cancelled.count !== 1) {
+        throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+      }
+    }
+    if (hasOwn(payload, "arName") || hasOwn(payload, "enName")) {
+      const client = await db.client.findFirst({
         where: {
-          id: client.id,
+          clientLeads: { some: { id: Number(clientLeadId) } },
         },
-        data: {
-          arName,
-          enName,
-        },
+        select: { id: true },
       });
+      if (!client) {
+        throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+      }
+      const clientData = {};
+      if (hasOwn(payload, "arName")) clientData.arName = payload.arName;
+      if (hasOwn(payload, "enName")) clientData.enName = payload.enName;
+      await db.client.update({ where: { id: client.id }, data: clientData });
     }
     return contract;
-  } catch (e) {
-    console.log(e.message, "error in contract");
-    throw e;
-  }
+  });
 }
 async function createPayments({
+  db = prisma,
   contractId,
   payments,
   projectGroupId,
@@ -183,6 +185,7 @@ async function createPayments({
       paymentCondition = payment.condition;
     }
     const createdPayment = await createContractPayment({
+      db,
       payment,
       paymentCondition,
       projectGroupId,
@@ -197,6 +200,7 @@ async function createPayments({
   return firstPaymentId;
 }
 async function createContractPayment({
+  db = prisma,
   payment,
   projectGroupId,
   clientLeadId,
@@ -205,12 +209,12 @@ async function createContractPayment({
   conditionId,
 }) {
   const data = { amount: payment.amount, note: payment.note, contractId };
-  if (conditionId) {
+  if (conditionId != null && conditionId !== "") {
     data.conditionId = Number(conditionId);
   }
   data.paymentCondition = paymentCondition;
   if (paymentCondition !== "SIGNATURE") {
-    const project = await prisma.project.findFirst({
+    const project = await db.project.findFirst({
       where: {
         clientLeadId: Number(clientLeadId),
         groupId: projectGroupId,
@@ -220,10 +224,13 @@ async function createContractPayment({
         id: true,
       },
     });
+    if (!project) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
     data.projectId = project.id;
   }
 
-  const createdPayment = await prisma.contractPayment.create({ data });
+  const createdPayment = await db.contractPayment.create({ data });
   return createdPayment;
 }
 function getStageOrder(stageLevel) {
@@ -232,6 +239,7 @@ function getStageOrder(stageLevel) {
 }
 
 async function createStages({
+  db = prisma,
   contractId,
   stages,
   projectGroupId,
@@ -241,13 +249,14 @@ async function createStages({
   for (const stage of stages) {
     const levelEnum = stage.levelEnum;
     const createdStage = await createStage({
+      db,
       clientLeadId,
       contractId,
       stage,
       projectGroupId,
     });
-    if (paymentId && levelEnum === "LEVEL_2") {
-      await prisma.contractPayment.update({
+    if (paymentId && levelEnum === CONTRACT_LEVELS.LEVEL_2) {
+      await db.contractPayment.update({
         where: { id: Number(paymentId) },
         data: { stageId: createdStage.id },
       });
@@ -255,32 +264,35 @@ async function createStages({
   }
 }
 async function createStage({
+  db = prisma,
   contractId,
   stage,
   projectGroupId,
   clientLeadId,
 }) {
-  const levelEnum = stage.levelEnum;
-  delete stage.levelEnum;
+  const { levelEnum, ...stageData } = stage;
   const order = getStageOrder(levelEnum);
 
   let projectId;
 
   const projectType = stageLevelStartProject[levelEnum];
   if (projectType) {
-    const relatedProject = await prisma.project.findFirst({
+    const relatedProject = await db.project.findFirst({
       where: {
         clientLeadId: Number(clientLeadId),
         groupId: projectGroupId,
         type: projectType,
       },
     });
+    if (!relatedProject) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
     projectId = relatedProject.id;
   }
   const data = {
     order,
     contractId,
-    ...stage,
+    ...stageData,
     title: levelEnum,
   };
   if (data.isActive || data.isActive === false) {
@@ -289,36 +301,36 @@ async function createStage({
   if (projectId) {
     data.projectId = projectId;
   }
-  if (levelEnum === "LEVEL_1") {
-    data.stageStatus = "IN_PROGRESS";
+  if (levelEnum === CONTRACT_LEVELS.LEVEL_1) {
+    data.stageStatus = WORK_STAGE_STATUSES.IN_PROGRESS;
   }
 
-  const createdStage = await prisma.contractStage.create({ data });
+  const createdStage = await db.contractStage.create({ data });
   return createdStage;
 }
-async function createSpecialItems({ specialItems, contractId }) {
+async function createSpecialItems({ db = prisma, specialItems, contractId }) {
   for (const item of specialItems) {
-    await createSpecialItem({ contractId, item });
+    await createSpecialItem({ db, contractId, item });
   }
 }
-async function createSpecialItem({ item, contractId }) {
+async function createSpecialItem({ db = prisma, item, contractId }) {
   contractId = Number(contractId);
-  return await prisma.contractSpecialItem.create({
+  return await db.contractSpecialItem.create({
     data: {
       contractId,
       ...item,
     },
   });
 }
-async function createDrawings({ drawings, contractId }) {
+async function createDrawings({ db = prisma, drawings, contractId }) {
   for (const drawing of drawings) {
-    await createDrawing({ contractId, drawing });
+    await createDrawing({ db, contractId, drawing });
   }
 }
-async function createDrawing({ contractId, drawing }) {
+async function createDrawing({ db = prisma, contractId, drawing }) {
   contractId == Number(contractId);
 
-  return await prisma.contractDrawing.create({
+  return await db.contractDrawing.create({
     data: {
       contractId: Number(contractId),
       url: drawing.url,
@@ -362,54 +374,66 @@ export async function updateContractBasics({
   enName,
   contractId,
 }) {
-  const data = {};
-  if (title) {
-    data.title = title;
-  }
-  if (enTitle) {
-    data.enTitle = enTitle;
-  }
-  if (projectGroupId) {
-    data.projectGroupId = projectGroupId;
-    await reAssignAllContractStages({ contractId, projectGroupId });
-    await reAssignAllContractPayments({ contractId, projectGroupId });
-  }
-  const contract = await prisma.contract.findUnique({
-    where: {
-      id: Number(contractId),
-    },
-  });
-  if (arName || enName) {
-    const client = await prisma.client.findFirst({
-      where: {
-        clientLeads: {
-          some: {
-            id: Number(contract.clientLeadId),
-          },
-        },
-      },
+  return prisma.$transaction(async (db) => {
+    const contract = await db.contract.findUnique({
+      where: { id: Number(contractId) },
+      select: { id: true, clientLeadId: true },
     });
-    await prisma.client.update({
-      where: {
-        id: client.id,
-      },
-      data: {
-        arName,
-        enName,
-      },
-    });
-  }
-  await prisma.contract.update({
-    where: {
-      id: Number(contractId),
-    },
-    data,
+    if (!contract) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
+
+    const data = {};
+    if (title !== undefined) data.title = title;
+    if (enTitle !== undefined) data.enTitle = enTitle;
+    if (projectGroupId !== undefined) {
+      data.projectGroupId = projectGroupId;
+      await reAssignAllContractStages({
+        db,
+        contractId,
+        projectGroupId,
+        clientLeadId: contract.clientLeadId,
+      });
+      await reAssignAllContractPayments({
+        db,
+        contractId,
+        projectGroupId,
+        clientLeadId: contract.clientLeadId,
+      });
+    }
+    if (arName !== undefined || enName !== undefined) {
+      const client = await db.client.findFirst({
+        where: { clientLeads: { some: { id: Number(contract.clientLeadId) } } },
+        select: { id: true },
+      });
+      if (!client) {
+        throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+      }
+      const clientData = {};
+      if (arName !== undefined) clientData.arName = arName;
+      if (enName !== undefined) clientData.enName = enName;
+      await db.client.update({ where: { id: client.id }, data: clientData });
+    }
+    await db.contract.update({ where: { id: Number(contractId) }, data });
+    return undefined;
   });
 }
-async function reAssignAllContractStages({ contractId, projectGroupId }) {
-  const stages = await prisma.contractStage.findMany({
+async function reAssignAllContractStages({
+  db = prisma,
+  contractId,
+  projectGroupId,
+  clientLeadId,
+}) {
+  if (projectGroupId == null) {
+    await db.contractStage.updateMany({
+      where: { contractId: Number(contractId), projectId: { not: null } },
+      data: { projectId: null },
+    });
+    return true;
+  }
+  const stages = await db.contractStage.findMany({
     where: {
-      id: Number(contractId),
+      contractId: Number(contractId),
       projectId: { not: null },
     },
     select: {
@@ -422,13 +446,18 @@ async function reAssignAllContractStages({ contractId, projectGroupId }) {
     },
   });
   for (const stage of stages) {
-    const newProject = await prisma.project.findFirst({
+    const newProject = await db.project.findFirst({
       where: {
         groupId: projectGroupId,
+        clientLeadId: Number(clientLeadId),
         type: stage.project.type,
       },
+      select: { id: true },
     });
-    await prisma.contractStage.update({
+    if (!newProject) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
+    await db.contractStage.update({
       where: {
         id: Number(stage.id),
       },
@@ -440,10 +469,22 @@ async function reAssignAllContractStages({ contractId, projectGroupId }) {
   return true;
 }
 
-async function reAssignAllContractPayments({ contractId, projectGroupId }) {
-  const stages = await prisma.contractPayment.findMany({
+async function reAssignAllContractPayments({
+  db = prisma,
+  contractId,
+  projectGroupId,
+  clientLeadId,
+}) {
+  if (projectGroupId == null) {
+    await db.contractPayment.updateMany({
+      where: { contractId: Number(contractId), projectId: { not: null } },
+      data: { projectId: null },
+    });
+    return true;
+  }
+  const payments = await db.contractPayment.findMany({
     where: {
-      id: Number(contractId),
+      contractId: Number(contractId),
       projectId: { not: null },
     },
     select: {
@@ -455,16 +496,21 @@ async function reAssignAllContractPayments({ contractId, projectGroupId }) {
       },
     },
   });
-  for (const stage of stages) {
-    const newProject = await prisma.project.findFirst({
+  for (const payment of payments) {
+    const newProject = await db.project.findFirst({
       where: {
         groupId: projectGroupId,
-        type: stage.project.type,
+        clientLeadId: Number(clientLeadId),
+        type: payment.project.type,
       },
+      select: { id: true },
     });
-    await prisma.contractPayment.update({
+    if (!newProject) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
+    await db.contractPayment.update({
       where: {
-        id: Number(stage.id),
+        id: Number(payment.id),
       },
       data: {
         projectId: newProject.id,
@@ -521,10 +567,10 @@ export async function createContractStage({ contractId, stage }) {
 export async function updateContractStage({ stageId, newStage }) {
   try {
     const data = {};
-    if (newStage.deliveryDays) {
+    if (hasOwn(newStage, "deliveryDays")) {
       data.deliveryDays = newStage.deliveryDays;
     }
-    if (newStage.deptDeliveryDays) {
+    if (hasOwn(newStage, "deptDeliveryDays")) {
       data.deptDeliveryDays = newStage.deptDeliveryDays;
 
       const currentStage = await prisma.contractStage.findUnique({
@@ -535,7 +581,7 @@ export async function updateContractStage({ stageId, newStage }) {
           deliverySchedule: true,
         },
       });
-      if (currentStage?.deliverySchedule) {
+      if (currentStage?.deliverySchedule && newStage.deptDeliveryDays != null) {
         const days = Number(newStage?.deptDeliveryDays);
 
         const base = new Date(currentStage.createdAt);
@@ -567,7 +613,7 @@ export async function deleteContractStage({ stageId }) {
         id: Number(stageId),
       },
     });
-    if (stage.stageStatus === "COMPLETED") {
+    if (stage.stageStatus === WORK_STAGE_STATUSES.COMPLETED) {
       throw new AppError({ code: contractsMessagesCodes.CONTRACT_STAGE_COMPLETED, statusCode: 409 });
     }
     return await prisma.contractStage.delete({
@@ -594,7 +640,7 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
         contractId: true,
       },
     });
-    if (payment.status === "NOT_DUE") {
+    if (payment.status === CONTRACT_PAYMENT_STATUSES.NOT_DUE) {
       throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_NOT_DUE, statusCode: 409 });
     }
     await prisma.contractPayment.update({
@@ -622,7 +668,7 @@ async function checkIfNoOtherPaymentAndNoOtherStages({ contractId }) {
     where: {
       contractId: contractId,
       stageStatus: {
-        in: ["IN_PROGRESS", "NOT_STARTED"],
+        in: [WORK_STAGE_STATUSES.IN_PROGRESS, WORK_STAGE_STATUSES.NOT_STARTED],
       },
     },
   });
@@ -630,7 +676,7 @@ async function checkIfNoOtherPaymentAndNoOtherStages({ contractId }) {
     where: {
       contractId: contractId,
       status: {
-        in: ["DUE", "NOT_DUE"],
+        in: [CONTRACT_PAYMENT_STATUSES.DUE, CONTRACT_PAYMENT_STATUSES.NOT_DUE],
       },
     },
   });
@@ -646,7 +692,7 @@ async function updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
         id: Number(contractId),
       },
       data: {
-        status: "COMPLETED",
+        status: WORK_STAGE_STATUSES.COMPLETED,
       },
     });
   }
@@ -658,8 +704,8 @@ export async function createNewContractPayment({ contractId, payment }) {
   if (payment.condition === "To Do") {
     throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
-  try {
-    const contract = await prisma.contract.findUnique({
+  return prisma.$transaction(async (db) => {
+    const contract = await db.contract.findUnique({
       where: {
         id: Number(contractId),
       },
@@ -676,114 +722,109 @@ export async function createNewContractPayment({ contractId, payment }) {
 
       // type: payment.projectType,
     };
+    if (!contract) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
     const newPayment = await createContractPayment({
+      db,
       contractId,
       payment,
       paymentCondition: payment.condition,
       conditionId: payment.conditionId,
       ...contract,
     });
-    await updateContractTotals(contract.id);
+    await updateContractTotalsWithDb(db, contract.id);
 
     return newPayment;
-  } catch (e) {
-    throw e;
-  }
+  });
 }
 
 export async function updateContractPayment({ paymentId, newPayment }) {
   // update total payment if amount updated
-  let data = {};
   if (newPayment.condition === "To Do") {
     throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
   if (newPayment.type && !newPayment.condition) {
     throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_CONDITION_INVALID, statusCode: 400 });
   }
-  const payment = await prisma.contractPayment.findUnique({
-    where: {
-      id: Number(paymentId),
-    },
-    select: {
-      id: true,
-      amount: true,
-      contractId: true,
-      contract: {
-        select: {
-          clientLeadId: true,
-          id: true,
-          projectGroupId: true,
-          amount: true,
-          taxRate: true,
-        },
-      },
-      project: {
-        select: {
-          groupId: true,
-          type: true,
-        },
-      },
-    },
-  });
-  if (newPayment.amount) {
-    data.amount = newPayment.amount;
-  }
-  if (newPayment.condition) {
-    data.paymentCondition = newPayment.condition;
-  }
-  if (newPayment.conditionId) {
-    data.conditionId = Number(newPayment.conditionId);
-  }
-  if (newPayment.type) {
-    let groupId = payment.project?.groupId;
-    if (!groupId) {
-      groupId = payment.contract.projectGroupId;
-    }
-    const newProject = await prisma.project.findFirst({
-      where: {
-        type: newPayment.type,
-        groupId: groupId,
-        clientLeadId: payment.contract.clientLeadId,
-      },
+  return prisma.$transaction(async (db) => {
+    const data = {};
+    const payment = await db.contractPayment.findUnique({
+      where: { id: Number(paymentId) },
       select: {
         id: true,
+        amount: true,
+        contractId: true,
+        contract: {
+          select: {
+            clientLeadId: true,
+            id: true,
+            projectGroupId: true,
+            amount: true,
+            taxRate: true,
+          },
+        },
+        project: { select: { groupId: true, type: true } },
       },
     });
-    data.projectId = newProject.id;
-  }
+    if (!payment) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_NOT_FOUND, statusCode: 404 });
+    }
+    if (hasOwn(newPayment, "amount")) data.amount = newPayment.amount;
+    if (hasOwn(newPayment, "condition")) data.paymentCondition = newPayment.condition;
+    if (hasOwn(newPayment, "conditionId")) {
+      data.conditionId = newPayment.conditionId == null || newPayment.conditionId === ""
+        ? null
+        : Number(newPayment.conditionId);
+    }
+    if (hasOwn(newPayment, "note")) data.note = newPayment.note;
+    if (hasOwn(newPayment, "type")) {
+      if (newPayment.type == null || newPayment.type === "") {
+        data.projectId = null;
+      } else {
+        const groupId = payment.project?.groupId ?? payment.contract.projectGroupId;
+        const newProject = await db.project.findFirst({
+          where: {
+            type: newPayment.type,
+            groupId,
+            clientLeadId: payment.contract.clientLeadId,
+          },
+          select: { id: true },
+        });
+        if (!newProject) {
+          throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+        }
+        data.projectId = newProject.id;
+      }
+    }
 
-  await prisma.contractPayment.update({
-    where: {
-      id: Number(paymentId),
-    },
-    data,
+    await db.contractPayment.update({ where: { id: Number(paymentId) }, data });
+    if (hasOwn(newPayment, "amount")) {
+      await updateContractTotalsWithDb(db, payment.contractId);
+    }
+    return true;
   });
-
-  if (newPayment.amount) {
-    await updateContractTotals(payment.contractId);
-  }
-  return true;
 }
 
 export async function deleteContractPayment({ paymentId }) {
-  const payment = await prisma.contractPayment.findUnique({
-    where: {
-      id: Number(paymentId),
-    },
+  return prisma.$transaction(async (db) => {
+    const payment = await db.contractPayment.findUnique({
+      where: { id: Number(paymentId) },
+    });
+    if (!payment) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_PAYMENT_NOT_FOUND, statusCode: 404 });
+    }
+    if (payment.paymentCondition === "SIGNATURE") {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_SIGNATURE_PAYMENT_REQUIRED, statusCode: 409 });
+    }
+    await db.contractPayment.delete({ where: { id: Number(payment.id) } });
+    await updateContractTotalsWithDb(db, payment.contractId);
+    return undefined;
   });
-  if (payment.paymentCondition === "SIGNATURE") {
-    throw new AppError({ code: contractsMessagesCodes.CONTRACT_SIGNATURE_PAYMENT_REQUIRED, statusCode: 409 });
-  }
-  await prisma.contractPayment.delete({
-    where: {
-      id: Number(payment.id),
-    },
-  });
-  await updateContractTotals(payment.contractId);
 }
 
-export async function updateContractTotals(contractId) {
-  const contract = await prisma.contract.findUnique({
+async function updateContractTotalsWithDb(db, contractId) {
+  const contract = await db.contract.findUnique({
     where: { id: Number(contractId) },
     include: { paymentsNew: true },
   });
@@ -798,7 +839,7 @@ export async function updateContractTotals(contractId) {
   const taxRate = Number(contract.taxRate || 0);
   const totalAmount = amount + (amount * taxRate) / 100;
 
-  const updated = await prisma.contract.update({
+  const updated = await db.contract.update({
     where: { id: Number(contractId) },
     data: {
       amount,
@@ -809,6 +850,10 @@ export async function updateContractTotals(contractId) {
   return updated;
 }
 
+export async function updateContractTotals(contractId) {
+  return updateContractTotalsWithDb(prisma, contractId);
+}
+
 // drawings
 
 export async function createContractDrawing({ contractId, drawing }) {
@@ -817,10 +862,10 @@ export async function createContractDrawing({ contractId, drawing }) {
 
 export async function updateContractDrwaing({ drawId, newDrawing }) {
   let data = {};
-  if (newDrawing.url) {
+  if (hasOwn(newDrawing, "url")) {
     data.url = newDrawing.url;
   }
-  if (newDrawing.fileName) {
+  if (hasOwn(newDrawing, "fileName")) {
     data.fileName = newDrawing.fileName;
   }
   return await prisma.contractDrawing.update({
@@ -849,10 +894,10 @@ export async function updateContractSpecialItem({
   newSpecialItem,
 }) {
   let data = {};
-  if (newSpecialItem.labelAr) {
+  if (hasOwn(newSpecialItem, "labelAr")) {
     data.labelAr = newSpecialItem.labelAr;
   }
-  if (newSpecialItem.labelEn) {
+  if (hasOwn(newSpecialItem, "labelEn")) {
     data.labelEn = newSpecialItem.labelEn;
   }
   await prisma.contractSpecialItem.update({
@@ -878,7 +923,7 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
   groupId,
   groupTitle,
 }) {
-  if (status.toUpperCase() !== "COMPLETED") {
+  if (status.toUpperCase() !== WORK_STAGE_STATUSES.COMPLETED) {
     return;
   }
   const nextContractStage = await prisma.contractStage.findFirst({
@@ -886,7 +931,7 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
       projectId: Number(projectId),
       // stageStatus: "NOT_STARTED",
       contract: {
-        status: "IN_PROGRESS",
+        status: WORK_STAGE_STATUSES.IN_PROGRESS,
       },
     },
   });
@@ -895,13 +940,13 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
     await prisma.contractStage.updateMany({
       where: {
         projectId: Number(projectId),
-        stageStatus: "NOT_STARTED",
+        stageStatus: WORK_STAGE_STATUSES.NOT_STARTED,
         contract: {
-          status: "IN_PROGRESS",
+          status: WORK_STAGE_STATUSES.IN_PROGRESS,
         },
       },
       data: {
-        stageStatus: "IN_PROGRESS",
+        stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
       },
     });
     prevStageLevels = STAGE_PREV_LEVELS_MAP[nextContractStage?.title];
@@ -913,17 +958,17 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
       where: {
         contractId: Number(nextContractStage.contractId),
         title: { in: prevStageLevels },
-        stageStatus: "IN_PROGRESS",
+        stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
       },
     });
     await prisma.contractStage.updateMany({
       where: {
         contractId: Number(nextContractStage.contractId),
         title: { in: prevStageLevels },
-        stageStatus: "IN_PROGRESS",
+        stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
       },
       data: {
-        stageStatus: "COMPLETED",
+        stageStatus: WORK_STAGE_STATUSES.COMPLETED,
       },
     });
   }
@@ -951,26 +996,26 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
 export async function updateSecondStageAfterFirstPayment({ contractId }) {
   const oldStageWhere = {
     contractId: Number(contractId),
-    stageStatus: "IN_PROGRESS",
-    title: "LEVEL_1",
+    stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
+    title: CONTRACT_LEVELS.LEVEL_1,
     contract: {
-      status: "IN_PROGRESS",
+      status: WORK_STAGE_STATUSES.IN_PROGRESS,
     },
   };
 
   const where = {
     contractId: Number(contractId),
-    stageStatus: "NOT_STARTED",
-    title: "LEVEL_2",
+    stageStatus: WORK_STAGE_STATUSES.NOT_STARTED,
+    title: CONTRACT_LEVELS.LEVEL_2,
     contract: {
-      status: "IN_PROGRESS",
+      status: WORK_STAGE_STATUSES.IN_PROGRESS,
     },
   };
 
   await prisma.contractStage.updateMany({
     where: oldStageWhere,
     data: {
-      stageStatus: "COMPLETED",
+      stageStatus: WORK_STAGE_STATUSES.COMPLETED,
     },
   });
   const levelTwoStage = await prisma.contractStage.findFirst({
@@ -979,7 +1024,7 @@ export async function updateSecondStageAfterFirstPayment({ contractId }) {
   await prisma.contractStage.updateMany({
     where,
     data: {
-      stageStatus: "IN_PROGRESS",
+      stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
     },
   });
   if (levelTwoStage) {
@@ -993,7 +1038,7 @@ export async function updateSecondStageAfterFirstPayment({ contractId }) {
       },
     });
     const { clientLeadId, projectGroupId } = contract;
-    const relatedProjectType = stageLevelRelatedProject["LEVEL_2"];
+    const relatedProjectType = stageLevelRelatedProject[CONTRACT_LEVELS.LEVEL_2];
     await assignDesignersForStageRelatedProject({
       groupId: projectGroupId,
       projectType: relatedProjectType,
@@ -1006,7 +1051,7 @@ export async function updateSecondStageAfterFirstPayment({ contractId }) {
 export async function checkIfProjectHasPaymentAndUpdate({ projectId, status }) {
   const where = {
     projectId: Number(projectId),
-    status: "NOT_DUE",
+    status: CONTRACT_PAYMENT_STATUSES.NOT_DUE,
     paymentCondition: status,
   };
   return await updateContractPaymentStatusToDue({ where });
@@ -1016,7 +1061,7 @@ export async function updateContractPaymentStatusToDue({ where }) {
   return await prisma.contractPayment.updateMany({
     where,
     data: {
-      status: "DUE",
+      status: CONTRACT_PAYMENT_STATUSES.DUE,
     },
   });
 }
@@ -1024,7 +1069,7 @@ export async function updateContractPaymentStatusToDue({ where }) {
 export async function updateContractPaymentOnContractSign({ contractId }) {
   const where = {
     contractId: Number(contractId),
-    status: "NOT_DUE",
+    status: CONTRACT_PAYMENT_STATUSES.NOT_DUE,
     paymentCondition: "SIGNATURE",
   };
   return await updateContractPaymentStatusToDue({ where });
@@ -1104,10 +1149,10 @@ export async function setContractCancelled({ contractId }) {
 // contract payments page
 
 const STATUS = {
-  RECEIVED: "RECEIVED",
-  TRANSFERRED: "TRANSFERRED",
-  DUE: "DUE",
-  NOT_DUE: "NOT_DUE",
+  RECEIVED: CONTRACT_PAYMENT_STATUSES.RECEIVED,
+  TRANSFERRED: CONTRACT_PAYMENT_STATUSES.TRANSFERRED,
+  DUE: CONTRACT_PAYMENT_STATUSES.DUE,
+  NOT_DUE: CONTRACT_PAYMENT_STATUSES.NOT_DUE,
 };
 
 function toNumber(d) {
@@ -1124,7 +1169,7 @@ function withTax(amount, taxRate) {
 export async function getContractPaymentsGroupedService({
   page = 1,
   limit = 10,
-  status = "DUE",
+  status = CONTRACT_PAYMENT_STATUSES.DUE,
   user,
 }) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -1140,7 +1185,7 @@ export async function getContractPaymentsGroupedService({
   if (
     user &&
     !user.isAdminTier &&
-    user.currentProfileKey !== "SUPER_SALES"
+    user.currentProfileKey !== PROFILES.SUPER_SALES
   ) {
     whereForCount.clientLead = {
       userId: user.id,
@@ -1164,7 +1209,7 @@ export async function getContractPaymentsGroupedService({
       },
       stages: {
         where: {
-          stageStatus: "IN_PROGRESS",
+          stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
         },
         select: {
           id: true,
@@ -1325,12 +1370,12 @@ export async function assignDesignersForProjectsInContractIfAutoAssigned({
   const inProgressContracts = await prisma.contract.findMany({
     where: {
       clientLeadId: Number(leadId),
-      status: "IN_PROGRESS",
+      status: WORK_STAGE_STATUSES.IN_PROGRESS,
     },
     include: {
       stages: {
         where: {
-          stageStatus: "IN_PROGRESS",
+          stageStatus: WORK_STAGE_STATUSES.IN_PROGRESS,
         },
       },
     },

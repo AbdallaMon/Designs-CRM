@@ -23,6 +23,11 @@ import {
   FiStar,
 } from "react-icons/fi";
 import { MdOpenInNew } from "react-icons/md";
+import {
+  FORM_VALIDATION_MESSAGES as FORM_ERRORS,
+  PROFILE_FAMILIES,
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+} from "@dms/shared";
 
 import { getData } from "@/app/helpers/functions/getData";
 import { usePermission } from "@/app/hooks/usePermission";
@@ -44,15 +49,15 @@ import UserProfilesPanel from "@/features/users/UserProfilesPanel";
 const IDENTITY_INPUTS = [
   {
     data: { id: "name", type: "text", label: "User name", key: "name" },
-    pattern: { required: { value: true, message: "Please enter a name" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.ENTER_NAME } },
   },
   {
     data: { id: "email", type: "email", label: "Email" },
     pattern: {
-      required: { value: true, message: "Please enter an email address" },
+      required: { value: true, message: FORM_ERRORS.ENTER_EMAIL_ADDRESS },
       pattern: {
         value: /\w+@[a-z]+\.[a-z]{2,}/gi,
-        message: "Please enter a valid email address",
+        message: FORM_ERRORS.INVALID_EMAIL_ADDRESS,
       },
     },
   },
@@ -69,7 +74,9 @@ const IDENTITY_INPUTS = [
 // Is this a sales-staff user? Restricted-countries / max-leads / deals tools apply only to
 // them (same predicate the legacy user-profile page used).
 function isStaffUser(user) {
-  return heldProfilesOf(user).some((profile) => profile.family === "SALES");
+  return heldProfilesOf(user).some(
+    (profile) => profile.family === PROFILE_FAMILIES.SALES,
+  );
 }
 
 // Held profiles as a flat [{ id, key, label }] list from the management row's userProfiles.
@@ -120,7 +127,7 @@ export default function UserDetails({ userId }) {
         setError(
           listRes?.error?.message ||
             profileRes?.error?.message ||
-            "Unable to load this user.",
+            FEEDBACK.USER_LOAD_FAILED,
         );
         setUser(null);
         setLoading(false);
@@ -461,7 +468,7 @@ function MaxLeadsEditor({ user, setUser, field, label, href }) {
         {
           data: { id: field, label: "Enter a number", type: "text" },
           pattern: {
-            required: { value: true, message: "Please enter a number" },
+            required: { value: true, message: FORM_ERRORS.ENTER_NUMBER },
           },
         },
       ]}

@@ -12,6 +12,12 @@ import { clientImageSessionUsecase } from "./client-image-session.usecase.js";
 const TK = messagesNames.imageSessionsMessages;
 
 class ClientImageSessionController {
+  authorizeReferenceRead = (req) =>
+    clientImageSessionUsecase.authorizeReferenceRead({
+      token: req.query.token,
+      auth: req.auth,
+    });
+
   // ── reference-data reads ──────────────────────────────────────────────────────────────
   async getPageInfo(req, res) {
     const data = await clientImageSessionUsecase.getPageInfo({ lng: req.query.lng, type: req.query.type });

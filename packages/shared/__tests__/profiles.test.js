@@ -4,7 +4,9 @@ import {
   getEffectivePermissions,
   PROFILE_KEYS,
   PROFILE_META,
+  PROFILE_PERMISSION_DEFAULTS,
   PROFILES,
+  PERMISSIONS,
   resolveProfileKey,
 } from "../index.js";
 
@@ -15,15 +17,25 @@ describe("active profiles", () => {
       expect(PROFILE_META[key]).toBeTruthy();
       expect(PROFILE_META[key].label).toBeTruthy();
       expect(PROFILE_META[key].family).toBeTruthy();
-      for (const code of PROFILES[key]) expect(permissionUniverse.has(code)).toBe(true);
+      for (const code of PROFILE_PERMISSION_DEFAULTS[key]) {
+        expect(permissionUniverse.has(code)).toBe(true);
+      }
     }
   });
 
   it("models the sales profiles as an increasing hierarchy", () => {
-    const primary = new Set(PROFILES.PRIMARY_SALES);
-    const superSales = new Set(PROFILES.SUPER_SALES);
-    expect(PROFILES.NORMAL_SALES.every((code) => primary.has(code))).toBe(true);
-    expect(PROFILES.PRIMARY_SALES.every((code) => superSales.has(code))).toBe(true);
+    const primary = new Set(PROFILE_PERMISSION_DEFAULTS[PROFILES.PRIMARY_SALES]);
+    const superSales = new Set(PROFILE_PERMISSION_DEFAULTS[PROFILES.SUPER_SALES]);
+    expect(
+      PROFILE_PERMISSION_DEFAULTS[PROFILES.NORMAL_SALES].every((code) =>
+        primary.has(code),
+      ),
+    ).toBe(true);
+    expect(
+      PROFILE_PERMISSION_DEFAULTS[PROFILES.PRIMARY_SALES].every((code) =>
+        superSales.has(code),
+      ),
+    ).toBe(true);
   });
 
   it("resolves only an explicit valid active profile", () => {
@@ -46,5 +58,18 @@ describe("active profiles", () => {
       isSuperSales: true,
     }).permissions;
     expect(withRetainedFields).toEqual(base);
+  });
+
+  it("grants lead-pool visibility through explicit permission codes", () => {
+    const has = (profile, code) => PROFILE_PERMISSION_DEFAULTS[profile].includes(code);
+
+    expect(has("CONTACT_INITIATOR", PERMISSIONS.LEAD.NON_CONSULTED_VIEW)).toBe(true);
+    expect(has("CONTACT_INITIATOR", PERMISSIONS.LEAD.ON_HOLD_VIEW)).toBe(false);
+    expect(has("NORMAL_SALES", PERMISSIONS.LEAD.NON_CONSULTED_VIEW)).toBe(false);
+    expect(has("NORMAL_SALES", PERMISSIONS.LEAD.ON_HOLD_VIEW)).toBe(true);
+    expect(has("SUPER_SALES", PERMISSIONS.LEAD.NON_CONSULTED_VIEW)).toBe(true);
+    expect(has("SUPER_SALES", PERMISSIONS.LEAD.ON_HOLD_VIEW)).toBe(true);
+    expect(has("ADMIN", PERMISSIONS.LEAD.NON_CONSULTED_VIEW)).toBe(true);
+    expect(has("ADMIN", PERMISSIONS.LEAD.ON_HOLD_VIEW)).toBe(true);
   });
 });

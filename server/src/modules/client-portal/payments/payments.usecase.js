@@ -1,13 +1,14 @@
 // client-portal/payments usecase — the PUBLIC client Stripe checkout flow (legacy
-// `routes/client/payments.js`, mounted PATHLESS under `/client`, NO auth). Three endpoints:
-//   POST /pay              → create a $0 "book now" checkout + send the reminder email
-//   GET  /payment-status   → verify a checkout; on `paid`, mark the lead FULLY_PAID
+// `routes/client/payments.js`, mounted PATHLESS under `/client`, NO login session).
+//   POST /pay              → capability-gated $0 checkout + one reminder attempt
+//   POST /stripe/webhook   → signature-verified, idempotent fulfillment
+//   GET  /payment-status   → repeat-safe Stripe status/read reconciliation
 //   GET  /stripe/backfill  → secret-gated maintenance (legacy early-returns null → no-op)
 //
 // PUBLIC BY DESIGN — a prospective client paying the booking fee has no login session. The
 // authoritative payment proof is the STRIPE SESSION itself, not a client-supplied id.
 //
-// 🔒 The Stripe SDK calls are FROZEN (relocated verbatim into payments.stripe.js); the billing
+// 🔒 The checkout creation inputs/URLs are FROZEN in payments.stripe.js; the billing
 // normalization (`first`/`asKV`) lives in payments.dto.js and is imported directly. The email
 // side effects use the frozen `src/infra/notifications/index.js` senders directly.
 //
@@ -17,13 +18,15 @@
 // target lead from the VERIFIED session's `metadata.clientLeadId` and rejects a mismatch.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { env } from "../../../config/env.js";
-import { clientPortalMessagesCodes } from "@dms/shared";
+import { PAYMENT_STATUSES, clientPortalMessagesCodes } from "@dms/shared";
 import {
   createCheckoutSession,
   retrieveCheckoutSession,
   listCheckoutSessions,
   getLeadIdFromUrl,
   normalizeFromSession,
+  constructWebhookEvent,
+  isFulfillableCheckoutSession,
 } from "./payments.stripe.js";
 import { first, asKV } from "./payments.dto.js";
 import { paymentsRepository } from "./payments.repo.js";
@@ -32,6 +35,15 @@ import {
   sendPaymentSuccessEmail,
   leadPaymentSuccessed,
 } from "../../../infra/notifications/index.js";
+import {
+  PUBLIC_FUNNEL_PURPOSES,
+  verifyPublicFunnelCapability,
+} from "../../../infra/upload/public-funnel-capability.js";
+
+const FULFILLMENT_EVENT_TYPES = new Set([
+  "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+]);
 
 export class PaymentsUsecase {
   // POST /pay — create the checkout for the lead, email the reminder. Returns `{ url }` so the
@@ -42,11 +54,59 @@ export class PaymentsUsecase {
       throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, statusCode: 404 });
     }
 
+    if (clientId != null && Number(clientId) !== Number(lead.client.id)) {
+      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, statusCode: 403 });
+    }
+    if (lead.paymentStatus === PAYMENT_STATUSES.FULLY_PAID) {
+      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, statusCode: 409 });
+    }
+
+    const existingSession = await this.#getBoundCheckoutSession(
+      lead.paymentSessionId,
+      lead.id,
+    );
+    if (existingSession) {
+      const expiresAt = Number(existingSession.expires_at) * 1000;
+      const isActive =
+        existingSession.status === "open" &&
+        existingSession.url &&
+        (!Number.isFinite(expiresAt) || expiresAt > Date.now());
+      if (isActive) return { url: existingSession.url };
+      if (
+        existingSession.status !== "expired" &&
+        !(existingSession.status === "open" && expiresAt <= Date.now())
+      ) {
+        // Never replace a completed/pending session before webhook/status reconciliation.
+        throw new AppError({
+          code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED,
+          statusCode: 409,
+        });
+      }
+    }
+
     const session = await createCheckoutSession({
-      clientId,
-      clientLeadId,
+      clientId: lead.client.id,
+      clientLeadId: lead.id,
       lng,
     });
+
+    const bound = await paymentsRepository.bindCheckoutSession({
+      clientLeadId: lead.id,
+      expectedSessionId: lead.paymentSessionId,
+      sessionId: session.id,
+    });
+    if (!bound) {
+      const current = await paymentsRepository.getLeadWithClient(lead.id);
+      const winner = await this.#getBoundCheckoutSession(
+        current?.paymentSessionId,
+        lead.id,
+      );
+      if (winner?.status === "open" && winner.url) return { url: winner.url };
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_CHECKOUT_FAILED,
+        statusCode: 409,
+      });
+    }
 
     await sendPaymentReminderEmail(
       lead.client.email,
@@ -58,44 +118,58 @@ export class PaymentsUsecase {
     return { url: session.url };
   }
 
+  authorizePay(clientLeadId, token) {
+    return verifyPublicFunnelCapability(token, {
+      purpose: PUBLIC_FUNNEL_PURPOSES.PUBLIC_REGISTER,
+      leadId: clientLeadId,
+    });
+  }
+
   // GET /payment-status — verify a checkout. On `paid`, the lead is the one named in the
   // VERIFIED session metadata; the client-supplied clientLeadId must match it.
   async paymentStatus({ sessionId, clientLeadId, lng }) {
     const session = await retrieveCheckoutSession(sessionId);
-
-    if (session.payment_status !== "paid") {
-      // Legacy returned 402 with a prose message; we return a code (the controller maps the
-      // not-completed branch to 402).
-      return { paid: false };
-    }
-
-    // IDOR close: trust the SESSION, not the caller's clientLeadId.
-    const metaLeadId = session.metadata?.clientLeadId;
-    if (!metaLeadId || Number(metaLeadId) !== Number(clientLeadId)) {
-      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED, statusCode: 403 });
-    }
-
-    const lead = await paymentsRepository.getLeadPaymentState(metaLeadId);
-    if (!lead) {
-      throw new AppError({ code: clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND, statusCode: 404 });
-    }
-
-    if (lead.paymentStatus !== "FULLY_PAID") {
-      await paymentsRepository.markFullyPaid(metaLeadId, session.id);
-      await leadPaymentSuccessed(metaLeadId);
-    }
-
-    const kv = await this.#buildBillingKV(session);
-    await paymentsRepository.saveStripeMetadata(metaLeadId, kv);
-
-    await sendPaymentSuccessEmail(
-      lead.client.email,
-      lead.client.name,
-      metaLeadId,
+    return this.#reconcileVerifiedSession({
+      session,
+      requestedLeadId: clientLeadId,
       lng,
-    );
+    });
+  }
 
-    return { paid: true, session, kv };
+  async handleWebhook({ rawBody, signature }) {
+    let event;
+    try {
+      event = constructWebhookEvent(rawBody, signature);
+    } catch (error) {
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_VERIFY_FAILED,
+        statusCode:
+          error?.code === "STRIPE_WEBHOOK_SECRET_MISSING" ? 500 : 400,
+      });
+    }
+
+    if (!FULFILLMENT_EVENT_TYPES.has(event.type)) {
+      return { received: true, handled: false };
+    }
+
+    const eventSession = event.data?.object;
+    if (!eventSession?.id) {
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_VERIFY_FAILED,
+        statusCode: 400,
+      });
+    }
+
+    const session = await retrieveCheckoutSession(eventSession.id);
+    const result = await this.#reconcileVerifiedSession({
+      session,
+      lng: session.metadata?.lng,
+    });
+    return {
+      received: true,
+      handled: true,
+      fulfilled: result.paid,
+    };
   }
 
   // GET /stripe/backfill — legacy guarded on a secret then early-returned null (the backfill
@@ -172,6 +246,80 @@ export class PaymentsUsecase {
     };
 
     return asKV(normalized);
+  }
+
+  async #getBoundCheckoutSession(sessionId, clientLeadId) {
+    if (!sessionId) return null;
+    try {
+      const session = await retrieveCheckoutSession(sessionId);
+      if (Number(session.metadata?.clientLeadId) !== Number(clientLeadId)) {
+        throw new AppError({
+          code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED,
+          statusCode: 403,
+        });
+      }
+      return session;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      if (error?.code === "resource_missing") return null;
+      // A transient Stripe lookup failure must not create a second checkout blindly.
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_CHECKOUT_FAILED,
+        statusCode: 502,
+      });
+    }
+  }
+
+  async #reconcileVerifiedSession({ session, requestedLeadId, lng }) {
+    const metaLeadId = session?.metadata?.clientLeadId;
+    if (
+      !metaLeadId ||
+      (requestedLeadId != null &&
+        Number(metaLeadId) !== Number(requestedLeadId))
+    ) {
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED,
+        statusCode: 403,
+      });
+    }
+
+    if (!isFulfillableCheckoutSession(session)) {
+      return { paid: false };
+    }
+
+    const kv = this.#buildBillingKV(session);
+    const fulfillment = await paymentsRepository.fulfillCheckoutSession({
+      clientLeadId: metaLeadId,
+      sessionId: session.id,
+      kv,
+    });
+
+    if (fulfillment.state === "missing") {
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_LEAD_NOT_FOUND,
+        statusCode: 404,
+      });
+    }
+    if (fulfillment.state === "session_mismatch") {
+      throw new AppError({
+        code: clientPortalMessagesCodes.PAYMENT_NOT_ALLOWED,
+        statusCode: 403,
+      });
+    }
+
+    if (fulfillment.state === "fulfilled") {
+      await Promise.allSettled([
+        leadPaymentSuccessed(Number(metaLeadId)),
+        sendPaymentSuccessEmail(
+          fulfillment.lead.client.email,
+          fulfillment.lead.client.name,
+          Number(metaLeadId),
+          lng,
+        ),
+      ]);
+    }
+
+    return { paid: true, session, kv };
   }
 
   // DORMANT maintenance orchestration — relocated VERBATIM from the legacy

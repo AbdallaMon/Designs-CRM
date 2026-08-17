@@ -1,4 +1,5 @@
 "use client";
+import { PAYMENT_STATUSES, PROFILES } from "@dms/shared";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { Button, Stack, Typography, useTheme } from "@mui/material";
 
@@ -32,13 +33,13 @@ dayjs.extend(relativeTime);
  * Lead card — rebuilt on the shared RecordCard. Same signature ({lead, setData})
  * and same action wiring as before, so NonConsultedLeads/OnHoldLeads keep working.
  * -------------------------------------------------------------------------- */
-export function LeadSliderCard({ lead, setData }) {
+export function LeadSliderCard({ lead, setData, onMutation }) {
   const { user } = useAuth();
   const theme = useTheme();
   const { setLoading } = useToastContext();
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
   const admin = checkIfAdmin(user);
-  const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
+  const isFullyPaid = lead.paymentStatus === PAYMENT_STATUSES.FULLY_PAID;
   const { hasPermission } = usePermission();
   const canAssignOther = hasPermission(LEAD_CODES.ASSIGN_OTHER);
 
@@ -46,10 +47,10 @@ export function LeadSliderCard({ lead, setData }) {
   const idLabel = `#${lead?.id.toString().padStart(7, "0")}`;
 
   const showContact =
-    user.profile === "ADMIN" ||
-    user.profile === "SUPER_ADMIN" ||
-    user.profile === "CONTACT_INITIATOR" ||
-    user.profile === "SUPER_SALES";
+    user.profile === PROFILES.ADMIN ||
+    user.profile === PROFILES.SUPER_ADMIN ||
+    user.profile === PROFILES.CONTACT_INITIATOR ||
+    user.profile === PROFILES.SUPER_SALES;
 
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
@@ -62,13 +63,17 @@ export function LeadSliderCard({ lead, setData }) {
       "PUT"
     );
     if (assign.status === 200) {
-      setData((data) => data.filter((l) => l.id !== lead.id));
+      removeFromPool();
     }
     return assign;
   }
 
   const category = LeadCategory[lead.selectedCategory] || lead.selectedCategory;
   const location = lead.country || lead.emirate;
+  const removeFromPool = () => {
+    setData((data) => data.filter((item) => item.id !== lead.id));
+    onMutation?.();
+  };
 
   return (
     <>
@@ -125,11 +130,12 @@ export function LeadSliderCard({ lead, setData }) {
                 lead={lead}
                 triggerLabel="Assign lead"
                 title="Assign lead to staff"
-                onUpdate={() => setData((data) => data.filter((l) => l.id !== lead.id))}
+                submitLabel="Assign"
+                onUpdate={removeFromPool}
               />
             )}
             {/* Claimant path: a STAFF whose ACTIVE profile is not super-sales (profile-based, no isSuperSales flag). */}
-            {["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) && user.profile !== "SUPER_SALES" && (
+            {[PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) && user.profile !== PROFILES.SUPER_SALES && (
               <ConfirmWithActionModel
                 title="Are you sure you want to get this lead and assign it to you as a new deal?"
                 handleConfirm={() => createADeal(lead)}
@@ -142,11 +148,9 @@ export function LeadSliderCard({ lead, setData }) {
             <UpdateInitialConsultButton
               clientLead={lead}
               fullWidth
-              onSuccess={() =>
-                setData((data) => data.filter((l) => l.id !== lead.id))
-              }
+              onSuccess={removeFromPool}
             />
-            {user.profile !== "CONTACT_INITIATOR" && (
+            {user.profile !== PROFILES.CONTACT_INITIATOR && (
               <Button
                 fullWidth
                 onClick={() => setPreviewDialogOpen(true)}

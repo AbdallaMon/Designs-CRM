@@ -1,11 +1,8 @@
 // Admin (management) course routes. Endpoints + middleware chain ONLY.
 //
 // Mounted at `/v2/courses` (legacy `/admin/courses` internal sub-paths preserved).
-// Legacy guard was `verifyTokenAndHandleAuthorization(..., "ADMIN")` (ADMIN /
-// SUPER_ADMIN / ADMIN-SUPER_ADMIN sub-roles / `isSuperSales`). That exact set holds
-// the four COURSE_* codes in @dms/shared role-permissions (ADMIN + SUPER_ADMIN base
-// roles, plus `isSuperSales` via SUPER_SALES_EXTRA_PERMISSIONS), so gating on the
-// codes preserves observable access. Reads use COURSE.VIEW; content/test writes use
+// The management surface is gated only by the caller's effective COURSE_* permission
+// codes. Reads use COURSE.VIEW; content/test writes use
 // COURSE.MANAGE; access grants use COURSE.ACCESS_MANAGE; attempt admin + answer
 // approval use COURSE.ATTEMPT_MANAGE.
 //
@@ -175,7 +172,7 @@ adminCourseRouter.post(
   "/:courseId/lessons",
   AuthMiddleware.requirePermissions([P.MANAGE]),
   validate(AdminCourseValidation.courseParams, "params"),
-  validate(AdminCourseValidation.lessonBody),
+  validate(AdminCourseValidation.createLessonBody),
   asyncHandler(ctrl.createLesson),
 );
 adminCourseRouter.get(
@@ -188,7 +185,7 @@ adminCourseRouter.put(
   "/:courseId/lessons/:lessonId",
   AuthMiddleware.requirePermissions([P.MANAGE]),
   validate(AdminCourseValidation.lessonParams, "params"),
-  validate(AdminCourseValidation.lessonBody),
+  validate(AdminCourseValidation.editLessonBody),
   asyncHandler(ctrl.editLesson),
 );
 adminCourseRouter.post(

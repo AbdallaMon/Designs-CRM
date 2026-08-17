@@ -1,3 +1,4 @@
+import { LEAD_LOCATIONS } from "@dms/shared";
 // export const consultationLead = [{name: "Room", value: "ROOM", subtext: "800",variantId:"48447274647863"},
 //     {value: "PLAN", subtext: "1200",variantId:"48447274615095"},
 //     {value: "CITY_VISIT", subtext: "1800",variantId: "48447274680631"},
@@ -75,13 +76,13 @@ export const leads = [
 export const designLeadTypes = [
   {
     title: "Inside UAE",
-    value: "INSIDE_UAE",
+    value: LEAD_LOCATIONS.INSIDE_UAE,
     image: "/inside-uae.webp",
     alt: "Dream studio create your dream design inside UAE",
   },
   {
     title: "Out side UAE",
-    value: "OUTSIDE_UAE",
+    value: LEAD_LOCATIONS.OUTSIDE_UAE,
     image: "/outside-uae.jpg",
     alt: "Dream Studio - Dream Design & Luxurious Home Solutions.",
   },

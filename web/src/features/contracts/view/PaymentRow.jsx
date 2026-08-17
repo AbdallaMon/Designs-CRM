@@ -1,4 +1,5 @@
 "use client";
+import { CONTRACT_PAYMENT_STATUSES } from "@dms/shared";
 
 import { useEffect, useState } from "react";
 import {
@@ -65,7 +66,7 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
   // === NEW: independent request for status ===
   const updateStatus = async (next) => {
     // guard: allow only RECEIVED or TRANSFERRED
-    if (next !== "RECEIVED" && next !== "TRANSFERRED") return;
+    if (next !== CONTRACT_PAYMENT_STATUSES.RECEIVED && next !== CONTRACT_PAYMENT_STATUSES.TRANSFERRED) return;
 
     const req = await handleRequestSubmit(
       { status: next },
@@ -142,11 +143,11 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
 
   // color for Chip preview
   const statusColor =
-    status === "RECEIVED"
+    status === CONTRACT_PAYMENT_STATUSES.RECEIVED
       ? "success"
-      : status === "TRANSFERRED"
+      : status === CONTRACT_PAYMENT_STATUSES.TRANSFERRED
       ? "info"
-      : status === "DUE"
+      : status === CONTRACT_PAYMENT_STATUSES.DUE
       ? "warning"
       : "default";
 
@@ -231,8 +232,12 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
                   size="small"
                 >
                   {/* Only allowed targets */}
-                  <MenuItem value="RECEIVED">RECEIVED</MenuItem>
-                  <MenuItem value="TRANSFERRED">TRANSFERRED</MenuItem>
+                  <MenuItem value={CONTRACT_PAYMENT_STATUSES.RECEIVED}>
+                    RECEIVED
+                  </MenuItem>
+                  <MenuItem value={CONTRACT_PAYMENT_STATUSES.TRANSFERRED}>
+                    TRANSFERRED
+                  </MenuItem>
                 </Select>
               </FormControl>
             </Stack>

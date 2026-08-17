@@ -4,7 +4,11 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { projectsMessagesCodes } from "@dms/shared";
+import {
+  PROJECT_STATUSES, PROFILES,
+  projectsMessagesCodes,
+  WORK_DEPARTMENTS,
+} from "@dms/shared";
 import { projectRepository } from "./project.repo.js";
 import { PROJECT_TYPES } from "./project.constants.js";
 import { groupProjects, sortProjectsByTypeOrder } from "./project.dto.js";
@@ -431,7 +435,7 @@ async function getLeadByPorjects({ searchParams, isAdmin }) {
     updatesWhere.OR.push({
       sharedSettings: {
         some: {
-          type: "ADMIN",
+          type: WORK_DEPARTMENTS.ADMIN,
           isArchived: false,
         },
       },
@@ -482,12 +486,12 @@ async function getLeadByPorjects({ searchParams, isAdmin }) {
     where.status = "ARCHIVED";
   } else {
     where.status = {
-      notIn: ["ARCHIVED", "NEW"],
+      notIn: ["ARCHIVED", PROJECT_STATUSES.NEW],
     };
   }
 
   const getTaskVisibilityFilter = (profileKey) => {
-    if (searchParams.isAdmin || profileKey === "DESIGNER_3D") {
+    if (searchParams.isAdmin || profileKey === PROFILES.DESIGNER_3D) {
       return {
         type: {
           in: ["PROJECT", "MODIFICATION"],
@@ -592,7 +596,7 @@ async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
     updatesWhere.OR.push({
       sharedSettings: {
         some: {
-          type: "ADMIN",
+          type: WORK_DEPARTMENTS.ADMIN,
           isArchived: false,
         },
       },
@@ -654,12 +658,12 @@ async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
     where.status = "ARCHIVED";
   } else {
     where.status = {
-      notIn: ["ARCHIVED", "NEW"],
+      notIn: ["ARCHIVED", PROJECT_STATUSES.NEW],
     };
   }
 
   const getTaskVisibilityFilter = (profileKey) => {
-    if (searchParams.isAdmin || profileKey === "DESIGNER_3D") {
+    if (searchParams.isAdmin || profileKey === PROFILES.DESIGNER_3D) {
       return {
         type: {
           in: ["PROJECT", "MODIFICATION"],
@@ -822,8 +826,8 @@ async function getLeadDetailsByProject(clientLeadId, searchParams) {
     });
   }
   clientLead.callReminders = [
-    ...clientLead.callReminders.filter((call) => call.status === "IN_PROGRESS"),
-    ...clientLead.callReminders.filter((call) => call.status !== "IN_PROGRESS"),
+    ...clientLead.callReminders.filter((call) => call.status === PROJECT_STATUSES.IN_PROGRESS),
+    ...clientLead.callReminders.filter((call) => call.status !== PROJECT_STATUSES.IN_PROGRESS),
   ];
   return clientLead;
 }

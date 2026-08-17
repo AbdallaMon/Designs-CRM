@@ -1,3 +1,4 @@
+import { CALL_REMINDER_STATUSES, LEAD_STATUSES, PROFILES } from "@dms/shared";
 import React from "react";
 import {
   Paper,
@@ -94,7 +95,7 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                   <Chip
                     size="small"
                     icon={
-                      call.status === "DONE" ? (
+                      call.status === CALL_REMINDER_STATUSES.DONE ? (
                         <RiCheckboxCircleLine size={16} />
                       ) : (
                         <RiAlarmLine size={16} />
@@ -110,7 +111,7 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                       },
                     }}
                   />
-                  {call.status !== "IN_PROGRESS" && (
+                  {call.status !== LEAD_STATUSES.IN_PROGRESS && (
                     <Typography variant="body2" fontWeight="600">
                       Done at ,{dayjs(call.updatedAt).format("DD/MM/YYYY")}
                     </Typography>
@@ -124,9 +125,9 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                     Preview lead
                   </Button>
                 </Box>
-                {user.profile !== "ACCOUNTANT" && (
+                {user.profile !== PROFILES.ACCOUNTANT && (
                   <>
-                    {call.status === "IN_PROGRESS" && (
+                    {call.status === LEAD_STATUSES.IN_PROGRESS && (
                       <CallResultDialog call={call} onUpdate={onUpdate} />
                     )}
                   </>
@@ -147,7 +148,7 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                 </Typography>
               </Stack>
             </Stack>
-            {call.status === "IN_PROGRESS" && <InProgressCall call={call} />}
+            {call.status === LEAD_STATUSES.IN_PROGRESS && <InProgressCall call={call} />}
             <Stack spacing={2}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <RiCalendarLine size={18} color={theme.palette.primary.main} />

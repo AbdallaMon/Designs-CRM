@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { ADMIN_ARCHIVE_MODEL_ALLOWLIST } from "@dms/shared";
+import {
+  ADMIN_ARCHIVE_MODEL_ALLOWLIST,
+  validationMessagesCodes as V,
+} from "@dms/shared";
 
 // admin-residual/model-archive validation. The `model` query is constrained to the
 // case-insensitive allow-list (the projects broad-delete lesson) — anything else is
@@ -15,7 +18,7 @@ export class ModelArchiveValidation {
         .trim()
         .min(1)
         .refine((v) => allowedKeys.includes(v.toLowerCase()), {
-          message: "Unsupported model",
+          message: V.UNSUPPORTED_MODEL,
         }),
     })
     .strip();

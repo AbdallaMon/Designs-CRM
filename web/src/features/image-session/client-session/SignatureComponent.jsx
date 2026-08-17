@@ -8,6 +8,7 @@ import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProv
 import { FloatingActionButton } from "@/features/image-session/client-session/Utility.jsx";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { PUBLIC_UPLOAD_PURPOSES, USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -64,7 +65,7 @@ const SignatureComponent = ({
   const handleExternalUpload = async () => {
     // Check if the signature canvas is empty
     if (sigCanvas.current && sigCanvas.current.isEmpty()) {
-      setAlertError("Please sign before approving."); // You can replace this with a more styled alert or toast notification
+      setAlertError(FEEDBACK.SIGN_BEFORE_APPROVING);
       return; // Stop the function if the signature is empty
     }
 
@@ -76,7 +77,7 @@ const SignatureComponent = ({
         setProgress,
         setOverlay,
         {
-          publicAccess: { purpose: "IMAGE_SESSION", token },
+          publicAccess: { purpose: PUBLIC_UPLOAD_PURPOSES.IMAGE_SESSION, token },
         }
       );
 

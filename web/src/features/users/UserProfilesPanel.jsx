@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -22,7 +23,7 @@ import { USER_CODES } from "@/app/helpers/permissionCodes";
 import { PROFILE_LABEL } from "@/features/users/pages/users/config.jsx";
 
 // At most one of the three STAFF-sales profiles; other families combine freely.
-const SALES_TIER = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
+const SALES_TIER = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES];
 
 // Inline (non-modal) editor for a user's DB-relational permission PROFILES: pick the
 // assigned set + which one is active (current). Same endpoints as ProfileManagerDialog

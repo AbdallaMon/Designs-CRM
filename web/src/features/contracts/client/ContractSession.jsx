@@ -52,10 +52,6 @@ export default function ContractSession({
   contractUtility,
 }) {
   const [confirmed, setConfirmed] = useState(false);
-  console.log(
-    contractUtility?.stageClauses,
-    "<< stage clauses in contract session"
-  );
   // choose clauses: prefer external override if provided
   const stageClauses = useMemo(() => {
     return contractUtility?.stageClauses;
@@ -71,7 +67,7 @@ export default function ContractSession({
     //   }
     // }
     // return merged;
-  }, [stageClausesOverride]);
+  }, [contractUtility?.stageClauses, stageClausesOverride]);
 
   // Default handwritten list if not provided
 

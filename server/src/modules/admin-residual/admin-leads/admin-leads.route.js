@@ -40,16 +40,39 @@ const upload = multer({ storage: multer.memoryStorage() });
 function requireExcelFile(req, res, next) {
   const file = req.file;
   if (!file) {
-    return next(new AppError({ code: generalMessagesCodes.VALIDATION_ERROR, statusCode: 422, details: [{ path: "file", message: "File is required" }] }));
+    return next(
+      new AppError({
+        code: generalMessagesCodes.VALIDATION_ERROR,
+        statusCode: 422,
+        details: [
+          { path: "file", message: generalMessagesCodes.FILE_REQUIRED },
+        ],
+      }),
+    );
   }
   const allowed = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.ms-excel",
+    "application/vnd.ms-excel", // some clients report .xlsx with the legacy mime
     "text/csv",
     "application/octet-stream", // some browsers send this for .xlsx
   ];
-  if (file.mimetype && !allowed.includes(file.mimetype)) {
-    return next(new AppError({ code: generalMessagesCodes.VALIDATION_ERROR, statusCode: 422, details: [{ path: "file", message: "Unsupported file type" }] }));
+  const hasSupportedExtension = /\.(?:xlsx|csv)$/i.test(file.originalname || "");
+  if (
+    !hasSupportedExtension ||
+    (file.mimetype && !allowed.includes(file.mimetype))
+  ) {
+    return next(
+      new AppError({
+        code: generalMessagesCodes.VALIDATION_ERROR,
+        statusCode: 422,
+        details: [
+          {
+            path: "file",
+            message: generalMessagesCodes.UNSUPPORTED_FILE_TYPE,
+          },
+        ],
+      }),
+    );
   }
   return next();
 }

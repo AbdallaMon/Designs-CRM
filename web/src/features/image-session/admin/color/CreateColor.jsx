@@ -15,6 +15,7 @@ import { CreateTitleOrDesc } from "@/features/image-session/admin/shared/CreateT
 import { TemplateAutocomplete } from "@/features/image-session/admin/shared/SelectATemplate.jsx";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export function CreateColor({ onUpdate }) {
   const { languages } = useLanguage();
@@ -26,7 +27,7 @@ export function CreateColor({ onUpdate }) {
     if (!data.templateId) {
       return {
         error: true,
-        message: "Please select a template",
+        message: FORM_ERRORS.SELECT_TEMPLATE,
       };
     }
     const allFilled = languages.every((lng) =>
@@ -36,7 +37,7 @@ export function CreateColor({ onUpdate }) {
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
 
@@ -47,7 +48,7 @@ export function CreateColor({ onUpdate }) {
         setOverlay
       );
       if (uploadResponse.status === 200) {
-        data.imageUrl = fileUpload.url;
+        data.imageUrl = uploadResponse.url;
       }
       delete data.file;
     }
@@ -59,7 +60,7 @@ export function CreateColor({ onUpdate }) {
       component={CreateColorForm}
       name={"Colors"}
       modelType={"COLOR_PATTERN"}
-      slug={`image-session/colors`}
+      slug="colors"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       awaitCheck={true}

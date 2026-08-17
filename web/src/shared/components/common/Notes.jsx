@@ -19,6 +19,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { simpleModalStyle } from "@/app/helpers/constants";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.jsx";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import {
   MdNoteAdd,
   MdAttachFile,
@@ -29,11 +30,16 @@ import {
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { getNotesPath } from "./notesPath.js";
+import {
+  buildNoteUploadOptions,
+  resolveNoteAttachmentReference,
+} from "./noteUpload.js";
 
 export function NotesComponent({
   idKey,
   id,
-  slug = "accountant",
+  slug = "accounting",
   showAddNotes = true,
   mustAddFile = false,
   simpleButton,
@@ -55,6 +61,7 @@ export function NotesComponent({
   const { setAlertError } = useAlertContext();
   const { user } = useAuth();
   const { setProgress, setOverlay } = useUploadContext();
+  const notesPath = getNotesPath(slug);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,7 +74,7 @@ export function NotesComponent({
     const tokenParam =
       slug === "client" && token ? `&token=${encodeURIComponent(token)}` : "";
     const data = await getData({
-      url: `${slug}/notes?idKey=${idKey}&id=${id}${tokenParam}&`,
+      url: `${notesPath}?idKey=${idKey}&id=${id}${tokenParam}&`,
       setLoading,
     });
     // On a failed request getData returns undefined (or an envelope with no `data`);
@@ -85,15 +92,15 @@ export function NotesComponent({
   // Add note function
   async function addNote() {
     if (slug === "client" && notes && notes.length >= 1) {
-      setAlertError("You can't upload more than one note");
+      setAlertError(FEEDBACK.ONE_NOTE_MAX);
       return;
     }
     if (!content) {
-      setAlertError("You must enter note or title");
+      setAlertError(FEEDBACK.NOTE_OR_TITLE_REQUIRED);
       return;
     }
     if (!file && mustAddFile) {
-      setAlertError("You must upload file");
+      setAlertError(FEEDBACK.FILE_REQUIRED);
       return;
     }
 
@@ -107,18 +114,18 @@ export function NotesComponent({
         file.file,
         setProgress,
         setOverlay,
-        slug === "client"
+        buildNoteUploadOptions({ slug, token })
       );
 
       if (fileUpload.status === 200) {
-        data.attachment = fileUpload.url;
+        data.attachment = resolveNoteAttachmentReference(fileUpload);
       }
     }
 
     const request = await handleRequestSubmit(
       data,
       setGlobalLoading,
-      `${slug}/notes`,
+      notesPath,
       false,
       "Creating"
     );

@@ -28,6 +28,16 @@ class UploadRepository {
       select: { id: true },
     });
   }
+
+  findPublicLeadDraftById({ id }) {
+    return prisma.clientLead.findFirst({
+      where: {
+        id: Number(id),
+        description: "Didn't complete register yet",
+      },
+      select: { id: true },
+    });
+  }
 }
 
 export const uploadRepository = new UploadRepository();

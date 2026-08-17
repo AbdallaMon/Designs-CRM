@@ -1,4 +1,5 @@
 "use client";
+import { CONTRACT_STATUSES } from "@dms/shared";
 
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import React, { Fragment, useEffect, useMemo, useState } from "react";
@@ -157,7 +158,7 @@ function ContractBasics({ id, contract, onReload }) {
     pdfLinkEn: "",
     arToken: "",
     enToken: "",
-    status: contract?.status || "IN_PROGRESS",
+    status: contract?.status || CONTRACT_STATUSES.IN_PROGRESS,
     isCompleted: !!contract?.isCompleted,
     isInProgress: !!contract?.isInProgress,
   });
@@ -177,7 +178,7 @@ function ContractBasics({ id, contract, onReload }) {
         pdfLinkEn: contract.pdfLinkEn || "",
         arToken: contract.arToken || "",
         enToken: contract.enToken || "",
-        status: contract.status || "IN_PROGRESS",
+        status: contract.status || CONTRACT_STATUSES.IN_PROGRESS,
         isCompleted: !!contract.isCompleted,
         isInProgress: !!contract.isInProgress,
       });

@@ -1,14 +1,18 @@
 "use client";
+import { CONTRACT_SESSION_STATUSES } from "@dms/shared";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { ClientImageAppBar } from "@/features/image-session/client-session/Utility.jsx";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { Alert, Box, Container, Typography } from "@mui/material";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import ContractSession from "@/features/contracts/client/ContractSession.jsx";
-import { contractSessionStatusFlow } from "@/features/contracts/client/helpers.js";
+import {
+  contractSessionStatusFlow,
+  isContractUtilityReady,
+} from "@/features/contracts/client/helpers.js";
 import ContractSignature from "@/features/contracts/client/ContractSignature.jsx";
 import ContractSignedSuccessSection from "@/features/contracts/client/ContractSignedSuccessSection.jsx";
 const AnimatedComponent = ({
@@ -17,24 +21,17 @@ const AnimatedComponent = ({
   direction = "left",
   timeout = 500,
 }) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return <>{children}</>;
 };
 export default function ClientContractPage({ token }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [contractUtility, setContractUtility] = useState(null);
-  const [animationKey, setAnimationKey] = useState(0); // Key to force re-animation
   const status = loading ? "LOADING" : session?.sessionStatus || "ERROR";
   const { lng } = useLanguageSwitcherContext();
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
-  async function getSessionData() {
+  const getSessionData = useCallback(async () => {
     // The v2 backend nests master's flat `{ data: session, contractUtility }` body inside the
     // envelope's own `data` field, so the normalized result is `req.data = { data, contractUtility }`.
     // Unwrap both here (a plain `setData: setSession` would store the wrapper, not the session).
@@ -44,15 +41,14 @@ export default function ClientContractPage({ token }) {
     });
     setSession(req?.data?.data || null);
     setContractUtility(req?.data?.contractUtility || null);
-  }
+  }, [lng, token]);
 
   useEffect(() => {
-    getSessionData();
-  }, [lng]);
-
-  useEffect(() => {
-    setAnimationKey((prev) => prev + 1);
-  }, [status]);
+    const timer = window.setTimeout(() => {
+      void getSessionData();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [getSessionData]);
 
   async function simpleHandleNext() {
     const req = await handleRequestSubmit(
@@ -72,40 +68,38 @@ export default function ClientContractPage({ token }) {
     }
   }
 
-  async function simpleHandleBack() {
-    const req = await handleRequestSubmit(
-      {
-        token: token,
-        sessionStatus: contractSessionStatusFlow[status].back,
-      },
-      setToastLoading,
-      `client/contracts/session/status`,
-      false,
-      "Updating",
-      false,
-      "PUT"
-    );
-    if (req.status === 200) {
-      await getSessionData();
-    }
-  }
-
   function getSessionStatusComponent() {
     switch (status) {
       case "LOADING":
         return (
           <AnimatedComponent
-            key={`initial-${animationKey}`}
+            key="loading"
             animationType="fade"
             timeout={600}
           >
             <FullScreenLoader />
           </AnimatedComponent>
         );
-      case "INITIAL":
+      case CONTRACT_SESSION_STATUSES.INITIAL:
+        if (!isContractUtilityReady(contractUtility)) {
+          return (
+            <Alert severity="warning" sx={{ mx: 2, px: 2, py: 4, textAlign: "center" }}>
+              <Typography variant="h5" sx={{ mb: 1 }}>
+                {lng === "ar"
+                  ? "بيانات العقد غير مكتملة"
+                  : "Contract details are not configured"}
+              </Typography>
+              <Typography variant="body2">
+                {lng === "ar"
+                  ? "يرجى التواصل مع خدمة العملاء قبل متابعة توقيع العقد."
+                  : "Please contact customer service before continuing with the contract."}
+              </Typography>
+            </Alert>
+          );
+        }
         return (
           <AnimatedComponent
-            key={`initial-${animationKey}`}
+            key="initial"
             animationType="fade"
             timeout={600}
           >
@@ -119,10 +113,10 @@ export default function ClientContractPage({ token }) {
             </Box>
           </AnimatedComponent>
         );
-      case "SIGNING":
+      case CONTRACT_SESSION_STATUSES.SIGNING:
         return (
           <AnimatedComponent
-            key={`color-${animationKey}`}
+            key="signing"
             animationType="slide"
             direction="left"
             timeout={500}
@@ -132,15 +126,14 @@ export default function ClientContractPage({ token }) {
               token={token}
               onSignatureSaved={getSessionData}
               nextStatus={contractSessionStatusFlow[status].next}
-              handleBack={simpleHandleBack}
               disabled={toastLoading}
             />
           </AnimatedComponent>
         );
-      case "REGISTERED":
+      case CONTRACT_SESSION_STATUSES.REGISTERED:
         return (
           <AnimatedComponent
-            key={`selected-color-${animationKey}`}
+            key="registered"
             animationType="zoom"
             timeout={400}
           >
@@ -156,7 +149,7 @@ export default function ClientContractPage({ token }) {
       default:
         return (
           <AnimatedComponent
-            key={`default-${animationKey}`}
+            key="error"
             animationType="fade"
             timeout={500}
           >

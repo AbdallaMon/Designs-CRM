@@ -30,6 +30,12 @@ import EmojiPicker from "emoji-picker-react";
 import { FILE_UPLOAD_LIMITS } from "@/features/chat/utils/chatConstants.js";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { RecordingBar } from "@/features/chat/components/messages/RecordingBar.jsx";
+import {
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+  formatChatFileTooLarge,
+  formatChatFileTypeNotAllowed,
+  formatChatFileUploadFailed,
+} from "@dms/shared";
 
 /* ===================== Main Component ===================== */
 
@@ -154,7 +160,7 @@ export function ChatInput({
       typeof window === "undefined" ||
       !navigator?.mediaDevices?.getUserMedia
     ) {
-      setVoiceError("Voice recording is not supported in this browser.");
+      setVoiceError(FEEDBACK.VOICE_RECORDING_UNSUPPORTED);
       return;
     }
 
@@ -210,7 +216,7 @@ export function ChatInput({
       recorder.start();
     } catch (err) {
       console.error(err);
-      setVoiceError("Microphone permission denied or unavailable.");
+      setVoiceError(FEEDBACK.MICROPHONE_UNAVAILABLE);
       cleanupVoice();
       setVoiceStatus("idle");
     }
@@ -228,7 +234,7 @@ export function ChatInput({
         recorder.stop();
       } catch (err) {
         console.error(err);
-        setVoiceError("Failed to stop recording.");
+        setVoiceError(FEEDBACK.RECORDING_STOP_FAILED);
         cleanupVoice();
         setVoiceStatus("idle");
       }
@@ -276,11 +282,11 @@ export function ChatInput({
 
         cancelRecording();
       } else {
-        setVoiceError("Failed to upload voice note.");
+        setVoiceError(FEEDBACK.VOICE_UPLOAD_FAILED);
       }
     } catch (err) {
       console.error(err);
-      setVoiceError("Failed to send voice note.");
+      setVoiceError(FEEDBACK.VOICE_SEND_FAILED);
     } finally {
       setIsSending(false);
       setVoiceUploadProgress(null);
@@ -318,7 +324,7 @@ export function ChatInput({
               fileSize: file.size,
             });
           } else {
-            setFileError(`Failed to upload ${file.name}`);
+            setFileError(formatChatFileUploadFailed(file.name));
           }
 
           setUploadingFiles((prev) => {
@@ -345,7 +351,7 @@ export function ChatInput({
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      setFileError("Failed to send message");
+      setFileError(FEEDBACK.CHAT_MESSAGE_SEND_FAILED);
     } finally {
       setIsSending(false);
       setMessage("");
@@ -365,15 +371,16 @@ export function ChatInput({
 
       if (file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
         setFileError(
-          `File "${file.name}" exceeds ${
-            FILE_UPLOAD_LIMITS.MAX_SIZE / 1024 / 1024
-          }MB limit`
+          formatChatFileTooLarge(
+            file.name,
+            FILE_UPLOAD_LIMITS.MAX_SIZE / 1024 / 1024,
+          ),
         );
         continue;
       }
 
       if (!FILE_UPLOAD_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-        setFileError(`File type "${file.type}" not allowed`);
+        setFileError(formatChatFileTypeNotAllowed(file.type));
         continue;
       }
 

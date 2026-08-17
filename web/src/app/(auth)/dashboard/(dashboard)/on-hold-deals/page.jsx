@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/shared/components/AdminTable";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -9,7 +10,7 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
 import { LeadCategory } from "@/app/helpers/constants";
 import FilterSelect from "@/shared/components/formComponents/FilterSelect.jsx";
-import { enumToKeyValueArray } from "@/app/helpers/functions/utility.js";
+import { enumToKeyValueArray } from "@/app/helpers/functions/utility.jsx";
 import ConfirmWithActionModel from "@/shared/components/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 
@@ -306,10 +307,10 @@ function StaffOnHoldDeals() {
 export default function Leads() {
   const { user } = useAuth();
   if (!user?.profile) return null;
-  if (["NORMAL_SALES", "PRIMARY_SALES"].includes(user.profile)) {
+  if ([PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES].includes(user.profile)) {
     return <StaffOnHoldDeals />;
   }
-  if (user.profile === "ADMIN" || user.profile === "SUPER_ADMIN") {
+  if (user.profile === PROFILES.ADMIN || user.profile === PROFILES.SUPER_ADMIN) {
     return <AdminOnHoldDeals />;
   }
   return <SuperOnHoldDeals />;

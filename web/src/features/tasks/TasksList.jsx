@@ -1,4 +1,5 @@
 "use client";
+import { TASK_STATUSES } from "@dms/shared";
 // Shared tasks/modifications dashboard. Reused by:
 //   • leads/config/leadSections.jsx (Modifications tab)
 //   • work-stages/PreviewWorkStage.jsx (Tasks + Modifications tabs)
@@ -45,8 +46,8 @@ export const TasksList = ({
       const data = tasksData.data;
 
       const sortedTasks = data.sort((a, b) => {
-        const isADone = a.status === "DONE";
-        const isBDone = b.status === "DONE";
+        const isADone = a.status === TASK_STATUSES.DONE;
+        const isBDone = b.status === TASK_STATUSES.DONE;
 
         if (isADone && !isBDone) return 1;
         if (!isADone && isBDone) return -1;

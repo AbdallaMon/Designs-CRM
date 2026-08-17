@@ -1,4 +1,5 @@
 "use client";
+import { REMINDER_TYPES, WORK_STAGE_STATUSES } from "@dms/shared";
 // DealHealthBar — the compact deal-health summary at the top of the cockpit strip.
 //
 // Renders, from the cockpit `health` payload:
@@ -102,7 +103,7 @@ export function DealHealthBar({ health }) {
           </Typography>
           {health.contract && (
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>
-              {health.contract.status === "COMPLETED"
+              {health.contract.status === WORK_STAGE_STATUSES.COMPLETED
                 ? "Contract: delivered"
                 : `Contract: ${health.contract.currentLevel || "—"} (${health.contract.levelsDone}/${health.contract.levelsTotal})`}
             </Typography>
@@ -113,7 +114,7 @@ export function DealHealthBar({ health }) {
                 `Last activity ${health.lastActivityDays}d ago`}
               {health.lastActivityDays != null && health.nextTouch && " · "}
               {health.nextTouch &&
-                `Next ${health.nextTouch.kind === "MEETING" ? "meeting" : "call"}: ${formatTouchTime(health.nextTouch.at)}`}
+                `Next ${health.nextTouch.kind === REMINDER_TYPES.MEETING ? "meeting" : "call"}: ${formatTouchTime(health.nextTouch.at)}`}
             </Typography>
           )}
         </Box>

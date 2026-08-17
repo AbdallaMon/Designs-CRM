@@ -6,6 +6,7 @@
 // READ query schemas are intentionally permissive (legacy read arbitrary query params,
 // defaulting type/timezone/adminId in the handler) so observable behavior is unchanged.
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -14,10 +15,14 @@ const idParam = z.coerce.number().int().positive();
 // on <= 0, so we reject it at the edge without changing valid-input behavior).
 const positiveMinutes = z.coerce
   .number()
-  .refine((n) => Number.isFinite(n) && n > 0, { message: "must be a positive number" });
+  .refine((n) => Number.isFinite(n) && n > 0, {
+    message: V.POSITIVE_NUMBER_REQUIRED,
+  });
 const nonNegativeMinutes = z.coerce
   .number()
-  .refine((n) => Number.isFinite(n) && n >= 0, { message: "must be a non-negative number" });
+  .refine((n) => Number.isFinite(n) && n >= 0, {
+    message: V.NON_NEGATIVE_NUMBER_REQUIRED,
+  });
 
 // "HH:mm" (optionally with AM/PM, matching the legacy buildUtcDateTime parser which dayjs
 // accepts). Keep it a non-empty string; the service does the precise tz parsing.

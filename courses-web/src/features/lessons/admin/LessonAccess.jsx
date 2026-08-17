@@ -24,6 +24,7 @@ import { handleRequestSubmit } from '@/app/helpers/functions/handleSubmit';
 import { MdAdd, MdManageAccounts, MdPerson } from 'react-icons/md';
 import { useToastContext } from '@/app/providers/ToastLoadingProvider';
 import { apiRequest } from '@/app/helpers/functions/apiClient';
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from '@dms/shared';
 
 const LessonAccessDialog = ({ lessonId ,courseId }) => {
   const [open, setOpen] = useState(false);
@@ -70,7 +71,7 @@ const {setToastLoading }=useToastContext()
 
       const hasAccess = lessonAccess.some(access => access.userId === selectedUser.id);
       if (hasAccess) {
-        setAlertError('User already has access to this lesson');
+        setAlertError(FEEDBACK.USER_ALREADY_HAS_LESSON_ACCESS);
         return;
       }
         const req=await handleRequestSubmit({userId:selectedUser.id},setToastLoading,`courses/${courseId}/lessons/${lessonId}/allowed-users`,false,"Allowing")

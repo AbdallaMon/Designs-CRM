@@ -4,12 +4,9 @@
 //   2. `routes/client/image-session.js` — the EXTRAS router (mounted SECOND)
 // Combined here cleanly under `/v2/client/image-session`, preserving every REACHABLE path.
 //
-// PUBLIC BY DESIGN — NO requireAuth, NO requirePermissions, NO permission code. Every
-// endpoint is authenticated by the per-session ClientImageSession.token, exactly like the
-// public calendar booking flow and `/files/client/*`. Gating these would break the public
-// client image-selection flow (a client has no login session). The session is derived FROM
-// the token inside the usecase, never from a client-supplied id (the IDOR close vs legacy,
-// which keyed saves/status/pdf by a raw body `session.id` / `id` / `sessionData.id`).
+// Client mutations and session reads are authenticated by the per-session token. Reference
+// catalog reads (which contain private image URLs) require either that token or an
+// authenticated user with IMAGE_SESSION.ADMIN_VIEW. A client never needs a CRM login.
 //
 // TWO-ROUTERS-SAME-BASE RESOLUTION: the extras router's `GET /images` is SHADOWED by the
 // main router's `GET /images` (the main router was mounted first), so it was DEAD in legacy
@@ -41,31 +38,39 @@ import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { clientImageSessionController } from "./client-image-session.controller.js";
 import { ClientImageSessionValidation } from "./client-image-session.validation.js";
+import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 
 const router = Router();
 
+const referenceRead = [
+  AuthMiddleware.optionalAuth,
+  AuthMiddleware.requireSpecialChecker(
+    clientImageSessionController.authorizeReferenceRead,
+  ),
+];
+
 // ── reference-data reads ────────────────────────────────────────────────────────────────
-router.get("/page-info", validate(ClientImageSessionValidation.pageInfoQuery, "query"), asyncHandler(clientImageSessionController.getPageInfo));
-router.get("/pros-and-cons", validate(ClientImageSessionValidation.prosConsQuery, "query"), asyncHandler(clientImageSessionController.getProsAndCons));
+router.get("/page-info", validate(ClientImageSessionValidation.pageInfoQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getPageInfo));
+router.get("/pros-and-cons", validate(ClientImageSessionValidation.prosConsQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getProsAndCons));
 
 // ── session (literal /session/status before /session) ──────────────────────────────────
 router.put("/session/status", validate(ClientImageSessionValidation.changeStatus), asyncHandler(clientImageSessionController.changeStatus));
 router.get("/session", validate(ClientImageSessionValidation.sessionQuery, "query"), asyncHandler(clientImageSessionController.getSession));
 
 // ── colors ──────────────────────────────────────────────────────────────────────────────
-router.get("/colors", validate(ClientImageSessionValidation.lngQuery, "query"), asyncHandler(clientImageSessionController.getColors));
+router.get("/colors", validate(ClientImageSessionValidation.lngQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getColors));
 router.post("/colors", validate(ClientImageSessionValidation.saveColor), asyncHandler(clientImageSessionController.saveColor));
 
 // ── materials ──────────────────────────────────────────────────────────────────────────
-router.get("/materials", validate(ClientImageSessionValidation.lngQuery, "query"), asyncHandler(clientImageSessionController.getMaterials));
+router.get("/materials", validate(ClientImageSessionValidation.lngQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getMaterials));
 router.post("/materials", validate(ClientImageSessionValidation.saveMaterials), asyncHandler(clientImageSessionController.saveMaterials));
 
 // ── styles ──────────────────────────────────────────────────────────────────────────────
-router.get("/styles", validate(ClientImageSessionValidation.lngQuery, "query"), asyncHandler(clientImageSessionController.getStyles));
+router.get("/styles", validate(ClientImageSessionValidation.lngQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getStyles));
 router.post("/styles", validate(ClientImageSessionValidation.saveStyle), asyncHandler(clientImageSessionController.saveStyle));
 
 // ── images ──────────────────────────────────────────────────────────────────────────────
-router.get("/images", validate(ClientImageSessionValidation.imagesQuery, "query"), asyncHandler(clientImageSessionController.getImages));
+router.get("/images", validate(ClientImageSessionValidation.imagesQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getImages));
 router.post("/images", validate(ClientImageSessionValidation.saveImages), asyncHandler(clientImageSessionController.saveImages));
 // DELETE is token-scoped (IDOR close): the session token in the body authenticates the
 // caller; the usecase confirms the :imageId belongs to that token's session before deleting.
@@ -80,7 +85,7 @@ router.delete(
 router.post("/generate-pdf", validate(ClientImageSessionValidation.generatePdf), asyncHandler(clientImageSessionController.generatePdf));
 
 // ── EXTRAS router endpoints (same base, no collision with the main router) ───────────────
-router.get("/data", validate(ClientImageSessionValidation.modelDataQuery, "query"), asyncHandler(clientImageSessionController.getModelData));
+router.get("/data", validate(ClientImageSessionValidation.modelDataQuery, "query"), ...referenceRead, asyncHandler(clientImageSessionController.getModelData));
 router.post("/save-patterns", validate(ClientImageSessionValidation.savePatterns), asyncHandler(clientImageSessionController.savePatterns));
 router.post("/save-images", validate(ClientImageSessionValidation.saveSelection), asyncHandler(clientImageSessionController.saveSelectionByToken));
 

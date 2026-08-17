@@ -9,6 +9,7 @@ import { MultiAutoCompleteSelector } from "@/features/image-session/admin/shared
 import MultiFileInput from "@/shared/components/formComponents/MulitFileInput";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export function CreateDesginImage({ onUpdate }) {
   const { setLoading } = useToastContext();
@@ -19,19 +20,19 @@ export function CreateDesginImage({ onUpdate }) {
     if (!data || !data.styleId) {
       return {
         error: true,
-        message: "Please select a style",
+        message: FORM_ERRORS.SELECT_STYLE,
       };
     }
     if (!data.spaceIds || data.spaceIds.length === 0) {
       return {
         error: true,
-        message: "Please select at least one space",
+        message: FORM_ERRORS.SELECT_SPACE,
       };
     }
     if (!data.file) {
       return {
         error: true,
-        message: "Please upload an image file",
+        message: FORM_ERRORS.UPLOAD_IMAGE,
       };
     }
     if (data.file) {
@@ -53,19 +54,19 @@ export function CreateDesginImage({ onUpdate }) {
     if (!data || !data.styleId) {
       return {
         error: true,
-        message: "Please select a style",
+        message: FORM_ERRORS.SELECT_STYLE,
       };
     }
     if (!data.spaceIds || data.spaceIds.length === 0) {
       return {
         error: true,
-        message: "Please select at least one space",
+        message: FORM_ERRORS.SELECT_SPACE,
       };
     }
     if (!data.file) {
       return {
         error: true,
-        message: "Please upload an image file",
+        message: FORM_ERRORS.UPLOAD_IMAGE,
       };
     }
     if (data.file) {
@@ -90,7 +91,7 @@ export function CreateDesginImage({ onUpdate }) {
         component={CreateDesignImage}
         name={"Images"}
         modelType={"DesignImage"}
-        slug={`image-session/images`}
+        slug="images"
         onUpdate={onUpdate}
         checkValidation={checkValidation}
         awaitCheck={true}
@@ -101,7 +102,7 @@ export function CreateDesginImage({ onUpdate }) {
         component={CreateBulkDesignImage}
         name={"Multi Images"}
         modelType={"DesignImage"}
-        slug={`image-session/images/bulk`}
+        slug="images/bulk"
         onUpdate={onUpdate}
         checkValidation={checkBulkValidation}
         awaitCheck={true}

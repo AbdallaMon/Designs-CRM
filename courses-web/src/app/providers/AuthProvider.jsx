@@ -38,13 +38,29 @@ export default function AuthProvider({ children }) {
       setUser({ profile: null, emailConfirmed: null, accountStatus: null });
       // Login lives on the lead site; send unauthenticated users there.
       if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_WEB_URL) {
-        window.location.href = `${process.env.NEXT_PUBLIC_WEB_URL}/login`;
+        const isPublicAuthPage = ["/login", "/reset"].includes(
+          window.location.pathname
+        );
+        if (!isPublicAuthPage) {
+          window.location.assign(`${process.env.NEXT_PUBLIC_WEB_URL}/login`);
+        }
       }
     }
     setValidatingAuth(false);
   }, []);
 
   useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      ["/login", "/reset"].includes(window.location.pathname)
+    ) {
+      // Public auth pages establish their own session and must not trigger a
+      // failing refresh request before the user submits the form.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setValidatingAuth(false);
+      return;
+    }
+    // Authentication is loaded from the external API when this provider mounts.
     fetchMe();
   }, [fetchMe]);
 

@@ -24,7 +24,7 @@ export function ClientChatPage({ token, roomId }) {
       {loading ? (
         ""
       ) : !loading && tokenData && tokenData.isValid ? (
-        <SocketProvider clientId={tokenData.chatMember.clientId}>
+        <SocketProvider chatToken={token}>
           <ChatWindow
             roomId={parseInt(roomId)}
             onRoomActivity={() => {}}

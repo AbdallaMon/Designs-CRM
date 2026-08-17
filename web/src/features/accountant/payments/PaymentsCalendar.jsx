@@ -1,4 +1,5 @@
 "use client";
+import { PAYMENT_STATUSES } from "@dms/shared";
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -67,7 +68,7 @@ import { columns } from "@/features/accountant/config/paymentsCalendarConfig.js"
 //   },
 // ];
 
-const PaymentCalendar = ({ status = "PENDING" }) => {
+const PaymentCalendar = ({ status = PAYMENT_STATUSES.PENDING }) => {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("paymentId");
   const {
@@ -122,7 +123,7 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
     if (request.status === 200) {
       const newPayments = data.map((payment) => {
         if (payment.id === id) {
-          payment.status = "OVERDUE";
+          payment.status = PAYMENT_STATUSES.OVERDUE;
         }
         return payment;
       });

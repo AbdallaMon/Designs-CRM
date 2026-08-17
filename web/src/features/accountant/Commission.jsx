@@ -24,6 +24,10 @@ import { getData } from "@/app/helpers/functions/getData";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import {
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+  formatCommissionRemainingBalance,
+} from "@dms/shared";
+import {
   MdCheckCircle,
   MdClose,
   MdPendingActions,
@@ -59,7 +63,7 @@ const Commission = ({ userId }) => {
     if (response && response.status === 200) {
       setCommissions(response.data);
     } else {
-      setAlertError("Failed to load commissions");
+      setAlertError(FEEDBACK.COMMISSIONS_LOAD_FAILED);
     }
     setLoading(false);
   };
@@ -81,7 +85,7 @@ const Commission = ({ userId }) => {
       isNaN(parseFloat(paymentAmount)) ||
       parseFloat(paymentAmount) <= 0
     ) {
-      setAlertError("Please enter a valid amount");
+      setAlertError(FEEDBACK.VALID_AMOUNT_REQUIRED);
       return;
     }
 
@@ -89,9 +93,7 @@ const Commission = ({ userId }) => {
       parseFloat(selectedCommission.amount) -
       parseFloat(selectedCommission.amountPaid);
     if (parseFloat(paymentAmount) > remainingAmount) {
-      setAlertError(
-        `Amount cannot exceed the remaining balance of ${remainingAmount}`
-      );
+      setAlertError(formatCommissionRemainingBalance(remainingAmount));
       return;
     }
 

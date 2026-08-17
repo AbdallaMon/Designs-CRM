@@ -1,5 +1,6 @@
 // StagesTable.jsx
 "use client";
+import { WORK_STAGE_STATUSES } from "@dms/shared";
 
 import React from "react";
 import {
@@ -52,7 +53,7 @@ export default function StagesTable({ session, lng, levelClauses }) {
           {baseStages.map((s) => {
             const included = stagesMap.has(s.order);
             const data = stagesMap.get(s.order) || {};
-            const status = data?.stageStatus || "NOT_STARTED";
+            const status = data?.stageStatus || WORK_STAGE_STATUSES.NOT_STARTED;
             const deliveryDays = data?.deliveryDays;
             const currentLevel = levelClauses.find((l) => l.level === s.key);
 
@@ -86,13 +87,13 @@ export default function StagesTable({ session, lng, levelClauses }) {
                     <Chip
                       size="small"
                       color={
-                        status === "COMPLETED"
+                        status === WORK_STAGE_STATUSES.COMPLETED
                           ? "success"
-                          : status === "IN_PROGRESS"
+                          : status === WORK_STAGE_STATUSES.IN_PROGRESS
                           ? "warning"
                           : "default"
                       }
-                      icon={status === "COMPLETED" ? <FaCheck /> : undefined}
+                      icon={status === WORK_STAGE_STATUSES.COMPLETED ? <FaCheck /> : undefined}
                       label={STAGE_STATUS_LABEL[lng][status] || status}
                     />
                   </Stack>
@@ -176,7 +177,7 @@ export default function StagesTable({ session, lng, levelClauses }) {
   const StageColumn = ({ s }) => {
     const included = stagesMap.has(s.order);
     const data = stagesMap.get(s.order) || {};
-    const status = data?.stageStatus || "NOT_STARTED";
+    const status = data?.stageStatus || WORK_STAGE_STATUSES.NOT_STARTED;
     const deliveryDays = data?.deliveryDays;
     const details = levelClauses.find((l) => l.level === s.key);
 
@@ -219,13 +220,13 @@ export default function StagesTable({ session, lng, levelClauses }) {
             <Chip
               size="small"
               color={
-                status === "COMPLETED"
+                status === WORK_STAGE_STATUSES.COMPLETED
                   ? "success"
-                  : status === "IN_PROGRESS"
+                  : status === WORK_STAGE_STATUSES.IN_PROGRESS
                   ? "warning"
                   : "default"
               }
-              icon={status === "COMPLETED" ? <FaCheck /> : undefined}
+              icon={status === WORK_STAGE_STATUSES.COMPLETED ? <FaCheck /> : undefined}
               label={STAGE_STATUS_LABEL[lng][status] || status}
             />
           </Stack>

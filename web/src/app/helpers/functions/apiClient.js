@@ -20,16 +20,126 @@ export const API_BASE = API_ORIGIN.endsWith("/v2")
   ? API_ORIGIN
   : `${API_ORIGIN}/v2`;
 
-// Single in-flight refresh shared across all callers (prevents a refresh storm when many
-// requests 401 at once).
+const CSRF_COOKIE_NAME = "csrf_token";
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const COOKIE_INDEPENDENT_AUTH_PATHS = new Set([
+  "auth/login",
+  "auth/request-password-reset",
+  "auth/reset-password",
+]);
+
+let _csrfToken = null;
+let _csrfPromise = null;
 let _refreshPromise = null;
-async function refreshAccessToken() {
-  if (_refreshPromise) return _refreshPromise;
-  _refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
-    method: "POST",
+
+function canonicalAssetReference(value) {
+  if (typeof value !== "string") return value;
+  if (value.startsWith("/uploads/")) return value.split(/[?#]/, 1)[0];
+  const marker = "/v2/files/content/";
+  if (!value.startsWith(marker) && !/^https?:\/\//i.test(value)) return value;
+  try {
+    const parsed = new URL(value, "http://asset.local");
+    if (!parsed.pathname.startsWith(marker)) return value;
+    const key = parsed.pathname
+      .slice(marker.length)
+      .split("/")
+      .map(decodeURIComponent)
+      .join("/");
+    return key && !key.split("/").some((part) => !part || part === "." || part === "..")
+      ? `/uploads/${key}`
+      : value;
+  } catch {
+    return value;
+  }
+}
+
+function canonicalizeAssetReferences(value) {
+  if (typeof value === "string") return canonicalAssetReference(value);
+  if (Array.isArray(value)) return value.map(canonicalizeAssetReferences);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, canonicalizeAssetReferences(item)]),
+  );
+}
+
+function canonicalizeJsonBody(fetchOptions) {
+  if (typeof fetchOptions.body !== "string") return fetchOptions;
+  const headers = new Headers(fetchOptions.headers || {});
+  if (!headers.get("content-type")?.includes("application/json")) return fetchOptions;
+  try {
+    return {
+      ...fetchOptions,
+      body: JSON.stringify(canonicalizeAssetReferences(JSON.parse(fetchOptions.body))),
+    };
+  } catch {
+    return fetchOptions;
+  }
+}
+
+function browserCookie(name) {
+  if (typeof document === "undefined") return null;
+  const prefix = `${encodeURIComponent(name)}=`;
+  const item = document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith(prefix));
+  return item ? decodeURIComponent(item.slice(prefix.length)) : null;
+}
+
+async function csrfToken() {
+  const cookieToken = browserCookie(CSRF_COOKIE_NAME);
+  if (cookieToken) {
+    _csrfToken = cookieToken;
+    return cookieToken;
+  }
+  if (_csrfToken) return _csrfToken;
+  if (_csrfPromise) return _csrfPromise;
+
+  _csrfPromise = fetch(`${API_BASE}/auth/csrf`, {
+    method: "GET",
     credentials: "include",
   })
-    .then((r) => r.ok)
+    .then(async (response) => {
+      if (!response.ok) return null;
+      const body = await response.json().catch(() => null);
+      _csrfToken = body?.data?.csrfToken || null;
+      return _csrfToken;
+    })
+    .catch(() => null)
+    .finally(() => {
+      _csrfPromise = null;
+    });
+  return _csrfPromise;
+}
+
+async function securedFetchOptions(canonicalPath, opts) {
+  const { _skipRefresh, ...rawFetchOptions } = opts;
+  const fetchOptions = canonicalizeJsonBody(rawFetchOptions);
+  const method = String(fetchOptions.method || "GET").toUpperCase();
+  if (
+    !UNSAFE_METHODS.has(method) ||
+    COOKIE_INDEPENDENT_AUTH_PATHS.has(canonicalPath)
+  ) {
+    return fetchOptions;
+  }
+
+  const token = await csrfToken();
+  if (!token) return fetchOptions;
+  const headers = new Headers(fetchOptions.headers || {});
+  headers.set("x-csrf-token", token);
+  return { ...fetchOptions, headers };
+}
+
+async function refreshAccessToken() {
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = csrfToken()
+    .then((token) =>
+      fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: token ? { "x-csrf-token": token } : undefined,
+      }),
+    )
+    .then((response) => response.ok)
     .catch(() => false)
     .finally(() => {
       _refreshPromise = null;
@@ -38,12 +148,15 @@ async function refreshAccessToken() {
 }
 
 // Low-level request: maps the legacy path → its /v2 module path, prepends the /v2 base,
-// always sends cookies, retries ONCE after a successful token refresh on 401. `path` is
-// relative (no leading /v2), query already built.
+// always sends cookies, attaches CSRF to cookie-authenticated mutations, and retries once.
 export async function apiRequest(path, opts = {}, _retry = true) {
   const canonicalPath = String(path).replace(/^\/?(?:v2\/)?/, "");
   const url = `${API_BASE}/${canonicalPath}`;
-  const response = await fetch(url, { credentials: "include", ...opts });
+  const fetchOptions = await securedFetchOptions(canonicalPath, opts);
+  const response = await fetch(url, {
+    credentials: "include",
+    ...fetchOptions,
+  });
   if (response.status === 401 && _retry && !opts._skipRefresh) {
     const ok = await refreshAccessToken();
     if (ok) return apiRequest(path, { ...opts, _skipRefresh: true }, false);

@@ -1,3 +1,4 @@
+import { PAYMENT_STATUSES } from "@dms/shared";
 // accounting/payment repository — Prisma I/O ONLY (no business rules, no AppError).
 // The financial reads/writes relocated here from the legacy accountant service are pure
 // Prisma; the money guards/orchestration (processPayment / markPaymentAsOverdue) live in
@@ -8,6 +9,14 @@ import { generateInvoiceNumber } from "./payment.helpers.js";
 
 class PaymentRepository {
   model = prisma.payment;
+
+  runInTransaction(work) {
+    return prisma.$transaction(work);
+  }
+
+  lockPaymentForUpdate({ id, client }) {
+    return client.$queryRaw`SELECT id FROM Payment WHERE id = ${id} FOR UPDATE`;
+  }
 
   // Server-authoritative current state for the scope/guard checker. Returns null when
   // the payment does not exist (the usecase turns that into 404 PAYMENT_NOT_FOUND).
@@ -31,8 +40,8 @@ class PaymentRepository {
     let where = {};
 
     if (!status || status === "ALL") status = undefined;
-    if (status === "NOT_PAID") {
-      where = { status: { in: ["PENDING", "OVERDUE", "PARTIALLY_PAID"] } };
+    if (status === PAYMENT_STATUSES.NOT_PAID) {
+      where = { status: { in: [PAYMENT_STATUSES.PENDING, PAYMENT_STATUSES.OVERDUE, PAYMENT_STATUSES.PARTIALLY_PAID] } };
     } else {
       where =
         paymentId && paymentId !== "null"
@@ -61,7 +70,7 @@ class PaymentRepository {
       };
     }
     let pagination = {};
-    if (status !== "NOT_PAID") {
+    if (status !== PAYMENT_STATUSES.NOT_PAID) {
       pagination = {
         skip,
         take: limit,
@@ -156,14 +165,14 @@ class PaymentRepository {
   }
 
   // ── reads/writes backing the money workflow usecase methods ──────────────────────
-  findPayment({ id }) {
-    return prisma.payment.findUnique({
+  findPayment({ id, client }) {
+    return (client ?? prisma).payment.findUnique({
       where: { id },
     });
   }
 
-  updatePaymentAmounts({ id, amountPaid, status, amountLeft }) {
-    return prisma.payment.update({
+  updatePaymentAmounts({ id, amountPaid, status, amountLeft, client }) {
+    return (client ?? prisma).payment.update({
       where: { id },
       data: {
         amountPaid,
@@ -173,8 +182,8 @@ class PaymentRepository {
     });
   }
 
-  createInvoice({ paymentId, amount, issuedDate }) {
-    return prisma.invoice.create({
+  createInvoice({ paymentId, amount, issuedDate, client }) {
+    return (client ?? prisma).invoice.create({
       data: {
         invoiceNumber: generateInvoiceNumber(),
         paymentId,
@@ -184,8 +193,8 @@ class PaymentRepository {
     });
   }
 
-  createInvoiceNote({ attachment, invoiceId, userId }) {
-    return prisma.note.create({
+  createInvoiceNote({ attachment, invoiceId, userId, client }) {
+    return (client ?? prisma).note.create({
       data: {
         attachment,
         invoiceId,
@@ -198,7 +207,7 @@ class PaymentRepository {
     return prisma.payment.update({
       where: { id },
       data: {
-        status: "OVERDUE",
+        status: PAYMENT_STATUSES.OVERDUE,
       },
     });
   }

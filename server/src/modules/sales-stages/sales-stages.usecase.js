@@ -1,3 +1,4 @@
+import { SALES_STAGE_TYPES } from "@dms/shared";
 // sales-stages usecase — orchestration ONLY (Prisma lives in the repo). SalesStage rows
 // are LEAD-SCOPED; the v2 module ADDS the object-scope check the legacy route was MISSING
 // by resolving the parent clientLead and running the leads-module checker
@@ -43,13 +44,13 @@ export class SalesStagesUsecase {
     // writable until claimed.
     await this.assertLeadMutate({ clientLeadId, authUser });
 
-    if (nextStage && nextStage.key && nextStage.key !== "NOT_INITIATED") {
+    if (nextStage && nextStage.key && nextStage.key !== SALES_STAGE_TYPES.NOT_INITIATED) {
       const isPresent = await salesStagesRepository.findStage({ clientLeadId, stage: nextStage.key });
       if (!isPresent) {
         await salesStagesRepository.createStage({ clientLeadId, stage: nextStage.key });
       }
     }
-    if (action === "back" && currentStageType && currentStageType !== "NOT_INITIATED") {
+    if (action === "back" && currentStageType && currentStageType !== SALES_STAGE_TYPES.NOT_INITIATED) {
       await salesStagesRepository.deleteStage({ clientLeadId, stage: currentStageType });
     }
     return true;

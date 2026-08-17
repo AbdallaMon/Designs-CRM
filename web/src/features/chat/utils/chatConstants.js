@@ -1,47 +1,15 @@
-// Chat system constants
-
-export const CHAT_ROOM_TYPES = {
-  STAFF_TO_STAFF: "STAFF_TO_STAFF",
-  PROJECT_GROUP: "PROJECT_GROUP",
-  CLIENT_TO_STAFF: "CLIENT_TO_STAFF",
-  STAFF_GROUP: "STAFF_GROUP",
-  GROUP: "GROUP",
-};
-
-export const CHAT_MESSAGE_TYPES = {
-  TEXT: "TEXT",
-  FILE: "FILE",
-  IMAGE: "IMAGE",
-  VOICE: "VOICE",
-  VIDEO: "VIDEO",
-  SYSTEM: "SYSTEM",
-};
-
-export const CHAT_MEMBER_ROLES = {
-  ADMIN: "ADMIN",
-  MODERATOR: "MODERATOR",
-  MEMBER: "MEMBER",
-};
-
-export const CALL_TYPES = {
-  AUDIO: "AUDIO",
-  VIDEO: "VIDEO",
-};
-
-export const CALL_STATUSES = {
-  RINGING: "RINGING",
-  ONGOING: "ONGOING",
-  ENDED: "ENDED",
-  MISSED: "MISSED",
-  CANCELLED: "CANCELLED",
-};
-
-export const SCHEDULED_MESSAGE_STATUSES = {
-  PENDING: "PENDING",
-  SENT: "SENT",
-  CANCELLED: "CANCELLED",
-  FAILED: "FAILED",
-};
+// Compatibility exports for existing chat imports; the values are canonical in
+// the workspace shared package.
+export {
+  CHAT_CALL_STATUSES as CALL_STATUSES,
+  CHAT_CALL_TYPES as CALL_TYPES,
+  CHAT_MEMBER_ROLES,
+  CHAT_MESSAGE_TYPES,
+  CHAT_ROOM_FILTERS,
+  CHAT_ROOM_TYPES,
+  SCHEDULED_MESSAGE_STATUSES,
+} from "@dms/shared";
+import { CHAT_ROOM_FILTERS } from "@dms/shared";
 
 export const CHAT_ROOM_TYPE_LABELS = {
   STAFF_TO_STAFF: "Direct",
@@ -52,11 +20,11 @@ export const CHAT_ROOM_TYPE_LABELS = {
 };
 
 export const CHAT_CATEGORIES = [
-  { value: "DIRECT", label: "Direct Messages" },
-  { value: "PROJECT", label: "Project Chats" },
-  { value: "CLIENT", label: "Client Leads" },
-  { value: "GROUP", label: "Group Chats" },
-  { value: "ARCHIVED", label: "Archived" },
+  { value: CHAT_ROOM_FILTERS.DIRECT, label: "Direct Messages" },
+  { value: CHAT_ROOM_FILTERS.PROJECT, label: "Project Chats" },
+  { value: CHAT_ROOM_FILTERS.CLIENT_LEADS, label: "Client Leads" },
+  { value: CHAT_ROOM_FILTERS.GROUP, label: "Group Chats" },
+  { value: CHAT_ROOM_FILTERS.ARCHIVED, label: "Archived" },
 ];
 // all types allowed
 export const FILE_UPLOAD_LIMITS = {

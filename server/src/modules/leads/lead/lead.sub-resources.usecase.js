@@ -23,7 +23,13 @@ import {
   updateMettingNotification,
 } from "../../../infra/notifications/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes } from "@dms/shared";
+import {
+  CALL_REMINDER_STATUSES,
+  LEAD_STATUSES,
+  PROFILES,
+  REMINDER_TYPES,
+  leadsMessagesCodes,
+} from "@dms/shared";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -95,8 +101,8 @@ export async function createMeetingReminder({
   currentUser,
 }) {
   if (
-    currentUser.currentProfileKey === "DESIGNER_3D" ||
-    currentUser.currentProfileKey === "DESIGNER_2D"
+    currentUser.currentProfileKey === PROFILES.DESIGNER_3D ||
+    currentUser.currentProfileKey === PROFILES.DESIGNER_2D
   ) {
     throw new AppError({ code: leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, statusCode: 403 });
   }
@@ -160,8 +166,8 @@ export async function createMeetingReminderWithToken({
   currentUser,
 }) {
   if (
-    currentUser.currentProfileKey === "DESIGNER_3D" ||
-    currentUser.currentProfileKey === "DESIGNER_2D"
+    currentUser.currentProfileKey === PROFILES.DESIGNER_3D ||
+    currentUser.currentProfileKey === PROFILES.DESIGNER_2D
   ) {
     throw new AppError({ code: leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, statusCode: 403 });
   }
@@ -258,17 +264,17 @@ export async function createFile({
 // Lead statuses on which closing the LAST touchpoint must plan the next one (spec
 // 2026-07-15 §5.2 "required with escape"). Mirrors the cockpit's ACTIVE_STATUSES.
 const NEXT_TOUCH_ACTIVE_STATUSES = [
-  "IN_PROGRESS",
-  "INTERESTED",
-  "NEEDS_IDENTIFIED",
-  "NEGOTIATING",
+  LEAD_STATUSES.IN_PROGRESS,
+  LEAD_STATUSES.INTERESTED,
+  LEAD_STATUSES.NEEDS_IDENTIFIED,
+  LEAD_STATUSES.NEGOTIATING,
 ];
 
 // Throw 422 NEXT_TOUCH_REQUIRED when marking DONE/MISSED would leave an ACTIVE lead
 // with no future touchpoint and the caller planned neither a next touch nor an explicit
 // no-follow-up. Runs BEFORE the status write so the 422 path is side-effect-free.
 async function assertNextTouchPlanned({ clientLeadId, exclude, status, next, noFollowUp }) {
-  if (status !== "DONE" && status !== "MISSED") return;
+  if (status !== CALL_REMINDER_STATUSES.DONE && status !== "MISSED") return;
   if (next || noFollowUp) return;
   if (clientLeadId == null) return;
   const lead = await leadRepository.findLeadStatus({ id: clientLeadId });
@@ -294,7 +300,7 @@ async function assertNextTouchPlanned({ clientLeadId, exclude, status, next, noF
 async function applyNextTouchPlan({ clientLeadId, currentUser, next, noFollowUp }) {
   if (clientLeadId == null) return;
   if (next) {
-    if (next.type === "MEETING") {
+    if (next.type === REMINDER_TYPES.MEETING) {
       await createMeetingReminder({
         clientLeadId,
         userId: currentUser.id,
@@ -319,6 +325,22 @@ async function applyNextTouchPlan({ clientLeadId, currentUser, next, noFollowUp 
   }
 }
 
+function hasFullLeadScope(currentUser) {
+  return (
+    Boolean(currentUser?.isAdminTier) ||
+    currentUser?.currentProfileKey === PROFILES.SUPER_SALES
+  );
+}
+
+function canMutateReminder(reminder, currentUser) {
+  const currentUserId = Number(currentUser?.id);
+  return (
+    hasFullLeadScope(currentUser) ||
+    Number(reminder?.userId ?? reminder?.user?.id) === currentUserId ||
+    Number(reminder?.clientLead?.userId) === currentUserId
+  );
+}
+
 export async function updateCallReminderStatus({
   reminderId,
   currentUser,
@@ -330,10 +352,8 @@ export async function updateCallReminderStatus({
   const callReminder = await leadRepository.findCallReminderOwner({
     reminderId,
   });
-  if (!currentUser.isAdminTier) {
-    if (callReminder.user.id !== currentUser.id) {
-      throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
-    }
+  if (!canMutateReminder(callReminder, currentUser)) {
+    throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
   }
   await assertNextTouchPlanned({
     clientLeadId: callReminder?.clientLeadId ?? null,
@@ -345,7 +365,7 @@ export async function updateCallReminderStatus({
   const updatedReminder = await leadRepository.updateCallReminderStatusRecord({
     reminderId,
     status,
-    callResult: status === "DONE" ? callResult : "Missed call",
+    callResult: status === CALL_REMINDER_STATUSES.DONE ? callResult : "Missed call",
   });
   await applyNextTouchPlan({
     clientLeadId: updatedReminder.clientLeadId,
@@ -371,8 +391,8 @@ export async function updateMeetingReminderStatus({
   noFollowUp = null,
 }) {
   if (
-    currentUser.currentProfileKey === "DESIGNER_3D" ||
-    currentUser.currentProfileKey === "DESIGNER_2D"
+    currentUser.currentProfileKey === PROFILES.DESIGNER_3D ||
+    currentUser.currentProfileKey === PROFILES.DESIGNER_2D
   ) {
     throw new AppError({ code: leadsMessagesCodes.MEETING_NOT_ALLOWED_FOR_ROLE, statusCode: 403 });
   }
@@ -380,10 +400,8 @@ export async function updateMeetingReminderStatus({
   const meetingReminder = await leadRepository.findMeetingReminderOwner({
     reminderId,
   });
-  if (!currentUser.isAdminTier) {
-    if (meetingReminder.user.id !== currentUser.id) {
-      throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
-    }
+  if (!canMutateReminder(meetingReminder, currentUser)) {
+    throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
   }
   await assertNextTouchPlanned({
     clientLeadId: meetingReminder?.clientLeadId ?? null,
@@ -395,7 +413,7 @@ export async function updateMeetingReminderStatus({
   const updatedReminder = await leadRepository.updateMeetingReminderStatusRecord({
     reminderId,
     status,
-    meetingResult: status === "DONE" ? meetingResult : "Missed Meeting",
+    meetingResult: status === CALL_REMINDER_STATUSES.DONE ? meetingResult : "Missed Meeting",
   });
   await applyNextTouchPlan({
     clientLeadId: updatedReminder.clientLeadId,

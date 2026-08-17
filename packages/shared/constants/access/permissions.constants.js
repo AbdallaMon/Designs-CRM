@@ -127,6 +127,11 @@ export const LEAD_PERMISSIONS = {
   REMINDER_SEND: "lead.reminder.send", // payment-reminder / complete-register triggers
   COUNTRY_CHECK: "lead.country.check", // POST /:userId/countries (allowed-to-take check)
 
+  // Lead-pool visibility. The list endpoint also enforces these when the matching
+  // query flag is requested, so hiding a tab is not the authorization boundary.
+  NON_CONSULTED_VIEW: "lead.pool.non_consulted.view",
+  ON_HOLD_VIEW: "lead.pool.on_hold.view",
+
   // section-visibility codes (make the FE's isPrimary-gated tabs expressible as codes;
   // nothing gates on them until Phase 3 — additive, no parity impact).
   PRICE_OFFER_VIEW: "lead.price_offer.view",

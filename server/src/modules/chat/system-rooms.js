@@ -1,3 +1,8 @@
+import {
+  CHAT_MEMBER_ROLES,
+  CHAT_ROOM_TYPES,
+  chatMessagesCodes,
+} from "@dms/shared";
 import prisma from "../../infra/prisma/prisma.js";
 import { getIo } from "../../infra/socket/index.js";
 
@@ -7,7 +12,7 @@ export async function addADesginerToAllRelatedProjectsRooms({
 }) {
   const projectRooms = await prisma.chatRoom.findMany({
     where: {
-      type: "STAFF_GROUP",
+      type: CHAT_ROOM_TYPES.STAFF_GROUP,
       clientLeadId: parseInt(clientLeadId),
       multiProjectRooms: {
         some: {
@@ -21,7 +26,7 @@ export async function addADesginerToAllRelatedProjectsRooms({
   for (const room of projectRooms) {
     await addMemberToRoomBySystem({ roomId: room.id, userId });
   }
-  return { message: "Designer added to all related project rooms" };
+  return { message: chatMessagesCodes.MEMBERS_ADDED };
 }
 export async function addMemberToRoomBySystem({ roomId, userId }) {
   const checkIfExist = await prisma.chatMember.findFirst({
@@ -40,7 +45,7 @@ export async function addMemberToRoomBySystem({ roomId, userId }) {
       data: {
         roomId: parseInt(roomId),
         userId: parseInt(userId),
-        role: "MEMBER",
+        role: CHAT_MEMBER_ROLES.MEMBER,
       },
     });
   }

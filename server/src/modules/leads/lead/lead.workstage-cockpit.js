@@ -1,3 +1,4 @@
+import { CONTRACT_LEVELS, LEAD_STATUSES, WORK_STAGE_STATUSES } from "@dms/shared";
 // leads/lead — pure work-stage next-action engine for designers / executor.
 //
 // The lead cockpit (`computeCockpit`) is sales/accountant/admin-scoped and its endpoint
@@ -36,7 +37,7 @@ export function computeWorkStageActions({ assignments } = {}, now) {
   }
   const cta = { kind: "GOTO_WORKSTAGE", capability: null, tabKey: null };
   return arr(assignments)
-    .filter((a) => a && (a.projectStatus === "IN_PROGRESS" || a.stageStatus === "IN_PROGRESS"))
+    .filter((a) => a && (a.projectStatus === LEAD_STATUSES.IN_PROGRESS || a.stageStatus === LEAD_STATUSES.IN_PROGRESS))
     .map((a) => {
       const deliveryAt = a.deliveryAt ? new Date(a.deliveryAt) : null;
       const baseParams = { projectType: a.projectType, level: a.contractLevel };
@@ -75,10 +76,10 @@ export function computeWorkStageActions({ assignments } = {}, now) {
 // Contract LEVEL_N → production project type (mirrors the frozen contract service's
 // `stageLevelRelatedProject`; used here only to label the signal, inverted).
 export const PROJECT_TYPE_TO_LEVEL = {
-  "2D_Study": "LEVEL_2",
-  "3D_Designer": "LEVEL_3",
-  "2D_Final_Plans": "LEVEL_4",
-  "2D_Quantity_Calculation": "LEVEL_5",
+  "2D_Study": CONTRACT_LEVELS.LEVEL_2,
+  "3D_Designer": CONTRACT_LEVELS.LEVEL_3,
+  "2D_Final_Plans": CONTRACT_LEVELS.LEVEL_4,
+  "2D_Quantity_Calculation": CONTRACT_LEVELS.LEVEL_5,
 };
 
 // Legacy Project.status strings that mean the stage is finished → no action for the designer.
@@ -104,7 +105,7 @@ export function workStageActionsForLead(lead, userId, now = new Date()) {
       projectType: p.type,
       contractLevel: PROJECT_TYPE_TO_LEVEL[p.type] ?? null,
       projectStatus: p.status,
-      stageStatus: p.status && !DONE_PROJECT_STATUSES.has(p.status) ? "IN_PROGRESS" : "COMPLETED",
+      stageStatus: p.status && !DONE_PROJECT_STATUSES.has(p.status) ? LEAD_STATUSES.IN_PROGRESS : WORK_STAGE_STATUSES.COMPLETED,
     }));
   return computeWorkStageActions({ assignments }, now);
 }

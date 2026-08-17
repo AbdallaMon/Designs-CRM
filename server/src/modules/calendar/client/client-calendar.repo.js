@@ -5,6 +5,8 @@
 // client-calendar-service.js.
 import prisma from "../../../infra/prisma/prisma.js";
 
+class ReminderAlreadyReservedError extends Error {}
+
 class ClientCalendarRepository {
   model = prisma.meetingReminder;
 
@@ -12,6 +14,11 @@ class ClientCalendarRepository {
   findSlotById(slotId) {
     return prisma.availableSlot.findUnique({
       where: { id: Number(slotId) },
+      include: {
+        availableDay: {
+          select: { userId: true, date: true },
+        },
+      },
     });
   }
 
@@ -37,66 +44,75 @@ class ClientCalendarRepository {
     });
   }
 
-  // updateMeetingReminderTime — Prisma-only (verbatim): read (unused), update, refetch.
-  async updateMeetingReminderTime({ reminderId, time, userTimezone }) {
-    reminderId = Number(reminderId);
-    const reminder = await prisma.meetingReminder.findUnique({
-      where: { id: reminderId },
-    });
+  async reserveSlotAndUpdateReminder({
+    slotId,
+    meetingReminderId,
+    expectedOwnerId,
+    requestedDateStart,
+    requestedDateEnd,
+    userTimezone,
+  }) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const slot = await tx.availableSlot.findFirst({
+          where: {
+            id: Number(slotId),
+            startTime: { gte: requestedDateStart, lt: requestedDateEnd },
+            availableDay: {
+              userId: Number(expectedOwnerId),
+              date: { gte: requestedDateStart, lt: requestedDateEnd },
+            },
+          },
+        });
 
-    const updatedReminder = await prisma.meetingReminder.update({
-      where: { id: reminderId },
-      data: { time, userTimezone },
-    });
+        if (!slot) return { outcome: "not-found" };
 
-    return await prisma.meetingReminder.findUnique({
-      where: { id: updatedReminder.id },
-    });
-  }
+        const slotClaim = await tx.availableSlot.updateMany({
+          where: {
+            id: slot.id,
+            isBooked: false,
+            meetingReminderId: null,
+          },
+          data: {
+            isBooked: true,
+            meetingReminderId: Number(meetingReminderId),
+            userTimezone,
+          },
+        });
+        if (slotClaim.count !== 1) return { outcome: "already-booked" };
 
-  // bookAMeeting notification/email context read.
-  findReminderForBooking(reminderId) {
-    return prisma.meetingReminder.findUnique({
-      where: {
-        id: Number(reminderId),
-      },
-      select: {
-        userTimezone: true,
-        id: true,
-        time: true,
-        clientLead: {
-          select: {
-            client: {
+        const reminderClaim = await tx.meetingReminder.updateMany({
+          where: {
+            id: Number(meetingReminderId),
+            availableSlotId: null,
+          },
+          data: {
+            availableSlotId: slot.id,
+            time: slot.startTime,
+            userTimezone,
+          },
+        });
+        if (reminderClaim.count !== 1) throw new ReminderAlreadyReservedError();
+
+        const reminder = await tx.meetingReminder.findUnique({
+          where: { id: Number(meetingReminderId) },
+          include: {
+            clientLead: {
               select: {
-                name: true,
-                email: true,
+                client: { select: { name: true, email: true } },
               },
             },
           },
-        },
-      },
-    });
-  }
+        });
 
-  // assignSlotToMeeting reads/writes.
-  findSlotForAssign(slotId) {
-    return prisma.availableSlot.findUnique({
-      where: { id: Number(slotId) },
-    });
-  }
-
-  assignSlotToReminder({ meetingReminderId, slotId }) {
-    return prisma.meetingReminder.update({
-      where: { id: Number(meetingReminderId) },
-      data: { availableSlotId: Number(slotId) },
-    });
-  }
-
-  markSlotBooked({ slotId, meetingReminderId, userTimezone }) {
-    return prisma.availableSlot.update({
-      where: { id: Number(slotId) },
-      data: { isBooked: true, meetingReminderId, userTimezone },
-    });
+        return { outcome: "booked", reminder, slot };
+      });
+    } catch (error) {
+      if (error instanceof ReminderAlreadyReservedError) {
+        return { outcome: "already-booked" };
+      }
+      throw error;
+    }
   }
 }
 

@@ -19,7 +19,7 @@ export const initSocket = (url, options = {}) => {
     reconnectionDelayMax: 5000,
     autoConnect: true,
     transports: ["websocket", "polling"],
-    credentials: "include", // Include cookies for auth
+    withCredentials: true,
     ...options,
   });
 
@@ -103,11 +103,11 @@ export const offSocket = (event, callback) => {
  * @param {number} roomId - Chat room ID
  * @param {object} user - User object
  */
-export const joinChatRoom = (roomId, user) => {
-  emitSocket("join_room", { roomId, user });
+export const joinChatRoom = (roomId) => {
+  emitSocket("join_room", { roomId });
 };
-export const joinChatRoomAsClient = (roomId, clientId) => {
-  emitSocket("join_room_client", { roomId, clientId });
+export const joinChatRoomAsClient = (roomId) => {
+  emitSocket("join_room_client", { roomId });
 };
 
 /**
@@ -118,38 +118,38 @@ export const leaveChatRoom = (roomId) => {
   emitSocket("leave_room", { roomId });
 };
 
-export const typing = ({ roomId, user }) => {
-  emitSocket("user:typing", { roomId, user });
+export const typing = ({ roomId }) => {
+  emitSocket("user:typing", { roomId });
 };
 
-export const emitStopTyping = ({ roomId, user }) => {
-  emitSocket("user:stop_typing", { roomId, user });
+export const emitStopTyping = ({ roomId }) => {
+  emitSocket("user:stop_typing", { roomId });
 };
-export const sendNewMessage = ({ data, user }) => {
+export const sendNewMessage = ({ data }) => {
   emitSocket("message:create", { data });
 };
-export const emitEditMessage = ({ messageId, roomId, content, userId }) => {
-  emitSocket("message:edit", { messageId, roomId, content, userId });
+export const emitEditMessage = ({ messageId, roomId, content }) => {
+  emitSocket("message:edit", { messageId, roomId, content });
 };
-export const emitDeleteMessage = ({ messageId, roomId, userId }) => {
-  emitSocket("message:delete", { messageId, roomId, userId });
+export const emitDeleteMessage = ({ messageId, roomId }) => {
+  emitSocket("message:delete", { messageId, roomId });
 };
-export const emitPinMessage = ({ messageId, roomId, userId }) => {
-  emitSocket("message:pin", { messageId, roomId, userId });
+export const emitPinMessage = ({ messageId, roomId }) => {
+  emitSocket("message:pin", { messageId, roomId });
 };
-export const emitUnpinMessage = ({ messageId, roomId, userId }) => {
-  emitSocket("message:unpin", { messageId, roomId, userId });
+export const emitUnpinMessage = ({ messageId, roomId }) => {
+  emitSocket("message:unpin", { messageId, roomId });
 };
-export const isOnline = ({ userId }) => {
-  emitSocket("online", { userId });
+export const isOnline = () => {
+  emitSocket("online");
 };
 
 /**
  * Mark all messages in a room as read
  * @param {number} roomId - Chat room ID
  */
-export const markMessagesRead = (roomId, userId) => {
-  emitSocket("messages:mark_read", { roomId, userId });
+export const markMessagesRead = (roomId) => {
+  emitSocket("messages:mark_read", { roomId });
 };
 
 /**
@@ -157,10 +157,10 @@ export const markMessagesRead = (roomId, userId) => {
  * @param {number} roomId - Chat room ID
  * @param {number} messageId - Message ID
  */
-export const markMessageAsRead = (roomId, messageId, userId) => {
-  emitSocket("message:mark_read", { roomId, messageId, userId });
+export const markMessageAsRead = (roomId, messageId) => {
+  emitSocket("message:mark_read", { roomId, messageId });
 };
 
-export const forwardMultipleMessages = ({ roomsIds, messageIds, userId }) => {
-  emitSocket("messages:forward", { roomsIds, messageIds, userId });
+export const forwardMultipleMessages = ({ roomsIds, messageIds }) => {
+  emitSocket("messages:forward", { roomsIds, messageIds });
 };

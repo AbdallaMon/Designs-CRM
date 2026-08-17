@@ -14,7 +14,15 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS, messagesNames } from "@dms/shared";
+import {
+  LEAD_STATUSES, PROFILES, leadsMessagesCodes,
+  authMessagesCodes,
+  AUDIT_MODULES,
+  AUDIT_ACTIONS,
+  messagesNames,
+  hasPermission,
+  PERMISSIONS,
+} from "@dms/shared";
 import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadRepository } from "./lead.repo.js";
 import { adminLeadsRepository } from "../../admin-residual/admin-leads/admin-leads.repo.js";
@@ -64,17 +72,22 @@ dayjs.extend(timezone);
 // Roles that historically had FULL read scope on the LIST (legacy excluded these from
 // the country narrowing in getClientLeads).
 const LIST_FULL_PROFILES = [
-  "ADMIN",
-  "SUPER_ADMIN",
-  "SUPER_SALES",
-  "CONTACT_INITIATOR",
+  PROFILES.ADMIN,
+  PROFILES.SUPER_ADMIN,
+  PROFILES.SUPER_SALES,
+  PROFILES.CONTACT_INITIATOR,
 ];
+
+const requested = (value) => value === true || value === "true";
 
 class LeadUsecase {
   // Admin-tier lead operator = ADMIN/SUPER_ADMIN base role OR an admin-tier profile
   // (SUPER_SALES). Profile-authoritative — the legacy isSuperSales flag is NOT read.
   isAdminUser(authUser) {
-    return Boolean(authUser?.isAdminTier);
+    return (
+      Boolean(authUser?.isAdminTier) ||
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES
+    );
   }
 
   // Profile-key ONLY, by design (spec decision D4): do NOT fall back to isAdminTier or
@@ -84,14 +97,14 @@ class LeadUsecase {
 
   // Full read-scope over ALL leads (the super-sales pool), by active profile.
   #isSuperSalesScope(authUser) {
-    return authUser?.currentProfileKey === "SUPER_SALES";
+    return authUser?.currentProfileKey === PROFILES.SUPER_SALES;
   }
 
   // Primary-tier lead-visibility carve-out (SUPER_SALES ⊇ PRIMARY_SALES).
   #isPrimaryScope(authUser) {
     return (
-      authUser?.currentProfileKey === "SUPER_SALES" ||
-      authUser?.currentProfileKey === "PRIMARY_SALES"
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES ||
+      authUser?.currentProfileKey === PROFILES.PRIMARY_SALES
     );
   }
 
@@ -136,10 +149,30 @@ class LeadUsecase {
   // Legacy getClientLeads: status/filter where + (for non-privileged roles) a
   // country restriction. Does NOT scope by assignment — the list is the shared pool.
   async listLeads({ query, authUser, page, limit, skip }) {
+    this.#assertLeadPoolAccess({ query, authUser });
     const searchParams = { ...query, checkConsult: true };
     const where = await this.#buildListWhere(searchParams, authUser.id);
     const { items, total } = await leadRepository.listLeads({ where, skip, take: limit });
     return { items, total, page, pageSize: limit };
+  }
+
+  #assertLeadPoolAccess({ query, authUser }) {
+    let requiredPermission = null;
+    if (requested(query.noConsulted)) {
+      requiredPermission = PERMISSIONS.LEAD.NON_CONSULTED_VIEW;
+    } else if (requested(query.assignedOverdue)) {
+      requiredPermission = PERMISSIONS.LEAD.ON_HOLD_VIEW;
+    }
+
+    if (
+      requiredPermission &&
+      !hasPermission(authUser?.permissions, requiredPermission)
+    ) {
+      throw new AppError({
+        code: authMessagesCodes.PERMISSION_DENIED,
+        statusCode: 403,
+      });
+    }
   }
 
   async #buildListWhere(searchParams, userId) {
@@ -148,14 +181,14 @@ class LeadUsecase {
     const filters = JSON.parse(searchParams.filters);
 
     if (assignedOverdue) {
-      where = { status: "ON_HOLD" };
+      where = { status: LEAD_STATUSES.ON_HOLD };
       if (searchParams?.staffId) {
         where.assignedTo = { is: { id: { not: Number(searchParams.staffId) } } };
       }
     } else {
-      if (isNew) where.status = "NEW";
+      if (isNew) where.status = LEAD_STATUSES.NEW;
       else if (status) where.status = status;
-      else where.status = { notIn: ["NEW", "CONVERTED", "ON_HOLD"] };
+      else where.status = { notIn: [LEAD_STATUSES.NEW, LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD] };
       if (searchParams?.staffId) where.userId = Number(searchParams.staffId);
     }
     if (filters?.clientId && filters.clientId !== "all" && filters.clientId !== null) {
@@ -195,36 +228,50 @@ class LeadUsecase {
   // SAME where-builder its pool uses so the badge equals what that pool actually lists:
   //   new          → isNew (status NEW + initialConsult) pool
   //   nonConsulted → noConsulted (initialConsult:false) pool
-  //   stale        → assignedOverdue (ON_HOLD not-assigned-to-me) pool — staffId = caller
+  //   onHold       → assignedOverdue (ON_HOLD; optionally excluding the caller) pool
   //   calls/meetings → the IN_PROGRESS reminder countWhere (#staffFilter scoping)
   async getLeadsSummary({ query, authUser }) {
     const F = "{}"; // no extra filters for the headline counts
-    const [newWhere, nonConsultedWhere, staleWhere] = await Promise.all([
+    const canViewNonConsulted = hasPermission(
+      authUser?.permissions,
+      PERMISSIONS.LEAD.NON_CONSULTED_VIEW,
+    );
+    const canViewOnHold = hasPermission(
+      authUser?.permissions,
+      PERMISSIONS.LEAD.ON_HOLD_VIEW,
+    );
+    const [newWhere, nonConsultedWhere, onHoldWhere] = await Promise.all([
       this.#buildListWhere({ isNew: true, checkConsult: true, filters: F }, authUser.id),
-      this.#buildListWhere({ noConsulted: "true", filters: F }, authUser.id),
-      this.#buildListWhere(
-        { assignedOverdue: true, staffId: authUser.id, filters: F },
-        authUser.id,
-      ),
+      canViewNonConsulted
+        ? this.#buildListWhere({ noConsulted: "true", filters: F }, authUser.id)
+        : null,
+      canViewOnHold
+        ? this.#buildListWhere(
+            { assignedOverdue: true, staffId: query.staffId || undefined, filters: F },
+            authUser.id,
+          )
+        : null,
     ]);
 
     const reminderCountWhere = {
-      status: "IN_PROGRESS",
+      status: LEAD_STATUSES.IN_PROGRESS,
+      ...this.#reminderStaffScope(query),
       clientLead: {
-        status: { notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"] },
-        ...this.#staffFilter(query),
+        status: { notIn: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED] },
       },
     };
 
-    const [newCount, nonConsulted, stale, calls, meetings] = await Promise.all([
+    const [newCount, nonConsulted, onHold, calls, meetings] = await Promise.all([
       leadRepository.countLeads({ where: newWhere }),
-      leadRepository.countLeads({ where: nonConsultedWhere }),
-      leadRepository.countLeads({ where: staleWhere }),
+      nonConsultedWhere
+        ? leadRepository.countLeads({ where: nonConsultedWhere })
+        : 0,
+      onHoldWhere ? leadRepository.countLeads({ where: onHoldWhere }) : 0,
       leadRepository.countCalls({ where: reminderCountWhere }),
       leadRepository.countMeetings({ where: reminderCountWhere }),
     ]);
 
-    return { new: newCount, nonConsulted, stale, calls, meetings };
+    return { new: newCount, nonConsulted, onHold, stale: onHold, calls, meetings };
   }
 
   // Deals / columns delegate to the legacy aggregators (identical filter+select
@@ -234,15 +281,13 @@ class LeadUsecase {
     const searchParams = { ...query };
     if (
       !authUser.isAdminTier &&
-      authUser.currentProfileKey !== "ACCOUNTANT" &&
+      authUser.currentProfileKey !== PROFILES.ACCOUNTANT &&
       !this.#isSuperSalesScope(authUser)
     ) {
       searchParams.selfId = authUser.id;
       searchParams.userId = authUser.id;
     }
-    const isAdmin =
-      authUser.isAdminTier ||
-      authUser.currentProfileKey !== "SUPER_SALES";
+    const isAdmin = this.isAdminUser(authUser);
     const items = await getClientLeadsByDateRange({ searchParams, isAdmin, user: authUser });
     return items;
   }
@@ -251,7 +296,7 @@ class LeadUsecase {
     const searchParams = { ...query };
     if (
       !authUser.isAdminTier &&
-      authUser.currentProfileKey !== "ACCOUNTANT" &&
+      authUser.currentProfileKey !== PROFILES.ACCOUNTANT &&
       !this.#isSuperSalesScope(authUser)
     ) {
       searchParams.selfId = authUser.id;
@@ -280,12 +325,12 @@ class LeadUsecase {
     const privileged =
       authUser.isAdminTier ||
       this.#isSuperSalesScope(authUser) ||
-      profileKey === "CONTACT_INITIATOR";
+      profileKey === PROFILES.CONTACT_INITIATOR;
 
-    if (!authUser.isAdminTier && profileKey !== "ACCOUNTANT" && !this.#isSuperSalesScope(authUser)) {
+    if (!authUser.isAdminTier && profileKey !== PROFILES.ACCOUNTANT && !this.#isSuperSalesScope(authUser)) {
       searchParams.userId = authUser.id;
     }
-    if (!authUser.isAdminTier && profileKey !== "CONTACT_INITIATOR" && !this.#isSuperSalesScope(authUser)) {
+    if (!authUser.isAdminTier && profileKey !== PROFILES.CONTACT_INITIATOR && !this.#isSuperSalesScope(authUser)) {
       searchParams.checkConsult = true;
     }
 
@@ -345,7 +390,7 @@ class LeadUsecase {
       if (shuffle && shuffle.userId !== Number(userId)) {
         where = {};
       } else if (!this.#isPrimaryScope(user)) {
-        leadWhere.status = { notIn: ["NEW", "ARCHIVED", "ON_HOLD", "FINALIZED", "REJECTED", "CONVERTED"] };
+        leadWhere.status = { notIn: [LEAD_STATUSES.NEW, "ARCHIVED", LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED, LEAD_STATUSES.CONVERTED] };
       }
     }
     const isNew = await leadRepository.findUnassignedNew({ id: Number(clientLeadId) });
@@ -376,15 +421,15 @@ class LeadUsecase {
     }
 
     clientLead.callReminders = [
-      ...clientLead.callReminders.filter((c) => c.status === "IN_PROGRESS"),
-      ...clientLead.callReminders.filter((c) => c.status !== "IN_PROGRESS"),
+      ...clientLead.callReminders.filter((c) => c.status === LEAD_STATUSES.IN_PROGRESS),
+      ...clientLead.callReminders.filter((c) => c.status !== LEAD_STATUSES.IN_PROGRESS),
     ];
     if (clientLead.contracts?.length > 0) this.#decorateContractStage(clientLead);
     return clientLead;
   }
 
   #decorateContractStage(clientLead) {
-    const currentStage = clientLead.contracts[0].stages?.find((s) => s.stageStatus === "IN_PROGRESS");
+    const currentStage = clientLead.contracts[0].stages?.find((s) => s.stageStatus === LEAD_STATUSES.IN_PROGRESS);
     clientLead.contracts[0].stage = currentStage;
     clientLead.contracts[0].contractLevel = currentStage?.title;
   }
@@ -421,7 +466,7 @@ class LeadUsecase {
     const lead = await leadRepository.findLeadOwner({ id: Number(body.id) });
     if (!lead) throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
     if (lead.userId == null) throw new AppError({ code: leadsMessagesCodes.LEAD_CONVERT_REQUIRES_OWNER, statusCode: 409 });
-    return markClientLeadAsConverted(Number(body.id), body.reasonToConvert, "ON_HOLD");
+    return markClientLeadAsConverted(Number(body.id), body.reasonToConvert, LEAD_STATUSES.ON_HOLD);
   }
 
   async changeLeadStatus({ id, body, authUser, currentStatus, auditCtx }) {
@@ -469,15 +514,15 @@ class LeadUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   async listCalls({ query, skip, limit, page }) {
     const where = {
-      status: "IN_PROGRESS",
-      ...this.#staffFilter(query),
-      clientLead: { status: { notIn: ["CONVERTED", "ON_HOLD", "REJECTED"] }, ...this.#staffFilter(query) },
+      status: LEAD_STATUSES.IN_PROGRESS,
+      ...this.#reminderStaffScope(query),
+      clientLead: { status: { notIn: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.REJECTED] } },
     };
     const countWhere = {
-      status: "IN_PROGRESS",
+      status: LEAD_STATUSES.IN_PROGRESS,
+      ...this.#reminderStaffScope(query),
       clientLead: {
-        status: { notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"] },
-        ...this.#staffFilter(query),
+        status: { notIn: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED] },
       },
     };
     const { items, total } = await leadRepository.findNextCalls({ where, countWhere, skip, take: limit });
@@ -508,16 +553,16 @@ class LeadUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   async listMeetings({ query, skip, limit, page }) {
     const where = {
-      status: "IN_PROGRESS",
+      status: LEAD_STATUSES.IN_PROGRESS,
       time: { not: null },
-      ...this.#staffFilter(query),
-      clientLead: { status: { notIn: ["CONVERTED", "ON_HOLD", "REJECTED"] }, ...this.#staffFilter(query) },
+      ...this.#reminderStaffScope(query),
+      clientLead: { status: { notIn: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.REJECTED] } },
     };
     const countWhere = {
-      status: "IN_PROGRESS",
+      status: LEAD_STATUSES.IN_PROGRESS,
+      ...this.#reminderStaffScope(query),
       clientLead: {
-        status: { notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"] },
-        ...this.#staffFilter(query),
+        status: { notIn: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED] },
       },
     };
     const { items, total } = await leadRepository.findNextMeetings({ where, countWhere, skip, take: limit });
@@ -616,8 +661,15 @@ class LeadUsecase {
     return row;
   }
 
-  #staffFilter(query) {
-    return query?.staffId && query.staffId !== "undefined" ? { userId: Number(query.staffId) } : {};
+  #reminderStaffScope(query) {
+    if (!query?.staffId || query.staffId === "undefined") return {};
+    const userId = Number(query.staffId);
+    return {
+      OR: [
+        { userId },
+        { clientLead: { userId } },
+      ],
+    };
   }
 }
 

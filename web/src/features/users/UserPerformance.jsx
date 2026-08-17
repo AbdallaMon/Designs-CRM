@@ -33,6 +33,7 @@ import {
 
 import { getData } from "@/app/helpers/functions/getData";
 import { familiesOf, FAMILY_META } from "@/app/helpers/profiles";
+import { PROFILE_FAMILIES } from "@dms/shared";
 import LeadStatusChart from "@/features/dashboard/LeadStatusChart.jsx";
 import IncomeOverTimeChart from "@/features/dashboard/IncomeOverTimeChart.jsx";
 
@@ -232,7 +233,7 @@ function UntrackedSection({ families }) {
 // (key-metrics / designer-metrics) which return zeros for the wrong domain — never a 500.
 export default function UserPerformance({ user }) {
   const families = useMemo(() => familiesOf(user), [user]);
-  const isSales = families.includes("SALES");
+  const isSales = families.includes(PROFILE_FAMILIES.SALES);
   const isDesign = families.includes("DESIGN");
   const staffId = user?.id;
 
@@ -282,7 +283,11 @@ export default function UserPerformance({ user }) {
     );
   }
 
-  const untracked = families.filter((f) => f !== "SALES" && f !== "DESIGN");
+  const untracked = families.filter(
+    (family) =>
+      family !== PROFILE_FAMILIES.SALES &&
+      family !== PROFILE_FAMILIES.DESIGN,
+  );
 
   return (
     <Box>

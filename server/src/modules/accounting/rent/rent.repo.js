@@ -27,6 +27,10 @@ const RENT_ROW_SELECT = {
 class RentRepository {
   model = prisma.rent;
 
+  runInTransaction(work) {
+    return prisma.$transaction(work);
+  }
+
   findRentState({ rentId }) {
     return prisma.rent.findUnique({
       where: { id: Number(rentId) },
@@ -46,8 +50,8 @@ class RentRepository {
     return prisma.Rent.count();
   }
 
-  createRent({ name, description }) {
-    return prisma.Rent.create({
+  createRent({ name, description, client }) {
+    return (client ?? prisma).Rent.create({
       data: {
         name,
         description,
@@ -55,21 +59,21 @@ class RentRepository {
     });
   }
 
-  findRentRow({ id }) {
-    return prisma.Rent.findUnique({
+  findRentRow({ id, client }) {
+    return (client ?? prisma).Rent.findUnique({
       where: { id },
       select: RENT_ROW_SELECT,
     });
   }
 
-  findRentForRenew({ id }) {
-    return prisma.Rent.findUnique({
+  findRentForRenew({ id, client }) {
+    return (client ?? prisma).Rent.findUnique({
       where: { id },
     });
   }
 
-  createRentPeriod({ amount, rentId, startDate, endDate }) {
-    return prisma.RentPeriod.create({
+  createRentPeriod({ amount, rentId, startDate, endDate, client }) {
+    return (client ?? prisma).RentPeriod.create({
       data: {
         amount,
         rentId,
@@ -80,8 +84,8 @@ class RentRepository {
     });
   }
 
-  createRentOutcome({ amount, name, paymentDate, rentPeriodId }) {
-    return prisma.outcome.create({
+  createRentOutcome({ amount, name, paymentDate, rentPeriodId, client }) {
+    return (client ?? prisma).outcome.create({
       data: {
         amount,
         description: name || "Renewing rent",

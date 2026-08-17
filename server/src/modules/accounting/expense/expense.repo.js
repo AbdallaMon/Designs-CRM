@@ -1,3 +1,4 @@
+import { PAYMENT_STATUSES } from "@dms/shared";
 // accounting/expense repository — Prisma I/O ONLY. Relocated from the legacy accountant
 // service. `getOperationalExpenses` is a verbatim list read; `createOperationalExpense`
 // performs the two interleaved writes (OperationalExpenses.create + the linked Outcome)
@@ -28,17 +29,29 @@ class ExpenseRepository {
     };
   }
 
-  async createOperationalExpense({ category, amount, description, paymentDate }) {
-    const newExpense = await prisma.OperationalExpenses.create({
+  async createOperationalExpense({ category, amount, description, paymentDate, client }) {
+    if (!client) {
+      return prisma.$transaction((transactionClient) =>
+        this.createOperationalExpense({
+          category,
+          amount,
+          description,
+          paymentDate,
+          client: transactionClient,
+        }),
+      );
+    }
+
+    const newExpense = await client.OperationalExpenses.create({
       data: {
         category,
         amount,
         description,
         paymentDate: new Date(paymentDate),
-        paymentStatus: "FULLY_PAID",
+        paymentStatus: PAYMENT_STATUSES.FULLY_PAID,
       },
     });
-    const outcome = await prisma.outcome.create({
+    await client.outcome.create({
       data: {
         amount,
         description: `${category} - ${description}`,

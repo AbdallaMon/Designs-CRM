@@ -76,6 +76,17 @@ export const coursesMessages = {
   ATTEMPT_CANNOT_DECREASE: "Attempts cannot be decreased below the number already used",
   ATTEMPT_ALREADY_ENDED: "This attempt has already ended",
   QUESTION_TEST_MISMATCH: "This question does not belong to this test",
+  TEST_MUST_START_AS_DRAFT: "Create the test as a draft, add valid questions, then publish it",
+  TEST_VALID_QUESTION_REQUIRED: "Add at least one valid question before publishing this test",
+  QUESTION_TYPE_REQUIRED: "Question type is required",
+  QUESTION_CHOICES_MIN_TWO: "At least two answer choices are required",
+  QUESTION_CHOICE_TEXT_REQUIRED: "Every answer choice must contain text",
+  QUESTION_CHOICES_UNIQUE: "Answer choices must be unique",
+  QUESTION_CORRECT_ANSWER_REQUIRED: "Select at least one correct answer",
+  QUESTION_EXACTLY_ONE_CORRECT: "Select exactly one correct answer",
+  ORDERING_POSITION_INVALID: "Every ordering choice must have a non-negative integer position",
+  ORDERING_POSITION_UNIQUE: "Every ordering choice must have a unique position",
+  QUESTION_TYPE_UNSUPPORTED: "Unsupported question type",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
   OK: "Operation completed successfully",

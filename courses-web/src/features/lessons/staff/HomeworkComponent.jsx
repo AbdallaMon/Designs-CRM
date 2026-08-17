@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { HOMEWORK_TYPES } from "@dms/shared";
 import {
   Dialog,
   DialogTitle,
@@ -37,6 +38,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { homeworkPayload } from "@/app/helpers/contracts/coursePayloads";
 
 const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
   const [homeworkDialog, setHomeworkDialog] = useState(false);
@@ -52,17 +54,17 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
 
   const theme = useTheme();
 
-  useEffect(() => {
-    fetchHomeworks();
-  }, []);
-
-  const fetchHomeworks = async () => {
+  const fetchHomeworks = useCallback(async () => {
     await getDataAndSet({
       url: `staff-courses/${courseId}/lessons/${lessonId}/home-work`,
       setData: setHomeworks,
       setLoading,
     });
-  };
+  }, [courseId, lessonId]);
+
+  useEffect(() => {
+    fetchHomeworks();
+  }, [fetchHomeworks]);
 
   const handleUploadClick = (type) => {
     setUploadType(type);
@@ -77,12 +79,11 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
 
     const fileUpload = await uploadInChunks(file.file, setProgress, setOverlay);
 
-    if (fileUpload.status === 200) {
-      url = fileUpload.url;
-    }
+    if (fileUpload.status !== 200 || !fileUpload.url) return;
+    url = fileUpload.url;
 
     const req = await handleRequestSubmit(
-      { testId, url, title, type: uploadType },
+      homeworkPayload({ url, title, type: uploadType }),
       setSubmitting,
       `staff-courses/${courseId}/lessons/${lessonId}/home-work`
     );
@@ -99,8 +100,12 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
     setFile(null);
   };
 
-  const videoHomeworks = homeworks.filter((hw) => hw.type === "VIDEO");
-  const summaryHomeworks = homeworks.filter((hw) => hw.type === "SUMMARY");
+  const videoHomeworks = homeworks.filter(
+    (hw) => hw.type === HOMEWORK_TYPES.VIDEO,
+  );
+  const summaryHomeworks = homeworks.filter(
+    (hw) => hw.type === HOMEWORK_TYPES.SUMMARY,
+  );
   const hasVideo = videoHomeworks.length > 0;
   const hasSummary = summaryHomeworks.length > 0;
   const canProceed = type === "LESSON" ? hasSummary : hasVideo;
@@ -242,7 +247,7 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
                 <Button
                   variant="outlined"
                   startIcon={<FiVideo />}
-                  onClick={() => handleUploadClick("VIDEO")}
+                  onClick={() => handleUploadClick(HOMEWORK_TYPES.VIDEO)}
                   size="large"
                   sx={{
                     borderRadius: 2,
@@ -263,7 +268,7 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
                 <Button
                   variant="outlined"
                   startIcon={<FiFileText />}
-                  onClick={() => handleUploadClick("SUMMARY")}
+                  onClick={() => handleUploadClick(HOMEWORK_TYPES.SUMMARY)}
                   color="secondary"
                   size="large"
                   sx={{
@@ -409,8 +414,8 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
             ) : (
               <List sx={{ bgcolor: "background.paper", borderRadius: 2 }}>
                 {homeworks.map((homework, index) => {
-                  if (homework.type === "VIDEO" && type === "LESSON") return;
-                  if (homework.type === "SUMMARY" && type === "TEST") return;
+                  if (homework.type === HOMEWORK_TYPES.VIDEO && type === "LESSON") return;
+                  if (homework.type === HOMEWORK_TYPES.SUMMARY && type === "TEST") return;
 
                   return (
                     <React.Fragment key={homework.id}>
@@ -421,16 +426,16 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
                               p: 1,
                               borderRadius: 2,
                               bgcolor:
-                                homework.type === "VIDEO"
+                                homework.type === HOMEWORK_TYPES.VIDEO
                                   ? "primary.light"
                                   : "secondary.light",
                               color:
-                                homework.type === "VIDEO"
+                                homework.type === HOMEWORK_TYPES.VIDEO
                                   ? "primary.contrastText"
                                   : "secondary.contrastText",
                             }}
                           >
-                            {homework.type === "VIDEO" ? (
+                            {homework.type === HOMEWORK_TYPES.VIDEO ? (
                               <FiVideo size={20} />
                             ) : (
                               <FiFileText size={20} />
@@ -458,7 +463,7 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
                                 label={homework.type}
                                 size="small"
                                 color={
-                                  homework.type === "VIDEO"
+                                  homework.type === HOMEWORK_TYPES.VIDEO
                                     ? "primary"
                                     : "secondary"
                                 }
@@ -524,9 +529,11 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
                 p: 1,
                 borderRadius: 2,
                 bgcolor:
-                  uploadType === "VIDEO" ? "primary.light" : "secondary.light",
+                  uploadType === HOMEWORK_TYPES.VIDEO
+                    ? "primary.light"
+                    : "secondary.light",
                 color:
-                  uploadType === "VIDEO"
+                  uploadType === HOMEWORK_TYPES.VIDEO
                     ? "primary.contrastText"
                     : "secondary.contrastText",
               }}
@@ -534,7 +541,7 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
               <FiUpload size={20} />
             </Box>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Upload {uploadType === "VIDEO" ? "Video" : "Summary"}
+              Upload {uploadType === HOMEWORK_TYPES.VIDEO ? "Video" : "Summary"}
             </Typography>
           </Box>
         </DialogTitle>
@@ -553,17 +560,22 @@ const HomeworkComponent = ({ courseId, lessonId, onUpdate, type, testId }) => {
             }}
             required
             placeholder={`Enter a title for your ${
-              uploadType === "VIDEO" ? "video" : "summary"
+              uploadType === HOMEWORK_TYPES.VIDEO ? "video" : "summary"
             }`}
           />
           <SimpleFileInput
             id="file"
             setData={setFile}
             label={
-              uploadType === "VIDEO" ? "Choose video file" : "Choose document"
+              uploadType === HOMEWORK_TYPES.VIDEO
+                ? "Choose video file"
+                : "Choose document"
             }
             input={{
-              accept: uploadType === "VIDEO" ? "video/*" : "application/pdf",
+              accept:
+                uploadType === HOMEWORK_TYPES.VIDEO
+                  ? "video/*"
+                  : "application/pdf",
             }}
           />
         </DialogContent>

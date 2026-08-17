@@ -1,8 +1,35 @@
 import { getIo } from "../../infra/socket/io-registry.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { addDayGrouping } from "./chat.helpers.js";
-import { chatMessagesCodes } from "@dms/shared";
+import { CHAT_MEMBER_ROLES, CHAT_ROOM_TYPES, chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
+import { exposeAssetReferences } from "../../infra/upload/asset-access.js";
+import { canonicalizeAssetReferences } from "../../infra/upload/upload-reference.js";
+
+async function requireRoomMember({ roomId, userId, clientId }) {
+  const member = await chatRepository.getMember({ roomId, userId, clientId });
+  if (!member) {
+    throw new AppError({
+      code: chatMessagesCodes.ROOM_ACCESS_DENIED,
+      statusCode: 403,
+    });
+  }
+  return member;
+}
+
+async function requireMessageInRoom(messageId, roomId = null) {
+  const message = await chatRepository.getMessageById(messageId);
+  if (
+    !message ||
+    (roomId != null && Number(message.roomId) !== Number(roomId))
+  ) {
+    throw new AppError({
+      code: chatMessagesCodes.MESSAGE_NOT_FOUND,
+      statusCode: 404,
+    });
+  }
+  return message;
+}
 
 
 /**
@@ -61,7 +88,9 @@ export const messageMethods = {
     };
   },
 
-  async getMessagePage(messageId, limit = 50) {
+  async getMessagePage(roomId, messageId, userId, clientId, limit = 50) {
+    await requireRoomMember({ roomId, userId, clientId });
+    await requireMessageInRoom(messageId, roomId);
     return chatRepository.getMessageIndexInRoom(messageId, limit);
   },
 
@@ -79,12 +108,7 @@ export const messageMethods = {
   },
 
   async markRoomRead(roomId, userId, clientId) {
-    const member = await chatRepository.getMember({
-      roomId,
-      userId,
-      clientId,
-    });
-    if (!member) return;
+    const member = await requireRoomMember({ roomId, userId, clientId });
 
     const unreadMessages = await chatRepository.getUnreadMessages({
       roomId,
@@ -121,13 +145,8 @@ export const messageMethods = {
   },
 
   async markMessageRead(roomId, messageId, userId, clientId) {
-    const member = await chatRepository.getMember({
-      roomId,
-      userId,
-      clientId,
-    });
-    if (!member)
-      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
+    const member = await requireRoomMember({ roomId, userId, clientId });
+    if (messageId) await requireMessageInRoom(messageId, roomId);
 
     await chatRepository.updateMemberReadAt(member.id);
 
@@ -162,25 +181,40 @@ export const messageMethods = {
     return { code: chatMessagesCodes.ALL_ROOMS_MARKED_READ };
   },
 
-  async addReaction(messageId, userId, emoji) {
+  async addReaction({ messageId, roomId = null, userId, clientId, emoji }) {
+    const message = await requireMessageInRoom(messageId, roomId);
+    await requireRoomMember({
+      roomId: message.roomId,
+      userId,
+      clientId,
+    });
     const reaction = await chatRepository.upsertReaction({
       messageId,
       userId,
+      clientId,
       emoji,
     });
     const io = getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:added", {
       messageId: Number(messageId),
-      userId: Number(userId),
+      userId: userId ? Number(userId) : null,
+      clientId: clientId ? Number(clientId) : null,
       emoji,
     });
     return reaction;
   },
 
-  async removeReaction(messageId, userId, emoji) {
+  async removeReaction({ messageId, roomId = null, userId, clientId, emoji }) {
+    const message = await requireMessageInRoom(messageId, roomId);
+    await requireRoomMember({
+      roomId: message.roomId,
+      userId,
+      clientId,
+    });
     const reaction = await chatRepository.findReaction({
       messageId,
       userId,
+      clientId,
       emoji,
     });
     if (!reaction) throw new AppError({ code: chatMessagesCodes.REACTION_NOT_FOUND, statusCode: 404 });
@@ -188,7 +222,8 @@ export const messageMethods = {
     const io = getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:removed", {
       messageId: Number(messageId),
-      userId: Number(userId),
+      userId: userId ? Number(userId) : null,
+      clientId: clientId ? Number(clientId) : null,
       emoji,
     });
     return { success: true };
@@ -205,13 +240,7 @@ export const messageMethods = {
     attachments = [],
     replyToId,
   }) {
-    const member = await chatRepository.getMember({
-      roomId,
-      userId,
-      clientId,
-    });
-    if (!member)
-      throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
+    const member = await requireRoomMember({ roomId, userId, clientId });
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (!room?.isChatEnabled)
@@ -219,21 +248,24 @@ export const messageMethods = {
     if ((type === "FILE" || attachments?.length) && !room.allowFiles) {
       throw new AppError({ code: chatMessagesCodes.FILES_DISABLED, statusCode: 400 });
     }
+    if (replyToId) await requireMessageInRoom(replyToId, roomId);
 
+    const canonicalAttachments = canonicalizeAssetReferences(attachments || []);
     const message = await chatRepository.createMessage({
       roomId,
       senderId: userId,
       senderClient: clientId,
       content,
       type,
-      attachments: attachments || [],
+      attachments: canonicalAttachments,
       replyToId,
       memberId: member.id,
     });
 
     const io = getIo();
+    const exposedMessage = exposeAssetReferences(message);
     io.to(`room:${roomId}`).emit("message:created", {
-      ...message,
+      ...exposedMessage,
       roomId: Number(roomId),
     });
     io.to(`room:${roomId}`).emit("user:stop_typing", {
@@ -248,7 +280,7 @@ export const messageMethods = {
       clientId,
       event: "notification:new_message",
       content: {
-        message,
+        message: exposedMessage,
         roomId: Number(roomId),
         isMuted: member.isMuted,
         clientId,
@@ -258,9 +290,9 @@ export const messageMethods = {
     return message;
   },
 
-  async editMessage({ messageId, userId, clientId, content }) {
-    const message = await chatRepository.getMessageById(messageId);
-    if (!message) throw new AppError({ code: chatMessagesCodes.MESSAGE_NOT_FOUND, statusCode: 404 });
+  async editMessage({ roomId, messageId, userId, clientId, content }) {
+    const message = await requireMessageInRoom(messageId, roomId);
+    await requireRoomMember({ roomId: message.roomId, userId, clientId });
 
     const isOwner =
       (userId && message.senderId === Number(userId)) ||
@@ -280,11 +312,10 @@ export const messageMethods = {
     return updated;
   },
 
-  async deleteMessage({ messageId, userId, clientId }) {
-    const message = await chatRepository.getMessageById(messageId);
-    if (!message) throw new AppError({ code: chatMessagesCodes.MESSAGE_NOT_FOUND, statusCode: 404 });
+  async deleteMessage({ roomId, messageId, userId, clientId }) {
+    const message = await requireMessageInRoom(messageId, roomId);
 
-    const member = await chatRepository.getMember({
+    const member = await requireRoomMember({
       roomId: message.roomId,
       userId,
       clientId,
@@ -292,7 +323,7 @@ export const messageMethods = {
     const isOwner =
       (userId && message.senderId === Number(userId)) ||
       (clientId && message.senderClient === Number(clientId));
-    const isAdmin = member?.role === "ADMIN" || member?.role === "MODERATOR";
+    const isAdmin = member?.role === CHAT_MEMBER_ROLES.ADMIN || member?.role === CHAT_MEMBER_ROLES.MODERATOR;
 
     if (!isOwner && !isAdmin)
       throw new AppError({ code: chatMessagesCodes.MESSAGE_FORBIDDEN, statusCode: 403 });
@@ -309,18 +340,16 @@ export const messageMethods = {
   },
 
   async pinMessage({ roomId, messageId, userId, clientId }) {
-    const member = await chatRepository.getMember({
-      roomId,
-      userId,
-      clientId,
-    });
-    if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
+    const member = await requireRoomMember({ roomId, userId, clientId });
+    await requireMessageInRoom(messageId, roomId);
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (
-      room.type !== "STAFF_TO_STAFF" &&
-      member.role !== "ADMIN" &&
-      member.role !== "MODERATOR"
+      !userId ||
+      !room ||
+      (room.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF &&
+        member.role !== CHAT_MEMBER_ROLES.ADMIN &&
+        member.role !== CHAT_MEMBER_ROLES.MODERATOR)
     ) {
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
@@ -345,18 +374,16 @@ export const messageMethods = {
   },
 
   async unpinMessage({ roomId, messageId, userId, clientId }) {
-    const member = await chatRepository.getMember({
-      roomId,
-      userId,
-      clientId,
-    });
-    if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
+    const member = await requireRoomMember({ roomId, userId, clientId });
+    await requireMessageInRoom(messageId, roomId);
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (
-      room.type !== "STAFF_TO_STAFF" &&
-      member.role !== "ADMIN" &&
-      member.role !== "MODERATOR"
+      !userId ||
+      !room ||
+      (room.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF &&
+        member.role !== CHAT_MEMBER_ROLES.ADMIN &&
+        member.role !== CHAT_MEMBER_ROLES.MODERATOR)
     ) {
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
@@ -376,13 +403,54 @@ export const messageMethods = {
     return result;
   },
 
-  async forwardMessages({ roomsIds, messageIds, userId }) {
-    const messages = await chatRepository.getMessagesForForward(messageIds);
-    for (const roomId of roomsIds) {
+  async forwardMessages({
+    roomsIds,
+    messageIds,
+    userId,
+    clientId,
+    allowedRoomId = null,
+  }) {
+    const sourceIds = [...new Set(messageIds.map(Number))];
+    const destinationIds = [...new Set(roomsIds.map(Number))];
+    const messages = await chatRepository.getMessagesForForward(sourceIds);
+    if (messages.length !== sourceIds.length) {
+      throw new AppError({
+        code: chatMessagesCodes.MESSAGE_NOT_FOUND,
+        statusCode: 404,
+      });
+    }
+    for (const message of messages) {
+      if (
+        allowedRoomId != null &&
+        Number(message.roomId) !== Number(allowedRoomId)
+      ) {
+        throw new AppError({
+          code: chatMessagesCodes.ROOM_ACCESS_DENIED,
+          statusCode: 403,
+        });
+      }
+      await requireRoomMember({
+        roomId: message.roomId,
+        userId,
+        clientId,
+      });
+    }
+    for (const roomId of destinationIds) {
+      if (
+        allowedRoomId != null &&
+        Number(roomId) !== Number(allowedRoomId)
+      ) {
+        throw new AppError({
+          code: chatMessagesCodes.ROOM_ACCESS_DENIED,
+          statusCode: 403,
+        });
+      }
+      await requireRoomMember({ roomId, userId, clientId });
       for (const msg of messages) {
         await this.sendMessage({
           roomId,
           userId,
+          clientId,
           content: msg.content,
           type: msg.type,
           attachments: msg.attachments || [],

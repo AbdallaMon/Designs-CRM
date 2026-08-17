@@ -13,6 +13,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import { MdPlusOne } from "react-icons/md";
 
 import AttemptsLimit from "./components/AttemptsLimit";
@@ -50,7 +51,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
 
   async function getUserAttempts() {
     const req = await getDataAndSet({
-      url: `courses/tests/${testId}/attampts/user?userId=${userId}&`,
+      url: `courses/tests/${testId}/attampts/user?userId=${userId}`,
       setLoading,
       setData: setAttempts,
     });
@@ -98,7 +99,7 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
           )
         );
       } else {
-        throw new Error("Failed to update approval status");
+      throw new Error(FEEDBACK.APPROVAL_UPDATE_FAILED);
       }
     } catch (error) {
       console.error("Error updating approval:", error);
@@ -108,13 +109,13 @@ const ReviewAttempts = ({ testId = 1, userId }) => {
     }
   };
 
+  async function loadTestData() {
+    await Promise.all([getTest(), getTestQuestions(), getUserAttempts()]);
+  }
+
   useEffect(() => {
     loadTestData();
   }, [testId, userId]);
-
-  const loadTestData = async () => {
-    await Promise.all([getTest(), getTestQuestions(), getUserAttempts()]);
-  };
 
   if (loading) {
     return (

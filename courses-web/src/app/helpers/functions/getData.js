@@ -26,13 +26,11 @@ export async function getData({
       return;
     }
     setLoading(true);
-    let queryPrefix = "?";
-    if (url.endsWith("&")) {
-      queryPrefix = "";
-    }
-    if (url.includes("?")) {
-      queryPrefix = "&";
-    }
+    const queryPrefix = url.includes("?")
+      ? url.endsWith("?") || url.endsWith("&")
+        ? ""
+        : "&"
+      : "?";
     // Only serialize params that were actually supplied. Emitting `page=undefined`
     // (etc.) sends the literal string "undefined", which defeats server-side
     // `z.coerce.number().default(1)` (Number("undefined") is NaN, not missing) and

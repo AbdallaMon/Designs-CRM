@@ -1,4 +1,5 @@
 "use client";
+import { CALENDAR_VIEW_TYPES } from "@dms/shared";
 import {
   Box,
   CircularProgress,
@@ -68,7 +69,9 @@ function StaffAdminCalendar() {
           )}
         </Select>
       </FormControl>
-      {adminId && <AdminBookingPanel type="STAFF" adminId={adminId} />}
+      {adminId && (
+        <AdminBookingPanel type={CALENDAR_VIEW_TYPES.STAFF} adminId={adminId} />
+      )}
     </>
   );
 }

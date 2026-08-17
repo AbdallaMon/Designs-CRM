@@ -22,11 +22,12 @@ import { MdUploadFile } from "react-icons/md";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.jsx";
 import dayjs from "dayjs";
 import { MdDelete } from "react-icons/md";
 import AddPayments from "@/features/leads/payments/AddPayments.jsx";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 import utc from "dayjs/plugin/utc";
 
@@ -65,7 +66,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
 
   const handleAddNewFile = () => {
     if (!fileData.name || !fileData.file) {
-      setAlertError("You must fill all the inputs");
+      setAlertError(FEEDBACK.FILL_ALL_INPUTS);
       return;
     }
 
@@ -79,7 +80,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
 
   const handleSaveAllFiles = async () => {
     if (fileList.length === 0) {
-      setAlertError("No files to upload");
+      setAlertError(FEEDBACK.NO_FILES_TO_UPLOAD);
       return;
     }
 

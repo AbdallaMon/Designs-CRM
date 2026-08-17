@@ -1,3 +1,4 @@
+import { LEAD_STATUSES } from "@dms/shared";
 import { Grid, Typography } from "@mui/material";
 
 export function FinalPriceCalc({ lead }) {
@@ -20,7 +21,7 @@ export function FinalPriceCalc({ lead }) {
   const totalPrice = parseInt(lead.averagePrice) + extraServicesPrice;
   return (
     <>
-      {lead.status === "FINALIZED" && (
+      {lead.status === LEAD_STATUSES.FINALIZED && (
         <>
           <Grid size={{ xs: 12, md: 3 }}>
             <Typography color="text.secondary" variant="caption">

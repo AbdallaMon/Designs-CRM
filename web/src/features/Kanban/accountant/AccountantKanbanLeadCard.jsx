@@ -38,6 +38,10 @@ import Link from "next/link";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { formatCurrency } from "@/app/helpers/functions/utility";
+import {
+  PAYMENT_STATUSES, FORM_VALIDATION_MESSAGES as FORM_ERRORS,
+  formatAmountExceedsRemaining,
+} from "@dms/shared";
 
 const ItemTypes = {
   CARD: "card",
@@ -77,7 +81,7 @@ const StyledCard = styled(Card, {
 const inputs = [
   {
     data: { id: "amount", label: "Amount to be paid", type: "number" },
-    pattern: { required: { value: true, message: "Amount is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.AMOUNT_REQUIRED } },
   },
   {
     data: {
@@ -85,7 +89,7 @@ const inputs = [
       label: "Payment date",
       type: "date",
     },
-    pattern: { required: { value: true, message: "Date is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.DATE_REQUIRED } },
   },
   {
     data: {
@@ -93,7 +97,7 @@ const inputs = [
       label: "Attatchment",
       type: "file",
     },
-    pattern: { required: { value: true, message: "Attatchment is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.ATTACHMENT_REQUIRED } },
   },
 ];
 
@@ -125,7 +129,7 @@ const AccountantKanbanLeadCard = ({
     moveCard(payment, newStatus, setPayments);
   };
   function handleAfterEdit(newData) {
-    if (newData.status === "FULLY_PAID" || newData.amountLeft === 0) {
+    if (newData.status === PAYMENT_STATUSES.FULLY_PAID || newData.amountLeft === 0) {
       setPayments((payments) =>
         payments.filter((payment) => {
           return payment.id !== newData.id;
@@ -156,7 +160,7 @@ const AccountantKanbanLeadCard = ({
     if (request.status === 200) {
       const newPayments = data.map((payment) => {
         if (payment.id === id) {
-          payment.status = "OVERDUE";
+          payment.status = PAYMENT_STATUSES.OVERDUE;
         }
         return payment;
       });
@@ -169,10 +173,7 @@ const AccountantKanbanLeadCard = ({
       data.amount > payment.amountLeft &&
       data.amount > payment.amount - payment.amountPaid
     ) {
-      throw new Error(
-        "Error amount left is more than input ,Amount left is :" +
-          payment.amountLeft
-      );
+      throw new Error(formatAmountExceedsRemaining(payment.amountLeft));
     }
     const formData = new FormData();
     formData.append("file", data.file[0]);

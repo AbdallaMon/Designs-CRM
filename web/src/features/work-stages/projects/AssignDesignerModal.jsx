@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -39,13 +40,13 @@ export function AssignDesignerModal({
   const isThreeDDesigner = project.type === "3D_Designer";
   const requiredProfileKey =
     project.type === "3D_Designer" || project.type === "3D_Modification"
-      ? "DESIGNER_3D"
-      : "DESIGNER_2D";
+      ? PROFILES.DESIGNER_3D
+      : PROFILES.DESIGNER_2D;
 
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
-        url: `users/all-users?profile=${requiredProfileKey}&`,
+        url: `users/all-users?profile=${requiredProfileKey}`,
         setLoading,
       });
       if (usersRequest.status === 200) {

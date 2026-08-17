@@ -1,6 +1,9 @@
 import { adminResidualMessagesCodes, messagesNames } from "@dms/shared";
 import { ok } from "../../../shared/http/response.js";
-import { mapTelegramDataToDTO } from "./telegram.dto.js";
+import {
+  mapTelegramAuthStepToDTO,
+  mapTelegramDataToDTO,
+} from "./telegram.dto.js";
 import { TelegramAuthusecase } from "./telegram.usecase.js";
 
 const TK = messagesNames.adminResidualMessages;
@@ -19,7 +22,7 @@ export class TelegramController {
   static async initTelegramAuth(req, res) {
     const { phoneNumber } = req.body;
     const result = await TelegramAuthusecase.initTelegramAuth(phoneNumber);
-    return ok(res, result.data, result.message, TK);
+    return ok(res, mapTelegramAuthStepToDTO(result.data), result.message, TK);
   }
 
   static async verifyCode(req, res) {
@@ -28,7 +31,7 @@ export class TelegramController {
       phoneNumber,
       code,
     });
-    return ok(res, result.data, result.message, TK);
+    return ok(res, mapTelegramAuthStepToDTO(result.data), result.message, TK);
   }
 
   static async verifyPassword(req, res) {
@@ -37,6 +40,6 @@ export class TelegramController {
       phoneNumber,
       password,
     });
-    return ok(res, result.data, result.message, TK);
+    return ok(res, mapTelegramAuthStepToDTO(result.data), result.message, TK);
   }
 }

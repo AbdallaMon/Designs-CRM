@@ -19,7 +19,7 @@ export function OpenItemDialog({
   initialData = {},
   componentProps = {},
   slug,
-  path = "admin",
+  path = "image-sessions/admin",
   onUpdate,
   checkValidation,
   buttonType = "ICON",

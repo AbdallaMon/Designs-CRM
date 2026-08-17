@@ -1,7 +1,7 @@
 import { getIo } from "../../infra/socket/io-registry.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { computeRoomCapabilities } from "./chat.dto.js";
-import { chatMessagesCodes } from "@dms/shared";
+import { CHAT_MEMBER_ROLES, CHAT_ROOM_TYPES, chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
 
 
@@ -156,18 +156,18 @@ export const roomMethods = {
       isChatEnabled,
     });
 
-    if (type === "STAFF_GROUP" && projectIds?.length) {
+    if (type === CHAT_ROOM_TYPES.STAFF_GROUP && projectIds?.length) {
       await chatRepository.addRoomProjects(room.id, projectIds);
     }
 
     const memberData = [
-      { roomId: room.id, userId: Number(userId), role: "ADMIN" },
+      { roomId: room.id, userId: Number(userId), role: CHAT_MEMBER_ROLES.ADMIN },
     ];
     const filteredUserIds = [
       ...new Set((userIds || []).filter((id) => Number(id) !== Number(userId))),
     ];
     for (const uid of filteredUserIds) {
-      memberData.push({ roomId: room.id, userId: Number(uid), role: "MEMBER" });
+      memberData.push({ roomId: room.id, userId: Number(uid), role: CHAT_MEMBER_ROLES.MEMBER });
     }
     await chatRepository.addRoomMembers(memberData);
 
@@ -192,7 +192,7 @@ export const roomMethods = {
 
     return this.createRoom(userId, {
       name: "Staff to Staff Chat",
-      type: "STAFF_TO_STAFF",
+      type: CHAT_ROOM_TYPES.STAFF_TO_STAFF,
       userIds: [participantId],
       allowFiles: true,
       allowCalls: true,
@@ -215,7 +215,7 @@ export const roomMethods = {
     } = body;
 
     const projectWhere =
-      groupType === "STAFF_GROUP"
+      groupType === CHAT_ROOM_TYPES.STAFF_GROUP
         ? {
             type: { in: selectedProjectsTypes || [] },
             groupId: { in: (projectGroupIds || []).map(Number) },
@@ -228,7 +228,7 @@ export const roomMethods = {
     );
     if (!clientLead) throw new AppError({ code: chatMessagesCodes.CLIENT_LEAD_NOT_FOUND, statusCode: 404 });
 
-    let autoName = `${groupType === "CLIENT_TO_STAFF" ? "Lead" : "Projects"} ${clientLead.client.name} #(${clientLead.code})`;
+    let autoName = `${groupType === CHAT_ROOM_TYPES.CLIENT_TO_STAFF ? "Lead" : "Projects"} ${clientLead.client.name} #(${clientLead.code})`;
     const count = await chatRepository.countRoomsForLead(
       clientLeadId,
       groupType,
@@ -245,7 +245,7 @@ export const roomMethods = {
       chatAccessToken: token,
     });
 
-    if (groupType === "STAFF_GROUP") {
+    if (groupType === CHAT_ROOM_TYPES.STAFF_GROUP) {
       const pIds = clientLead.projects.map((p) => p.id);
       if (!pIds.length)
         throw new AppError({ code: chatMessagesCodes.NO_PROJECTS_FOR_CRITERIA, statusCode: 400 });
@@ -257,15 +257,15 @@ export const roomMethods = {
     let userIds = [];
 
     if (
-      groupType === "CLIENT_TO_STAFF" &&
+      groupType === CHAT_ROOM_TYPES.CLIENT_TO_STAFF &&
       addRelatedSalesStaff &&
       clientLead.assignedTo
     ) {
       userIds.push(String(clientLead.assignedTo.id));
     }
     if (
-      (groupType === "CLIENT_TO_STAFF" && addRelatedDesigners) ||
-      groupType === "STAFF_GROUP"
+      (groupType === CHAT_ROOM_TYPES.CLIENT_TO_STAFF && addRelatedDesigners) ||
+      groupType === CHAT_ROOM_TYPES.STAFF_GROUP
     ) {
       const staffIds = [
         ...new Set(
@@ -278,20 +278,20 @@ export const roomMethods = {
     }
 
     const memberData = [
-      { roomId: room.id, userId: Number(userId), role: "ADMIN" },
+      { roomId: room.id, userId: Number(userId), role: CHAT_MEMBER_ROLES.ADMIN },
     ];
-    if (groupType === "CLIENT_TO_STAFF" && addClient && clientLead.clientId) {
+    if (groupType === CHAT_ROOM_TYPES.CLIENT_TO_STAFF && addClient && clientLead.clientId) {
       memberData.push({
         roomId: room.id,
         clientId: clientLead.clientId,
-        role: "MEMBER",
+        role: CHAT_MEMBER_ROLES.MEMBER,
       });
     }
     const uniqueUserIds = [
       ...new Set(userIds.filter((id) => id !== String(userId))),
     ];
     for (const uid of uniqueUserIds) {
-      memberData.push({ roomId: room.id, userId: Number(uid), role: "MEMBER" });
+      memberData.push({ roomId: room.id, userId: Number(uid), role: CHAT_MEMBER_ROLES.MEMBER });
     }
     await chatRepository.addRoomMembers(memberData);
 
@@ -314,8 +314,8 @@ export const roomMethods = {
     const room = await chatRepository.findRoomBasic(roomId);
     if (!room) throw new AppError({ code: chatMessagesCodes.ROOM_NOT_FOUND, statusCode: 404 });
 
-    const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
-    if (!isAdminOrMod && room.type !== "STAFF_TO_STAFF") {
+    const isAdminOrMod = member.role === CHAT_MEMBER_ROLES.ADMIN || member.role === CHAT_MEMBER_ROLES.MODERATOR;
+    if (!isAdminOrMod && room.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF) {
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
 
@@ -350,12 +350,12 @@ export const roomMethods = {
 
   async deleteRoom(roomId, userId) {
     const member = await chatRepository.getMember({ roomId, userId });
-    if (!member || member.role !== "ADMIN")
+    if (!member || member.role !== CHAT_MEMBER_ROLES.ADMIN)
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
 
     const room = await chatRepository.findRoomBasic(roomId);
     if (!room) throw new AppError({ code: chatMessagesCodes.ROOM_NOT_FOUND, statusCode: 404 });
-    if (room.type === "STAFF_TO_STAFF" || room.type === "PROJECT_GROUP") {
+    if (room.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF || room.type === CHAT_ROOM_TYPES.PROJECT_GROUP) {
       throw new AppError({ code: chatMessagesCodes.ROOM_NOT_DELETABLE, statusCode: 400 });
     }
 
@@ -374,7 +374,7 @@ export const roomMethods = {
     const member = await chatRepository.getMember({ roomId, userId });
     if (!member) throw new AppError({ code: chatMessagesCodes.ROOM_ACCESS_DENIED, statusCode: 403 });
 
-    const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
+    const isAdminOrMod = member.role === CHAT_MEMBER_ROLES.ADMIN || member.role === CHAT_MEMBER_ROLES.MODERATOR;
     if (!isAdminOrMod)
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
 
@@ -386,7 +386,7 @@ export const roomMethods = {
 
     if (action === "addClient") {
       await chatRepository.addRoomMembers([
-        { roomId: Number(roomId), clientId, role: "MEMBER" },
+        { roomId: Number(roomId), clientId, role: CHAT_MEMBER_ROLES.MEMBER },
       ]);
       const token = await chatRepository.generateChatToken();
       await chatRepository.updateRoom(roomId, { chatAccessToken: token });
@@ -411,7 +411,7 @@ export const roomMethods = {
   async regenerateToken(roomId, userId) {
     const member = await chatRepository.getMember({ roomId, userId });
     const isAdminOrMod =
-      member?.role === "ADMIN" || member?.role === "MODERATOR";
+      member?.role === CHAT_MEMBER_ROLES.ADMIN || member?.role === CHAT_MEMBER_ROLES.MODERATOR;
     if (!isAdminOrMod)
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
 

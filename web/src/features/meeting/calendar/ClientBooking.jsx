@@ -1,5 +1,9 @@
 "use client";
 import {
+  CALENDAR_VIEW_TYPES,
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+} from "@dms/shared";
+import {
   Box,
   Button,
   Card,
@@ -176,7 +180,7 @@ const ClientBooking = () => {
       setAlertError(
         req?.error ||
           req?.message ||
-          "Failed to fetch slot details. Please try again."
+          FEEDBACK.SLOT_DETAILS_LOAD_FAILED
       );
       setSessionData((prev) => ({
         ...prev,
@@ -260,7 +264,7 @@ const ClientBooking = () => {
               setSessionData={setSessionData}
               setError={setError}
               setActiveStep={setActiveStep}
-              type="CLIENT"
+              type={CALENDAR_VIEW_TYPES.CLIENT}
             />
           </Box>
         );

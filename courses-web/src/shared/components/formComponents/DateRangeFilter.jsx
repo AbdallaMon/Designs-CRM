@@ -11,11 +11,8 @@ const DateRangeFilter = ({ setFilters, noMargin, lastThreeMonth }) => {
       .startOf("month"),
     end: dayjs(),
   });
-  useEffect(() => {
-    applyFilters();
-  }, [range]);
-  const applyFilters = () => {
-    if (!range.start && !range.end) return;
+  function applyFilters() {
+    if (!range.start || !range.end) return;
     setFilters((prevFilters) => ({
       ...prevFilters,
       range: {
@@ -23,7 +20,11 @@ const DateRangeFilter = ({ setFilters, noMargin, lastThreeMonth }) => {
         endDate: range.end.format("YYYY-MM-DD"),
       },
     }));
-  };
+  }
+
+  useEffect(() => {
+    applyFilters();
+  }, [range]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>

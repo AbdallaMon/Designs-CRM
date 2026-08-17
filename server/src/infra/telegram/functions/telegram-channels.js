@@ -13,9 +13,6 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
   const isUserAuthorized = await getTeleClient().checkAuthorization();
 
   if (!isUserAuthorized) {
-    console.warn(
-      "❌ Telegram client not authenticated. Aborting channel creation.",
-    );
     return;
   }
 
@@ -129,24 +126,12 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     }
     return { channel, inviteLink };
   } catch (err) {
-    console.error(
-      `❌ Error occurred during channel setup for ${clientLeadId}:`,
-      err.message,
-    );
-
     if (channel) {
       try {
-        console.warn("🧹 Attempting to delete incomplete channel...");
         await getTeleClient().invoke(
           new Api.channels.DeleteChannel({ channel }),
         );
-        console.log("🗑️ Incomplete channel deleted.");
-      } catch (cleanupErr) {
-        console.error(
-          "⚠️ Failed to delete incomplete channel:",
-          cleanupErr.message,
-        );
-      }
+      } catch {}
     }
 
     throw err; // Re-throw to let BullMQ handle retry/failure logic
@@ -198,16 +183,13 @@ export async function createTeleChannelRecord({
 
 export async function getChannelEntityFromInviteLink({ inviteLink }) {
   try {
-    console.log("🔗 Processing invite link:", inviteLink);
-    const isUserAuthorized = await getTeleClient().checkAuthorization();
-    console.log(isUserAuthorized, "isUserAuthorized");
+    await getTeleClient().checkAuthorization();
 
     const lastPart = inviteLink.trim().split("/").pop();
     if (!lastPart) throw new Error("❌ Invalid invite link format");
 
     // Case 1: Regular public username (no +)
     if (!lastPart.startsWith("+")) {
-      console.log("🔍 Resolving entity via username:", lastPart);
       return await getTeleClient().getEntity(lastPart);
     }
 
@@ -215,41 +197,25 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
     const hash = lastPart.replace("+", "");
 
     try {
-      console.log("🕵️ Checking chat invite hash:", hash);
       const result = await getTeleClient().invoke(
         new Api.messages.CheckChatInvite({ hash }),
       );
 
       if (result instanceof Api.ChatInviteAlready) {
-        console.log("✅ Already joined. Returning chat info.");
         return result.chat;
       } else {
         throw new Error("🚫 Not a member of the invite link.");
       }
     } catch (error) {
-      console.log(error.message, "error in first");
       if (error.errorMessage?.startsWith("FLOOD_WAIT_")) {
         const waitSeconds = parseInt(error.errorMessage.split("_")[2], 10);
-        console.warn(`⏳ FLOOD_WAIT: Waiting ${waitSeconds} seconds...`);
         await new Promise((res) => setTimeout(res, waitSeconds * 1000));
-        // Retry after wait
-        console.log("🔁 Retrying after wait...");
         return await getChannelEntityFromInviteLink({ inviteLink });
-      }
-
-      if (error.errorMessage === "INVITE_HASH_EXPIRED") {
-        console.error("🚫 Invite hash expired");
       }
 
       throw error;
     }
-  } catch (error) {
-    console.log(error.message, "error in second");
-
-    console.error(
-      "❌ Failed to get channel entity from invite link:",
-      error.message,
-    );
+  } catch {
     return null;
   }
 }

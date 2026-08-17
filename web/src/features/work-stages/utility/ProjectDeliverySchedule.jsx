@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
@@ -61,9 +62,9 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
   const [rows, setRows] = useState([]);
   const { user } = useAuth();
   const canDoActions =
-    user.profile === "ADMIN" ||
-    user.profile === "SUPER_ADMIN" ||
-    ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile);
+    user.profile === PROFILES.ADMIN ||
+    user.profile === PROFILES.SUPER_ADMIN ||
+    [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile);
   // TODO(profiles): no admin-tier delivery code; FE-only admin gate kept
   const admin = checkIfAdmin(user);
   const { setLoading: setSubmitting } = useToastContext();

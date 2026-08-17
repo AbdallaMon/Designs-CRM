@@ -5,7 +5,7 @@ import { Box } from "@mui/material";
 
 import React, { useEffect, useState } from "react";
 import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import LastSeen from "@/shared/components/buttons/LastSeen";
 import SalaryInfoButton from "@/features/accountant/SalaryDialog.jsx";
 import CreateModal from "@/shared/components/models/CreateModal.jsx";

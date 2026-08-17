@@ -1,20 +1,29 @@
 import rateLimit from "express-rate-limit";
 import { rateLimitResponse } from "../../shared/http/rate-limit-response.js";
+import { authMessagesCodes } from "@dms/shared";
 
-class AuthRateLimit {
-  static loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // 10 attempts per window
-    message: rateLimitResponse(),
+const authLimiter = ({ windowMs, max }) =>
+  rateLimit({
+    windowMs,
+    max,
+    message: rateLimitResponse(authMessagesCodes.RATE_LIMIT_EXCEEDED),
     standardHeaders: true,
     legacyHeaders: false,
   });
-  static forgotPasswordLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // 3 attempts per hour
-    message: rateLimitResponse(),
-    standardHeaders: true,
-    legacyHeaders: false,
+
+class AuthRateLimit {
+  static loginLimiter = authLimiter({ windowMs: 15 * 60 * 1000, max: 10 });
+  static forgotPasswordLimiter = authLimiter({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+  });
+  static resetPasswordLimiter = authLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+  });
+  static refreshLimiter = authLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 60,
   });
 }
 

@@ -1,4 +1,5 @@
 "use client"
+import { EMIRATES, LEAD_STATUSES } from "@dms/shared";
 import React, { useState } from 'react';
 import {
     Card,
@@ -166,7 +167,7 @@ const LeadReportFilters = () => {
 
                       <Grid container spacing={3}>
 
-                          <Grid item xs={12} >
+                            <Grid size={{ xs: 12 }}>
                               <Box sx={{ display: 'flex', gap: 2,flexDirection:{xs:"column",md:"row"} }}>
                                   <DatePicker
                                         label="Start Date"
@@ -183,7 +184,7 @@ const LeadReportFilters = () => {
                               </Box>
                           </Grid>
 
-                          <Grid item xs={12} md={6}>
+                            <Grid size={{ xs: 12, md: 6 }}>
                               <FormControl fullWidth>
                                   <InputLabel>Emirates</InputLabel>
                                   <Select
@@ -199,7 +200,7 @@ const LeadReportFilters = () => {
                                               </Box>
                                         )}
                                   >
-                                      {['DUBAI', 'ABU_DHABI', 'SHARJAH', 'AJMAN', 'UMM_AL_QUWAIN', 'RAS_AL_KHAIMAH', 'FUJAIRAH'].map((emirate) => (
+                                      {[EMIRATES.DUBAI, EMIRATES.ABU_DHABI, EMIRATES.SHARJAH, EMIRATES.AJMAN, EMIRATES.UMM_AL_QUWAIN, EMIRATES.RAS_AL_KHAIMAH, EMIRATES.FUJAIRAH].map((emirate) => (
                                             <MenuItem key={emirate} value={emirate}>
                                                 {emirate}
                                             </MenuItem>
@@ -208,7 +209,7 @@ const LeadReportFilters = () => {
                               </FormControl>
                           </Grid>
 
-                          <Grid item xs={12} md={6}>
+                            <Grid size={{ xs: 12, md: 6 }}>
                               <FormControl fullWidth>
                                   <InputLabel>Status</InputLabel>
                                   <Select
@@ -224,7 +225,7 @@ const LeadReportFilters = () => {
                                               </Box>
                                         )}
                                   >
-                                      {['NEW', 'IN_PROGRESS', 'INTERESTED', 'NEEDS_IDENTIFIED', 'NEGOTIATING', 'REJECTED', 'FINALIZED', 'CONVERTED', 'ON_HOLD'].map((status) => (
+                                      {[LEAD_STATUSES.NEW, LEAD_STATUSES.IN_PROGRESS, LEAD_STATUSES.INTERESTED, LEAD_STATUSES.NEEDS_IDENTIFIED, LEAD_STATUSES.NEGOTIATING, LEAD_STATUSES.REJECTED, LEAD_STATUSES.FINALIZED, LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD].map((status) => (
                                             <MenuItem key={status} value={status}>
                                                 {status}
                                             </MenuItem>
@@ -233,7 +234,7 @@ const LeadReportFilters = () => {
                               </FormControl>
                           </Grid>
 
-                          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                            <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                               <Button
                                     variant="outlined"
                                     startIcon={<MdRefresh />}
@@ -258,25 +259,25 @@ const LeadReportFilters = () => {
                             <Card sx={{ mb: 3, p: 3, boxShadow: 3 }}>
                                 <Typography variant="h6" sx={{ mb: 3, color: 'secondary.main' }}>Report Summary</Typography>
                                 <Grid container spacing={3}>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%' ,bgcolor:"background.default"}}>
                                             <Typography variant="subtitle2" color="textSecondary">Total Leads</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>{reportData.summary.totalLeads}</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%',bgcolor:"background.default"}}>
                                             <Typography variant="subtitle2" color="textSecondary">Total Value</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>${reportData.summary.totalValue.toLocaleString()}</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%' ,bgcolor:"background.default"}}>
                                             <Typography variant="subtitle2" color="textSecondary">Average Value</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>${reportData.summary.averageValue.toLocaleString()}</Typography>
                                         </Paper>
                                     </Grid>
-                                    <Grid item xs={12} sm={6} md={3}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%' ,bgcolor:"background.default"}}>
                                             <Typography variant="subtitle2" color="textSecondary">Total Discount</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>%{reportData.summary.totalDiscount}</Typography>
@@ -334,7 +335,7 @@ const LeadReportFilters = () => {
                                                                       label={lead.status}
                                                                       size="small"
                                                                       sx={{
-                                                                          bgcolor:lead.status === 'FINALIZED' ? statusColors.FINALIZED : STATUS_COLORS[lead.status]
+                                                                          bgcolor:lead.status === LEAD_STATUSES.FINALIZED ? statusColors.FINALIZED : STATUS_COLORS[lead.status]
                                                                       }}
                                                                 />
                                                             </TableCell>

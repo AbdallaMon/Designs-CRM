@@ -1,5 +1,7 @@
 import prisma from "../../../infra/prisma/prisma.js";
 import { sendEmail } from "../../../infra/mail/send-mail.js";
+import { buildAssetAccessUrl } from "../../../infra/upload/asset-access.js";
+import { env } from "../../../config/env.js";
 
 export async function sendSuccessEmailAfterContractSigned({
   token,
@@ -8,6 +10,12 @@ export async function sendSuccessEmailAfterContractSigned({
   enPdfUrl,
   lng = "ar",
 }) {
+  arPdfUrl = buildAssetAccessUrl(arPdfUrl, {
+    ttlSeconds: env.ASSET_EMAIL_URL_TTL_SECONDS,
+  });
+  enPdfUrl = buildAssetAccessUrl(enPdfUrl, {
+    ttlSeconds: env.ASSET_EMAIL_URL_TTL_SECONDS,
+  });
   // 1) Fetch client + assigned staff
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: Number(clientLeadId) },

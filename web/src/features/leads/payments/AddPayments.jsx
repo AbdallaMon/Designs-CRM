@@ -26,6 +26,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { MdClose } from "react-icons/md";
 import colors from "@/app/helpers/colors";
+import {
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+  formatPaymentsTotalMismatch,
+} from "@dms/shared";
 
 const locales = ["en-gb"];
 
@@ -93,7 +97,7 @@ function AddPayments({
   // Validate and handle the form submission
   const onSubmit = async () => {
     if (payments.length === 0) {
-      setError("Please recheck the fields");
+      setError(FEEDBACK.RECHECK_FIELDS);
       return;
     }
     const totalPayments = payments.reduce(
@@ -102,9 +106,7 @@ function AddPayments({
     );
 
     if (totalPayments !== parseInt(totalAmount)) {
-      setError(
-        `The total payments (${totalPayments}) do not match the final price agreed upon the client (${totalAmount}).`
-      );
+      setError(formatPaymentsTotalMismatch(totalPayments, totalAmount));
 
       return;
     }
@@ -112,7 +114,7 @@ function AddPayments({
       (payment) => payment.paymentReason === ""
     );
     if (checkIfPaymentReasonsAreEmpty) {
-      setError("Please fill in all payment reasons");
+      setError(FEEDBACK.PAYMENT_REASONS_REQUIRED);
       return;
     }
     const request = await handleRequestSubmit(

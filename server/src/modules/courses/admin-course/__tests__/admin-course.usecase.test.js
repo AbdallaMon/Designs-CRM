@@ -10,6 +10,16 @@ vi.mock("../admin-course.repo.js", () => ({
     getLastUserAttempt: vi.fn(),
     updateAttemptLimit: vi.fn(),
     reorderQuestion: vi.fn(),
+    createTest: vi.fn(),
+    updateTest: vi.fn(),
+    getTestForPublishing: vi.fn(),
+    getLastQuestionOrder: vi.fn(),
+    createQuestion: vi.fn(),
+    getQuestionById: vi.fn(),
+    deleteChoice: vi.fn(),
+    createChoice: vi.fn(),
+    updateChoice: vi.fn(),
+    updateQuestionText: vi.fn(),
   },
 }));
 
@@ -22,7 +32,7 @@ vi.mock("../../staff-course/staff-course.usecase.js", () => ({
 import { adminCourseUsecase } from "../admin-course.usecase.js";
 import { adminCourseRepository } from "../admin-course.repo.js";
 import { staffCourseUsecase } from "../../staff-course/staff-course.usecase.js";
-import { coursesMessagesCodes } from "@dms/shared";
+import { coursesMessagesCodes, generalMessagesCodes } from "@dms/shared";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -147,5 +157,96 @@ describe("AdminCourseUsecase.reorderTestQuestions", () => {
     await adminCourseUsecase.reorderTestQuestions({ data: [{ id: "5" }, { id: 8 }] });
     expect(adminCourseRepository.reorderQuestion).toHaveBeenNthCalledWith(1, { id: 5, order: 1 });
     expect(adminCourseRepository.reorderQuestion).toHaveBeenNthCalledWith(2, { id: 8, order: 2 });
+  });
+});
+
+describe("AdminCourseUsecase test publishing validation", () => {
+  it("rejects publishing a newly-created zero-question test", async () => {
+    await expect(
+      adminCourseUsecase.createTest({
+        key: "courseId",
+        id: 1,
+        attemptLimit: 2,
+        type: "FINAL",
+        timeLimit: 60,
+        title: "Test",
+        published: true,
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 422,
+      message: generalMessagesCodes.VALIDATION_ERROR,
+    });
+    expect(adminCourseRepository.createTest).not.toHaveBeenCalled();
+  });
+
+  it("rejects publishing an existing zero-question test", async () => {
+    adminCourseRepository.getTestForPublishing.mockResolvedValue({ id: 1, questions: [] });
+    await expect(
+      adminCourseUsecase.editTest({ testId: 1, data: { published: true } }),
+    ).rejects.toMatchObject({
+      statusCode: 422,
+      message: generalMessagesCodes.VALIDATION_ERROR,
+    });
+    expect(adminCourseRepository.updateTest).not.toHaveBeenCalled();
+  });
+
+  it("rejects a multiple-choice question with no correct answer", async () => {
+    await expect(
+      adminCourseUsecase.createTestQuestion({
+        id: 1,
+        data: {
+          type: "MULTIPLE_CHOICE",
+          question: "Pick",
+          choices: [
+            { text: "A", value: "A", isCorrect: false },
+            { text: "B", value: "B", isCorrect: false },
+          ],
+        },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 422,
+      message: generalMessagesCodes.VALIDATION_ERROR,
+    });
+    expect(adminCourseRepository.createQuestion).not.toHaveBeenCalled();
+  });
+
+  it("rejects ordering questions with duplicate or missing order values", async () => {
+    await expect(
+      adminCourseUsecase.createTestQuestion({
+        id: 1,
+        data: {
+          type: "ORDERING",
+          question: "Order",
+          choices: [
+            { text: "A", value: "A", order: 1 },
+            { text: "B", value: "B", order: 1 },
+          ],
+        },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 422,
+      message: generalMessagesCodes.VALIDATION_ERROR,
+    });
+  });
+
+  it("allows publishing a non-empty valid test", async () => {
+    adminCourseRepository.getTestForPublishing.mockResolvedValue({
+      id: 1,
+      questions: [
+        {
+          type: "MULTIPLE_CHOICE",
+          choices: [
+            { text: "A", isCorrect: true },
+            { text: "B", isCorrect: false },
+          ],
+        },
+      ],
+    });
+    adminCourseRepository.updateTest.mockResolvedValue({ id: 1, published: true });
+    await adminCourseUsecase.editTest({ testId: 1, data: { published: true } });
+    expect(adminCourseRepository.updateTest).toHaveBeenCalledWith({
+      id: 1,
+      data: { published: true },
+    });
   });
 });

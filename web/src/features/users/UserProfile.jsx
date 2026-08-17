@@ -19,6 +19,10 @@ import LastSeen from "@/shared/components/buttons/LastSeen.jsx";
 import EditModal from "@/shared/components/models/EditModal.jsx";
 import UserRestrictedCountries from "@/features/users/UserRestrictedCountries.jsx";
 import Commission from "@/features/accountant/Commission.jsx";
+import {
+  FORM_VALIDATION_MESSAGES as FORM_ERRORS,
+  PROFILE_FAMILIES,
+} from "@dms/shared";
 
 export default function UserProfile({ id }) {
   const [user, setUser] = useState(null);
@@ -100,7 +104,7 @@ export default function UserProfile({ id }) {
                 <Box>
                   <Commission userId={user.id} />
                 </Box>
-                {user.currentProfile?.family === "SALES" && (
+                {user.currentProfile?.family === PROFILE_FAMILIES.SALES && (
                   <>
                     <UserRestrictedCountries userId={user.id} />
                     <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
@@ -145,7 +149,7 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
             pattern: {
               required: {
                 value: true,
-                message: "Please enter a number",
+                message: FORM_ERRORS.ENTER_NUMBER,
               },
             },
           },
@@ -181,7 +185,7 @@ function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
             pattern: {
               required: {
                 value: true,
-                message: "Please enter a number",
+                message: FORM_ERRORS.ENTER_NUMBER,
               },
             },
           },

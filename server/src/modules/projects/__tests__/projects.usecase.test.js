@@ -89,6 +89,30 @@ afterEach(() => {
 //  PROJECT SCOPE — the keystone IDOR fix (allow vs deny)
 // ════════════════════════════════════════════════════════════════════════════
 describe("ProjectUsecase scope checkers (IDOR keystone)", () => {
+  it("uses active SUPER_SALES as the project workflow supervisor signal", () => {
+    expect(new ProjectUsecase().isAdminUser(superSales)).toBe(true);
+    expect(new TaskUsecase().isAdminUser(superSales)).toBe(true);
+    expect(new UpdateUsecase().isAdminUser(superSales)).toBe(true);
+  });
+
+  it("does not self-scope SUPER_SALES board, lead-project list, or project detail reads", async () => {
+    projectOperations.getLeadByPorjects.mockResolvedValue([]);
+    projectOperations.getProjectsByClientLeadId.mockResolvedValue([]);
+    projectOperations.getProjectDetailsById.mockResolvedValue(null);
+    const usecase = new ProjectUsecase();
+
+    await usecase.getDesigners({ query: {}, authUser: superSales });
+    await usecase.listByClientLead({ query: {}, authUser: superSales });
+    await usecase.getProject({ id: 10, query: {}, authUser: superSales });
+
+    expect(projectOperations.getLeadByPorjects.mock.calls[0][0]).toMatchObject({
+      isAdmin: true,
+      searchParams: { isAdmin: true, profileKey: "SUPER_SALES" },
+    });
+    expect(projectOperations.getProjectsByClientLeadId.mock.calls[0][0].searchParams.userId).toBeUndefined();
+    expect(projectOperations.getProjectDetailsById.mock.calls[0][0].searchParams.userId).toBeUndefined();
+  });
+
   it("ACCESS: a designer CAN access a project assigned to them", async () => {
     projectRepository.findScopedProject.mockResolvedValue({ id: 10, clientLeadId: 5, status: "To Do" });
     const usecase = new ProjectUsecase();

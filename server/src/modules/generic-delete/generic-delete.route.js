@@ -12,6 +12,7 @@ const genericDeleteRouter = Router();
 genericDeleteRouter.delete(
   "/:id",
   AuthMiddleware.requireAuth,
+  validate(genericDeleteSchemas.idParam, "params"),
   validate(genericDeleteSchemas.remove),
   AuthMiddleware.requireSpecialChecker(genericDeleteController.checkIfUserCanDeleteModel),
   asyncHandler(genericDeleteController.deleteModel),

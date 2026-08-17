@@ -39,36 +39,48 @@ class RentUsecase {
 
     amount = Number(amount);
 
-    const newRent = await rentRepository.createRent({
-      name,
-      description,
-    });
+    return rentRepository.runInTransaction(async (client) => {
+      const newRent = await rentRepository.createRent({
+        name,
+        description,
+        client,
+      });
 
-    const newRentPeriod = await this._renewRentAndMakeOutCome({
-      rentId: newRent.id,
-      name,
-      amount,
-      description,
-      startDate,
-      endDate,
-      paymentDate,
-    });
-    let createdRent = await rentRepository.findRentRow({ id: newRent.id });
-    createdRent = shapeRentRow(createdRent);
+      await this._renewRentAndMakeOutCome({
+        rentId: newRent.id,
+        name,
+        amount,
+        description,
+        startDate,
+        endDate,
+        paymentDate,
+        client,
+      });
+      let createdRent = await rentRepository.findRentRow({ id: newRent.id, client });
+      createdRent = shapeRentRow(createdRent);
 
-    return {
-      data: createdRent,
-    };
+      return {
+        data: createdRent,
+      };
+    });
   }
 
   // ── relocated renew orchestration (formerly legacy renewRentAndMakeOutCome) ───────
-  async _renewRentAndMakeOutCome({ rentId, amount, startDate, endDate, paymentDate, name }) {
+  async _renewRentAndMakeOutCome({
+    rentId,
+    amount,
+    startDate,
+    endDate,
+    paymentDate,
+    name,
+    client,
+  }) {
     if (!rentId || !amount || !startDate || !endDate) {
       throw new AppError({ code: accountingMessagesCodes.REQUIRED_FIELDS_MISSING, statusCode: 400 });
     }
 
     amount = Number(amount);
-    const rent = await rentRepository.findRentForRenew({ id: rentId });
+    const rent = await rentRepository.findRentForRenew({ id: rentId, client });
 
     if (!rent) {
       throw new AppError({ code: accountingMessagesCodes.RENT_NOT_FOUND, statusCode: 404 });
@@ -79,6 +91,7 @@ class RentUsecase {
       rentId: rent.id,
       startDate,
       endDate,
+      client,
     });
 
     const outcome = await rentRepository.createRentOutcome({
@@ -86,6 +99,7 @@ class RentUsecase {
       name,
       paymentDate,
       rentPeriodId: newRentPeriod.id,
+      client,
     });
 
     return {
@@ -106,13 +120,16 @@ class RentUsecase {
   // Known legacy throws: "Fill all the fields please" / "Rent not found".
   renew({ rentId, body }) {
     const { amount, startDate, endDate, paymentDate, name } = body;
-    return this._renewRentAndMakeOutCome({
-      rentId: Number(rentId),
-      amount,
-      startDate,
-      endDate,
-      paymentDate,
-      name,
+    return rentRepository.runInTransaction((client) => {
+      return this._renewRentAndMakeOutCome({
+        rentId: Number(rentId),
+        amount,
+        startDate,
+        endDate,
+        paymentDate,
+        name,
+        client,
+      });
     });
   }
 }

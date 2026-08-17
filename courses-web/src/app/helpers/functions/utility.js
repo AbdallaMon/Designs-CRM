@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 import dayjs from "dayjs";
 import { Box, Button, Link, Paper, Typography } from "@mui/material";
 import React from "react";
@@ -167,11 +168,11 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 
 export const checkIfADesigner = (user) => {
   const profile = activeProfileOf(user);
-  return profile === "DESIGNER_2D" || profile === "DESIGNER_3D";
+  return profile === PROFILES.DESIGNER_2D || profile === PROFILES.DESIGNER_3D;
 };
 export const checkIfAdmin = (user) => {
   const profile = activeProfileOf(user);
-  return profile === "ADMIN" || profile === "SUPER_ADMIN";
+  return profile === PROFILES.ADMIN || profile === PROFILES.SUPER_ADMIN;
 };
 
 export function ensureHttps(url) {

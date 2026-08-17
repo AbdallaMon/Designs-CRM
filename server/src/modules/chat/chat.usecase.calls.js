@@ -1,5 +1,39 @@
 import { getIo } from "../../infra/socket/io-registry.js";
+import { AppError } from "../../shared/errors/AppError.js";
+import { chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
+
+async function requireStaffRoomMember({ roomId, userId }) {
+  if (!userId) {
+    throw new AppError({
+      code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION,
+      statusCode: 403,
+    });
+  }
+  const member = await chatRepository.getMember({
+    roomId,
+    userId,
+    clientId: null,
+  });
+  if (!member) {
+    throw new AppError({
+      code: chatMessagesCodes.ROOM_ACCESS_DENIED,
+      statusCode: 403,
+    });
+  }
+  return member;
+}
+
+async function requireCallInRoom(callId, roomId) {
+  const call = await chatRepository.getCallById(callId);
+  if (!call || Number(call.roomId) !== Number(roomId)) {
+    throw new AppError({
+      code: chatMessagesCodes.ROOM_ACCESS_DENIED,
+      statusCode: 403,
+    });
+  }
+  return call;
+}
 
 
 /**
@@ -11,6 +45,14 @@ export const callMethods = {
   // ── Calls (socket-triggered) ───────────────────────────────────────────────
 
   async initiateCall({ roomId, callType, userId }) {
+    await requireStaffRoomMember({ roomId, userId });
+    const room = await chatRepository.findRoomBasic(roomId);
+    if (!room?.allowCalls) {
+      throw new AppError({
+        code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION,
+        statusCode: 403,
+      });
+    }
     const call = await chatRepository.createCall({
       roomId,
       initiatorId: userId,
@@ -28,6 +70,8 @@ export const callMethods = {
   },
 
   async answerCall({ callId, roomId, userId }) {
+    await requireStaffRoomMember({ roomId, userId });
+    await requireCallInRoom(callId, roomId);
     await chatRepository.updateCall(callId, { status: "ONGOING" });
     await chatRepository.addCallParticipant({ callId, userId });
     const io = getIo();
@@ -39,6 +83,8 @@ export const callMethods = {
   },
 
   async endCall({ callId, roomId, userId }) {
+    await requireStaffRoomMember({ roomId, userId });
+    await requireCallInRoom(callId, roomId);
     const call = await chatRepository.updateCall(callId, {
       status: "ENDED",
       endedAt: new Date(),

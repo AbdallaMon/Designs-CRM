@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { getData } from "@/app/helpers/functions/getData";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -200,7 +201,7 @@ export const SPAINQuestionsDialog = ({ clientLeadId }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
-  if (!isAdmin && !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile)) {
+  if (!isAdmin && ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile)) {
     return null;
   }
 

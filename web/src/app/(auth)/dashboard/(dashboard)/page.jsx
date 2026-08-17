@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import Dashboard from "@/features/dashboard/Dashboard.jsx";
@@ -13,19 +14,19 @@ export default function Page() {
   const sp = useSearchParams();
   if (!user?.profile) return null;
   let content;
-  if (user.profile === "ACCOUNTANT") {
+  if (user.profile === PROFILES.ACCOUNTANT) {
     content = <AccountantLanding />;
-  } else if (user.profile === "CONTACT_INITIATOR") {
+  } else if (user.profile === PROFILES.CONTACT_INITIATOR) {
     const searchParams = Object.fromEntries(sp.entries());
     content = <NewLeadsPage searchParams={searchParams} withSearch={true} />;
-  } else if (user.profile === "DESIGNER_3D") {
-    content = <Dashboard staff={true} userProfile="DESIGNER_3D" />;
-  } else if (user.profile === "DESIGNER_2D") {
-    content = <Dashboard staff={true} userProfile="DESIGNER_2D" />;
+  } else if (user.profile === PROFILES.DESIGNER_3D) {
+    content = <Dashboard staff={true} userProfile={PROFILES.DESIGNER_3D} />;
+  } else if (user.profile === PROFILES.DESIGNER_2D) {
+    content = <Dashboard staff={true} userProfile={PROFILES.DESIGNER_2D} />;
   } else {
     content = (
       <Dashboard
-        staff={["NORMAL_SALES", "PRIMARY_SALES"].includes(user.profile)}
+        staff={[PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES].includes(user.profile)}
         userProfile={user.profile}
       />
     );

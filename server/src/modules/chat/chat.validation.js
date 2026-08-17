@@ -1,14 +1,19 @@
+import {
+  CHAT_MEMBER_ROLES,
+  CHAT_ROOM_TYPES,
+  validationMessagesCodes as V,
+} from "@dms/shared";
 import { z } from "zod";
 
 const VALID_ROOM_TYPES = [
-  "STAFF_TO_STAFF",
-  "GROUP",
-  "PROJECT_GROUP",
-  "STAFF_GROUP",
-  "CLIENT_TO_STAFF",
+  CHAT_ROOM_TYPES.STAFF_TO_STAFF,
+  CHAT_ROOM_TYPES.GROUP,
+  CHAT_ROOM_TYPES.PROJECT_GROUP,
+  CHAT_ROOM_TYPES.STAFF_GROUP,
+  CHAT_ROOM_TYPES.CLIENT_TO_STAFF,
 ];
 
-const VALID_MEMBER_ROLES = ["ADMIN", "MODERATOR", "MEMBER"];
+const VALID_MEMBER_ROLES = [CHAT_MEMBER_ROLES.ADMIN, CHAT_MEMBER_ROLES.MODERATOR, CHAT_MEMBER_ROLES.MEMBER];
 
 class ChatSchemas {
   // ── Param schemas ─────────────────────────────────────────────────────────
@@ -17,14 +22,14 @@ class ChatSchemas {
     roomId: z.coerce
       .number()
       .int()
-      .positive("roomId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   memberIdParams = z.object({
     memberId: z.coerce
       .number()
       .int()
-      .positive("memberId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   // Combined params for routes that carry BOTH :roomId and :memberId.
@@ -35,26 +40,37 @@ class ChatSchemas {
     roomId: z.coerce
       .number()
       .int()
-      .positive("roomId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
     memberId: z.coerce
       .number()
       .int()
-      .positive("memberId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   messageIdParams = z.object({
     messageId: z.coerce
       .number()
       .int()
-      .positive("messageId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
+  });
+
+  roomMessageParams = z.object({
+    roomId: z.coerce
+      .number()
+      .int()
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
+    messageId: z.coerce
+      .number()
+      .int()
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   reactionParams = z.object({
     messageId: z.coerce
       .number()
       .int()
-      .positive("messageId must be a positive integer"),
-    emoji: z.string().min(1, "emoji is required").transform(decodeURIComponent),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
+    emoji: z.string().min(1, V.FIELD_REQUIRED).transform(decodeURIComponent),
   });
 
   // ── Query schemas ─────────────────────────────────────────────────────────
@@ -94,7 +110,7 @@ class ChatSchemas {
   createRoom = z.object({
     name: z.string().trim().optional().nullable(),
     type: z.enum(VALID_ROOM_TYPES, {
-      error: `type must be one of: ${VALID_ROOM_TYPES.join(", ")}`,
+      error: V.INVALID_ENUM_VALUE,
     }),
     projectId: z.coerce.number().int().positive().optional(),
     clientLeadId: z.coerce.number().int().positive().optional(),
@@ -109,15 +125,15 @@ class ChatSchemas {
     participantId: z.coerce
       .number()
       .int()
-      .positive("participantId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   createLeadsRoom = z.object({
-    groupType: z.string().trim().min(1, "groupType is required"),
+    groupType: z.string().trim().min(1, V.FIELD_REQUIRED),
     clientLeadId: z.coerce
       .number()
       .int()
-      .positive("clientLeadId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
     name: z.string().optional(),
     projectIds: z.array(z.number()).optional(),
     projectGroupIds: z.array(z.number()).optional(),
@@ -141,19 +157,19 @@ class ChatSchemas {
 
   manageClient = z.object({
     action: z.enum(["addClient", "removeClient"], {
-      error: "action must be addClient or removeClient",
+      error: V.INVALID_ACTION,
     }),
   });
 
   addMembers = z.object({
     userIds: z
       .array(z.number().int().positive())
-      .min(1, "userIds must be a non-empty array"),
+      .min(1, V.NON_EMPTY_ARRAY_REQUIRED),
   });
 
   updateMemberRole = z.object({
     role: z.enum(VALID_MEMBER_ROLES, {
-      error: `role must be one of: ${VALID_MEMBER_ROLES.join(", ")}`,
+      error: V.INVALID_ENUM_VALUE,
     }),
   });
 
@@ -166,7 +182,7 @@ class ChatSchemas {
   });
 
   addReaction = z.object({
-    emoji: z.string().min(1, "emoji is required"),
+    emoji: z.string().min(1, V.FIELD_REQUIRED),
   });
 }
 

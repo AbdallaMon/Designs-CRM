@@ -1,3 +1,4 @@
+import { CONTRACT_PAYMENT_STATUSES, LEAD_STATUSES, WORK_STAGE_STATUSES, PROFILES } from "@dms/shared";
 // leads/lead repository — Prisma I/O ONLY (no business rules, no AppError). Read
 // queries + scope `where` builders are ported VERBATIM (selects/filters/order) from
 // the legacy services so observable shapes are preserved 1:1:
@@ -30,16 +31,17 @@ class LeadRepository {
   // ── Scope `where` builders (the IDOR fix) ─────────────────────────────────────
   // Translate the auth user → a Prisma `where` fragment. Full-scope users get `{}`
   // (no narrowing); a scoped user is restricted to leads assigned to them, PLUS the
-  // unassigned NEW pool that legacy let anyone view/claim (status NEW, userId null).
+  // consulted, unassigned NEW pool that sales can view/claim. Non-consulted leads stay
+  // admin-only until the initial consultation is completed.
   // `mode: "view"` includes the claimable pool; `mode: "mutate"` is owned-only.
   hasFullScope({
     currentProfileKey,
     isAdminTier,
     includeContactInitiator = false,
   }) {
-    if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
-    if (currentProfileKey === "ACCOUNTANT") return true;
-    if (includeContactInitiator && currentProfileKey === "CONTACT_INITIATOR") return true;
+    if (currentProfileKey === PROFILES.SUPER_SALES || isAdminTier) return true;
+    if (currentProfileKey === PROFILES.ACCOUNTANT) return true;
+    if (includeContactInitiator && currentProfileKey === PROFILES.CONTACT_INITIATOR) return true;
     return false;
   }
 
@@ -58,7 +60,7 @@ class LeadRepository {
         : {
             OR: [
               { userId: Number(authUser.id) },
-              { userId: null, status: "NEW" },
+              { userId: null, status: LEAD_STATUSES.NEW, initialConsult: true },
             ],
           };
     // Merge ownership into an AND so we never clobber a caller-supplied OR.
@@ -209,14 +211,14 @@ class LeadRepository {
 
   findOnHoldOwner({ id }) {
     return prisma.clientLead.findUnique({
-      where: { id: Number(id), status: "ON_HOLD" },
+      where: { id: Number(id), status: LEAD_STATUSES.ON_HOLD },
       select: { userId: true },
     });
   }
 
   findUnassignedNew({ id }) {
     return prisma.clientLead.findUnique({
-      where: { id: Number(id), status: "NEW", userId: null },
+      where: { id: Number(id), status: LEAD_STATUSES.NEW, userId: null, initialConsult: true },
     });
   }
 
@@ -278,8 +280,8 @@ class LeadRepository {
       where: {
         contracts: {
           some: {
-            status: { in: ["IN_PROGRESS", "COMPLETED"] },
-            paymentsNew: { some: { status: "DUE" } },
+            status: { in: [LEAD_STATUSES.IN_PROGRESS, WORK_STAGE_STATUSES.COMPLETED] },
+            paymentsNew: { some: { status: CONTRACT_PAYMENT_STATUSES.DUE } },
           },
         },
       },
@@ -362,6 +364,7 @@ class LeadRepository {
         userId: true,
         clientLeadId: true,
         user: { select: { id: true } },
+        clientLead: { select: { userId: true } },
       },
     });
   }
@@ -374,6 +377,7 @@ class LeadRepository {
         userId: true,
         clientLeadId: true,
         user: { select: { id: true } },
+        clientLead: { select: { userId: true } },
       },
     });
   }
@@ -383,7 +387,7 @@ class LeadRepository {
   async hasOtherFutureTouch({ clientLeadId, excludeCallId = null, excludeMeetingId = null, now }) {
     const base = {
       clientLeadId: Number(clientLeadId),
-      status: "IN_PROGRESS",
+      status: LEAD_STATUSES.IN_PROGRESS,
       time: { gte: now },
     };
     const [calls, meetings] = await Promise.all([
@@ -445,6 +449,7 @@ class LeadRepository {
       select: {
         id: true,
         status: true,
+        initialConsult: true,
         assignedTo: {
           select: { id: true, name: true, email: true },
         },
@@ -846,11 +851,11 @@ class LeadRepository {
       where: {
         clientLead: {
           status: {
-            notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
+            notIn: [LEAD_STATUSES.CONVERTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED],
           },
           ...staffFilter,
         },
-        status: "IN_PROGRESS",
+        status: LEAD_STATUSES.IN_PROGRESS,
       },
       include: {
         clientLead: {
@@ -971,7 +976,7 @@ function dealsSelect({ callRemindersWhere, updatesWhere, sharedUpdatesWhere }) {
       take: 2,
     },
     contracts: {
-      where: { status: "IN_PROGRESS" },
+      where: { status: LEAD_STATUSES.IN_PROGRESS },
       orderBy: { id: "desc" },
       take: 1,
       select: {
@@ -1011,6 +1016,7 @@ function detailSelect(fileWhere) {
     previousLeadId: true,
     personality: true,
     discoverySource: true,
+    source: true,
     stateOfTheProject: true,
     stripieMetadata: true,
     location: true,
@@ -1026,7 +1032,7 @@ function detailSelect(fileWhere) {
     updatedAt: true,
     assignedAt: true,
     contracts: {
-      where: { status: "IN_PROGRESS" },
+      where: { status: LEAD_STATUSES.IN_PROGRESS },
       orderBy: { id: "desc" },
       take: 1,
       select: {
@@ -1159,13 +1165,13 @@ function detailSelect(fileWhere) {
 // signals survive into FINALIZED/CONVERTED). Dead (REJECTED/ARCHIVED — action-silent in
 // the engine anyway) and parked (ON_HOLD/LEADEXCHANGE) are excluded.
 export const MY_DAY_LEAD_STATUSES = Object.freeze([
-  "NEW",
-  "IN_PROGRESS",
-  "INTERESTED",
-  "NEEDS_IDENTIFIED",
-  "NEGOTIATING",
-  "FINALIZED",
-  "CONVERTED",
+  LEAD_STATUSES.NEW,
+  LEAD_STATUSES.IN_PROGRESS,
+  LEAD_STATUSES.INTERESTED,
+  LEAD_STATUSES.NEEDS_IDENTIFIED,
+  LEAD_STATUSES.NEGOTIATING,
+  LEAD_STATUSES.FINALIZED,
+  LEAD_STATUSES.CONVERTED,
 ]);
 
 const COCKPIT_BUNDLE_SELECT = {
@@ -1179,7 +1185,7 @@ const COCKPIT_BUNDLE_SELECT = {
   // Active contract (latest IN_PROGRESS or COMPLETED) — read-only, drives the post-finalize
   // signals + health.contract/payment. Language-neutral primitives only (no free text).
   contracts: {
-    where: { status: { in: ["IN_PROGRESS", "COMPLETED"] } },
+    where: { status: { in: [LEAD_STATUSES.IN_PROGRESS, WORK_STAGE_STATUSES.COMPLETED] } },
     orderBy: { id: "desc" },
     take: 1,
     select: {
@@ -1233,14 +1239,16 @@ function reduceVersaModel(vm) {
 
 const ADMIN_DETAIL_INCLUDE = {
   client: true,
-  assignedTo: true,
+  // Never load credentials, OAuth tokens, payroll data, or other internal User fields
+  // into a lead response. Keep the admin detail shape aligned with the staff detail DTO.
+  assignedTo: { select: { id: true, name: true, email: true } },
   priceOffers: {
     orderBy: { createdAt: "desc" },
     include: { user: { select: { name: true } } },
   },
   payments: { include: { invoices: true } },
   contracts: {
-    where: { status: "IN_PROGRESS" },
+    where: { status: LEAD_STATUSES.IN_PROGRESS },
     orderBy: { id: "desc" },
     take: 1,
     select: {

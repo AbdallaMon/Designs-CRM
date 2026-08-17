@@ -18,11 +18,12 @@ import { FaMoneyBillWave } from "react-icons/fa";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.jsx";
 import dayjs from "dayjs";
 import { MdDelete } from "react-icons/md";
 import AddPayments from "@/features/leads/payments/AddPayments.jsx";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 import utc from "dayjs/plugin/utc";
 
@@ -58,7 +59,7 @@ export const AddPriceOffers = ({
   }
   const handleAddNewPriceOffer = async () => {
     if (!priceOffer.note) {
-      setAlertError("You must enter note");
+      setAlertError(FEEDBACK.NOTE_REQUIRED);
       return;
     }
     if (priceOffer.file) {

@@ -21,24 +21,27 @@ class GoogleCalendarController {
     return ok(res, { isConnected, redirectUrl: authUrl }, calendarMessagesCodes.GOOGLE_AUTH_URL_GENERATED, TK);
   }
 
-  // GET /google/callback — PUBLIC OAuth callback. Google redirects the browser here with
-  // ?code&state. Behavior frozen: on success/failure redirect to the legacy dashboard URL.
-  // We do NOT log code/state/tokens.
+  // GET /google/callback — authenticated OAuth callback. The profile UI already consumes
+  // googleAuthSuccess/googleAuthError query values, so failures redirect with stable codes.
   async handleOAuthCallback(req, res) {
     const { code, state } = req.query;
-    if (!code || !state) {
-      return res.status(400).send("Missing authorization code or state");
+    if (typeof code !== "string" || !code || typeof state !== "string" || !state) {
+      return res.redirect(
+        `${process.env.DASHBOARD_ORIGIN}/dashboard?googleAuthError=${calendarMessagesCodes.GOOGLE_CALLBACK_INVALID}&profileOpen=true`,
+      );
     }
     try {
-      await googleCalendarUsecase.handleCallback({ code, state });
+      await googleCalendarUsecase.handleCallback({ code, state, authUser: req.auth });
       return res.redirect(
         `${process.env.DASHBOARD_ORIGIN}/dashboard?googleAuthSuccess=1&profileOpen=true`,
       );
     } catch (error) {
+      const errorCode =
+        error?.code === calendarMessagesCodes.GOOGLE_CALLBACK_INVALID
+          ? calendarMessagesCodes.GOOGLE_CALLBACK_INVALID
+          : calendarMessagesCodes.CALENDAR_FETCH_FAILED;
       return res.redirect(
-        `${process.env.DASHBOARD_ORIGIN}/dashboard?googleAuthError=${encodeURIComponent(
-          error.message,
-        )}&profileOpen=true`,
+        `${process.env.DASHBOARD_ORIGIN}/dashboard?googleAuthError=${errorCode}&profileOpen=true`,
       );
     }
   }

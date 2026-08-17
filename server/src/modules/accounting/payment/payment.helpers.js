@@ -1,3 +1,4 @@
+import { CONTRACT_LEVELS } from "@dms/shared";
 // accounting/payment helpers — pure, no Prisma, no side effects. Relocated verbatim from
 // the legacy accountant service. `getNextPaymentLevel` is currently DEAD (its only caller,
 // inside processPayment's payment.update, is commented out) but is preserved as-is.
@@ -5,12 +6,12 @@
 
 // Define the PaymentLevel as a JavaScript object
 export const PaymentLevel = {
-  LEVEL_1: "LEVEL_1",
-  LEVEL_2: "LEVEL_2",
-  LEVEL_3: "LEVEL_3",
-  LEVEL_4: "LEVEL_4",
-  LEVEL_5: "LEVEL_5",
-  LEVEL_6: "LEVEL_6",
+  LEVEL_1: CONTRACT_LEVELS.LEVEL_1,
+  LEVEL_2: CONTRACT_LEVELS.LEVEL_2,
+  LEVEL_3: CONTRACT_LEVELS.LEVEL_3,
+  LEVEL_4: CONTRACT_LEVELS.LEVEL_4,
+  LEVEL_5: CONTRACT_LEVELS.LEVEL_5,
+  LEVEL_6: CONTRACT_LEVELS.LEVEL_6,
   LEVEL_7_OR_MORE: "LEVEL_7_OR_MORE",
 };
 

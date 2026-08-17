@@ -23,7 +23,7 @@ export function CreateSessionItem({
     if (!data.templateId) {
       return {
         error: true,
-        message: "Please select a template",
+        message: FORM_ERRORS.SELECT_TEMPLATE,
       };
     }
     const allFilled = languages.every((lng) =>
@@ -33,7 +33,7 @@ export function CreateSessionItem({
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
 
@@ -56,7 +56,7 @@ export function CreateSessionItem({
       component={CreateSessionItemForm}
       name={name}
       modelType={modelType}
-      slug={`image-session/${slug}`}
+      slug={slug}
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       awaitCheck={true}
@@ -98,3 +98,4 @@ function CreateSessionItemForm({ data, setData, setValid, modelType }) {
     </>
   );
 }
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";

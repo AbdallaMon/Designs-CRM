@@ -1,6 +1,21 @@
 import dotenv from "dotenv";
+import os from "node:os";
+import path from "node:path";
 
 dotenv.config();
+
+function positiveInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const assetStorageRoot = path.resolve(
+  process.env.ASSET_STORAGE_ROOT ||
+    path.join(os.homedir(), ".dreamstudiio-crm", "storage"),
+);
+const uploadDir = path.resolve(
+  process.env.UPLOAD_DIR || path.join(assetStorageRoot, "uploads"),
+);
 
 export const env = {
   PORT: process.env.PORT || 5000,
@@ -24,8 +39,10 @@ export const env = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  INTEGRATION_CREDENTIALS_MASTER_KEY: process.env.INTEGRATION_CREDENTIALS_MASTER_KEY,
   ISLOCAL: process.env.ISLOCAL === "true",
   SERVER_URL: process.env.SERVER_URL,
+  IMAGE_DOMAIN: process.env.IMAGE_DOMAIN,
   // Per-frontend public domains (link/asset building).
   CRM_DOMAIN: process.env.CRM_DOMAIN,
   PORTFOLIO_DOMAIN: process.env.PORTFOLIO_DOMAIN,
@@ -35,7 +52,34 @@ export const env = {
   CONTACT_ORIGIN: process.env.CONTACT_ORIGIN,
   BOOKING_ORIGIN: process.env.BOOKING_ORIGIN,
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
-  UPLOADS_PATH: process.env.UPLOADS_PATH || "uploads",
+  ASSET_STORAGE_ROOT: assetStorageRoot,
+  ASSET_DELIVERY_ORIGIN:
+    process.env.ASSET_DELIVERY_ORIGIN || process.env.SERVER_URL,
+  ASSET_URL_SIGNING_SECRET:
+    process.env.ASSET_URL_SIGNING_SECRET ||
+    (process.env.NODE_ENV === "production"
+      ? undefined
+      : process.env.JWT_UPLOAD_SECRET ||
+        process.env.JWT_ACCESS_SECRET ||
+        "development-only-asset-signing-secret"),
+  ASSET_URL_TTL_SECONDS: positiveInteger(
+    process.env.ASSET_URL_TTL_SECONDS,
+    60 * 60,
+  ),
+  ASSET_EMAIL_URL_TTL_SECONDS: positiveInteger(
+    process.env.ASSET_EMAIL_URL_TTL_SECONDS,
+    7 * 24 * 60 * 60,
+  ),
+  ASSET_URL_MAX_TTL_SECONDS: positiveInteger(
+    process.env.ASSET_URL_MAX_TTL_SECONDS,
+    7 * 24 * 60 * 60,
+  ),
+  ASSET_CONTENT_RATE_LIMIT: positiveInteger(
+    process.env.ASSET_CONTENT_RATE_LIMIT,
+    3000,
+  ),
+  UPLOAD_LEGACY_ORIGINS: process.env.UPLOAD_LEGACY_ORIGINS || "",
+  UPLOADS_PATH: process.env.UPLOADS_PATH || uploadDir,
   JWT_RESET_SECRET: process.env.JWT_RESET_SECRET,
   JWT_RESET_EXPIRES_IN: process.env.JWT_RESET_EXPIRES_IN || "1h",
   JWT_UPLOAD_SECRET:
@@ -47,9 +91,13 @@ export const env = {
   REDIS_PORT: Number(process.env.REDIS_PORT) || 6379,
   REDIS_USERNAME: process.env.REDIS_USERNAME || undefined,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
-  UPLOAD_DIR: process.env.UPLOAD_DIR || "uploads",
-  TEMP_UPLOAD_DIR: process.env.TEMP_UPLOAD_DIR || "uploads/temp",
-  THUMBNAIL_DIR: process.env.THUMBNAIL_DIR || "uploads/thumb",
+  UPLOAD_DIR: uploadDir,
+  TEMP_UPLOAD_DIR: path.resolve(
+    process.env.TEMP_UPLOAD_DIR || path.join(assetStorageRoot, "temp"),
+  ),
+  THUMBNAIL_DIR: path.resolve(
+    process.env.THUMBNAIL_DIR || path.join(uploadDir, "thumb"),
+  ),
   MAX_FILE_SIZE: Number(process.env.MAX_FILE_SIZE) || 1024 * 1024 * 1024,
   MAX_FILE_SIZE_FOR_CLIENT:
     Number(process.env.MAX_FILE_SIZE_FOR_CLIENT) || 100 * 1024 * 1024,
@@ -67,3 +115,30 @@ export const allowedOrigins = [
   env.CONTACT_ORIGIN,
   env.BOOKING_ORIGIN,
 ];
+
+if (process.env.NODE_ENV === "production") {
+  if (
+    !env.ASSET_URL_SIGNING_SECRET ||
+    env.ASSET_URL_SIGNING_SECRET.length < 32 ||
+    env.ASSET_URL_SIGNING_SECRET.startsWith("REPLACE_")
+  ) {
+    throw new Error(
+      "Production ASSET_URL_SIGNING_SECRET must be an independent secret of at least 32 characters",
+    );
+  }
+  try {
+    const deliveryUrl = new URL(env.ASSET_DELIVERY_ORIGIN);
+    if (
+      deliveryUrl.protocol !== "https:" ||
+      deliveryUrl.username ||
+      deliveryUrl.password ||
+      deliveryUrl.pathname !== "/" ||
+      deliveryUrl.search ||
+      deliveryUrl.hash
+    ) {
+      throw new Error("HTTPS origin required");
+    }
+  } catch {
+    throw new Error("Production ASSET_DELIVERY_ORIGIN must be a valid HTTPS origin");
+  }
+}

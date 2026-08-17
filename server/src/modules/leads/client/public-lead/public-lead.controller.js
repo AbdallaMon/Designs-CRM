@@ -14,6 +14,12 @@ import { publicLeadUsecase } from "./public-lead.usecase.js";
 const TK = messagesNames.leadsMessages;
 
 class PublicLeadController {
+  authorizeCompleteRegister = (req) =>
+    publicLeadUsecase.authorizeCompleteRegister(
+      req.params.leadId,
+      req.get("x-funnel-token"),
+    );
+
   async createLead(req, res) {
     const lead = await publicLeadUsecase.createLead(req.body, auditCtxFromReq(req));
     return created(res, lead, leadsMessagesCodes.CLIENT_LEAD_CREATED, TK);
@@ -24,8 +30,18 @@ class PublicLeadController {
     return created(res, lead, leadsMessagesCodes.CLIENT_LEAD_REGISTERED, TK);
   }
 
+  async getRegistrationStatus(req, res) {
+    const status = await publicLeadUsecase.getRegistrationStatus(req.scoped.leadId);
+    return ok(
+      res,
+      status,
+      leadsMessagesCodes.CLIENT_LEAD_REGISTRATION_STATUS_FETCHED,
+      TK,
+    );
+  }
+
   async completeRegister(req, res) {
-    const lead = await publicLeadUsecase.completeRegister(req.params.leadId, req.body);
+    const lead = await publicLeadUsecase.completeRegister(req.scoped.leadId, req.body);
     return ok(res, lead, leadsMessagesCodes.CLIENT_LEAD_REGISTER_COMPLETED, TK);
   }
 

@@ -1,3 +1,4 @@
+import { EMIRATES } from "@dms/shared";
 import { Box, Card, CardContent, Chip, Grid, Typography } from "@mui/material";
 import {
   Bar,
@@ -21,7 +22,7 @@ const EmiratesAnalytics = ({ staff, staffId }) => {
 
   const emiratesData = [
     {
-      emirate: "DUBAI",
+      emirate: EMIRATES.DUBAI,
       leads: 50,
       totalPrice: 1000000,
       averageLeadPrice: 20000,
@@ -30,7 +31,7 @@ const EmiratesAnalytics = ({ staff, staffId }) => {
       successRate: 40, // 20 finalized out of 50 total
     },
     {
-      emirate: "ABU_DHABI",
+      emirate: EMIRATES.ABU_DHABI,
       leads: 30,
       totalPrice: 600000,
       averageLeadPrice: 20000,
@@ -39,7 +40,7 @@ const EmiratesAnalytics = ({ staff, staffId }) => {
       successRate: 33, // 10 finalized out of 30 total
     },
     {
-      emirate: "SHARJAH",
+      emirate: EMIRATES.SHARJAH,
       leads: 25,
       totalPrice: 400000,
       averageLeadPrice: 16000,
@@ -48,7 +49,7 @@ const EmiratesAnalytics = ({ staff, staffId }) => {
       successRate: 20, // 5 finalized out of 25 total
     },
     {
-      emirate: "AJMAN",
+      emirate: EMIRATES.AJMAN,
       leads: 15,
       totalPrice: 200000,
       averageLeadPrice: 13333,
@@ -57,7 +58,7 @@ const EmiratesAnalytics = ({ staff, staffId }) => {
       successRate: 30, // 4 finalized out of 15 total
     },
     {
-      emirate: "RAS_AL_KHAIMAH",
+      emirate: EMIRATES.RAS_AL_KHAIMAH,
       leads: 10,
       totalPrice: 150000,
       averageLeadPrice: 15000,

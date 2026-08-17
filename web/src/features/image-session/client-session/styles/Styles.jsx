@@ -39,7 +39,7 @@ export function Styles({
 
   async function getStyles() {
     await getCachedStepData({
-      url: `client/image-session/styles?lng=${lng}&`,
+      url: `client/image-session/styles?lng=${lng}&token=${encodeURIComponent(session.token)}`,
       setLoading,
       setData: setStyles,
     });

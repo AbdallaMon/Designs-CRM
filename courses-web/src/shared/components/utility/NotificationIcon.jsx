@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Badge,
   IconButton,
@@ -34,8 +34,18 @@ const NotificationsIcon = () => {
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  const notificationSound =
-    typeof Audio !== "undefined" && new Audio("/notification-sound.mp3");
+  const notificationSound = useRef(null);
+  useEffect(() => {
+    notificationSound.current = new Audio("/notification-sound.mp3");
+    return () => {
+      notificationSound.current = null;
+    };
+  }, []);
+
+  function handleMarkAsRead() {
+    setUnreadCount(0);
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  }
   useEffect(() => {
     const fetchUnreadNotifications = async () => {
       try {
@@ -60,25 +70,20 @@ const NotificationsIcon = () => {
     if (!user?.id) return;
     const socket = io(url, {
       transports: ["websocket", "polling"],
-      query: { userId: user.id },
+      withCredentials: true,
     });
 
-    socket.emit("join-room", { userId: user.id });
-    const interval = setInterval(() => {
-      socket.emit("heartbeat", { userId: user.id });
-    }, 5 * 60 * 1000);
     socket.on("notification", (notification) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1); // Increase unread count
-      if (notificationSound) {
-        notificationSound.play().catch((error) => {
+      if (notificationSound.current) {
+        notificationSound.current.play().catch((error) => {
           console.error("Error playing notification sound:", error);
         });
       }
     });
 
     return () => {
-      clearInterval(interval);
       socket.off("notification");
       socket.disconnect();
     };
@@ -108,11 +113,6 @@ const NotificationsIcon = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleMarkAsRead = () => {
-    setUnreadCount(0);
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
   };
 
   const renderNotificationContent = (content) => {

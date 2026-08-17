@@ -1,8 +1,16 @@
 import { AuthUseCase } from "./auth.usecase.js";
 import { AuthSchema } from "./auth.dto.js";
 import { JwtService } from "../../infra/security/jwt.js";
+import { CsrfService } from "../../infra/security/csrf.js";
 import { ok } from "../../shared/http/response.js";
 import { authMessagesCodes, messagesNames } from "@dms/shared";
+
+function setSessionCookies(req, res, accessToken, refreshToken) {
+  res
+    .cookie(AuthSchema.cookieNames.ACCESS, accessToken, JwtService.cookies.access)
+    .cookie(AuthSchema.cookieNames.REFRESH, refreshToken, JwtService.cookies.refresh);
+  CsrfService.issue(req, res);
+}
 
 class AuthController {
   static async login(req, res) {
@@ -13,19 +21,17 @@ class AuthController {
       password,
     );
 
-    // Issue the unified access/refresh pair.
-    res
-      .cookie(AuthSchema.cookieNames.ACCESS, accessToken, JwtService.cookies.access)
-      .cookie(AuthSchema.cookieNames.REFRESH, refreshToken, JwtService.cookies.refresh);
+    setSessionCookies(req, res, accessToken, refreshToken);
 
     ok(res, { user }, authMessagesCodes.LOGIN_SUCCESS, messagesNames.authMessages);
   }
 
   static async logout(req, res) {
-    // Clear the unified cookie pair.
+    await AuthUseCase.logout(req.cookies[AuthSchema.cookieNames.REFRESH]);
     res
       .cookie(AuthSchema.cookieNames.ACCESS, "", JwtService.cookies.clear)
       .cookie(AuthSchema.cookieNames.REFRESH, "", JwtService.cookies.clear);
+    CsrfService.clear(res);
     ok(res, null, authMessagesCodes.LOGOUT_SUCCESS, messagesNames.authMessages);
   }
 
@@ -33,11 +39,14 @@ class AuthController {
     const { accessToken, refreshToken } = await AuthUseCase.refreshTokens(
       req.cookies[AuthSchema.cookieNames.REFRESH],
     );
-    res
-      .cookie(AuthSchema.cookieNames.ACCESS, accessToken, JwtService.cookies.access)
-      .cookie(AuthSchema.cookieNames.REFRESH, refreshToken, JwtService.cookies.refresh);
+    setSessionCookies(req, res, accessToken, refreshToken);
 
     ok(res, {}, authMessagesCodes.TOKENS_REFRESHED, messagesNames.authMessages);
+  }
+
+  static async csrfToken(req, res) {
+    const csrfToken = CsrfService.issue(req, res);
+    ok(res, { csrfToken });
   }
 
   static async requestPasswordReset(req, res) {
@@ -53,8 +62,8 @@ class AuthController {
 
   static async resetPassword(req, res) {
     const { token, password } = req.body;
-    const result = await AuthUseCase.resetPassword(token, password);
-    ok(res, result, authMessagesCodes.PASSWORD_CHANGED, messagesNames.authMessages);
+    await AuthUseCase.resetPassword(token, password);
+    ok(res, null, authMessagesCodes.PASSWORD_CHANGED, messagesNames.authMessages);
   }
 
   static async getCurrentUser(req, res) {
@@ -74,10 +83,9 @@ class AuthController {
     const { user, accessToken, refreshToken } = await AuthUseCase.switchProfile({
       authUser: req.auth,
       profileId: req.body.profileId,
+      refreshToken: req.cookies[AuthSchema.cookieNames.REFRESH],
     });
-    res
-      .cookie(AuthSchema.cookieNames.ACCESS, accessToken, JwtService.cookies.access)
-      .cookie(AuthSchema.cookieNames.REFRESH, refreshToken, JwtService.cookies.refresh);
+    setSessionCookies(req, res, accessToken, refreshToken);
     ok(res, { user }, authMessagesCodes.PROFILE_SWITCHED, messagesNames.authMessages);
   }
 }

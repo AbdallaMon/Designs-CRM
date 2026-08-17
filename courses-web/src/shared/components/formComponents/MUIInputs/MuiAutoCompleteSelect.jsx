@@ -113,15 +113,6 @@ function MUIAutoComplete({
     const onChange = select.onChange;
     const [opened, setOpened] = useState(false);
     const [changed, setChanged] = useState(false);
-    useEffect(() => {
-        if (select.data.defaultValue && !value && !changed) {
-            handleOpen();
-            setValue(select.data.defaultValue);
-            triggerValue(selectData.id, select.data.defaultValue);
-            handleClose();
-        }
-    }, [select]);
-
     const handleOpen = async () => {
         setOpen(true);
         if (getData && (!opened || select.rerender)) {
@@ -138,6 +129,17 @@ function MUIAutoComplete({
     const handleClose = () => {
         setOpen(false);
     };
+
+    /* eslint-disable react-hooks/set-state-in-effect -- defaults can arrive after this controlled field mounts. */
+    useEffect(() => {
+        if (select.data.defaultValue && !value && !changed) {
+            handleOpen();
+            setValue(select.data.defaultValue);
+            triggerValue(selectData.id, select.data.defaultValue);
+            handleClose();
+        }
+    }, [select]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const handleChange = (event, newValue) => {
         setValue(newValue ? newValue.id : "");

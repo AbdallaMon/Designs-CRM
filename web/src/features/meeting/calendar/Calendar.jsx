@@ -1,4 +1,8 @@
 "use client";
+import {
+  CALENDAR_VIEW_TYPES,
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+} from "@dms/shared";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -99,9 +103,7 @@ export const Calendar = ({
         });
 
         if (!tokenData || tokenData.status !== 200) {
-          setError(
-            "Invalid or expired token please ask the customer support to resend the link"
-          );
+          setError(FEEDBACK.MEETING_TOKEN_INVALID);
           return;
         } else {
           if (!tokenData.data.selectedTimezone && tokenData.data.userTimezone) {
@@ -120,7 +122,7 @@ export const Calendar = ({
       }
 
       const baseUrl =
-        type === "STAFF"
+      type === CALENDAR_VIEW_TYPES.STAFF
           ? `calendar/available-days?month=${monthParam}&adminId=${adminId}&`
           : isAdmin
           ? `calendar/available-days?month=${monthParam}&`
@@ -327,9 +329,9 @@ export const Calendar = ({
                         : {},
                       transition: "all 0.2s ease",
                       opacity:
-                        (!canClick && type === "CLIENT") ||
+            (!canClick && type === CALENDAR_VIEW_TYPES.CLIENT) ||
                         !isCurrentMonth ||
-                        (isPast && type === "CLIENT")
+              (isPast && type === CALENDAR_VIEW_TYPES.CLIENT)
                           ? 0.4
                           : 1,
                     }}
@@ -341,7 +343,7 @@ export const Calendar = ({
                         color:
                           !isCurrentMonth || isPast
                             ? "text.disabled"
-                            : (!canClick && type === "CLIENT") || fullyBooked
+              : (!canClick && type === CALENDAR_VIEW_TYPES.CLIENT) || fullyBooked
                             ? "red"
                             : selected
                             ? "primary.contrastText"
@@ -430,7 +432,7 @@ export const AdminBookingPanel = ({
   timezone: tz = Intl.DateTimeFormat().resolvedOptions().timeZone ||
     "Asia/Dubai",
   adminId,
-  type = "ADMIN",
+  type = CALENDAR_VIEW_TYPES.ADMIN,
 }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDates, setSelectedDates] = useState([]);

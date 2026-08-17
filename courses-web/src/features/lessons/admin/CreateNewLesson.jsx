@@ -21,6 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FiPlus, FiSave, FiX } from "react-icons/fi";
+import { lessonPayload } from "@/app/helpers/contracts/coursePayloads";
 
 export const CreateLesson = ({ courseId }) => {
   const [open, setOpen] = useState(false);
@@ -46,7 +47,7 @@ export const CreateLesson = ({ courseId }) => {
 
   const handleSubmit = async () => {
     const req = await handleRequestSubmit(
-      formData,
+      lessonPayload(formData),
       setToastLoading,
       `courses/${courseId}/lessons`,
       false,

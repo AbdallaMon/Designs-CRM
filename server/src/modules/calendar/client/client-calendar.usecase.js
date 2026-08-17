@@ -19,13 +19,62 @@ import { createCalendarEvent } from "../../../infra/google/google-calendar.clien
 import { clientCalendarRepository } from "./client-calendar.repo.js";
 import { shapeCalendarTokenData } from "../calendar.dto.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { calendarMessagesCodes } from "@dms/shared";
+import {
+  CALENDAR_SLOT_TYPES,
+  CALENDAR_VIEW_TYPES,
+  calendarMessagesCodes,
+  leadsMessagesCodes,
+} from "@dms/shared";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
 import {
   getAvailableDaysImpl,
   getAvailableSlotsForDayImpl,
 } from "../availability/availability.usecase.js";
 
 const DEFAULT_TZ = "Asia/Dubai";
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+function bookingDateRange(selectedDate, selectedTimezone) {
+  const requestedDate = dayjs(selectedDate).tz(selectedTimezone || DEFAULT_TZ);
+  if (!requestedDate.isValid()) {
+    throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
+  }
+  return {
+    requestedDateStart: requestedDate.startOf("day").utc().toDate(),
+    requestedDateEnd: requestedDate.add(1, "day").startOf("day").utc().toDate(),
+  };
+}
+
+async function runBookingSideEffects({ clientLeadId, reminder }) {
+  const client = reminder?.clientLead?.client;
+  const sideEffects = [
+    ["notification", () => newMeetingNotification(Number(clientLeadId), reminder)],
+    [
+      "email",
+      () =>
+        sendReminderCreatedToClient({
+          clientEmail: client?.email,
+          clientName: client?.name,
+          reminderTime: reminder?.time,
+          reminderTitle: "Booked succssfully",
+          userTimezone: reminder?.userTimezone,
+        }),
+    ],
+    ["google-calendar", () => createCalendarEvent(reminder)],
+  ];
+
+  const results = await Promise.allSettled(
+    sideEffects.map(([, effect]) => Promise.resolve().then(effect)),
+  );
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`Calendar booking ${sideEffects[index][0]} side effect failed`, result.reason);
+    }
+  });
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 //  Relocated booking logic (formerly legacy/client-calendar-service.js). Prisma →
@@ -36,30 +85,33 @@ export async function bookAMeeting({
   reminderId,
   clientLeadId,
   selectedSlot,
+  selectedDate,
+  adminId,
+  userId,
   selectedTimezone = "Asia/Dubai",
 }) {
-  const time = selectedSlot.startTime;
-  const reminder = await clientCalendarRepository.updateMeetingReminderTime({
-    reminderId,
-    time,
+  if (!selectedSlot?.id || selectedSlot.type === CALENDAR_SLOT_TYPES.MOCK) {
+    throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
+  }
+
+  const ownerId = adminId || userId;
+  const dateRange = bookingDateRange(selectedDate, selectedTimezone);
+  const reservation = await clientCalendarRepository.reserveSlotAndUpdateReminder({
+    slotId: selectedSlot.id,
+    meetingReminderId: reminderId,
+    expectedOwnerId: ownerId,
+    ...dateRange,
     userTimezone: selectedTimezone,
   });
-  if (selectedSlot.type !== "MOCK") {
-    await assignSlotToMeeting({
-      slotId: selectedSlot.id,
-      meetingReminderId: reminderId,
-      userTimezone: selectedTimezone,
-    });
+
+  if (reservation.outcome === "not-found") {
+    throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
   }
-  const reminderData = await clientCalendarRepository.findReminderForBooking(reminderId);
-  await newMeetingNotification(Number(clientLeadId), reminder);
-  await sendReminderCreatedToClient({
-    clientEmail: reminderData.clientLead.client.email,
-    clientName: reminderData.clientLead.client.name,
-    reminderTime: reminderData.time,
-    reminderTitle: "Booked succssfully",
-    userTimezone: reminderData.userTimezone,
-  });
+  if (reservation.outcome !== "booked") {
+    throw new AppError({ code: calendarMessagesCodes.SLOT_ALREADY_BOOKED, statusCode: 409 });
+  }
+
+  await runBookingSideEffects({ clientLeadId, reminder: reservation.reminder });
   return true;
 }
 
@@ -78,33 +130,10 @@ export async function verifyAndExtractCalendarToken(token) {
   if (!token) throw new AppError({ code: calendarMessagesCodes.BOOKING_TOKEN_REQUIRED, statusCode: 401 });
 
   const tokenData = await clientCalendarRepository.findReminderByToken(token);
+  if (!tokenData) {
+    throw new AppError({ code: leadsMessagesCodes.MEETING_REMINDER_NOT_FOUND, statusCode: 404 });
+  }
   return shapeCalendarTokenData(tokenData);
-}
-
-export async function assignSlotToMeeting({
-  slotId,
-  meetingReminderId,
-  userTimezone,
-}) {
-  slotId = Number(slotId);
-  meetingReminderId = Number(meetingReminderId);
-  const slot = await clientCalendarRepository.findSlotForAssign(slotId);
-
-  if (!slot || slot.isBooked)
-    throw new AppError({ code: calendarMessagesCodes.SLOT_ALREADY_BOOKED, statusCode: 409 });
-
-  const reminder = await clientCalendarRepository.assignSlotToReminder({
-    meetingReminderId,
-    slotId,
-  });
-
-  const availableSlot = await clientCalendarRepository.markSlotBooked({
-    slotId,
-    meetingReminderId,
-    userTimezone,
-  });
-  await createCalendarEvent(reminder);
-  return availableSlot;
 }
 
 class ClientCalendarUsecase {
@@ -121,7 +150,7 @@ class ClientCalendarUsecase {
     return getAvailableDaysImpl({
       month,
       ...tokenData,
-      type: "CLIENT",
+      type: CALENDAR_VIEW_TYPES.CLIENT,
       timezone,
     });
   }
@@ -134,15 +163,19 @@ class ClientCalendarUsecase {
       dayId,
       ...tokenData,
       timezone,
-      type: "CLIENT",
+      type: CALENDAR_VIEW_TYPES.CLIENT,
     });
   }
 
   // GET /slots/details — confirm a slot is still available + not booked (legacy verified
   // the token first, then checked the slot by id). Returns the slot row.
   async getSlotDetails({ token, slotId, timezone }) {
-    await verifyAndExtractCalendarToken(token);
-    return verifySlotIsAvailableAndNotBooked({ slotId: Number(slotId), timezone });
+    const tokenData = await verifyAndExtractCalendarToken(token);
+    const slot = await verifySlotIsAvailableAndNotBooked({ slotId: Number(slotId), timezone });
+    if (Number(slot.availableDay?.userId) !== Number(tokenData.adminId || tokenData.userId)) {
+      throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
+    }
+    return slot;
   }
 
   // POST /book — book the meeting. Legacy merged the request body (selectedSlot,

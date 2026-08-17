@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
@@ -102,7 +103,7 @@ export default function Layout({ admin, staff, threeD, twoD, accountant }) {
   // Route the dashboard slot from the active profile.
   const profile = activeProfileOf(user);
   if (!user || !profile) return null;
-  const isAdmin = profile === "ADMIN" || profile === "SUPER_ADMIN";
+  const isAdmin = profile === PROFILES.ADMIN || profile === PROFILES.SUPER_ADMIN;
   return (
     <Box
       sx={{

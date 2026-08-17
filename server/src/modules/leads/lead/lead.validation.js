@@ -4,6 +4,7 @@
 // schemas `.passthrough()` and coerce only the ids/pagination we actually consume, so
 // observable behavior is unchanged while every mutating route still gets a schema.
 import { z } from "zod";
+import { REMINDER_TYPES } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -70,7 +71,7 @@ export class LeadValidation {
   // OR record an explicit no-follow-up reason. Both optional at the schema level — the
   // usecase enforces the conditional requirement (it needs DB state: last-touch check).
   static reminderNext = z.object({
-    type: z.enum(["CALL", "MEETING"]),
+    type: z.enum([REMINDER_TYPES.CALL, REMINDER_TYPES.MEETING]),
     time: z.union([z.string(), z.date()]),
     reason: z.string().optional(),
   });

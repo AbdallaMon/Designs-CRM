@@ -7,10 +7,16 @@ const P = PERMISSIONS.SITE_UTILITY;
 
 // ContractUtility is a singleton whose PK is `id Int @id` (schema.prisma) with NO
 // DB-side default (not autoincrement — verified against the reconciled prod schema).
-// The row is seeded lazily on the first obligations save, so the create must supply
-// an explicit id or Prisma rejects it ("Argument `id` is missing"). We use a fixed
-// singleton id, mirroring the sibling SiteUtility singleton (`id Int @id @default(1)`).
+// The row is seeded lazily on the first obligations or clause save, so the create must
+// supply an explicit id or Prisma rejects it ("Argument `id` is missing"). We use a
+// fixed singleton id, mirroring the sibling SiteUtility singleton (`id Int @id @default(1)`).
 const CONTRACT_UTILITY_SINGLETON_ID = 1;
+const EMPTY_OBLIGATIONS = {
+  obligationsPartyOneAr: "",
+  obligationsPartyOneEn: "",
+  obligationsPartyTwoAr: "",
+  obligationsPartyTwoEn: "",
+};
 
 // Business logic / orchestration for the contract-utility editor. Prisma never
 // appears here — only repo calls. Errors are thrown as AppError(code, statusCode);
@@ -18,9 +24,9 @@ const CONTRACT_UTILITY_SINGLETON_ID = 1;
 //
 // The clause templates hang off the ContractUtility singleton (contractUtilityId).
 // Legacy resolved the singleton via `findFirst` before every clause create and
-// assigned its id; if no singleton existed it crashed on `.id` of null. We preserve
-// the observable create behavior but fail cleanly (CONTRACT_UTILITY_NOT_FOUND, 409)
-// instead of throwing a raw TypeError — the obligations save creates the singleton.
+// assigned its id; if no singleton existed it crashed on `.id` of null. Fresh databases
+// are intentionally not seeded, so every clause create now ensures the required parent
+// shell exists instead of imposing an undocumented "save obligations first" order.
 class ContractUtilityUsecase {
   // ── Aggregate read ───────────────────────────────────────────────────────────
   // GET /details — the singleton + its three ordered clause lists. Mirrors legacy
@@ -43,20 +49,26 @@ class ContractUtilityUsecase {
   async saveObligations({ input }) {
     const existing = await contractUtilityRepository.getUtility();
     if (!existing) {
-      return contractUtilityRepository.createUtility({
-        data: { ...input, id: CONTRACT_UTILITY_SINGLETON_ID },
+      return contractUtilityRepository.upsertUtility({
+        id: CONTRACT_UTILITY_SINGLETON_ID,
+        create: { ...input, id: CONTRACT_UTILITY_SINGLETON_ID },
       });
     }
     return contractUtilityRepository.updateUtility({ id: existing.id, data: input });
   }
 
-  // Resolve the singleton id for a clause create; fail cleanly if not seeded yet.
   async #requireUtilityId() {
     const utility = await contractUtilityRepository.getUtility();
-    if (!utility) {
-      throw new AppError({ code: siteUtilityMessagesCodes.CONTRACT_UTILITY_NOT_FOUND, statusCode: 409 });
-    }
-    return utility.id;
+    if (utility) return utility.id;
+
+    const created = await contractUtilityRepository.upsertUtility({
+      id: CONTRACT_UTILITY_SINGLETON_ID,
+      create: {
+        id: CONTRACT_UTILITY_SINGLETON_ID,
+        ...EMPTY_OBLIGATIONS,
+      },
+    });
+    return created.id;
   }
 
   // ── Stage clauses ────────────────────────────────────────────────────────────

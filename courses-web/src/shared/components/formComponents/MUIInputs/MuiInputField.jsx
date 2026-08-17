@@ -13,7 +13,6 @@ export default function MuiInputField({
                                           trigger, setValue
                                       }) {
     const [inputData, setInputData] = useState(input.data);
-    const [showPassword, setShowPassword] = useState(false);
     const inputRef = useRef(null);
     const [type, setType] = useState(null);
     const fieldValue = watch(inputData.id);
@@ -22,10 +21,6 @@ export default function MuiInputField({
     function handleChange(event) {
         input.onChange && input.onChange(event, setValue, watch)
     }
-
-    useEffect(() => {
-
-    }, [])
     const handleClickShowPassword = () => {
         setInputData({
             ...inputData,
@@ -42,9 +37,7 @@ export default function MuiInputField({
         }
     }, [fieldValue]);
 
-    useEffect(() => {
-        setShowPassword(inputData.type !== "text");
-    }, [inputData.type]);
+    const showPassword = inputData.type !== "text";
 
     return (
           <TextField

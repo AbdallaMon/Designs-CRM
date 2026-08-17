@@ -36,6 +36,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
+import { linkPayload } from "@/app/helpers/contracts/coursePayloads";
 
 // Enhanced Links Section Component
 const LinksSection = ({ courseId, lessonId }) => {
@@ -66,7 +67,7 @@ const LinksSection = ({ courseId, lessonId }) => {
   const handleAddLink = async () => {
     if (newLink.url.trim() && newLink.title.trim()) {
       const req = await handleRequestSubmit(
-        newLink,
+        linkPayload(newLink),
         setToastLoading,
         `courses/${courseId}/lessons/${lessonId}/links`,
         false,
@@ -102,7 +103,7 @@ const LinksSection = ({ courseId, lessonId }) => {
 
   const handleUpdateLink = async () => {
     const req = await handleRequestSubmit(
-      editData,
+      linkPayload(editData),
       setToastLoading,
       `courses/${courseId}/lessons/${lessonId}/links/${editingId}`,
       false,

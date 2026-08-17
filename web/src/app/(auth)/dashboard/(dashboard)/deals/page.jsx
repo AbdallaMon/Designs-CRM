@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import StaffLeadsKanbanBoard from "@/features/Kanban/staff/StaffLeadsKanbanBoard";
@@ -10,7 +11,7 @@ export default function Page() {
   const sp = useSearchParams();
   if (!user?.profile) return null;
   const board =
-    ["NORMAL_SALES", "PRIMARY_SALES"].includes(user.profile) ? (
+    [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES].includes(user.profile) ? (
       <StaffLeadsKanbanBoard />
     ) : (
       <StaffLeadsKanbanBoard staffId={sp.get("staffId") ?? undefined} />

@@ -5,6 +5,7 @@ import { Box, Paper, Stack, Badge, Fab, IconButton, Slide } from "@mui/material"
 import { FaComments, FaExternalLinkAlt } from "react-icons/fa";
 import Link from "next/link";
 import { CreateGroupDialog } from "@/features/chat/components/dialogs/index.js";
+import { CHAT_VIEW_MODES } from "@dms/shared";
 
 export function RenderWidgetChat({
   selectedRoomId,
@@ -162,7 +163,7 @@ export function RenderWidgetChat({
         fetchRooms={fetchRooms}
         onCreated={(room) => {
           setSelectedRoomId(room.id);
-          if (isMobile) setViewMode("CHAT");
+          if (isMobile) setViewMode(CHAT_VIEW_MODES.CHAT);
           if (type === "page") router.replace(`?roomId=${room.id}`);
         }}
       />

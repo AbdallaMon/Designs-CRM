@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import React, { useState, useEffect } from "react";
 import {
   Paper,
@@ -482,7 +483,7 @@ export default function BigCalendar({
         </Box>
 
         {/* Admin Controls */}
-        {(user.profile === "ADMIN" || user.profile === "SUPER_ADMIN") && (
+        {(user.profile === PROFILES.ADMIN || user.profile === PROFILES.SUPER_ADMIN) && (
           <Box
             sx={{
               px: 3,

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getData } from "@/app/helpers/functions/getData";
 import { CHAT_LIMITS } from "@/features/chat/utils/chatConstants.js";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 /**
  * Hook to fetch and manage chat room files with infinite scroll, search, and filtering
@@ -82,10 +83,10 @@ export function useChatFiles(
         const hasMore = (page + 1) * LIMIT < (response.total || 0);
         setHasMore(hasMore);
       } else {
-        setError(response?.message || "Failed to fetch files");
+        setError(response?.message || FEEDBACK.CHAT_FILES_LOAD_FAILED);
       }
     } catch (err) {
-      setError(err.message || "Error fetching files");
+      setError(err.message || FEEDBACK.CHAT_FILES_FETCH_ERROR);
       console.error("Error fetching chat files:", err);
     } finally {
       setLoading(false);

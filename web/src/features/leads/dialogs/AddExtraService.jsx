@@ -19,6 +19,8 @@ import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 
 import dayjs from "dayjs";
 import AddPayments from "@/features/leads/payments/AddPayments.jsx";
+import { OpenButton } from "@/features/leads/dialogs/OpenButton.jsx";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 import utc from "dayjs/plugin/utc";
 
@@ -59,11 +61,11 @@ export const AddExtraService = ({
   }
   const handleAddNewExtraService = async () => {
     if (!extraService.price || !extraService.paymentReason) {
-      setAlertError("You must enter payment reason and price");
+      setAlertError(FEEDBACK.PAYMENT_REASON_AND_PRICE_REQUIRED);
       return;
     }
     if (extraService.price <= 0) {
-      setAlertError("You must a price bigger than 0");
+      setAlertError(FEEDBACK.PRICE_MUST_BE_POSITIVE);
       return;
     }
     setOpenPayments(true);

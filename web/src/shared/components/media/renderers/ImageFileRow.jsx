@@ -1,8 +1,18 @@
 "use client";
 import { Box, Skeleton, Typography } from "@mui/material";
 import { FaDownload, FaFile } from "react-icons/fa";
-import { useEffect, useState } from "react";
-import { isImage, isInCache, isPdf } from "@/shared/components/media/fileTypes.js";
+import { useCallback, useEffect, useState } from "react";
+import { isImage, isPdf } from "@/shared/components/media/fileTypes.js";
+import { isInPrivateMediaCache } from "@/shared/components/media/privateCacheState.js";
+
+function warmResource(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = resolve;
+    image.onerror = reject;
+    image.src = url;
+  });
+}
 
 export function ImageFileRow({
   att,
@@ -23,10 +33,10 @@ export function ImageFileRow({
 
   useEffect(() => {
     let mounted = true;
-    setStage("checking");
-
-    (async () => {
-      const cached = await isInCache(fileUrl);
+    queueMicrotask(async () => {
+      if (!mounted) return;
+      setStage("checking");
+      const cached = await isInPrivateMediaCache(fileUrl);
       if (!mounted) return;
 
       if (cached) {
@@ -36,14 +46,14 @@ export function ImageFileRow({
         setStage("thumb");
         setImgSrc(thumbUrl || "");
       }
-    })();
+    });
 
     return () => {
       mounted = false;
     };
   }, [isImg, fileUrl, thumbUrl]);
 
-  const handleTileClick = async () => {
+  const handleTileClick = useCallback(async () => {
     // Non-image media tile (video/pdf) opens viewer directly
     if (!isImg) {
       onOpen?.();
@@ -72,7 +82,7 @@ export function ImageFileRow({
       setImgSrc(fileUrl);
       setStage("full");
     }
-  };
+  }, [fileUrl, isImg, mime, onOpen, stage]);
 
   const showDownloadOverlay = isImg && stage === "thumb" && !overlayText;
   useEffect(() => {
@@ -82,10 +92,16 @@ export function ImageFileRow({
   }, [att, handleMediaReady]);
 
   useEffect(() => {
+    let active = true;
     if (shouldLoadImmediately && stage !== "full") {
-      handleTileClick();
+      queueMicrotask(() => {
+        if (active) handleTileClick();
+      });
     }
-  }, [shouldLoadImmediately, att, stage]);
+    return () => {
+      active = false;
+    };
+  }, [handleTileClick, shouldLoadImmediately, stage]);
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -99,7 +115,7 @@ export function ImageFileRow({
 
     window.addEventListener("keydown", onKeyDown, { passive: false });
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [att, handleTileClick, iframe]);
+  }, [handleTileClick, iframe]);
   return (
     <Box
       onClick={handleTileClick}
@@ -135,7 +151,6 @@ export function ImageFileRow({
           />
         ) : (
           <>
-            sskkk
             <Skeleton variant="rectangular" width="100%" height="100%" />
           </>
         )

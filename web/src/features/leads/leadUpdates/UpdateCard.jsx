@@ -1,4 +1,5 @@
 import { DEPARTMENTS } from "@/app/helpers/constants";
+import { WORK_DEPARTMENTS } from "@dms/shared";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
@@ -58,7 +59,9 @@ export const UpdateCard = ({
     (shared) => shared.type === currentUserDepartment
   );
   const adminSharedUpdate = isAdmin
-    ? update?.sharedSettings?.find((shared) => shared.type === "ADMIN")
+    ? update?.sharedSettings?.find(
+        (shared) => shared.type === WORK_DEPARTMENTS.ADMIN,
+      )
     : null;
   const isArchived = canManageDepartments
     ? adminSharedUpdate

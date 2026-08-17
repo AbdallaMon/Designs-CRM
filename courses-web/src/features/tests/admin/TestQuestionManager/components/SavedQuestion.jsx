@@ -28,6 +28,10 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import ChoiceEditor from "./ChoiceEditor";
+import {
+  questionEditPayload,
+  validateQuestionDraft,
+} from "@/app/helpers/contracts/coursePayloads";
 
 const SavedQuestion = React.memo(
   ({ questionId, testId, questions, index, moveQuestion, setDeleteDialog }) => {
@@ -149,25 +153,7 @@ const SavedQuestion = React.memo(
       });
     }, []);
 
-    const validateQuestion = useCallback((question) => {
-      if (!question.question.trim()) return "Question text is required";
-      if (!question.type) return "Question type is required";
-
-      if (question.type !== QuestionTypes.TEXT) {
-        if (question.choices.length < 2)
-          return "At least 2 choices are required";
-        if (question.choices.some((c) => !c.text.trim() && c.type !== "DELETE"))
-          return "All choices must have text";
-        if (
-          !question.choices.some(
-            (c) => (c.isCorrect && c.type !== "DELETE") || c.order
-          )
-        )
-          return "At least one correct answer is required";
-      }
-
-      return null;
-    }, []);
+    const validateQuestion = validateQuestionDraft;
 
     const saveEdit = useCallback(async () => {
       const validation = validateQuestion(editedQuestion);
@@ -177,7 +163,7 @@ const SavedQuestion = React.memo(
       }
 
       const req = await handleRequestSubmit(
-        editedQuestion,
+        questionEditPayload(editedQuestion),
         setToastLoading,
         `courses/tests/${testId}/test-questions/${questionId}`,
         false,
@@ -379,5 +365,7 @@ const SavedQuestion = React.memo(
     );
   }
 );
+
+SavedQuestion.displayName = "SavedQuestion";
 
 export default SavedQuestion;

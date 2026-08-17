@@ -1,3 +1,4 @@
+import { NOTIFICATION_TYPES, PROFILES } from "@dms/shared";
 import prisma from "../../prisma/prisma.js";
 import { dealsLink } from "../../config/links.js";
 import { sendEmail } from "../../mail/send-mail.js";
@@ -21,7 +22,7 @@ export async function newFileUploaded(leadId, file, userId) {
     true,
     notificationHtml,
     null,
-    "NEW_FILE",
+    NOTIFICATION_TYPES.NEW_FILE,
     "New file upload",
     true,
     "HTML",
@@ -43,7 +44,7 @@ export async function newNoteNotification(leadId, content, userId) {
     true,
     notificationHtml,
     null,
-    "NEW_NOTE",
+    NOTIFICATION_TYPES.NEW_NOTE,
     "New note",
     true,
     "HTML",
@@ -63,7 +64,7 @@ export async function createNotification(
   contentType = "TEXT",
   clientLeadId,
   staffId,
-  profileKeys = ["NORMAL_SALES"],
+  profileKeys = [PROFILES.NORMAL_SALES],
   specificProfiles,
 ) {
   let subAdmins = [];
@@ -97,11 +98,11 @@ export async function createNotification(
         currentProfile: {
           key: {
             in: [
-              "NORMAL_SALES",
-              "PRIMARY_SALES",
-              "SUPER_SALES",
-              "ADMIN",
-              "SUPER_ADMIN",
+              PROFILES.NORMAL_SALES,
+              PROFILES.PRIMARY_SALES,
+              PROFILES.SUPER_SALES,
+              PROFILES.ADMIN,
+              PROFILES.SUPER_ADMIN,
             ],
           },
         },
@@ -126,7 +127,7 @@ export async function createNotification(
     if (isAdmin) {
       const admin = await prisma.user.findFirst({
         where: {
-          currentProfile: { key: "ADMIN" },
+          currentProfile: { key: PROFILES.ADMIN },
         },
         select: {
           id: true,
@@ -134,7 +135,7 @@ export async function createNotification(
       });
       subAdmins = await prisma.user.findMany({
         where: {
-          currentProfile: { key: "SUPER_ADMIN" },
+          currentProfile: { key: PROFILES.SUPER_ADMIN },
         },
         select: {
           id: true,
@@ -205,7 +206,6 @@ async function sendNotification(
       staffId: staffId && Number(staffId),
     },
   });
-  console.log("notification created?", notification);
   // await publishToSocket("notification", `user:${userId}`, notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({
@@ -227,9 +227,7 @@ async function sendNotification(
 `;
 
       setImmediate(() => {
-        sendEmail(user.email, emailSubject, email).catch((error) => {
-          console.error(`Failed to send email to user ${userId}:`, error);
-        });
+        sendEmail(user.email, emailSubject, email).catch(() => {});
       });
     }
   }

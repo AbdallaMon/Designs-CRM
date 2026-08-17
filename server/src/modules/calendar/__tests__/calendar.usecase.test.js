@@ -43,11 +43,7 @@ vi.mock("../client/client-calendar.repo.js", () => ({
   clientCalendarRepository: {
     findSlotById: vi.fn(),
     findReminderByToken: vi.fn(),
-    updateMeetingReminderTime: vi.fn(),
-    findReminderForBooking: vi.fn(),
-    findSlotForAssign: vi.fn(),
-    assignSlotToReminder: vi.fn(),
-    markSlotBooked: vi.fn(),
+    reserveSlotAndUpdateReminder: vi.fn(),
   },
 }));
 
@@ -69,6 +65,11 @@ vi.mock("../../../infra/google/google-calendar.client.js", () => ({
   createCalendarEvent: vi.fn(),
 }));
 
+vi.mock("../google/google-oauth-state.cache.js", () => ({
+  issueGoogleOAuthState: vi.fn(),
+  consumeGoogleOAuthState: vi.fn(),
+}));
+
 vi.mock("../google/google.repo.js", () => ({
   googleCalendarRepository: {
     findConnectionStatus: vi.fn(),
@@ -83,6 +84,7 @@ import {
   USER_ROLES,
   authMessagesCodes,
   calendarMessagesCodes,
+  leadsMessagesCodes,
 } from "@dms/shared";
 
 import { availabilityUsecase } from "../availability/availability.usecase.js";
@@ -93,8 +95,13 @@ import { googleCalendarUsecase } from "../google/google.usecase.js";
 import { googleCalendarRepository } from "../google/google.repo.js";
 import {
   getAuthUrl,
+  handleOAuthCallback,
   isGoogleCalendarConnected,
 } from "../../../infra/google/google-calendar.client.js";
+import {
+  consumeGoogleOAuthState,
+  issueGoogleOAuthState,
+} from "../google/google-oauth-state.cache.js";
 import { clientCalendarUsecase } from "../client/client-calendar.usecase.js";
 import { clientCalendarRepository } from "../client/client-calendar.repo.js";
 import { newMeetingNotification } from "../../../infra/notifications/index.js";
@@ -323,12 +330,47 @@ describe("GoogleCalendarUsecase", () => {
     });
   });
 
-  it("connect returns the auth URL for the CALLER's id when not connected", async () => {
+  it("connect returns an auth URL with opaque state bound to the caller", async () => {
     isGoogleCalendarConnected.mockResolvedValue(false);
+    issueGoogleOAuthState.mockResolvedValue("opaque-state");
     getAuthUrl.mockResolvedValue("https://accounts.google.com/o/oauth2/...");
     const res = await googleCalendarUsecase.connect({ authUser: { id: 55 } });
-    expect(getAuthUrl).toHaveBeenCalledWith(55);
+    expect(issueGoogleOAuthState).toHaveBeenCalledWith({ userId: 55 });
+    expect(getAuthUrl).toHaveBeenCalledWith("opaque-state");
     expect(res).toEqual({ isConnected: false, authUrl: "https://accounts.google.com/o/oauth2/..." });
+  });
+
+  it("rejects forged, expired, reused, or different-user state before token exchange", async () => {
+    consumeGoogleOAuthState.mockResolvedValue(false);
+
+    await expect(
+      googleCalendarUsecase.handleCallback({
+        code: "authorization-code",
+        state: "invalid-state",
+        authUser: { id: 55 },
+      }),
+    ).rejects.toMatchObject({
+      code: calendarMessagesCodes.GOOGLE_CALLBACK_INVALID,
+      statusCode: 400,
+    });
+    expect(handleOAuthCallback).not.toHaveBeenCalled();
+  });
+
+  it("binds exchanged tokens only to the authenticated user, never state data", async () => {
+    consumeGoogleOAuthState.mockResolvedValue(true);
+    handleOAuthCallback.mockResolvedValue({ success: true });
+
+    await googleCalendarUsecase.handleCallback({
+      code: "authorization-code",
+      state: "opaque-state",
+      authUser: { id: 55 },
+    });
+
+    expect(consumeGoogleOAuthState).toHaveBeenCalledWith({
+      state: "opaque-state",
+      userId: 55,
+    });
+    expect(handleOAuthCallback).toHaveBeenCalledWith("authorization-code", 55);
   });
 
   it("status exposes ONLY connection metadata, never tokens", async () => {
@@ -353,6 +395,13 @@ describe("GoogleCalendarUsecase", () => {
 //  CLIENT (PUBLIC) BOOKING — token is the credential; body cannot override it
 // ════════════════════════════════════════════════════════════════════════════
 describe("ClientCalendarUsecase (public, token-based)", () => {
+  const bookedReminder = {
+    id: 10,
+    time: new Date("2026-06-10T09:00:00Z"),
+    userTimezone: "Asia/Dubai",
+    clientLead: { client: { email: "c@x.com", name: "Client" } },
+  };
+
   it("book ALWAYS derives reminder/lead from the verified token (body cannot override)", async () => {
     // The verified token (via the real dto shaping of this repo row) yields reminderId 10 /
     // clientLeadId 20 — NOT the malicious body's 999 / 888.
@@ -362,27 +411,124 @@ describe("ClientCalendarUsecase (public, token-based)", () => {
       clientLeadId: 20,
       adminId: 30,
     });
-    clientCalendarRepository.updateMeetingReminderTime.mockResolvedValue({ id: 10 });
-    clientCalendarRepository.findSlotForAssign.mockResolvedValue({ id: 5, isBooked: false });
-    clientCalendarRepository.assignSlotToReminder.mockResolvedValue({ id: 10 });
-    clientCalendarRepository.markSlotBooked.mockResolvedValue({ id: 5, isBooked: true });
-    clientCalendarRepository.findReminderForBooking.mockResolvedValue({
-      id: 10,
-      time: new Date(),
-      userTimezone: "Asia/Dubai",
-      clientLead: { client: { email: "c@x.com", name: "Client" } },
+    clientCalendarRepository.reserveSlotAndUpdateReminder.mockResolvedValue({
+      outcome: "booked",
+      reminder: bookedReminder,
     });
 
     // A malicious body tries to hijack the booking onto another reminder/lead.
     await clientCalendarUsecase.bookMeeting({
       token: "tok",
-      body: { reminderId: 999, clientLeadId: 888, selectedSlot: { id: 5, startTime: "x" } },
+      body: {
+        reminderId: 999,
+        clientLeadId: 888,
+        selectedSlot: { id: 5, startTime: "x" },
+        selectedDate: "2026-06-10",
+      },
     });
 
-    // token spread comes AFTER the body spread, so the verified ids win: the reminder time
-    // update targets reminderId 10 and the notification fires for clientLeadId 20.
-    expect(clientCalendarRepository.updateMeetingReminderTime.mock.calls[0][0].reminderId).toBe(10);
+    const reservation = clientCalendarRepository.reserveSlotAndUpdateReminder.mock.calls[0][0];
+    expect(reservation.meetingReminderId).toBe(10);
+    expect(reservation.expectedOwnerId).toBe(30);
     expect(newMeetingNotification).toHaveBeenCalledWith(20, expect.anything());
+  });
+
+  it("invalid or expired tokens return a coded 404 instead of a null TypeError", async () => {
+    clientCalendarRepository.findReminderByToken.mockResolvedValue(null);
+    await expect(clientCalendarUsecase.getMeetingData({ token: "expired" })).rejects.toMatchObject({
+      statusCode: 404,
+      message: leadsMessagesCodes.MEETING_REMINDER_NOT_FOUND,
+    });
+  });
+
+  it("rejects a client-controlled MOCK slot before any reservation", async () => {
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+    await expect(
+      clientCalendarUsecase.bookMeeting({
+        token: "tok",
+        body: {
+          selectedSlot: { id: 5, type: "MOCK" },
+          selectedDate: "2026-06-10",
+        },
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, message: calendarMessagesCodes.SLOT_NOT_FOUND });
+    expect(clientCalendarRepository.reserveSlotAndUpdateReminder).not.toHaveBeenCalled();
+  });
+
+  it("rejects a cross-admin or wrong-date slot as not found", async () => {
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+    clientCalendarRepository.reserveSlotAndUpdateReminder.mockResolvedValue({ outcome: "not-found" });
+    await expect(
+      clientCalendarUsecase.bookMeeting({
+        token: "tok",
+        body: { selectedSlot: { id: 99 }, selectedDate: "2026-06-10" },
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, message: calendarMessagesCodes.SLOT_NOT_FOUND });
+    expect(clientCalendarRepository.reserveSlotAndUpdateReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ slotId: 99, expectedOwnerId: 30 }),
+    );
+  });
+
+  it("concurrent booking attempts produce exactly one winner", async () => {
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+    let reserved = false;
+    clientCalendarRepository.reserveSlotAndUpdateReminder.mockImplementation(async () => {
+      if (reserved) return { outcome: "already-booked" };
+      reserved = true;
+      return { outcome: "booked", reminder: bookedReminder };
+    });
+    const input = {
+      token: "tok",
+      body: { selectedSlot: { id: 5 }, selectedDate: "2026-06-10" },
+    };
+    const results = await Promise.allSettled([
+      clientCalendarUsecase.bookMeeting(input),
+      clientCalendarUsecase.bookMeeting(input),
+    ]);
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
+    expect(results.find((result) => result.status === "rejected").reason).toMatchObject({
+      statusCode: 409,
+      message: calendarMessagesCodes.SLOT_ALREADY_BOOKED,
+    });
+  });
+
+  it("keeps a committed booking successful when a post-commit side effect fails", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+    clientCalendarRepository.reserveSlotAndUpdateReminder.mockResolvedValue({
+      outcome: "booked",
+      reminder: bookedReminder,
+    });
+    newMeetingNotification.mockRejectedValue(new Error("queue unavailable"));
+    await expect(
+      clientCalendarUsecase.bookMeeting({
+        token: "tok",
+        body: { selectedSlot: { id: 5 }, selectedDate: "2026-06-10" },
+      }),
+    ).resolves.toBe(true);
+    expect(clientCalendarRepository.reserveSlotAndUpdateReminder).toHaveBeenCalledTimes(1);
+    consoleSpy.mockRestore();
   });
 
   it("book validation STRIPS body fields outside selectedSlot/selectedTimezone (parity: FE posts its whole session object)", () => {
@@ -401,15 +547,31 @@ describe("ClientCalendarUsecase (public, token-based)", () => {
     // The mass-assignment vector is closed by stripping: those keys never reach the usecase.
     expect(r.data).not.toHaveProperty("reminderId");
     expect(r.data).not.toHaveProperty("clientLeadId");
-    expect(Object.keys(r.data)).toEqual(["selectedSlot"]);
+    expect(Object.keys(r.data)).toEqual(["selectedSlot", "selectedDate"]);
   });
 
   it("book validation accepts the legitimate slot + timezone body", () => {
     const r = ClientCalendarValidation.book.safeParse({
       selectedSlot: { id: 5, startTime: "2026-06-10T09:00:00Z", type: "REAL" },
+      selectedDate: "2026-06-10",
       selectedTimezone: "Asia/Dubai",
     });
     expect(r.success).toBe(true);
+  });
+
+  it("book validation requires a real slot id/date and rejects MOCK", () => {
+    expect(
+      ClientCalendarValidation.book.safeParse({
+        selectedSlot: { startTime: "2026-06-10T09:00:00Z" },
+        selectedDate: "2026-06-10",
+      }).success,
+    ).toBe(false);
+    expect(
+      ClientCalendarValidation.book.safeParse({
+        selectedSlot: { id: 5, type: "MOCK" },
+        selectedDate: "2026-06-10",
+      }).success,
+    ).toBe(false);
   });
 
   it("timezones returns a non-empty grouped IANA list (pure, no token)", () => {

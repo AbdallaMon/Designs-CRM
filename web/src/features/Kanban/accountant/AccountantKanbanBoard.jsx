@@ -1,4 +1,5 @@
 "use client";
+import { PAYMENT_STATUSES } from "@dms/shared";
 import React, { useEffect, useState } from "react";
 import { DndProvider, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -17,7 +18,7 @@ const AccountantKanbanBoard = ({
   links,
   statusArray,
   moveCard,
-  status = "NOT_PAID",
+  status = PAYMENT_STATUSES.NOT_PAID,
   type,
 }) => {
   const searchParams = useSearchParams();

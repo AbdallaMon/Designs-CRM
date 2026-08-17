@@ -4,6 +4,7 @@ import React from "react";
 import { Box, Paper } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import CreateLeadChatGroup from "@/features/chat/components/dialogs/CreateLeadChatGroup.jsx";
+import { CHAT_VIEW_MODES } from "@dms/shared";
 
 export function RenderTabChat({
   isMobile,
@@ -48,7 +49,8 @@ export function RenderTabChat({
                 flexDirection: "column",
                 borderRadius: 3,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                display: viewMode === "LIST" ? "block" : "none",
+                display:
+                  viewMode === CHAT_VIEW_MODES.LIST ? "block" : "none",
               }}
             >
               {renderChatRoomsList()}
@@ -56,7 +58,7 @@ export function RenderTabChat({
           </Box>
           {/* )} */}
 
-          {viewMode === "CHAT" && (
+          {viewMode === CHAT_VIEW_MODES.CHAT && (
             <Box sx={{ flex: 1, p: 0 }}>{renderChatWindow()}</Box>
           )}
         </Box>

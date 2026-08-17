@@ -1,3 +1,5 @@
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
+
 export const resetInputs = [
     {
         data: {
@@ -9,11 +11,11 @@ export const resetInputs = [
         pattern: {
             required: {
                 value: true,
-                message: "Please enter your email",
+                message: FORM_ERRORS.ENTER_EMAIL,
             },
             pattern: {
                 value: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
-                message: "Please enter a valid email address",
+                message: FORM_ERRORS.INVALID_EMAIL_ADDRESS,
             },
         },
     },
@@ -30,11 +32,11 @@ export const resetPasswordInputs = [
         pattern: {
             required: {
                 value: true,
-                message: "Please enter your password",
+                message: FORM_ERRORS.ENTER_PASSWORD,
             },
             pattern: {
                 value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d!@#$%^&*()_+~`|}{[\]:;?><,./-=]{8,}$/,
-                message: "Password must contain at least one uppercase letter, one lowercase letter, and one number, and be at least 8 characters long",
+                message: FORM_ERRORS.PASSWORD_COMPLEXITY,
             },
         },
     },
@@ -48,12 +50,12 @@ export const resetPasswordInputs = [
         pattern: {
             required: {
                 value: true,
-                message: "Please confirm your password",
+                message: FORM_ERRORS.CONFIRM_PASSWORD,
             },
             validate: {
                 matchesPreviousPassword: (value) => {
                     const password = document.getElementById("password").value;
-                    return password === value || "Passwords do not match";
+                    return password === value || FORM_ERRORS.PASSWORDS_DO_NOT_MATCH;
                 },
             },
         },

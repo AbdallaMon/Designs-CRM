@@ -7,6 +7,14 @@ import dayjs from "dayjs";
 import prisma from "../../../infra/prisma/prisma.js";
 
 class SalaryRepository {
+  runInTransaction(work) {
+    return prisma.$transaction(work);
+  }
+
+  lockBaseSalaryForUpdate({ baseSalaryId, client }) {
+    return client.$queryRaw`SELECT id FROM BaseEmployeeSalary WHERE id = ${baseSalaryId} FOR UPDATE`;
+  }
+
   async getUsersWithSalaries(searchParams, limit, skip) {
     const filters = searchParams.filters && JSON.parse(searchParams.filters);
     const staffFilter = searchParams.staffId
@@ -74,8 +82,8 @@ class SalaryRepository {
     });
   }
 
-  findMonthlySalaryForMonth({ baseSalaryId, startOfMonth, endOfMonth }) {
-    return prisma.monthlySalary.findFirst({
+  findMonthlySalaryForMonth({ baseSalaryId, startOfMonth, endOfMonth, client }) {
+    return (client ?? prisma).monthlySalary.findFirst({
       where: {
         baseSalary: {
           id: baseSalaryId,
@@ -88,7 +96,7 @@ class SalaryRepository {
     });
   }
 
-  createMonthlySalaryWithOutcome({
+  async createMonthlySalaryWithOutcome({
     baseSalaryId,
     totalHoursWorked,
     overtimeHours,
@@ -97,77 +105,91 @@ class SalaryRepository {
     netSalary,
     isFulfilled,
     paymentDate,
+    client,
   }) {
-    // Create a transaction to ensure both salary and outcome are created together
-    return prisma.$transaction(async (prisma) => {
-      // Create the new monthly salary record
-      const monthlySalary = await prisma.monthlySalary.create({
-        data: {
-          baseSalaryId: baseSalaryId,
-          totalHoursWorked: totalHoursWorked,
-          overtimeHours: overtimeHours,
-          bonuses: bonuses,
-          deductions: deductions,
-          netSalary: netSalary,
-          isFulfilled: isFulfilled,
-          paymentDate: paymentDate,
-        },
-      });
-      const user = await prisma.monthlySalary.findUnique({
-        where: { id: monthlySalary.id },
-        select: {
-          baseSalary: {
-            select: {
-              employee: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      });
+    if (!client) {
+      return prisma.$transaction((transactionClient) =>
+        this.createMonthlySalaryWithOutcome({
+          baseSalaryId,
+          totalHoursWorked,
+          overtimeHours,
+          bonuses,
+          deductions,
+          netSalary,
+          isFulfilled,
+          paymentDate,
+          client: transactionClient,
+        }),
+      );
+    }
 
-      // Generate an outcome record linked to the monthly salary
-      const outcome = await prisma.outcome.create({
-        data: {
-          type: "Salary",
-          amount: netSalary,
-          description: `Monthly salary payment for ${
-            user.baseSalary.employee.name
-          } ,${dayjs().format("MMMM YYYY")}`,
-          monthlySalariesByOutcome: {
-            connect: {
-              id: monthlySalary.id,
-            },
-          },
-        },
-      });
-
-      const updatedMonthlySalary = await prisma.monthlySalary.update({
-        where: {
-          id: monthlySalary.id,
-        },
-        data: {
-          outcomeId: outcome.id,
-        },
-        include: {
-          outcome: true,
-          baseSalary: {
-            include: {
-              employee: {
-                select: {
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      return { data: updatedMonthlySalary };
+    // Create the new monthly salary record
+    const monthlySalary = await client.monthlySalary.create({
+      data: {
+        baseSalaryId: baseSalaryId,
+        totalHoursWorked: totalHoursWorked,
+        overtimeHours: overtimeHours,
+        bonuses: bonuses,
+        deductions: deductions,
+        netSalary: netSalary,
+        isFulfilled: isFulfilled,
+        paymentDate: paymentDate,
+      },
     });
+    const user = await client.monthlySalary.findUnique({
+      where: { id: monthlySalary.id },
+      select: {
+        baseSalary: {
+          select: {
+            employee: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Generate an outcome record linked to the monthly salary
+    const outcome = await client.outcome.create({
+      data: {
+        type: "Salary",
+        amount: netSalary,
+        description: `Monthly salary payment for ${
+          user.baseSalary.employee.name
+        } ,${dayjs().format("MMMM YYYY")}`,
+        monthlySalariesByOutcome: {
+          connect: {
+            id: monthlySalary.id,
+          },
+        },
+      },
+    });
+
+    const updatedMonthlySalary = await client.monthlySalary.update({
+      where: {
+        id: monthlySalary.id,
+      },
+      data: {
+        outcomeId: outcome.id,
+      },
+      include: {
+        outcome: true,
+        baseSalary: {
+          include: {
+            employee: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return { data: updatedMonthlySalary };
   }
 
   getSalaryData(data) {

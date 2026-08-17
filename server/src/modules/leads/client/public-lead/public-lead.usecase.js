@@ -19,7 +19,7 @@
 // the guard failures, success codes via the controller). `lng` is still accepted for parity
 // but is no longer used to pick a string.
 import { AppError } from "../../../../shared/errors/AppError.js";
-import { leadsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
+import { EMIRATES, LEAD_CATEGORIES, LEAD_LOCATIONS, LEAD_STATUSES, leadsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
 import { recordAction } from "../../../../infra/audit/record-action.js";
 import { buildCooperationRequestEmail } from "./public-lead.email.js";
 import { publicLeadRepository } from "./public-lead.repo.js";
@@ -30,6 +30,11 @@ import {
   newLeadCompletedNotification,
 } from "../../../../infra/notifications/index.js";
 import { sendEmail } from "../../../../infra/mail/send-mail.js";
+import {
+  issuePublicFunnelCapability,
+  PUBLIC_FUNNEL_PURPOSES,
+  verifyPublicFunnelCapability,
+} from "../../../../infra/upload/public-funnel-capability.js";
 
 // Verbatim from legacy.
 const priceRangeValues = {
@@ -51,6 +56,29 @@ const consultationLeadPrices = {
   CITY_VISIT: "1800",
 };
 
+function mapPublicLeadResponse(lead) {
+  return {
+    id: lead.id,
+    code: lead.code ?? null,
+    clientId: lead.clientId,
+    status: lead.status,
+    selectedCategory: lead.selectedCategory,
+    type: lead.type ?? null,
+    source: lead.source ?? null,
+  };
+}
+
+function assertLeadBoundUploadUrl(leadId, url) {
+  if (!url) return;
+  const expectedPrefix = `/uploads/public/public-lead/${Number(leadId)}/`;
+  if (!url.startsWith(expectedPrefix)) {
+    throw new AppError({
+      code: leadsMessagesCodes.LEAD_ACCESS_DENIED,
+      statusCode: 403,
+    });
+  }
+}
+
 // Side-effecting legacy collaborators — the lead code generator + file attach (lead repo),
 // the funnel notifications, and the cooperation email — are now imported statically at the
 // top and called directly (no lazy-import deps bag). Behavior is unchanged.
@@ -60,7 +88,7 @@ const consultationLeadPrices = {
 function applyOptionalLeadFields(data, body) {
   if (body.clientDescription) data.clientDescription = body.clientDescription;
   if (body.emirate) data.emirate = body.emirate;
-  if (body.location === "OUTSIDE_UAE") data.emirate = "OUTSIDE";
+  if (body.location === LEAD_LOCATIONS.OUTSIDE_UAE) data.emirate = EMIRATES.OUTSIDE;
 
   if (body.timeToContact) {
     const date = new Date(body.timeToContact);
@@ -68,6 +96,7 @@ function applyOptionalLeadFields(data, body) {
   }
 
   if (body.country) data.country = body.country;
+  if (body.source) data.source = body.source;
 
   if (body.priceRange) {
     data.price = `${body.priceRange[0]} - ${body.priceRange[1]}`;
@@ -93,7 +122,7 @@ class PublicLeadUsecase {
       client: { connect: { id: client.id } },
       selectedCategory: body.category,
       type: body.item,
-      status: "NEW",
+      status: LEAD_STATUSES.NEW,
       description: `${body.category} ${body.item} ${
         body.category === "DESIGN"
           ? body.emirate
@@ -106,7 +135,7 @@ class PublicLeadUsecase {
     data.code = await leadRepository.generateCodeForNewLead(client.id);
     applyOptionalLeadFields(data, body);
 
-    if (body.category === "CONSULTATION") {
+    if (body.category === LEAD_CATEGORIES.CONSULTATION) {
       data.price = consultationLeadPrices[body.item];
       data.averagePrice = Number(consultationLeadPrices[body.item]);
       data.priceWithOutDiscount = Number(consultationLeadPrices[body.item]);
@@ -134,7 +163,7 @@ class PublicLeadUsecase {
       },
     });
 
-    return clientLead;
+    return mapPublicLeadResponse(clientLead);
   }
 
   // POST /new-lead/register
@@ -147,17 +176,47 @@ class PublicLeadUsecase {
     const data = {
       client: { connect: { id: client.id } },
       selectedCategory: "DESIGN",
-      status: "NEW",
+      status: LEAD_STATUSES.NEW,
       description: `Didn't complete register yet`,
     };
     data.code = await leadRepository.generateCodeForNewLead(client.id);
     data.initialConsult = false;
     if (body.stateOfTheProject) data.stateOfTheProject = body.stateOfTheProject;
+    if (body.source) data.source = body.source;
 
     const clientLead = await publicLeadRepository.createLead(data);
     await newClientLeadNotification(clientLead.id, client, true);
 
-    return clientLead;
+    const capability = issuePublicFunnelCapability({
+      purpose: PUBLIC_FUNNEL_PURPOSES.PUBLIC_REGISTER,
+      leadId: clientLead.id,
+    });
+
+    return {
+      ...mapPublicLeadResponse(clientLead),
+      capabilityToken: capability.token,
+      capabilityExpiresIn: capability.expiresIn,
+    };
+  }
+
+  authorizeCompleteRegister(leadId, token) {
+    return verifyPublicFunnelCapability(token, {
+      purpose: PUBLIC_FUNNEL_PURPOSES.PUBLIC_REGISTER,
+      leadId,
+    });
+  }
+
+  async getRegistrationStatus(leadId) {
+    const lead = await publicLeadRepository.findRegistrationStatusById(leadId);
+    if (!lead) {
+      throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
+    }
+
+    return {
+      id: lead.id,
+      completed: lead.description !== "Didn't complete register yet",
+      item: lead.type ?? null,
+    };
   }
 
   // POST /new-lead/complete-register/:leadId
@@ -167,17 +226,20 @@ class PublicLeadUsecase {
       throw new AppError({ code: leadsMessagesCodes.LEAD_NOT_FOUND, statusCode: 404 });
     }
 
-    // Legacy guard: a lead that already moved past the draft AND has a price cannot be
-    // re-submitted.
+    // A registration capability may be replayed until it expires, so the workflow state
+    // must independently guarantee that completion happens only once.
     if (lead.description !== "Didn't complete register yet") {
-      if (lead.price && lead.averagePrice) {
-        throw new AppError({ code: leadsMessagesCodes.CLIENT_LEAD_ALREADY_COMPLETED, statusCode: 400 });
-      }
+      throw new AppError({
+        code: leadsMessagesCodes.CLIENT_LEAD_ALREADY_COMPLETED,
+        statusCode: 400,
+      });
     }
+
+    assertLeadBoundUploadUrl(leadId, body.url);
 
     const data = {
       type: body.item,
-      status: "NEW",
+      status: LEAD_STATUSES.NEW,
       description: `${body.category} ${body.item} ${
         body.category === "DESIGN"
           ? body.emirate
@@ -190,23 +252,28 @@ class PublicLeadUsecase {
     if (body.discoverySource) data.discoverySource = body.discoverySource;
     // master fdefbbf: completing the registration also fixes up the client's real
     // name/phone (replacing the draft placeholders written at the register step).
-    if (body.phone)
-      data.client = { update: { phone: body.phone.replace(/\s+/g, "") } };
-    if (body.name)
-      data.client = {
-        update: {
-          name: body.name,
-          ...(data.client?.update && data.client.update),
-        },
-      };
+    const clientData = {};
+    if (body.phone) clientData.phone = body.phone.replace(/\s+/g, "");
+    if (body.name) clientData.name = body.name;
 
-    const clientLead = await publicLeadRepository.updateLead(leadId, data);
+    const clientLead = await publicLeadRepository.completeRegistrationDraft({
+      id: leadId,
+      clientId: lead.clientId,
+      leadData: data,
+      clientData,
+    });
+    if (!clientLead) {
+      throw new AppError({
+        code: leadsMessagesCodes.CLIENT_LEAD_ALREADY_COMPLETED,
+        statusCode: 409,
+      });
+    }
     if (body.url) await leadRepository.uploadFile(body, clientLead.id);
 
     const client = await publicLeadRepository.findClientById(lead.clientId);
     await newLeadCompletedNotification(clientLead.id, client, true);
 
-    return clientLead;
+    return mapPublicLeadResponse(clientLead);
   }
 
   // POST /cooperation-requests — partner contact form → email only (no DB write).

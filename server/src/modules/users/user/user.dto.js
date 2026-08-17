@@ -2,7 +2,13 @@
 // the server checkers remain the source of truth). Pure: no Prisma, no side effects.
 //
 // Profile reads use narrow repository selects; the password strip is defence-in-depth.
-import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
+import {
+  PERMISSIONS,
+  PROFILE_FAMILIES,
+  PROFILES,
+  computeCapabilities,
+  hasPermission,
+} from "@dms/shared";
 import dayjs from "dayjs";
 
 const P = PERMISSIONS.USER;
@@ -32,6 +38,44 @@ export function isAdminTier(authUser) {
   return Boolean(authUser.isAdminTier);
 }
 
+/** Sales-team management is elevated without redefining the global admin tier. */
+export function isUserManagementOperator(authUser) {
+  return (
+    isAdminTier(authUser) ||
+    authUser?.currentProfileKey === PROFILES.SUPER_SALES
+  );
+}
+
+function targetProfileFacts(record) {
+  const profiles = (record?.userProfiles ?? [])
+    .map((assignment) => assignment?.profile)
+    .filter(Boolean);
+  return {
+    keys: new Set(profiles.map((profile) => profile.key)),
+    families: new Set(profiles.map((profile) => profile.family)),
+    hasAdminTier: profiles.some(
+      (profile) => profile.isAdminTier || [PROFILES.ADMIN, PROFILES.SUPER_ADMIN].includes(profile.key),
+    ),
+  };
+}
+
+/** Target scope for user management. ADMIN outranks SUPER_ADMIN; SUPER_SALES is sales-only. */
+export function canManageUser(record, authUser) {
+  if (!record || !authUser) return false;
+  if (Number(record.id) === Number(authUser.id)) return false;
+  const target = targetProfileFacts(record);
+  switch (authUser.currentProfileKey) {
+    case PROFILES.ADMIN:
+      return true;
+    case PROFILES.SUPER_ADMIN:
+      return !target.keys.has(PROFILES.ADMIN);
+    case PROFILES.SUPER_SALES:
+  return !target.hasAdminTier && target.families.has(PROFILE_FAMILIES.SALES);
+    default:
+      return false;
+  }
+}
+
 /**
  * Capabilities for a single managed user row (admin list / detail). Combines the
  * permission CODE the caller holds with object facts (you cannot manage yourself the
@@ -40,19 +84,24 @@ export function isAdminTier(authUser) {
 export function computeUserCapabilities(record, authUser) {
   const permissions = authUser?.permissions ?? [];
   const isSelf = record?.id != null && Number(record.id) === Number(authUser?.id);
+  const canManageTarget = canManageUser(record, authUser);
   return computeCapabilities(
     {
-      canEditUser: () => hasPermission(permissions, P.UPDATE),
-      canManageProfiles: () => hasPermission(permissions, P.MANAGE_PROFILES),
-      canSetMaxLeads: () => hasPermission(permissions, P.SET_MAX_LEADS),
+      canEditUser: () => hasPermission(permissions, P.UPDATE) && canManageTarget,
+      canManageProfiles: () =>
+        hasPermission(permissions, P.MANAGE_PROFILES) && canManageTarget,
+      canSetMaxLeads: () =>
+        hasPermission(permissions, P.SET_MAX_LEADS) && canManageTarget,
       canManageRestrictedCountries: () =>
-        hasPermission(permissions, P.MANAGE_RESTRICTED_COUNTRIES),
+        hasPermission(permissions, P.MANAGE_RESTRICTED_COUNTRIES) && canManageTarget,
       canManageAutoAssignments: () =>
-        hasPermission(permissions, P.MANAGE_AUTO_ASSIGNMENTS),
-      canViewLogs: () => hasPermission(permissions, P.VIEW_LOGS),
-      canViewLastSeen: () => hasPermission(permissions, P.VIEW_LAST_SEEN),
+        hasPermission(permissions, P.MANAGE_AUTO_ASSIGNMENTS) && canManageTarget,
+      canViewLogs: () => hasPermission(permissions, P.VIEW_LOGS) && canManageTarget,
+      canViewLastSeen: () =>
+        hasPermission(permissions, P.VIEW_LAST_SEEN) && canManageTarget,
       // A user cannot deactivate their own account.
-      canToggleStatus: () => hasPermission(permissions, P.UPDATE) && !isSelf,
+      canToggleStatus: () =>
+        hasPermission(permissions, P.UPDATE) && !isSelf && canManageTarget,
     },
     {},
   );
@@ -125,12 +174,12 @@ export function formatUserLogs({ user, logs, todayLog, requestedMonth, requested
 export function computeProfileCapabilities(record, authUser) {
   const permissions = authUser?.permissions ?? [];
   const isSelf = record?.id != null && Number(record.id) === Number(authUser?.id);
-  const admin = isAdminTier(authUser);
+  const canManageTarget = canManageUser(record, authUser);
   return computeCapabilities(
     {
       // self may edit own profile; admin-tier may edit any.
       canEditProfile: () =>
-        hasPermission(permissions, P.PROFILE_EDIT) && (isSelf || admin),
+        hasPermission(permissions, P.PROFILE_EDIT) && (isSelf || canManageTarget),
     },
     {},
   );

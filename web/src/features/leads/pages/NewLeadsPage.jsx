@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import {
   Alert,
@@ -43,37 +44,36 @@ import PaginationWithLimit from "@/shared/components/PaginationWithLimit.jsx";
 import { EmptyState } from "@/features/leads/shared/EmptyState.jsx";
 import { LeadSliderCard } from "@/features/leads/core/LeadSliderCard.jsx";
 import { useSummary } from "@/features/leads/pages/useSummary.js";
+import { usePermission } from "@/app/hooks/usePermission.js";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes.js";
 
 /* ----------------------------------------------------------------------------
- * Tab registry â€” the LEAD POOLS only (new آ· non-consulted آ· stale). Arabic
- * titles, icons, role predicates. Order matters. Calls/meetings/targets are no
+ * Tab registry — the lead pools only. Permission codes are enforced again by the
+ * server list usecase; these predicates only control visibility. Order matters.
  * longer tabs â€” they render as their own stacked sections below the tabs.
  * -------------------------------------------------------------------------- */
 const TAB_DEFS = [
   {
-    key: "new",
-    title: "New leads",
-    icon: <MdOutlineFiberNew />,
-    countKey: "new",
-    show: () => true,
-  },
-  {
     key: "non-consulted",
-    title: "Non-consulted",
+    title: "New non-consulted",
     icon: <MdOutlinePending />,
     countKey: "nonConsulted",
-    show: (user) =>
-      user.profile === "ADMIN" ||
-      user.profile === "CONTACT_INITIATOR" ||
-      user.profile === "SUPER_SALES",
+    permission: LEAD_CODES.NON_CONSULTED_VIEW,
   },
   {
-    key: "stale",
-    title: "Overdue",
+    key: "new",
+    title: "New consulted",
+    icon: <MdOutlineFiberNew />,
+    countKey: "new",
+    permission: LEAD_CODES.LIST,
+  },
+  {
+    key: "on-hold",
+    title: "On hold leads",
     icon: <MdHistoryToggleOff />,
-    countKey: "stale",
+    countKey: "onHold",
     warnable: true,
-    show: (user) => user.profile !== "CONTACT_INITIATOR",
+    permission: LEAD_CODES.ON_HOLD_VIEW,
   },
 ];
 
@@ -88,14 +88,14 @@ const SECTION_DEFS = [
     title: "Today's Calls",
     icon: <MdPhoneInTalk />,
     countKey: "calls",
-    show: (user) => user.profile !== "CONTACT_INITIATOR",
+    show: (user) => user.profile !== PROFILES.CONTACT_INITIATOR,
   },
   {
     key: "meetings",
     title: "Meetings",
     icon: <MdEventAvailable />,
     countKey: "meetings",
-    show: (user) => user.profile !== "CONTACT_INITIATOR",
+    show: (user) => user.profile !== PROFILES.CONTACT_INITIATOR,
   },
   {
     key: "targets",
@@ -105,11 +105,10 @@ const SECTION_DEFS = [
   },
 ];
 
-function defaultTabFor(user) {
-  if (["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) && user.profile !== "SUPER_SALES") return "new";
-  // CONTACT_INITIATOR, SUPER_SALES, ADMIN â†’ non-consulted (falls back to new
-  // if the role can't see non-consulted, e.g. plain STAFF).
-  return "non-consulted";
+function defaultTabFor(tabs) {
+  if (tabs.some((tab) => tab.key === "non-consulted")) return "non-consulted";
+  if (tabs.some((tab) => tab.key === "new")) return "new";
+  return tabs[0]?.key;
 }
 
 /* ----------------------------------------------------------------------------
@@ -122,14 +121,18 @@ export default function NewLeadsPage({ searchParams, staff }) {
   const pathname = usePathname();
   const sp = useSearchParams();
   const admin = checkIfAdmin(user);
+  const { hasPermission } = usePermission();
 
-  // Visible tabs for this role, in defined order.
-  const tabs = useMemo(() => TAB_DEFS.filter((t) => t.show(user)), [user]);
+  // Visible tabs for the effective permission set, in defined order.
+  const tabs = useMemo(
+    () => TAB_DEFS.filter((tab) => hasPermission(tab.permission)),
+    [hasPermission],
+  );
   const tabKeys = tabs.map((t) => t.key);
 
   // Active tab from the URL (?tab=), with a per-role default fallback.
   const urlTab = sp.get("tab");
-  let initialDefault = defaultTabFor(user);
+  let initialDefault = defaultTabFor(tabs);
   if (!tabKeys.includes(initialDefault)) initialDefault = tabKeys[0];
   const active = tabKeys.includes(urlTab) ? urlTab : initialDefault;
 
@@ -199,8 +202,8 @@ export default function NewLeadsPage({ searchParams, staff }) {
                 Leads
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                New, non-consulted, and overdue leads â€” pick a lead and start a
-                deal.
+                New non-consulted, new consulted, and on-hold leads — pick a lead
+                and start a deal.
               </Typography>
             </Box>
             <Stack
@@ -420,16 +423,23 @@ export default function NewLeadsPage({ searchParams, staff }) {
                 key={`new-${rerenderToken}`}
                 def={activeDef}
                 searchParams={searchParams}
+                onMutation={refreshAll}
               />
             )}
             {active === "non-consulted" && (
               <NonConsultedPanel
                 key={`non-consulted-${rerenderToken}`}
                 def={activeDef}
+                onMutation={refreshAll}
               />
             )}
-            {active === "stale" && (
-              <StalePanel key={`stale-${rerenderToken}`} def={activeDef} />
+            {active === "on-hold" && (
+              <OnHoldPanel
+                key={`on-hold-${rerenderToken}`}
+                def={activeDef}
+                staff={staff}
+                onMutation={refreshAll}
+              />
             )}
           </Box>
         </Paper>
@@ -546,7 +556,7 @@ function SimpleSection({ def, count, children }) {
 }
 
 /* ----------------------------------------------------------------------------
- * Lead-list panel â€” the shared 5-state body for New / Non-consulted / Stale.
+ * Lead-list panel — the shared 5-state body for New / Non-consulted / On-hold.
  * Owns nothing; the caller passes the fetcher result + render config so each
  * pool keeps its exact existing query.
  * -------------------------------------------------------------------------- */
@@ -566,6 +576,7 @@ function LeadListBody({
   emptyDescription,
   emptyAction,
   onRetry,
+  onMutation,
 }) {
   const isEmpty = !loading && !error && (!data || data.length === 0);
 
@@ -604,7 +615,11 @@ function LeadListBody({
           <Grid container spacing={2}>
             {data.map((lead) => (
               <Grid size={{ xs: 12, sm: 6 }} key={lead.id}>
-                <LeadSliderCard lead={lead} setData={setData} />
+                <LeadSliderCard
+                  lead={lead}
+                  setData={setData}
+                  onMutation={onMutation}
+                />
               </Grid>
             ))}
           </Grid>
@@ -625,7 +640,7 @@ function LeadListBody({
 }
 
 /* ---- New leads pool ---- */
-function NewLeadsPanel({ def, searchParams }) {
+function NewLeadsPanel({ def, searchParams, onMutation }) {
   const {
     data,
     loading,
@@ -644,7 +659,7 @@ function NewLeadsPanel({ def, searchParams }) {
   });
   useEffect(() => {
     if (filters) setPage(1);
-  }, [filters]);
+  }, [filters, setPage]);
 
   return (
     <LeadListBody
@@ -660,6 +675,7 @@ function NewLeadsPanel({ def, searchParams }) {
       setLimit={setLimit}
       totalPages={totalPages}
       onRetry={() => setRender((r) => !r)}
+      onMutation={onMutation}
       emptyTitle="No new leads right now"
       emptyDescription="New leads will appear here when they arrive. You can add a lead manually."
       emptyAction={<CreateNewLead />}
@@ -668,7 +684,7 @@ function NewLeadsPanel({ def, searchParams }) {
 }
 
 /* ---- Non-consulted pool ---- */
-function NonConsultedPanel({ def }) {
+function NonConsultedPanel({ def, onMutation }) {
   const {
     data,
     loading,
@@ -685,7 +701,7 @@ function NonConsultedPanel({ def }) {
   } = useDataFetcher("leads?noConsulted=true&", false);
   useEffect(() => {
     if (filters) setPage(1);
-  }, [filters]);
+  }, [filters, setPage]);
 
   return (
     <LeadListBody
@@ -701,14 +717,15 @@ function NonConsultedPanel({ def }) {
       setLimit={setLimit}
       totalPages={totalPages}
       onRetry={() => setRender((r) => !r)}
+      onMutation={onMutation}
       emptyTitle="No leads awaiting consultation"
       emptyDescription="All new leads have been consulted. Great work!"
     />
   );
 }
 
-/* ---- Stale / overdue pool (was "Shuffle") ---- */
-function StalePanel({ def }) {
+/* ---- ON_HOLD pool ---- */
+function OnHoldPanel({ def, staff, onMutation }) {
   const { user } = useAuth();
   const {
     data,
@@ -723,7 +740,7 @@ function StalePanel({ def }) {
     totalPages,
     setRender,
   } = useDataFetcher(
-    `leads?staffId=${user.id}&assignedOverdue=true&`,
+    `leads?${staff ? `staffId=${user.id}&` : ""}assignedOverdue=true&`,
     false
   );
 
@@ -741,8 +758,9 @@ function StalePanel({ def }) {
       setLimit={setLimit}
       totalPages={totalPages}
       onRetry={() => setRender((r) => !r)}
-      emptyTitle="No overdue leads"
-      emptyDescription="No leads have exceeded the set time without follow-up."
+      onMutation={onMutation}
+      emptyTitle="No on-hold leads"
+      emptyDescription="There are no leads waiting to be reassigned."
     />
   );
 }

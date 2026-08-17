@@ -23,6 +23,7 @@ import { designLead } from "@/features/client-page/clientPageData";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import LanguageProvider from "@/app/providers/LanguageProvider";
+import { LEAD_LOCATIONS } from "@dms/shared";
 
 export default function CreateNewLead() {
   const [open, setOpen] = useState(false);
@@ -185,8 +186,8 @@ function InitialSelection({
               onChange={handleLocationChange}
               sx={{ borderRadius: 2 }}
             >
-              <MenuItem value="INSIDE_UAE">Inside UAE</MenuItem>
-              <MenuItem value="OUTSIDE_UAE">Outside UAE</MenuItem>
+              <MenuItem value={LEAD_LOCATIONS.INSIDE_UAE}>Inside UAE</MenuItem>
+              <MenuItem value={LEAD_LOCATIONS.OUTSIDE_UAE}>Outside UAE</MenuItem>
             </Select>
           </FormControl>
 

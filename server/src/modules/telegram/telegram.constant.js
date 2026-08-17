@@ -1,11 +1,13 @@
+import { TELEGRAM_AUTH_STATES } from "@dms/shared";
+
 export const TELEGRAM_CONSTANTS = {
   STATUS: {
-    init: "INIT",
-    awaitCode: "AWAIT_CODE",
-    awaitPassword: "AWAIT_PASSWORD",
-    passwordVerified: "PASSWORD_VERIFIED",
-    requirePassword: "REQUIRE_PASSWORD",
-    success: "SUCCESS",
-    reWritePassword: "AWAIT_TO_REWRITE_2FA_PASSWORD",
+    init: TELEGRAM_AUTH_STATES.INIT,
+    awaitCode: TELEGRAM_AUTH_STATES.AWAIT_CODE,
+    awaitPassword: TELEGRAM_AUTH_STATES.AWAIT_PASSWORD,
+    passwordVerified: TELEGRAM_AUTH_STATES.PASSWORD_VERIFIED,
+    requirePassword: TELEGRAM_AUTH_STATES.REQUIRE_PASSWORD,
+    success: TELEGRAM_AUTH_STATES.SUCCESS,
+    reWritePassword: TELEGRAM_AUTH_STATES.AWAIT_TO_REWRITE_2FA_PASSWORD,
   },
 };

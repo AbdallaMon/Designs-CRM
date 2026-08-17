@@ -1,3 +1,4 @@
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS, PROFILES } from "@dms/shared";
 import {
   alpha,
   Avatar,
@@ -13,16 +14,16 @@ import { usersHexColors } from "@/app/helpers/constants";
 // Mirrors `packages/shared/constants/access/profiles.js` PROFILE_META (web has no
 // dependency on @dms/shared, so the { value, label } options are kept in sync here).
 export const PROFILE_OPTIONS = [
-  { value: "NORMAL_SALES", label: "Sales" },
-  { value: "PRIMARY_SALES", label: "Primary sales" },
-  { value: "SUPER_SALES", label: "Super sales" },
-  { value: "ADMIN", label: "Admin" },
-  { value: "SUPER_ADMIN", label: "Super admin" },
-  { value: "ACCOUNTANT", label: "Accountant" },
-  { value: "DESIGNER_3D", label: "3D Designer" },
-  { value: "DESIGNER_2D", label: "2D Designer" },
-  { value: "EXECUTOR_2D", label: "2D Executor" },
-  { value: "CONTACT_INITIATOR", label: "Contact initiator" },
+  { value: PROFILES.NORMAL_SALES, label: "Sales" },
+  { value: PROFILES.PRIMARY_SALES, label: "Primary sales" },
+  { value: PROFILES.SUPER_SALES, label: "Super sales" },
+  { value: PROFILES.ADMIN, label: "Admin" },
+  { value: PROFILES.SUPER_ADMIN, label: "Super admin" },
+  { value: PROFILES.ACCOUNTANT, label: "Accountant" },
+  { value: PROFILES.DESIGNER_3D, label: "3D Designer" },
+  { value: PROFILES.DESIGNER_2D, label: "2D Designer" },
+  { value: PROFILES.EXECUTOR_2D, label: "2D Executor" },
+  { value: PROFILES.CONTACT_INITIATOR, label: "Contact initiator" },
 ];
 
 export const PROFILE_LABEL = Object.fromEntries(PROFILE_OPTIONS.map((p) => [p.value, p.label]));
@@ -166,8 +167,7 @@ export const columns = [
   },
 ];
 
-export const PASSWORD_RULE =
-  "The password must contain an uppercase letter, a lowercase letter, a number, and be at least 8 characters long";
+export const PASSWORD_RULE = FORM_ERRORS.PASSWORD_RULE;
 
 // The create/edit form is IDENTITY only — no role/profile field. Roles are assigned
 // separately via the "اسناد دور" (profiles) dialog in the row actions.
@@ -175,16 +175,16 @@ export const inputs = [
   {
     data: { id: "name", type: "text", label: "User name", key: "name" },
     pattern: {
-      required: { value: true, message: "Please enter a name" },
+      required: { value: true, message: FORM_ERRORS.ENTER_NAME },
     },
   },
   {
     data: { id: "email", type: "email", label: "Email" },
     pattern: {
-      required: { value: true, message: "Please enter an email address" },
+      required: { value: true, message: FORM_ERRORS.ENTER_EMAIL_ADDRESS },
       pattern: {
         value: /\w+@[a-z]+\.[a-z]{2,}/gi,
-        message: "Please enter a valid email address",
+        message: FORM_ERRORS.INVALID_EMAIL_ADDRESS,
       },
     },
   },
@@ -204,7 +204,7 @@ export const inputs = [
       helperText: PASSWORD_RULE,
     },
     pattern: {
-      required: { value: true, message: "Please enter a password" },
+      required: { value: true, message: FORM_ERRORS.ENTER_A_PASSWORD },
       pattern: {
         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/,
         message: PASSWORD_RULE,

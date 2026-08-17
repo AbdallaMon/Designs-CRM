@@ -1,4 +1,8 @@
 import { DEPARTMENTS } from "@/app/helpers/constants";
+import {
+  USER_FEEDBACK_MESSAGES as FEEDBACK,
+  WORK_DEPARTMENTS,
+} from "@dms/shared";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -64,12 +68,12 @@ export const CreateUpdateModal = ({
 
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
-      setAlertError("Title is required");
+      setAlertError(FEEDBACK.TITLE_REQUIRED);
     }
 
     if (formData.sharedDepartments.length === 0) {
       newErrors.departments = "At least one department must be selected";
-      setAlertError("At least one department must be selected");
+      setAlertError(FEEDBACK.DEPARTMENT_REQUIRED);
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -102,34 +106,32 @@ export const CreateUpdateModal = ({
     }
 
     // Handle ADMIN department logic
-    if (dept === "ADMIN") {
-      if (formData.sharedDepartments.includes("ADMIN")) {
+    if (dept === WORK_DEPARTMENTS.ADMIN) {
+      if (formData.sharedDepartments.includes(WORK_DEPARTMENTS.ADMIN)) {
         // If ADMIN is already selected, remove it
         setFormData((prev) => ({
           ...prev,
           sharedDepartments: prev.sharedDepartments.filter(
-            (d) => d !== "ADMIN"
+            (d) => d !== WORK_DEPARTMENTS.ADMIN
           ),
         }));
       } else {
         // If selecting ADMIN, clear all other departments except main department and show alert
-        setAlertError(
-          "If you select Admin, you can't share this with any other department"
-        );
+        setAlertError(FEEDBACK.UPDATE_ADMIN_EXCLUSIVE);
         const mainDept = department || currentUserDepartment;
         setFormData((prev) => ({
           ...prev,
-          sharedDepartments: mainDept ? ["ADMIN", mainDept] : ["ADMIN"],
+          sharedDepartments: mainDept
+            ? [WORK_DEPARTMENTS.ADMIN, mainDept]
+            : [WORK_DEPARTMENTS.ADMIN],
         }));
       }
       return;
     }
 
     // Handle other departments when ADMIN is selected
-    if (formData.sharedDepartments.includes("ADMIN")) {
-      setAlertError(
-        "You have to unselect Admin if you want to share with other departments"
-      );
+    if (formData.sharedDepartments.includes(WORK_DEPARTMENTS.ADMIN)) {
+      setAlertError(FEEDBACK.UPDATE_ADMIN_UNSELECT_REQUIRED);
       return;
     }
 
@@ -236,7 +238,7 @@ export const CreateUpdateModal = ({
                       sx={{ borderRadius: 2 }}
                     >
                       {DEPARTMENTS.map((dept) => {
-                        if (dept.value === "ADMIN" && isAdmin) return;
+                        if (dept.value === WORK_DEPARTMENTS.ADMIN && isAdmin) return;
                         return (
                           <MenuItem key={dept.value} value={dept.value}>
                             <Box
@@ -288,9 +290,9 @@ export const CreateUpdateModal = ({
                   const isDisabled =
                     (dept.value === currentUserDepartment && !isAdmin) ||
                     dept.value === department || // Main department is always disabled for toggling
-                    (dept.value === "ADMIN" && isAdmin); // Admin department is disabled for admin users
+                    (dept.value === WORK_DEPARTMENTS.ADMIN && isAdmin); // Admin department is disabled for admin users
                   const isMainDepartment = dept.value === department;
-                  if (dept.value === "ADMIN" && isAdmin) return;
+                  if (dept.value === WORK_DEPARTMENTS.ADMIN && isAdmin) return;
                   return (
                     <Box
                       key={dept.value}
@@ -394,7 +396,7 @@ export const CreateUpdateModal = ({
                             />
                           )}
 
-                        {dept.value === "ADMIN" && isAdmin && (
+                        {dept.value === WORK_DEPARTMENTS.ADMIN && isAdmin && (
                           <Chip
                             label="Not Available"
                             size="small"

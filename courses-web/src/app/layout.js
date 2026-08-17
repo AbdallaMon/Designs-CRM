@@ -6,6 +6,7 @@ import DotsLoader from "@/shared/components/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
 import UploadingProvider from "./providers/UploadingProgressProvider";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 
 export const metadata = {
   // Clear and benefit-focused for educational platform
@@ -71,19 +72,24 @@ export default function RootLayout({ children }) {
         <meta name="google" content="notranslate" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body style={{ backgroundColor: colors.bgSecondary }}>
-        <MuiAlertProvider>
-          <MUIContextProvider>
-            <UploadingProvider>
-              <ToastProvider>
-                <AuthProvider>
-                  <DotsLoader />
-                  {children}
-                </AuthProvider>
-              </ToastProvider>
-            </UploadingProvider>
-          </MUIContextProvider>
-        </MuiAlertProvider>
+      <body
+        suppressHydrationWarning
+        style={{ backgroundColor: colors.bgSecondary }}
+      >
+        <AppRouterCacheProvider>
+          <MuiAlertProvider>
+            <MUIContextProvider>
+              <UploadingProvider>
+                <ToastProvider>
+                  <AuthProvider>
+                    <DotsLoader />
+                    {children}
+                  </AuthProvider>
+                </ToastProvider>
+              </UploadingProvider>
+            </MUIContextProvider>
+          </MuiAlertProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

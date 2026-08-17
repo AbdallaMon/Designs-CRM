@@ -16,7 +16,7 @@
 // Project workflow functions live in ./project.flows.js and are imported through the
 // projectOperations interface. Public flow exports remain available to domain callers.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { projectsMessagesCodes } from "@dms/shared";
+import { PROFILES, projectsMessagesCodes } from "@dms/shared";
 import { workStageActionsForLead } from "../../leads/lead/lead.workstage-cockpit.js";
 import { projectRepository } from "./project.repo.js";
 import { groupProjects } from "./project.dto.js";
@@ -32,7 +32,10 @@ class ProjectUsecase {
     // Authoritative: the resolved current profile's admin-tier flag (from
     // requireAuth) — object scope follows the ACTIVE profile. Falls back to the
     // legacy role/flag computation for raw users without a resolved profile.
-    return Boolean(authUser?.isAdminTier);
+    return (
+      Boolean(authUser?.isAdminTier) ||
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES
+    );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -97,7 +100,7 @@ class ProjectUsecase {
   // Reproduce the legacy ROUTE narrowing exactly: ADMIN/SUPER_ADMIN → isAdmin=true;
   // everyone else → searchParams.userId = self. userRole is always forwarded.
   async getDesigners({ query, authUser }) {
-    const isAdmin = Boolean(authUser.isAdminTier);
+    const isAdmin = this.isAdminUser(authUser);
     const searchParams = {
       ...query,
       profileKey: authUser.currentProfileKey,
@@ -108,7 +111,7 @@ class ProjectUsecase {
   }
 
   async getDesignerColumns({ query, authUser }) {
-    const isAdmin = Boolean(authUser.isAdminTier);
+    const isAdmin = this.isAdminUser(authUser);
     const searchParams = {
       ...query,
       profileKey: authUser.currentProfileKey,
@@ -122,10 +125,11 @@ class ProjectUsecase {
   // checker; here we reproduce the legacy admin/accountant-vs-self search narrowing.
   async getDesignerLeadDetail({ id, query, authUser }) {
     const searchParams = { ...query };
-    if (!authUser.isAdminTier && authUser.currentProfileKey !== "ACCOUNTANT") {
+    const isAdmin = this.isAdminUser(authUser);
+    if (!isAdmin && authUser.currentProfileKey !== PROFILES.ACCOUNTANT) {
       searchParams.userId = authUser.id;
     }
-    if (authUser.isAdminTier) searchParams.isAdmin = true;
+    if (isAdmin) searchParams.isAdmin = true;
     const lead = await projectOperations.getLeadDetailsByProject(Number(id), searchParams);
     // Attach the caller's own "what do I do next" work-stage actions (designers/executor).
     // Assignment-scoped, computed from the already-scoped lead.projects — no extra query,
@@ -168,7 +172,7 @@ class ProjectUsecase {
   // before delegating, since the controller resolved it.
   async listByClientLead({ query, authUser }) {
     const searchParams = { ...query };
-    if (!authUser.isAdminTier) {
+    if (!this.isAdminUser(authUser)) {
       searchParams.userId = authUser.id;
     }
     return projectOperations.getProjectsByClientLeadId({ searchParams });
@@ -176,7 +180,7 @@ class ProjectUsecase {
 
   async listArchivedProjects({ query, authUser, skip, limit }) {
     const searchParams = { ...query };
-    if (!authUser.isAdminTier) {
+    if (!this.isAdminUser(authUser)) {
       searchParams.userId = authUser.id;
     }
     return this.#archivedFromRepo({ searchParams, skip, take: limit });
@@ -212,11 +216,10 @@ class ProjectUsecase {
     const searchParams = { ...query };
     if (
       [
-        "DESIGNER_3D",
-        "DESIGNER_2D",
-        "NORMAL_SALES",
-        "PRIMARY_SALES",
-        "SUPER_SALES",
+        PROFILES.DESIGNER_3D,
+        PROFILES.DESIGNER_2D,
+        PROFILES.NORMAL_SALES,
+        PROFILES.PRIMARY_SALES,
       ].includes(authUser.currentProfileKey)
     ) {
       searchParams.userId = authUser.id;

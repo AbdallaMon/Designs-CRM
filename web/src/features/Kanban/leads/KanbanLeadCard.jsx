@@ -1,4 +1,9 @@
 "use client";
+import {
+  LEAD_STATUSES, KANBAN_VIEW_TYPES,
+  PROFILES,
+  WORK_DEPARTMENTS,
+} from "@dms/shared";
 import React from "react";
 import { useDrag } from "react-dnd";
 import {
@@ -37,7 +42,7 @@ import {
   CallResultDialog,
   NewCallDialog,
 } from "@/features/leads/dialogs/CallsDialog.jsx";
-import { hideMoreData } from "@/app/helpers/functions/utility.js";
+import { hideMoreData } from "@/app/helpers/functions/utility.jsx";
 import { FaEye } from "react-icons/fa";
 import { InProgressCall } from "@/features/leads/widgets/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -72,7 +77,8 @@ const LeadCard = ({
     item: {
       id: lead.id,
       status:
-        type === "STAFF" || type === "CONTRACTLEVELS"
+        type === KANBAN_VIEW_TYPES.STAFF ||
+        type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS
           ? lead.status
           : lead.projects[0].status,
       ...lead,
@@ -107,7 +113,7 @@ const LeadCard = ({
   };
 
   const handleStatusChange = async (newStatus) => {
-    if (type === "CONTRACTLEVELS") return;
+    if (type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) return;
     await movelead(lead, newStatus);
   };
 
@@ -142,7 +148,8 @@ const LeadCard = ({
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";
   const statusColor =
-    type === "STAFF" || type === "CONTRACTLEVELS"
+    type === KANBAN_VIEW_TYPES.STAFF ||
+    type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS
       ? lead.status && statusColors[lead.status]
       : statusColors[lead.projects?.[0]?.status];
   const accentColor =
@@ -324,7 +331,7 @@ const LeadCard = ({
             </Box>
           )}
 
-          {!["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) && lead.projects && lead.projects[0] && (
+          {![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) && lead.projects && lead.projects[0] && (
             <Box
               sx={{
                 mt: 1,
@@ -400,9 +407,9 @@ const LeadCard = ({
           <Stack spacing={2}>
             {latestCalls?.map((call, index) => {
               if (
-                user.profile !== "ADMIN" &&
-                user.profile !== "SUPER_ADMIN" &&
-                !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
+                user.profile !== PROFILES.ADMIN &&
+                user.profile !== PROFILES.SUPER_ADMIN &&
+                ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
                 call.userId !== user.id
               ) {
                 return;
@@ -410,9 +417,9 @@ const LeadCard = ({
               return (
                 <CallInfoBox
                   key={index}
-                  variant={call.status === "IN_PROGRESS" && "next"}
+                  variant={call.status === LEAD_STATUSES.IN_PROGRESS && "next"}
                 >
-                  {call.status === "IN_PROGRESS" ? (
+                  {call.status === LEAD_STATUSES.IN_PROGRESS ? (
                     <InProgressCall call={call} simple={true} />
                   ) : (
                     <Box display="flex" alignItems="center" mb={1}>
@@ -421,7 +428,7 @@ const LeadCard = ({
                     </Box>
                   )}
                   <Box pl={3}>
-                    {call.status === "IN_PROGRESS" ? (
+                    {call.status === LEAD_STATUSES.IN_PROGRESS ? (
                       ""
                     ) : (
                       <Typography variant="body2" color="text.secondary">
@@ -436,7 +443,7 @@ const LeadCard = ({
                         Result: {hideMoreData(call.callResult) || "N/A"}
                       </Typography>
                     )}
-                    {call.status === "IN_PROGRESS" && (
+                    {call.status === LEAD_STATUSES.IN_PROGRESS && (
                       <CallResultDialog
                         setleads={setleads}
                         lead={lead}
@@ -453,7 +460,7 @@ const LeadCard = ({
           <KanbanUpdateSection
             lead={lead}
             setleads={setleads}
-            currentUserDepartment="STAFF"
+            currentUserDepartment={WORK_DEPARTMENTS.STAFF}
             setRerenderColumns={setRerenderColumns}
             reRenderColumns={reRenderColumns}
             type={type}
@@ -527,7 +534,8 @@ const LeadCard = ({
         </Menu>
       )}
 
-      {type === "STAFF" || type === "CONTRACTLEVELS" ? (
+      {type === KANBAN_VIEW_TYPES.STAFF ||
+      type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS ? (
         <PreviewDialog
           open={previewDialogOpen}
           onClose={() => setPreviewDialogOpen(false)}

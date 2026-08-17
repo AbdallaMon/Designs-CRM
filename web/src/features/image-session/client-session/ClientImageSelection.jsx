@@ -1,4 +1,5 @@
 "use client";
+import { IMAGE_SESSION_STATUSES } from "@dms/shared";
 
 import { Alert, Box, Container, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -22,8 +23,10 @@ import { Materials } from "@/features/image-session/client-session/material/Mate
 export default function ClientImageSelection({ token }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
+  const [viewStatus, setViewStatus] = useState(null);
   const [error, setError] = useState();
-  const status = loading ? "LOADING" : session?.sessionStatus || "ERROR";
+  const persistedStatus = session?.sessionStatus;
+  const status = loading ? "LOADING" : viewStatus || persistedStatus || "ERROR";
   const { lng } = useLanguageSwitcherContext();
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
@@ -42,8 +45,17 @@ export default function ClientImageSelection({ token }) {
   }, []);
 
   async function simpleHandleNext() {
+    const nextStatus = sessionStatusFlow[status]?.next;
+    const statusOrder = Object.keys(sessionStatusFlow);
+    if (
+      viewStatus &&
+      statusOrder.indexOf(nextStatus) <= statusOrder.indexOf(persistedStatus)
+    ) {
+      setViewStatus(nextStatus === persistedStatus ? null : nextStatus);
+      return;
+    }
     const req = await handleRequestSubmit(
-      { token, sessionStatus: sessionStatusFlow[status].next },
+      { token, sessionStatus: nextStatus },
       setToastLoading,
       `client/image-session/session/status`,
       false,
@@ -57,17 +69,21 @@ export default function ClientImageSelection({ token }) {
   }
 
   async function simpleHandleBack() {
-    const req = await handleRequestSubmit(
-      { token, sessionStatus: sessionStatusFlow[status].back },
-      setToastLoading,
-      `client/image-session/session/status`,
-      false,
-      "Updating",
-      false,
-      "PUT"
-    );
-    if (req.status === 200) {
-      await getSessionData();
+    const backStatus = sessionStatusFlow[status]?.back;
+    if (backStatus) setViewStatus(backStatus);
+  }
+
+  async function handleSelectionUpdate() {
+    const nextStatus = sessionStatusFlow[status]?.next;
+    const statusOrder = Object.keys(sessionStatusFlow);
+    await getSessionData();
+    if (
+      viewStatus &&
+      statusOrder.indexOf(nextStatus) < statusOrder.indexOf(persistedStatus)
+    ) {
+      setViewStatus(nextStatus);
+    } else {
+      setViewStatus(null);
     }
   }
 
@@ -75,7 +91,7 @@ export default function ClientImageSelection({ token }) {
     switch (status) {
       case "LOADING":
         return <FullScreenLoader />;
-      case "INITIAL":
+      case IMAGE_SESSION_STATUSES.INITIAL:
         return (
           <Box sx={{ px: 2 }}>
             <PageInfoComponent
@@ -87,18 +103,18 @@ export default function ClientImageSelection({ token }) {
             />
           </Box>
         );
-      case "PREVIEW_COLOR_PATTERN":
+      case IMAGE_SESSION_STATUSES.PREVIEW_COLOR_PATTERN:
         return (
           <ColorPalletes
             handleBack={simpleHandleBack}
             handleNext={simpleHandleNext}
             disabled={toastLoading}
             nextStatus={sessionStatusFlow[status].next}
-            onUpdate={getSessionData}
+            onUpdate={handleSelectionUpdate}
             session={session}
           />
         );
-      case "SELECTED_COLOR_PATTERN":
+      case IMAGE_SESSION_STATUSES.SELECTED_COLOR_PATTERN:
         return (
           <Box sx={{ px: 2 }}>
             <PageInfoComponent
@@ -110,17 +126,17 @@ export default function ClientImageSelection({ token }) {
             />
           </Box>
         );
-      case "PREVIEW_MATERIAL":
+      case IMAGE_SESSION_STATUSES.PREVIEW_MATERIAL:
         return (
           <Materials
             handleBack={simpleHandleBack}
             disabled={toastLoading}
             nextStatus={sessionStatusFlow[status].next}
-            onUpdate={getSessionData}
+            onUpdate={handleSelectionUpdate}
             session={session}
           />
         );
-      case "SELECTED_MATERIAL":
+      case IMAGE_SESSION_STATUSES.SELECTED_MATERIAL:
         return (
           <Box sx={{ px: 2 }}>
             <PageInfoComponent
@@ -132,27 +148,27 @@ export default function ClientImageSelection({ token }) {
             />
           </Box>
         );
-      case "PREVIEW_STYLE":
+      case IMAGE_SESSION_STATUSES.PREVIEW_STYLE:
         return (
           <Styles
             handleBack={simpleHandleBack}
             disabled={toastLoading}
             nextStatus={sessionStatusFlow[status].next}
-            onUpdate={getSessionData}
+            onUpdate={handleSelectionUpdate}
             session={session}
           />
         );
-      case "SELECTED_STYLE":
+      case IMAGE_SESSION_STATUSES.SELECTED_STYLE:
         return (
           <Images
             handleBack={simpleHandleBack}
             disabled={toastLoading}
             nextStatus={sessionStatusFlow[status].next}
-            onUpdate={getSessionData}
+            onUpdate={handleSelectionUpdate}
             session={session}
           />
         );
-      case "PREVIEW_IMAGES":
+      case IMAGE_SESSION_STATUSES.PREVIEW_IMAGES:
         return (
           <SelectedImages
             handleBack={simpleHandleBack}
@@ -164,7 +180,7 @@ export default function ClientImageSelection({ token }) {
             loading={loading}
           />
         );
-      case "SELECTED_IMAGES":
+      case IMAGE_SESSION_STATUSES.SELECTED_IMAGES:
         return (
           <SignatureComponent
             session={session}
@@ -175,8 +191,8 @@ export default function ClientImageSelection({ token }) {
             disabled={toastLoading}
           />
         );
-      case "PDF_GENERATED":
-      case "SUBMITTED":
+      case IMAGE_SESSION_STATUSES.PDF_GENERATED:
+      case IMAGE_SESSION_STATUSES.SUBMITTED:
         return <ClientSessionSubmitted session={session} loading={loading} />;
       default:
         return (

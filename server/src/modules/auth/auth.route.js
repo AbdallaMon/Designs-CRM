@@ -17,7 +17,12 @@ router.post(
   asyncHandler(AuthController.login),
 );
 
-router.post("/refresh", asyncHandler(AuthController.refresh));
+router.get("/csrf", asyncHandler(AuthController.csrfToken));
+router.post(
+  "/refresh",
+  AuthRateLimit.refreshLimiter,
+  asyncHandler(AuthController.refresh),
+);
 router.get(
   "/me",
   AuthMiddleware.requireAuth,
@@ -49,6 +54,7 @@ router.post(
 );
 router.post(
   "/reset-password",
+  AuthRateLimit.resetPasswordLimiter,
   validate(authSchemas.resetPassword),
   asyncHandler(AuthController.resetPassword),
 );

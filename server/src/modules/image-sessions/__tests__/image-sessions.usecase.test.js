@@ -13,6 +13,9 @@ vi.mock("../session/image-session.repo.js", () => ({
   getModelIds: vi.fn(),
   getSessionByToken: vi.fn(),
   changeSessionStatus: vi.fn(),
+  advanceClientSessionStatus: vi.fn(),
+  claimPdfGeneration: vi.fn(),
+  releasePdfGenerationClaim: vi.fn(),
 }));
 vi.mock("../../leads/lead/lead.usecase.js", () => ({
   leadUsecase: { checkIfUserCanAccessLead: vi.fn(), checkIfUserCanMutateLead: vi.fn() },
@@ -20,7 +23,13 @@ vi.mock("../../leads/lead/lead.usecase.js", () => ({
 vi.mock("../admin/page-info.repo.js", () => ({ getPageInfo: vi.fn() }));
 vi.mock("../admin/pros-cons.repo.js", () => ({ getConsAndPros: vi.fn() }));
 vi.mock("../client/client-image-session.repo.js", () => ({
-  clientImageSessionRepository: { findSelectedImageOwnerSessionId: vi.fn() },
+  clientImageSessionRepository: {
+    findSelectedImageOwnerSessionId: vi.fn(),
+    findColorChoice: vi.fn(),
+    findMaterialChoices: vi.fn(),
+    findStyleChoice: vi.fn(),
+    findDesignImageChoices: vi.fn(),
+  },
   getColorsByLng: vi.fn(),
   getMaterialsByLng: vi.fn(),
   getStyleByLng: vi.fn(),
@@ -63,11 +72,17 @@ import {
   getModelIds,
   getSessionByToken,
   changeSessionStatus,
+  advanceClientSessionStatus,
+  claimPdfGeneration,
+  releasePdfGenerationClaim,
 } from "../session/image-session.repo.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import {
   clientImageSessionRepository,
   saveClientSelectedColor,
+  saveClientSelectedMaterials,
+  saveClientSelectedStyle,
+  saveClientSelectedImages,
   deleteImage,
   getImageSesssionModel,
 } from "../client/client-image-session.repo.js";
@@ -300,10 +315,23 @@ describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe("ClientImageSessionUsecase public flow — token is authoritative", () => {
   it("changeStatus keys the session by the TOKEN only (no client id override)", async () => {
-    changeSessionStatus.mockResolvedValue({ id: 1 });
-    await clientImageSessionUsecase.changeStatus({ token: "tok-abc", sessionStatus: "SELECTED_STYLE" });
-    expect(changeSessionStatus).toHaveBeenCalledWith({ token: "tok-abc", sessionStatus: "SELECTED_STYLE" });
-    expect(changeSessionStatus.mock.calls[0][0]).not.toHaveProperty("id");
+    getSessionByToken.mockResolvedValue({
+      id: 1,
+      token: "tok-abc",
+      clientLeadId: 100,
+      sessionStatus: "INITIAL",
+    });
+    advanceClientSessionStatus.mockResolvedValue({ id: 1, sessionStatus: "PREVIEW_COLOR_PATTERN" });
+    await clientImageSessionUsecase.changeStatus({
+      token: "tok-abc",
+      sessionStatus: "PREVIEW_COLOR_PATTERN",
+    });
+    expect(advanceClientSessionStatus).toHaveBeenCalledWith({
+      token: "tok-abc",
+      fromStatus: "INITIAL",
+      toStatus: "PREVIEW_COLOR_PATTERN",
+    });
+    expect(advanceClientSessionStatus.mock.calls[0][0]).not.toHaveProperty("id");
   });
 
   it("changeStatus throws TOKEN_INVALID when no token", async () => {
@@ -313,9 +341,33 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
     });
   });
 
+  it("changeStatus rejects backwards and direct terminal transitions", async () => {
+    getSessionByToken.mockResolvedValue({
+      id: 1,
+      token: "tok",
+      clientLeadId: 100,
+      sessionStatus: "SELECTED_MATERIAL",
+    });
+    for (const sessionStatus of ["PREVIEW_MATERIAL", "PDF_GENERATED", "SUBMITTED"]) {
+      await expect(
+        clientImageSessionUsecase.changeStatus({ token: "tok", sessionStatus }),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        message: imageSessionsMessagesCodes.IMAGE_SESSION_SUBMITTED_LOCKED,
+      });
+    }
+    expect(advanceClientSessionStatus).not.toHaveBeenCalled();
+  });
+
   it("saveColor: OVERRIDES the body session id with the TOKEN-resolved id (the IDOR close)", async () => {
     // attacker passes session.id = 999 (someone else's) but a token that resolves to id 7.
-    getSessionByToken.mockResolvedValue({ id: 7, token: "tok", clientLeadId: 100 });
+    getSessionByToken.mockResolvedValue({
+      id: 7,
+      token: "tok",
+      clientLeadId: 100,
+      sessionStatus: "PREVIEW_COLOR_PATTERN",
+    });
+    clientImageSessionRepository.findColorChoice.mockResolvedValue({ id: 3 });
     saveClientSelectedColor.mockResolvedValue({});
     await clientImageSessionUsecase.saveColor({
       session: { id: 999, token: "tok" },
@@ -337,8 +389,14 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   });
 
   it("generatePdf operates ONLY on the token's session (overrides id) → 🔒 frozen orchestrator", async () => {
-    getSessionByToken.mockResolvedValue({ id: 7, token: "tok-xyz", clientLeadId: 100 });
-    changeSessionStatus.mockResolvedValue({});
+    const resolved = {
+      id: 7,
+      token: "tok-xyz",
+      clientLeadId: 100,
+      sessionStatus: "SELECTED_IMAGES",
+    };
+    getSessionByToken.mockResolvedValue(resolved);
+    claimPdfGeneration.mockResolvedValue({ ...resolved, sessionStatus: "PDF_GENERATED" });
     uploadPdfAndApproveSession.mockResolvedValue({});
     await clientImageSessionUsecase.generatePdf({
       sessionData: { id: 999, token: "tok-xyz" }, // forged id 999
@@ -346,11 +404,10 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
       sessionStatus: "PDF_GENERATED",
       lng: "ar",
     });
-    // status keyed by the token; PDF orchestrator gets the TOKEN-resolved id (7), not 999.
-    expect(changeSessionStatus).toHaveBeenCalledWith({
+    expect(claimPdfGeneration).toHaveBeenCalledWith({
       token: "tok-xyz",
-      sessionStatus: "PDF_GENERATED",
-      extra: { signatureUrl: "/uploads/sig.png" },
+      signatureUrl: "/uploads/sig.png",
+      staleBefore: expect.any(Date),
     });
     const pdfArg = uploadPdfAndApproveSession.mock.calls[0][0];
     expect(pdfArg.sessionData.id).toBe(7);
@@ -359,8 +416,12 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
   });
 
   it("generatePdf maps a frozen-builder failure to a language-neutral code (no prose)", async () => {
-    getSessionByToken.mockResolvedValue({ id: 7, token: "t", clientLeadId: 100 });
-    changeSessionStatus.mockResolvedValue({});
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const resolved = { id: 7, token: "t", clientLeadId: 100, sessionStatus: "SELECTED_IMAGES" };
+    const claimUpdatedAt = new Date("2026-08-16T12:00:00Z");
+    getSessionByToken.mockResolvedValue(resolved);
+    claimPdfGeneration.mockResolvedValue({ ...resolved, sessionStatus: "PDF_GENERATED", updatedAt: claimUpdatedAt });
+    releasePdfGenerationClaim.mockResolvedValue({ count: 1 });
     uploadPdfAndApproveSession.mockRejectedValue(new Error("boom"));
     await expect(
       clientImageSessionUsecase.generatePdf({
@@ -369,6 +430,116 @@ describe("ClientImageSessionUsecase public flow — token is authoritative", () 
         sessionStatus: "PDF_GENERATED",
       }),
     ).rejects.toMatchObject({ statusCode: 500, message: imageSessionsMessagesCodes.IMAGE_SESSION_PDF_GENERATION_FAILED });
+    expect(releasePdfGenerationClaim).toHaveBeenCalledWith({ token: "t", claimUpdatedAt });
+    expect(consoleError).toHaveBeenCalledWith("PDF generation error:", expect.any(Error));
+    consoleError.mockRestore();
+  });
+
+  it("generatePdf is idempotent after submission and does not render again", async () => {
+    getSessionByToken.mockResolvedValue({
+      id: 7,
+      token: "t",
+      clientLeadId: 100,
+      sessionStatus: "SUBMITTED",
+      pdfUrl: "/uploads/session.pdf",
+    });
+    await expect(
+      clientImageSessionUsecase.generatePdf({
+        sessionData: { token: "t" },
+        signatureUrl: "/uploads/s.png",
+        sessionStatus: "PDF_GENERATED",
+      }),
+    ).resolves.toEqual({});
+    expect(claimPdfGeneration).not.toHaveBeenCalled();
+    expect(uploadPdfAndApproveSession).not.toHaveBeenCalled();
+  });
+
+  it("generatePdf reports success when the frozen orchestrator committed before a side effect failed", async () => {
+    const selected = { id: 7, token: "t", clientLeadId: 100, sessionStatus: "SELECTED_IMAGES" };
+    getSessionByToken
+      .mockResolvedValueOnce(selected)
+      .mockResolvedValueOnce({ ...selected, sessionStatus: "SUBMITTED", pdfUrl: "/uploads/session.pdf" });
+    claimPdfGeneration.mockResolvedValue({ ...selected, sessionStatus: "PDF_GENERATED" });
+    uploadPdfAndApproveSession.mockRejectedValue(new Error("notification failed after commit"));
+    await expect(
+      clientImageSessionUsecase.generatePdf({
+        sessionData: { token: "t" },
+        signatureUrl: "/uploads/s.png",
+        sessionStatus: "PDF_GENERATED",
+      }),
+    ).resolves.toEqual({});
+    expect(releasePdfGenerationClaim).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid color, material, style, and image choices before any write", async () => {
+    getSessionByToken.mockResolvedValue({
+      id: 7,
+      token: "tok",
+      clientLeadId: 100,
+      sessionStatus: "PREVIEW_COLOR_PATTERN",
+    });
+    clientImageSessionRepository.findColorChoice.mockResolvedValue(null);
+    await expect(
+      clientImageSessionUsecase.saveColor({
+        session: { token: "tok" },
+        selectedColor: { id: 999 },
+        customColors: [],
+        status: "SELECTED_COLOR_PATTERN",
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND });
+    expect(saveClientSelectedColor).not.toHaveBeenCalled();
+
+    getSessionByToken.mockResolvedValue({
+      id: 7,
+      token: "tok",
+      clientLeadId: 100,
+      sessionStatus: "PREVIEW_MATERIAL",
+      styleId: 4,
+      selectedSpaces: [{ space: { id: 8 } }],
+    });
+    clientImageSessionRepository.findMaterialChoices.mockResolvedValue([{ id: 1 }]);
+    await expect(
+      clientImageSessionUsecase.saveMaterials({
+        session: { token: "tok" },
+        selectedMaterials: [{ id: 1 }, { id: 999 }],
+        status: "SELECTED_MATERIAL",
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND });
+    expect(saveClientSelectedMaterials).not.toHaveBeenCalled();
+
+    getSessionByToken.mockResolvedValue({
+      id: 7,
+      token: "tok",
+      clientLeadId: 100,
+      sessionStatus: "PREVIEW_STYLE",
+    });
+    clientImageSessionRepository.findStyleChoice.mockResolvedValue(null);
+    await expect(
+      clientImageSessionUsecase.saveStyle({
+        session: { token: "tok" },
+        selectedStyle: { id: 999 },
+        status: "SELECTED_STYLE",
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND });
+    expect(saveClientSelectedStyle).not.toHaveBeenCalled();
+
+    getSessionByToken.mockResolvedValue({
+      id: 7,
+      token: "tok",
+      clientLeadId: 100,
+      sessionStatus: "SELECTED_STYLE",
+      styleId: 4,
+      selectedSpaces: [{ space: { id: 8 } }],
+    });
+    clientImageSessionRepository.findDesignImageChoices.mockResolvedValue([]);
+    await expect(
+      clientImageSessionUsecase.saveImages({
+        session: { token: "tok" },
+        selectedImages: [{ id: 999 }],
+        status: "PREVIEW_IMAGES",
+      }),
+    ).rejects.toMatchObject({ statusCode: 404, message: imageSessionsMessagesCodes.IMAGE_SESSION_NOT_FOUND });
+    expect(saveClientSelectedImages).not.toHaveBeenCalled();
   });
 
   it("deleteImage: REJECTS a missing/invalid token (404 NOT_FOUND) — frozen delete NOT called", async () => {
@@ -451,13 +622,18 @@ describe("image-sessions validation — mass-assignment + SSRF + enum", () => {
     expect(r.success).toBe(false);
   });
 
-  it("public changeStatus: REJECTS an invalid sessionStatus, ACCEPTS valid enum values", () => {
+  it("public changeStatus accepts navigation targets and rejects terminal/backdoor values", () => {
     expect(ClientImageSessionValidation.changeStatus.safeParse({ token: "t", sessionStatus: "SIGNING" }).success).toBe(
       false,
     );
-    for (const s of ["INITIAL", "SELECTED_STYLE", "PDF_GENERATED", "SUBMITTED"]) {
+    for (const s of ["PREVIEW_COLOR_PATTERN", "PREVIEW_MATERIAL", "PREVIEW_STYLE", "PREVIEW_IMAGES", "SELECTED_IMAGES"]) {
       expect(ClientImageSessionValidation.changeStatus.safeParse({ token: "t", sessionStatus: s }).success, s).toBe(
         true,
+      );
+    }
+    for (const s of ["INITIAL", "SELECTED_STYLE", "PDF_GENERATED", "SUBMITTED"]) {
+      expect(ClientImageSessionValidation.changeStatus.safeParse({ token: "t", sessionStatus: s }).success, s).toBe(
+        false,
       );
     }
   });

@@ -47,6 +47,7 @@ const SearchComponent = ({
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect -- search results synchronize with an external API. */
   useEffect(() => {
     if (searchTerm) {
       fetchSearchResults(searchTerm);
@@ -54,6 +55,7 @@ const SearchComponent = ({
       setSearchResults([]);
     }
   }, [searchTerm, resource, profile]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSelect = (event, newValue) => {
     setSelectedItem(newValue);
@@ -82,12 +84,14 @@ const SearchComponent = ({
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect -- the parent reset signal clears local input state. */
   useEffect(() => {
     if (resetTrigger !== null && resetTrigger !== undefined) {
       setSearchTerm("");
       setSelectedItem(null);
     }
   }, [resetTrigger]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>

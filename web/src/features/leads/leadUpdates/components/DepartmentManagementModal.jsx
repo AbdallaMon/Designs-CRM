@@ -20,6 +20,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
+import { WORK_DEPARTMENTS } from "@dms/shared";
 import { useState, useEffect } from "react";
 import { MdBusiness, MdCheckCircle, MdSettings, MdUndo } from "react-icons/md";
 import { DEPARTMENTS } from "@/app/helpers/constants";
@@ -79,8 +80,8 @@ export function DepartmentManagementModal({ update, onUpdate }) {
     }
     if (
       !isCurrentlyAuthorized &&
-      departmentValue !== "ADMIN" &&
-      authorizedDepartmentIds.has("ADMIN")
+      departmentValue !== WORK_DEPARTMENTS.ADMIN &&
+      authorizedDepartmentIds.has(WORK_DEPARTMENTS.ADMIN)
     ) {
       setConfirmationDialog({
         open: true,
@@ -89,7 +90,7 @@ export function DepartmentManagementModal({ update, onUpdate }) {
           "In order to authorize another department, you have to unauthorize Admin first. Do you want to continue?",
         onConfirm: async () => {
           // First unauthorize ADMIN
-          await performDepartmentToggle("ADMIN", true);
+          await performDepartmentToggle(WORK_DEPARTMENTS.ADMIN, true);
           // Then authorize the requested department
           await performDepartmentToggle(departmentValue, false);
           setConfirmationDialog({
@@ -104,9 +105,9 @@ export function DepartmentManagementModal({ update, onUpdate }) {
     }
 
     // Check if trying to authorize ADMIN while other departments are authorized
-    if (!isCurrentlyAuthorized && departmentValue === "ADMIN") {
+    if (!isCurrentlyAuthorized && departmentValue === WORK_DEPARTMENTS.ADMIN) {
       const otherAuthorizedDepts = Array.from(authorizedDepartmentIds).filter(
-        (dept) => dept !== "ADMIN" && dept !== update.department
+        (dept) => dept !== WORK_DEPARTMENTS.ADMIN && dept !== update.department
       );
 
       if (otherAuthorizedDepts.length > 0) {
@@ -121,7 +122,7 @@ export function DepartmentManagementModal({ update, onUpdate }) {
               await performDepartmentToggle(dept, true);
             }
             // Then authorize ADMIN
-            await performDepartmentToggle("ADMIN", false);
+            await performDepartmentToggle(WORK_DEPARTMENTS.ADMIN, false);
             setConfirmationDialog({
               open: false,
               title: "",

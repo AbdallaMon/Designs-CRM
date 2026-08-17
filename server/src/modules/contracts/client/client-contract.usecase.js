@@ -15,14 +15,28 @@
 // legacy did (SIGNING → build PDF → REGISTERED). We never touch the PDF logic, the fragile
 // `__dirname`-relative font loading, the fonts, or the output bytes.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { contractsMessagesCodes } from "@dms/shared";
+import { CONTRACT_SESSION_STATUSES, contractsMessagesCodes } from "@dms/shared";
 // The not-yet-migrated, FROZEN client-contract + PDF services (wrapped, never modified).
 import {
   getContractSessionByToken,
   getDefaultContractUtilityData,
-  changeContractSessionStatus,
+  transitionContractSessionStatus,
+  setContractSigningSignature,
+  completeContractFinalization,
+  runWithContractFinalizationLock,
 } from "./client-contract.repo.js";
 import { buildAndUploadContractPdf } from "../services/generate-contract-pdf.js";
+import {
+  toPublicContractSession,
+  toPublicContractUtility,
+} from "./client-contract.dto.js";
+
+function invalidTransition() {
+  return new AppError({
+    code: contractsMessagesCodes.CONTRACT_SESSION_INVALID,
+    statusCode: 409,
+  });
+}
 
 class ClientContractUsecase {
   // GET /session?token= — resolve the session from the token + the default utility data.
@@ -34,18 +48,37 @@ class ClientContractUsecase {
       throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
     }
     const contractUtility = await getDefaultContractUtilityData();
-    return { data: session, contractUtility };
+    return {
+      data: toPublicContractSession(session),
+      contractUtility: toPublicContractUtility(contractUtility),
+    };
   }
 
   // PUT /session/status — token-keyed status change ONLY (no client id override — the IDOR
   // close vs legacy, which accepted a raw `id`). The token selects the session.
   async changeStatus({ token, sessionStatus }) {
     if (!token) throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 400 });
-    const updated = await changeContractSessionStatus({ token, sessionStatus });
-    if (!updated) {
+    const session = await getContractSessionByToken({ token });
+    if (!session) {
       throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
     }
-    return updated;
+    if (sessionStatus !== CONTRACT_SESSION_STATUSES.SIGNING) throw invalidTransition();
+    if (session.sessionStatus === CONTRACT_SESSION_STATUSES.SIGNING) {
+      return toPublicContractSession(session);
+    }
+    if (session.sessionStatus !== CONTRACT_SESSION_STATUSES.INITIAL) {
+      throw invalidTransition();
+    }
+    const updated = await transitionContractSessionStatus({
+      contractId: session.id,
+      fromStatus: CONTRACT_SESSION_STATUSES.INITIAL,
+      toStatus: CONTRACT_SESSION_STATUSES.SIGNING,
+    });
+    if (updated) return toPublicContractSession(updated);
+
+    const latest = await getContractSessionByToken({ token });
+    if (latest?.sessionStatus === CONTRACT_SESSION_STATUSES.SIGNING) return toPublicContractSession(latest);
+    throw invalidTransition();
   }
 
   // POST /generate-pdf — the e-sign finalize flow (token authoritative). Ported 1:1:
@@ -57,22 +90,39 @@ class ClientContractUsecase {
     if (!session) {
       throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
     }
+    if (session.sessionStatus === CONTRACT_SESSION_STATUSES.REGISTERED) return {};
+    if (session.sessionStatus !== CONTRACT_SESSION_STATUSES.SIGNING) throw invalidTransition();
+
     try {
-      await changeContractSessionStatus({
-        token,
-        sessionStatus: "SIGNING",
-        extra: { signatureUrl },
+      return await runWithContractFinalizationLock({
+        contractId: session.id,
+        task: async () => {
+          const latest = await getContractSessionByToken({ token });
+          if (!latest) {
+            throw new AppError({ code: contractsMessagesCodes.CONTRACT_SESSION_INVALID, statusCode: 404 });
+          }
+          if (latest.sessionStatus === CONTRACT_SESSION_STATUSES.REGISTERED) return {};
+          if (latest.sessionStatus !== CONTRACT_SESSION_STATUSES.SIGNING) throw invalidTransition();
+
+          const signatureSaved = await setContractSigningSignature({
+            contractId: latest.id,
+            signatureUrl,
+          });
+          if (!signatureSaved) throw invalidTransition();
+
+          // 🔒 Frozen PDF builder call and arguments are unchanged.
+          await buildAndUploadContractPdf({ token, signatureUrl, lng });
+          const completed = await completeContractFinalization({ contractId: latest.id });
+          if (!completed) {
+            const after = await getContractSessionByToken({ token });
+            if (after?.sessionStatus !== CONTRACT_SESSION_STATUSES.REGISTERED) throw invalidTransition();
+          }
+          return {};
+        },
       });
-      // 🔒 frozen PDF builder — wrapped only.
-      await buildAndUploadContractPdf({ token, signatureUrl, lng });
-      await changeContractSessionStatus({
-        token,
-        sessionStatus: "REGISTERED",
-        extra: { writtenAt: new Date() },
-      });
-      return {};
-    } catch (err) {
-      console.error("PDF generation error:", err);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error("PDF generation error:", error);
       throw new AppError({ code: contractsMessagesCodes.CONTRACT_PDF_GENERATION_FAILED, statusCode: 500 });
     }
   }

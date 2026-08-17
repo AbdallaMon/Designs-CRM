@@ -9,9 +9,8 @@
 //
 // SCOPE: all Google actions are self-scoped to the caller (req.auth.id); connect/disconnect/
 // status act only on the caller's own connection, so the code is the gate (no object-scope
-// checker). The OAuth callback identifies the user from the `state` query param (=userId)
-// set when the auth URL was generated — token handling is owned by the frozen googleCalendar
-// service and is never logged/leaked here.
+// checker). OAuth state is an opaque, expiring, single-use Redis nonce bound to req.auth.id;
+// the callback never derives user identity from query parameters.
 //
 // NOTE on the callback gate: in LEGACY the callback inherited the SHARED auth gate (it is a
 // sub-route of the authed calendar router). To preserve observable behavior 1:1 it stays

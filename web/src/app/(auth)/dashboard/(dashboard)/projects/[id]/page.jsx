@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import ProjectPage from "@/features/work-stages/projects/ProjectPage";
@@ -9,7 +10,7 @@ export default function Page() {
   if (!user?.profile) return null;
   const { id } = params;
 
-  if (user.profile === "DESIGNER_3D" || user.profile === "DESIGNER_2D") {
+  if (user.profile === PROFILES.DESIGNER_3D || user.profile === PROFILES.DESIGNER_2D) {
     return <ProjectPage id={id} isStaff={true} />;
   }
   return <ProjectPage id={id} />;

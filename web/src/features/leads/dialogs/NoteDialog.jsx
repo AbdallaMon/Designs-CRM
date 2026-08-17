@@ -19,9 +19,10 @@ import { MdStickyNote2 } from "react-icons/md";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 
 import dayjs from "dayjs";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 import utc from "dayjs/plugin/utc";
 
@@ -48,7 +49,7 @@ export const NewNoteDialog = ({
   }
   const handleAddNote = async () => {
     if (!newNote.trim()) {
-      setAlertError("You must write something in the note to create new one");
+      setAlertError(FEEDBACK.NOTE_CONTENT_REQUIRED);
       return;
     }
     const request = await handleRequestSubmit(

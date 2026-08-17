@@ -10,10 +10,16 @@ import { paymentsUsecase } from "./payments.usecase.js";
 const TK = messagesNames.clientPortalMessages;
 
 class PaymentsController {
+  authorizePay = (req) =>
+    paymentsUsecase.authorizePay(
+      req.body.clientLeadId,
+      req.get("x-funnel-token"),
+    );
+
   async pay(req, res) {
     const data = await paymentsUsecase.pay({
       clientId: req.body.clientId,
-      clientLeadId: req.body.clientLeadId,
+      clientLeadId: req.scoped.leadId,
       lng: req.body.lng,
     });
     return ok(res, data, clientPortalMessagesCodes.PAYMENT_CHECKOUT_CREATED, TK);

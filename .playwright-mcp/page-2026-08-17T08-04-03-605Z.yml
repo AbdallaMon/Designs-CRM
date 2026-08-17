@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]
+    - generic [ref=e11]:
+      - button "Open issues overlay" [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "0"
+          - generic [ref=e15]: "1"
+        - generic [ref=e16]: Issue
+      - button "Collapse issues badge" [ref=e17]
+  - region "Notifications Alt+T"
+  - generic [ref=e20]:
+    - img "Admin Dashboard Background" [ref=e21]
+    - generic [ref=e23]:
+      - heading "Login" [level=4] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e28]:
+            - generic: Email
+            - textbox "Email" [ref=e30]
+          - generic [ref=e32]:
+            - generic: Password
+            - generic [ref=e33]:
+              - textbox "Password" [ref=e34]
+              - button "toggle password visibility" [ref=e36] [cursor=pointer]
+        - link "Forgot password ?" [ref=e40] [cursor=pointer]:
+          - /url: /reset
+        - button "Login" [ref=e41] [cursor=pointer]
+  - alert [ref=e42]

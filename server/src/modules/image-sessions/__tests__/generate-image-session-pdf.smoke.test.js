@@ -9,7 +9,13 @@ const PNG_1x1 = Buffer.from(
 
 vi.mock("../../../infra/prisma/prisma.js", () => ({
   default: {
-    siteUtility: { findFirst: vi.fn().mockResolvedValue(null) },
+    siteUtility: {
+      findFirst: vi.fn().mockResolvedValue({
+        introPage: "/uploads/custom-intro.jpg",
+        pdfFrame: "/uploads/custom-frame.jpg",
+        pdfSignaturePart: "/uploads/custom-signature.png",
+      }),
+    },
   },
 }));
 
@@ -19,7 +25,9 @@ vi.mock("../../../infra/pdf/pdf-helpers.js", async (importOriginal) => {
 });
 
 let generateImageSessionPdf;
+let fetchImageBuffer;
 beforeAll(async () => {
+  ({ fetchImageBuffer } = await import("../../../infra/pdf/pdf-helpers.js"));
   ({ generateImageSessionPdf } = await import(
     "../services/generate-image-session-pdf.js"
   ));
@@ -37,5 +45,6 @@ describe("generateImageSessionPdf (structural smoke)", () => {
     // PDF magic header "%PDF"
     expect(Buffer.from(bytes.slice(0, 4)).toString()).toBe("%PDF");
     expect(bytes.length).toBeGreaterThan(1000);
+    expect(fetchImageBuffer).toHaveBeenCalledWith("/uploads/custom-intro.jpg");
   });
 });

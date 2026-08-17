@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import PreviewDialog from "@/features/leads/PreviewLeadDialog.jsx";
@@ -10,13 +11,13 @@ export default function Page() {
   if (!user?.profile) return null;
   const { id } = params;
 
-  if (user.profile === "DESIGNER_3D") {
+  if (user.profile === PROFILES.DESIGNER_3D) {
     return <PreviewWorkStage type="three-d" open={true} page={true} id={id} />;
   }
-  if (user.profile === "DESIGNER_2D") {
+  if (user.profile === PROFILES.DESIGNER_2D) {
     return <PreviewWorkStage type="two-d" open={true} page={true} id={id} />;
   }
-  if (["ADMIN", "SUPER_ADMIN", "SUPER_SALES"].includes(user.profile)) {
+  if ([PROFILES.ADMIN, PROFILES.SUPER_ADMIN, PROFILES.SUPER_SALES].includes(user.profile)) {
     return <PreviewDialog open={true} page={true} id={id} admin={true} />;
   }
   return <PreviewDialog open={true} page={true} id={id} />;

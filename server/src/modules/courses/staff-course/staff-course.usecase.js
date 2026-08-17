@@ -4,25 +4,72 @@
 // the legacy staff course service — same gating, same scoring math,
 // same outputs.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { coursesMessagesCodes } from "@dms/shared";
+import {
+  COURSE_QUESTION_TYPES,
+  HOMEWORK_TYPES,
+  coursesMessagesCodes,
+  generalMessagesCodes,
+} from "@dms/shared";
 import { staffCourseRepository } from "./staff-course.repo.js";
+import { courseRoleForAuthUser } from "./course-profile-role.js";
+import { isValidPublishedTest } from "../course-test-validity.js";
+import { sanitizeLearnerQuestions } from "./staff-course.dto.js";
 // Notification on a fully-consumed failed attempt — the (not-yet-migrated) legacy notifier,
 // called directly so observable behavior is preserved (Notifications are a Phase-11 migration).
 import { attemptFailedByUser } from "../../../infra/notifications/index.js";
 
 class StaffCourseUsecase {
+  #courseRole(authUser) {
+    const courseRole = courseRoleForAuthUser(authUser);
+    if (!courseRole) {
+      throw new AppError({
+        code: coursesMessagesCodes.COURSE_ACCESS_DENIED,
+        statusCode: 403,
+      });
+    }
+    return courseRole;
+  }
+
+  #assertAttemptIdentity({ attempt, attemptId, testId, authUserId }) {
+    if (!attempt) {
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
+    }
+    if (authUserId != null && attempt.userId !== authUserId) {
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
+    }
+    if (testId != null && attempt.testId !== testId) {
+      throw new AppError({ code: coursesMessagesCodes.QUESTION_TEST_MISMATCH, statusCode: 400 });
+    }
+    return attempt;
+  }
+
+  #assertAttemptOpenAndInTime({ attempt, test }) {
+    if (attempt.endTime) {
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
+    }
+    if (
+      test?.timeLimit > 0 &&
+      attempt.startTime &&
+      Date.now() >=
+        new Date(attempt.startTime).getTime() + Number(test.timeLimit) * 60 * 1000
+    ) {
+      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
+    }
+  }
+
   // ── Object-scope checker — attempts are OWNER-scoped ─────────────────────────────
   // Legacy loaded attempts with `where: { userId }`, so a user could only read their
   // own attempt. We enforce that explicitly: THROW 403 when the attempt is not the
   // caller's. Returns the (id, userId) row on success.
-  async checkIfUserCanAccessAttempt({ attemptId, authUserId }) {
+  async checkIfUserCanAccessAttempt({
+    attemptId,
+    testId,
+    authUserId,
+    authUser,
+  }) {
     const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
-    if (!attempt) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
-    }
-    if (attempt.userId !== authUserId) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
-    }
+    this.#assertAttemptIdentity({ attempt, attemptId, testId, authUserId });
+    await this.assertCanAccessTest({ testId: attempt.testId, userId: authUserId, authUser });
     return attempt;
   }
 
@@ -31,26 +78,24 @@ class StaffCourseUsecase {
   // semantics to the access checker (404 missing / 403 not the caller's), but named
   // for the write surface so the layering reads correctly. Returns the loaded row
   // (id, userId, testId, endTime) on success.
-  async checkIfUserCanMutateAttempt({ attemptId, authUserId }) {
-    const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
-    if (!attempt) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
-    }
-    if (attempt.userId !== authUserId) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
-    }
-    return attempt;
+  async checkIfUserCanMutateAttempt(args) {
+    return this.checkIfUserCanAccessAttempt(args);
   }
 
   // ── courses ───────────────────────────────────────────────────────────────────
-  async listCourses({ skip, take }) {
-    return staffCourseRepository.listPublishedCourses({ skip, take });
+  async listCourses({ skip, take, authUser }) {
+    const courseRole = courseRoleForAuthUser(authUser);
+    if (!courseRole) return [];
+    return staffCourseRepository.listPublishedCourses({ skip, take, courseRole });
   }
 
-  async getCourse({ courseId, userId }) {
+  async getCourse({ courseId, userId, authUser }) {
+    const courseRole = courseRoleForAuthUser(authUser);
+    if (!courseRole) return null;
     const course = await staffCourseRepository.getPublishedCourse({
       courseId,
       userId,
+      courseRole,
     });
     if (!course) return null;
 
@@ -65,7 +110,16 @@ class StaffCourseUsecase {
     };
   }
 
-  async getUserCourseProgress({ courseId, userId }) {
+  async getUserCourseProgress({ courseId, userId, authUser }) {
+    const courseRole = this.#courseRole(authUser);
+    const course = await staffCourseRepository.getPublishedCourse({
+      courseId,
+      userId,
+      courseRole,
+    });
+    if (!course) {
+      throw new AppError({ code: coursesMessagesCodes.COURSE_ACCESS_DENIED, statusCode: 403 });
+    }
     const [completedLessons, completedTests, testAttempts] = await Promise.all([
       staffCourseRepository.listCompletedLessonIds({ userId, courseId }),
       staffCourseRepository.listCompletedTestIds({ userId, courseId }),
@@ -80,9 +134,12 @@ class StaffCourseUsecase {
   }
 
   // ── lessons ──────────────────────────────────────────────────────────────────
-  async getLesson({ lessonId, userId }) {
+  async getLesson({ lessonId, courseId, userId, authUser }) {
+    const courseRole = this.#courseRole(authUser);
     const lesson = await staffCourseRepository.getPreviewableLesson({
       lessonId,
+      courseId,
+      courseRole,
     });
     if (!lesson) {
       throw new AppError({ code: coursesMessagesCodes.LESSON_NOT_FOUND, statusCode: 404 });
@@ -93,10 +150,11 @@ class StaffCourseUsecase {
 
   // Mirrors legacy `canAccessAlesson`: requires an explicit LessonAccess row AND all
   // previous homework lessons completed AND their published tests passed.
-  async assertCanAccessLesson({ lesson, userId }) {
+  async assertCanAccessLesson({ lesson, userId, client }) {
     const access = await staffCourseRepository.getLessonAccess({
       lessonId: lesson.id,
       userId,
+      client,
     });
     if (!access) {
       throw new AppError({ code: coursesMessagesCodes.LESSON_ACCESS_DENIED, statusCode: 403 });
@@ -105,16 +163,18 @@ class StaffCourseUsecase {
       courseId: lesson.courseId,
       order: lesson.order,
       userId,
+      client,
     });
   }
 
   // Shared gate used by lesson-access and test-access (legacy canAccessALessonTest /
   // canAccessACourseTest). `order === undefined` means "all homework lessons in the
   // course" (course-level test gate); otherwise "previous lessons only".
-  async assertPreviousLessonsCleared({ courseId, order, userId }) {
+  async assertPreviousLessonsCleared({ courseId, order, userId, client }) {
     const previousLessons = await staffCourseRepository.listPreviousHomeworkLessons({
       courseId,
       order,
+      client,
     });
     const previousLessonIds = previousLessons.map((l) => l.id);
 
@@ -122,6 +182,7 @@ class StaffCourseUsecase {
       userId,
       courseId,
       lessonIds: previousLessonIds,
+      client,
     });
     const completedIds = completed.map((l) => l.lessonId);
     const allPreviousCompleted = previousLessonIds.every((id) =>
@@ -130,6 +191,7 @@ class StaffCourseUsecase {
 
     const lessonsWithTests = await staffCourseRepository.listLessonsWithPublishedTests({
       lessonIds: previousLessonIds,
+      client,
     });
 
     let allPreviousTestsPassed = true;
@@ -138,6 +200,7 @@ class StaffCourseUsecase {
         const attempt = await staffCourseRepository.findPassedAttempt({
           userId,
           testId: test.id,
+          client,
         });
         if (!attempt) {
           allPreviousTestsPassed = false;
@@ -153,13 +216,15 @@ class StaffCourseUsecase {
   }
 
   // ── homework ───────────────────────────────────────────────────────────────────
-  async getHomeworks({ userId, lessonId }) {
+  async getHomeworks({ userId, lessonId, courseId, authUser }) {
+    await this.getLesson({ lessonId, courseId, userId, authUser });
     return staffCourseRepository.listHomeworks({ userId, lessonId });
   }
 
   // Legacy `createAHomeWork`: create a homework row, then if BOTH a VIDEO and a
   // SUMMARY exist for the lesson, mark the lesson complete.
-  async createHomework({ data, lessonId, userId, courseId }) {
+  async createHomework({ data, lessonId, userId, courseId, authUser }) {
+    await this.getLesson({ lessonId, courseId, userId, authUser });
     await staffCourseRepository.createHomework({
       data: {
         lessonId,
@@ -174,64 +239,101 @@ class StaffCourseUsecase {
       userId,
       lessonId,
     });
-    const hasVideo = homeworks.some((hw) => hw.type === "VIDEO");
-    const hasSummary = homeworks.some((hw) => hw.type === "SUMMARY");
+    const hasVideo = homeworks.some((hw) => hw.type === HOMEWORK_TYPES.VIDEO);
+    const hasSummary = homeworks.some((hw) => hw.type === HOMEWORK_TYPES.SUMMARY);
     if (hasSummary && hasVideo) {
-      await this.markLessonAsCompleted({ lessonId, userId, courseId });
+      await this.markLessonAsCompleted({
+        lessonId,
+        userId,
+        courseId,
+        authUser,
+      });
     }
     return;
   }
 
-  async markLessonAsCompleted({ lessonId, courseId, userId }) {
-    let courseProgress = await staffCourseRepository.findCourseProgress({
-      courseId,
-      userId,
-    });
-    if (!courseProgress) {
-      courseProgress = await staffCourseRepository.createCourseProgress({
+  async markLessonAsCompleted({ lessonId, courseId, userId, authUser }) {
+    await this.getLesson({ lessonId, courseId, userId, authUser });
+
+    return staffCourseRepository.runTransaction(async (tx) => {
+      await staffCourseRepository.lockCourseForUpdate({ courseId, client: tx });
+      let courseProgress = await staffCourseRepository.findCourseProgress({
         courseId,
         userId,
+        client: tx,
       });
-    }
-    return staffCourseRepository.createCompletedLesson({
-      lessonId,
-      courseProgressId: courseProgress.id,
+      if (!courseProgress) {
+        courseProgress = await staffCourseRepository.createCourseProgress({
+          courseId,
+          userId,
+          client: tx,
+        });
+      }
+      const completed = await staffCourseRepository.findCompletedLesson({
+        lessonId,
+        courseProgressId: courseProgress.id,
+        client: tx,
+      });
+      if (completed) return completed;
+      return staffCourseRepository.createCompletedLesson({
+        lessonId,
+        courseProgressId: courseProgress.id,
+        client: tx,
+      });
     });
   }
 
   // ── tests (staff) ────────────────────────────────────────────────────────────────
-  // Legacy `getUserTest`: admins pass a falsy userId and skip the access gates.
-  async getUserTest({ testId, userId }) {
-    const test = await staffCourseRepository.getPublishedTestWithRelations({ testId });
-    if (userId) {
-      if (test?.lesson) {
-        await this.assertPreviousLessonsCleared({
-          courseId: test.lesson.courseId,
-          order: test.lesson.order,
-          userId,
-        });
-      }
-      if (test?.course) {
-        await this.assertPreviousLessonsCleared({
-          courseId: test.course.id,
-          order: undefined,
-          userId,
-        });
-      }
+  async assertCanAccessTest({ testId, userId, authUser, client }) {
+    const courseRole = this.#courseRole(authUser);
+    const test = await staffCourseRepository.getPublishedTestWithRelations({
+      testId,
+      courseRole,
+      client,
+    });
+    if (!test) {
+      throw new AppError({ code: coursesMessagesCodes.COURSE_ACCESS_DENIED, statusCode: 403 });
+    }
+    if (!isValidPublishedTest(test.questions)) {
+      throw new AppError({ code: generalMessagesCodes.BAD_REQUEST, statusCode: 400 });
+    }
+    if (test.lesson) {
+      await this.assertCanAccessLesson({ lesson: test.lesson, userId, client });
+    } else if (test.course) {
+      await this.assertPreviousLessonsCleared({
+        courseId: test.course.id,
+        order: undefined,
+        userId,
+        client,
+      });
+    } else {
+      throw new AppError({ code: coursesMessagesCodes.COURSE_ACCESS_DENIED, statusCode: 403 });
     }
     return test;
   }
 
-  async getUserTestQuestions({ testId }) {
-    return staffCourseRepository.listTestQuestions({ testId });
+  async getUserTest({ testId, userId, authUser }) {
+    const test = await this.assertCanAccessTest({ testId, userId, authUser });
+    const { questions, ...learnerTest } = test;
+    return learnerTest;
+  }
+
+  async getUserTestQuestions({ testId, userId, authUser }) {
+    await this.assertCanAccessTest({ testId, userId, authUser });
+    const questions = await staffCourseRepository.listTestQuestions({ testId });
+    return sanitizeLearnerQuestions(questions);
   }
 
   // ── attempts (staff) ──────────────────────────────────────────────────────────
-  async getUserAttempts({ testId, userId }) {
+  async getUserAttempts({ testId, userId, authUser }) {
+    await this.assertCanAccessTest({ testId, userId, authUser });
     return staffCourseRepository.listUserAttempts({ testId, userId });
   }
 
-  async getUserAttempt({ attemptId, userId }) {
+  async getUserAttempt({ attemptId, testId, userId, authUser }) {
+    const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
+    this.#assertAttemptIdentity({ attempt, attemptId, testId, authUserId: userId });
+    await this.assertCanAccessTest({ testId, userId, authUser });
     return staffCourseRepository.getUserAttempt({ attemptId, userId });
   }
 
@@ -240,11 +342,21 @@ class StaffCourseUsecase {
   // attempt row is read `FOR UPDATE` so two concurrent requests serialize on it —
   // the second blocks until the first commits its new row, then re-reads it and is
   // correctly rejected. Same observable result/shape as before for serial callers.
-  async createAttempt({ testId, userId }) {
-    const test = await staffCourseRepository.getTestById({ testId });
-    if (!test) throw new AppError({ code: coursesMessagesCodes.TEST_NOT_FOUND, statusCode: 404 });
-
+  async createAttempt({ testId, userId, authUser }) {
     return staffCourseRepository.runTransaction(async (tx) => {
+      const lockedTest = await staffCourseRepository.lockTestForUpdate({
+        testId,
+        client: tx,
+      });
+      if (!lockedTest) {
+        throw new AppError({ code: coursesMessagesCodes.TEST_NOT_FOUND, statusCode: 404 });
+      }
+      const test = await this.assertCanAccessTest({
+        testId,
+        userId,
+        authUser,
+        client: tx,
+      });
       const last = await staffCourseRepository.getLastUserAttemptForUpdate({
         testId,
         userId,
@@ -277,59 +389,73 @@ class StaffCourseUsecase {
   //   • H1 — reject when the attempt is already finalized (endTime set, 409).
   //   • H2 — the question must belong to the attempt's test AND the route's
   //          :testId must match the attempt's test (foreign-test question → 400).
-  async submitAnswer({ answer, attemptId, questionId, testId, authUserId }) {
-    const attempt = await staffCourseRepository.getAttemptOwner({ attemptId });
-    if (!attempt) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
-    }
-    if (authUserId != null && attempt.userId !== authUserId) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ACCESS_DENIED, statusCode: 403 });
-    }
-    if (attempt.endTime) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
-    }
-    if (testId != null && attempt.testId !== testId) {
-      throw new AppError({ code: coursesMessagesCodes.QUESTION_TEST_MISMATCH, statusCode: 400 });
-    }
-
-    const question = await staffCourseRepository.getQuestionTestId({ questionId });
-    if (!question || question.testId !== attempt.testId) {
-      throw new AppError({ code: coursesMessagesCodes.QUESTION_TEST_MISMATCH, statusCode: 400 });
-    }
-
-    const existing = await staffCourseRepository.findExistingAnswer({
-      attemptId,
-      questionId,
-    });
-
-    const selectedAnswers = answer.selectedAnswers
-      ? {
-          create: answer.selectedAnswers.map((value, index) => ({
-            value,
-            order: index + 1,
-          })),
-        }
-      : undefined;
-
-    if (existing) {
-      if (existing.selectedAnswers.length > 0) {
-        await staffCourseRepository.deleteSelectedAnswers({
-          userAnswerId: existing.id,
-        });
-      }
-      return staffCourseRepository.updateUserAnswer({
-        id: existing.id,
-        data: { textAnswer: answer.textAnswer || null, selectedAnswers },
+  async submitAnswer({
+    answer,
+    attemptId,
+    questionId,
+    testId,
+    authUserId,
+    authUser,
+  }) {
+    return staffCourseRepository.runTransaction(async (tx) => {
+      const attempt = await staffCourseRepository.getAttemptOwnerForUpdate({
+        attemptId,
+        client: tx,
       });
-    }
+      this.#assertAttemptIdentity({ attempt, attemptId, testId, authUserId });
+      const test = await this.assertCanAccessTest({
+        testId: attempt.testId,
+        userId: authUserId,
+        authUser,
+        client: tx,
+      });
+      this.#assertAttemptOpenAndInTime({ attempt, test });
 
-    return staffCourseRepository.createUserAnswer({
-      data: {
+      const question = await staffCourseRepository.getQuestionTestId({
+        questionId,
+        client: tx,
+      });
+      if (!question || question.testId !== attempt.testId) {
+        throw new AppError({ code: coursesMessagesCodes.QUESTION_TEST_MISMATCH, statusCode: 400 });
+      }
+
+      const existing = await staffCourseRepository.findExistingAnswer({
         attemptId,
         questionId,
-        textAnswer: answer.textAnswer || null,
-        selectedAnswers,
-      },
+        client: tx,
+      });
+      const selectedAnswers = answer.selectedAnswers
+        ? {
+            create: answer.selectedAnswers.map((value, index) => ({
+              value,
+              order: index + 1,
+            })),
+          }
+        : undefined;
+
+      if (existing) {
+        if (existing.selectedAnswers.length > 0) {
+          await staffCourseRepository.deleteSelectedAnswers({
+            userAnswerId: existing.id,
+            client: tx,
+          });
+        }
+        return staffCourseRepository.updateUserAnswer({
+          id: existing.id,
+          data: { textAnswer: answer.textAnswer || null, selectedAnswers },
+          client: tx,
+        });
+      }
+
+      return staffCourseRepository.createUserAnswer({
+        data: {
+          attemptId,
+          questionId,
+          textAnswer: answer.textAnswer || null,
+          selectedAnswers,
+        },
+        client: tx,
+      });
     });
   }
 
@@ -339,76 +465,117 @@ class StaffCourseUsecase {
   // `reScore` is passed ONLY by the admin approve-answer path (re-scoring an already
   // finalized attempt after manually approving a TEXT answer). Staff callers never
   // pass it, so a staff PUT on a finalized attempt (endTime set) is rejected (H1).
-  async endAttempt({ attemptId, reScore = false }) {
-    const attempt = await staffCourseRepository.getAttemptForScoring({ attemptId });
-    if (!attempt) throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
-
-    if (!reScore && attempt.endTime) {
-      throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
-    }
-
-    const totalQuestions = attempt.test.questions.length;
-    let earnedPoints = 0;
-
-    for (const answer of attempt.answers) {
-      if (answer.question.type === "TEXT") {
-        if (answer.isApproved) earnedPoints += 1;
-        continue;
-      }
-
-      const correctChoices = answer.question.choices
-        .filter((c) => c.isCorrect)
-        .map((c) => c.text);
-      const selectedChoices = answer.selectedAnswers.map((c) => c.value);
-
-      if (answer.question.type === "ORDERING") {
-        const correctOrder = answer.question.choices
-          .sort((a, b) => a.order - b.order)
-          .map((c) => c.text);
-        const isCorrect =
-          JSON.stringify(correctOrder) === JSON.stringify(selectedChoices);
-        if (isCorrect) {
-          earnedPoints += 1;
-        } else {
-          let correctPositions = 0;
-          for (let i = 0; i < correctOrder.length; i++) {
-            if (selectedChoices[i] === correctOrder[i]) correctPositions += 1;
-          }
-          earnedPoints += correctPositions / correctOrder.length;
+  async endAttempt({
+    attemptId,
+    testId,
+    authUserId,
+    authUser,
+    reScore = false,
+  }) {
+    const result = await staffCourseRepository.runTransaction(async (tx) => {
+      const owner = await staffCourseRepository.getAttemptOwnerForUpdate({
+        attemptId,
+        client: tx,
+      });
+      if (!reScore) {
+        this.#assertAttemptIdentity({
+          attempt: owner,
+          attemptId,
+          testId,
+          authUserId,
+        });
+        await this.assertCanAccessTest({
+          testId: owner.testId,
+          userId: authUserId,
+          authUser,
+          client: tx,
+        });
+        if (owner.endTime) {
+          throw new AppError({ code: coursesMessagesCodes.ATTEMPT_ALREADY_ENDED, statusCode: 409 });
         }
-        continue;
+      } else if (!owner) {
+        throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
       }
 
-      if (answer.question.type === "MULTIPLE_CHOICE") {
-        const totalCorrect = correctChoices.length;
-        const selectedCorrect = selectedChoices.filter((v) =>
-          correctChoices.includes(v),
-        ).length;
-        earnedPoints += selectedCorrect / totalCorrect;
-      } else {
-        const isCorrect =
-          JSON.stringify(correctChoices.sort()) ===
-          JSON.stringify(selectedChoices.sort());
-        if (isCorrect) earnedPoints += 1;
+      const attempt = await staffCourseRepository.getAttemptForScoring({
+        attemptId,
+        client: tx,
+      });
+      if (!attempt) {
+        throw new AppError({ code: coursesMessagesCodes.ATTEMPT_NOT_FOUND, statusCode: 404 });
       }
-    }
+      if (!isValidPublishedTest(attempt.test.questions)) {
+        throw new AppError({ code: generalMessagesCodes.BAD_REQUEST, statusCode: 400 });
+      }
 
-    const score = (earnedPoints / totalQuestions) * 100;
-    const passed = score >= 80;
-    await staffCourseRepository.updateAttemptScore({
-      attemptId,
-      score,
-      passed,
-      endTime: new Date(),
-    });
+      const totalQuestions = attempt.test.questions.length;
+      let earnedPoints = 0;
 
-    if (!passed && attempt.attemptCount >= attempt.attemptLimit) {
-      await attemptFailedByUser({
+      for (const answer of attempt.answers) {
+        if (answer.question.type === COURSE_QUESTION_TYPES.TEXT) {
+          if (answer.isApproved) earnedPoints += 1;
+          continue;
+        }
+
+        const correctChoices = answer.question.choices
+          .filter((c) => c.isCorrect)
+          .map((c) => c.text);
+        const selectedChoices = answer.selectedAnswers.map((c) => c.value);
+
+        if (answer.question.type === COURSE_QUESTION_TYPES.ORDERING) {
+          const correctOrder = [...answer.question.choices]
+            .sort((a, b) => a.order - b.order)
+            .map((c) => c.text);
+          const isCorrect =
+            JSON.stringify(correctOrder) === JSON.stringify(selectedChoices);
+          if (isCorrect) {
+            earnedPoints += 1;
+          } else {
+            let correctPositions = 0;
+            for (let i = 0; i < correctOrder.length; i++) {
+              if (selectedChoices[i] === correctOrder[i]) correctPositions += 1;
+            }
+            earnedPoints += correctPositions / correctOrder.length;
+          }
+          continue;
+        }
+
+        if (answer.question.type === COURSE_QUESTION_TYPES.MULTIPLE_CHOICE) {
+          const selectedCorrect = selectedChoices.filter((v) =>
+            correctChoices.includes(v),
+          ).length;
+          earnedPoints += selectedCorrect / correctChoices.length;
+        } else {
+          const isCorrect =
+            JSON.stringify(correctChoices.sort()) ===
+            JSON.stringify(selectedChoices.sort());
+          if (isCorrect) earnedPoints += 1;
+        }
+      }
+
+      const computedScore = (earnedPoints / totalQuestions) * 100;
+      const score = Number.isFinite(computedScore) ? computedScore : 0;
+      const passed = score >= 80;
+      await staffCourseRepository.updateAttemptScore({
+        attemptId,
+        score,
+        passed,
+        endTime: new Date(),
+        client: tx,
+      });
+      return {
+        score,
+        passed,
+        notifyFailure: !passed && attempt.attemptCount >= attempt.attemptLimit,
         testId: attempt.testId,
         userId: attempt.userId,
-      });
+      };
+    });
+
+    if (result.notifyFailure) {
+      await attemptFailedByUser({ testId: result.testId, userId: result.userId });
     }
-    return { score, passed };
+    return { score: result.score, passed: result.passed };
   }
 
   // ── user dashboard ─────────────────────────────────────────────────────────────

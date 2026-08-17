@@ -20,6 +20,7 @@ const EditModal = ({
   extraEditParams,
   renderFormTitle,
   editFormButton = "Save",
+  mergeEditedItem,
 }) => {
   const { setLoading } = useToastContext();
   const [open, setOpen] = useState(false);
@@ -39,11 +40,11 @@ const EditModal = ({
     }
     if (handleBeforeSubmit)
       dataToSubmit = await handleBeforeSubmit(formData, item);
-    if (extraEditParams === undefined) extraEditParams = "";
+    const editParams = extraEditParams ?? "";
     const result = await handleRequestSubmit(
       dataToSubmit,
       setLoading,
-      `${href}/${item.id}${extraEditParams}`,
+      `${href}/${item.id}${editParams}`,
       false,
       "Editing",
       null,
@@ -56,7 +57,9 @@ const EditModal = ({
         } else {
           setData((prevData) =>
             prevData.map((dataItem) =>
-              dataItem.id === result.data.id ? result.data : dataItem
+              dataItem.id === result.data.id
+                ? mergeEditedItem?.(dataItem, result.data) ?? result.data
+                : dataItem
             )
           );
         }

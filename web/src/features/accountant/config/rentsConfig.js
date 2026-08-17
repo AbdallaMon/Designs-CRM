@@ -1,3 +1,5 @@
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
+
 export const renewInputs = [
   {
     data: {
@@ -7,7 +9,7 @@ export const renewInputs = [
       defaultValue: new Date(),
     },
     useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.DATE_REQUIRED } },
   },
   {
     data: {
@@ -17,7 +19,7 @@ export const renewInputs = [
       defaultValue: new Date(),
     },
     useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.DATE_REQUIRED } },
   },
   {
     data: {
@@ -27,17 +29,17 @@ export const renewInputs = [
       defaultValue: new Date(),
     },
     useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.DATE_REQUIRED } },
   },
   {
     data: { id: "amount", label: "Amount", type: "number" },
-    pattern: { required: { value: true, message: "Amount is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.AMOUNT_REQUIRED } },
   },
 ];
 export const inputs = [
   {
     data: { id: "name", label: "Name of service", type: "text" },
-    pattern: { required: { value: true, message: "Payment category" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.PAYMENT_CATEGORY } },
   },
   {
     data: {

@@ -1,5 +1,9 @@
 import { Alert, Box, Button, Link, Snackbar, TextField } from "@mui/material";
 import { useState } from "react";
+import {
+  formatFileSizeExceedsLimit,
+  formatFileTypeNotAllowed,
+} from "@dms/shared";
 
 export default function SimpleFileInput({
   input,
@@ -18,7 +22,7 @@ export default function SimpleFileInput({
     const MAX_FILE_SIZE = 80 * 1024 * 1024;
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File size exceeds the 80MB limit.`);
+      setError(formatFileSizeExceedsLimit("80MB"));
       setPreview(null);
       setFileName("");
       return;
@@ -44,9 +48,7 @@ export default function SimpleFileInput({
       if (isImage) allowedTypes.push("Images");
       if (isPdf) allowedTypes.push("PDFs");
 
-      setError(
-        `File type not allowed. Allowed types: ${allowedTypes.join(", ")}.`
-      );
+      setError(formatFileTypeNotAllowed(allowedTypes));
       setPreview(null);
       setFileName("");
       return;

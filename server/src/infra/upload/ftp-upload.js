@@ -1,50 +1,57 @@
-// HTTP-based upload helpers, ported VERBATIM from the former utilities/legacy/utility.js.
-//  - uploadAsHttp: writes a single in-memory file to the public uploads dir (handler owns
-//    its own HTTP response — the FROZEN client-portal chunk/http upload contract).
-//  - uploadToFTPHttpAsBuffer: POSTs a buffer to the CRM upload endpoint (used by the
-//    contract + image-session PDF paths). Behavior, logs, and quirks preserved 1:1.
-import * as fs from "node:fs";
 import * as path from "node:path";
-import axios from "axios";
-import FormData from "form-data";
-import { JwtService } from "../security/jwt.js";
+import { AppError } from "../../shared/errors/AppError.js";
+import { ok } from "../../shared/http/response.js";
+import { generalMessagesCodes, messagesNames } from "@dms/shared";
+import { LocalStorageProvider } from "./local-disk-storage.provider.js";
+import { buildAssetAccessUrl } from "./asset-access.js";
+import { storageKeyFromUploadReference } from "./upload-reference.js";
+
+const TK = messagesNames.generalMessages;
 
 // used
 export async function uploadAsHttp(req, res) {
   try {
-    const filename = req.file.originalname;
-    const fileBuffer = req.file.buffer;
-
-    const uploadDir = "/home/dreamstudiio.com/public_html/uploads";
-    console.log(uploadDir, "uploadDir in uploadAsHttp");
-    console.log(filename, "filename in uploadAsHttp");
-    console.log(req.file, "req.file.size in uploadAsHttp");
-    console.log(fileBuffer.length, "fileBuffer length in uploadAsHttp");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!req.file?.buffer || !req.file?.originalname) {
+      throw new AppError({
+        code: generalMessagesCodes.FILE_UPLOAD_ERROR,
+        statusCode: 400,
+        translationKey: TK,
+      });
     }
-    const savePath = path.join(uploadDir, filename);
-    console.log(savePath, "savePath in uploadAsHttp");
-    fs.writeFileSync(savePath, fileBuffer);
+    const filename = path.basename(req.file.originalname);
+    const fileBuffer = req.file.buffer;
+    const authorizedFilename = path.basename(String(req.scoped?.subject || ""));
+    if (!authorizedFilename || authorizedFilename !== filename) {
+      throw new AppError({
+        code: generalMessagesCodes.FILE_UPLOAD_ERROR,
+        statusCode: 401,
+        translationKey: TK,
+      });
+    }
 
-    res.status(200).json({ message: "? Upload successful." });
+    await LocalStorageProvider.saveBufferAs(fileBuffer, filename);
+
+    res.locals.preserveCanonicalAssetReferences = true;
+    return ok(
+      res,
+      {
+        originalName: filename,
+        url: `/uploads/${filename}`,
+        accessUrl: buildAssetAccessUrl(`/uploads/${filename}`),
+      },
+      generalMessagesCodes.CREATED,
+      TK,
+    );
   } catch (err) {
     console.error("? Upload error:", err.message);
-    res.status(500).json({ error: err.message });
+    if (err instanceof AppError) throw err;
+    throw new AppError({
+      code: generalMessagesCodes.FILE_UPLOAD_ERROR,
+      statusCode: 500,
+      translationKey: TK,
+      reason: err?.code || null,
+    });
   }
-}
-function buildPublicUrl(remoteFilename, server = process.env.CRM_DOMAIN) {
-  if (!remoteFilename) return "";
-
-  // Grab everything starting from "/uploads"
-  const i = remoteFilename.indexOf("/uploads");
-  const uploadsPath = i >= 0 ? remoteFilename.slice(i) : remoteFilename;
-
-  // Safe join: avoid double slashes
-  const base = (server || "").replace(/\/+$/, "");
-  const path = uploadsPath.startsWith("/") ? uploadsPath : `/${uploadsPath}`;
-
-  return `${base}${path}`;
 }
 // used
 export async function uploadToFTPHttpAsBuffer(
@@ -69,23 +76,12 @@ export async function uploadToFTPHttpAsBuffer(
       throw new Error("HTTP upload expects a buffer.");
     }
 
-    const form = new FormData();
-    form.append("file", buffer, remoteFilename);
-
-    const uploadToken = JwtService.signUploadCapability({
-      purpose: "INTERNAL_PDF",
-      subject: remoteFilename,
+    const storageKey = storageKeyFromUploadReference(remoteFilename, {
+      allowAnyOrigin: true,
     });
-    await axios.post(`${process.env.SERVER_URL}/v2/client/api/upload`, form, {
-      headers: {
-        ...form.getHeaders(),
-        "x-upload-token": uploadToken,
-      },
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      timeout: 10 * 60 * 1000,
-    });
-    const url = buildPublicUrl(remoteFilename);
+    if (!storageKey) throw new Error("Invalid upload destination.");
+    await LocalStorageProvider.saveBufferAs(buffer, storageKey);
+    const url = `/uploads/${storageKey}`;
 
     console.log(`? Uploaded via HTTP: ${url}`);
   } catch (err) {

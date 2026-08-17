@@ -1,3 +1,9 @@
+import {
+  CALL_REMINDER_STATUSES,
+  LEAD_STATUSES,
+  PROFILES,
+  REMINDER_TYPES,
+} from "@dms/shared";
 import React from "react";
 import {
   Paper,
@@ -163,7 +169,7 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                   <Chip
                     size="small"
                     icon={
-                      meeting.status === "DONE" ? (
+                      meeting.status === CALL_REMINDER_STATUSES.DONE ? (
                         <RiCheckboxCircleLine size={16} />
                       ) : (
                         <RiAlarmLine size={16} />
@@ -229,7 +235,7 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                   )}
                 </Stack>
 
-                {meeting.status !== "IN_PROGRESS" && (
+                {meeting.status !== LEAD_STATUSES.IN_PROGRESS && (
                   <Typography
                     variant="body2"
                     fontWeight="600"
@@ -240,12 +246,12 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                 )}
 
                 <Stack direction="row" spacing={1} alignItems="center">
-                  {user.profile !== "ACCOUNTANT" && (
+                  {user.profile !== PROFILES.ACCOUNTANT && (
                     <>
-                      {meeting.status === "IN_PROGRESS" && (
+                      {meeting.status === LEAD_STATUSES.IN_PROGRESS && (
                         <CallResultDialog
                           call={meeting}
-                          reminderType="MEETING"
+                          reminderType={REMINDER_TYPES.MEETING}
                           text="Update meeting result"
                           onUpdate={onUpdate}
                         />
@@ -327,8 +333,8 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
               </Stack>
             </Stack>
 
-            {meeting.status === "IN_PROGRESS" && (
-              <InProgressCall call={meeting} type="MEETING" />
+            {meeting.status === LEAD_STATUSES.IN_PROGRESS && (
+              <InProgressCall call={meeting} type={REMINDER_TYPES.MEETING} />
             )}
 
             <Stack spacing={2}>

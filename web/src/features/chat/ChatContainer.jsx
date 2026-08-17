@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { ChatRoomsList } from "@/features/chat/components/rooms/ChatRoomsList.jsx";
 import { ChatWindow } from "@/features/chat/components/window/ChatWindow.jsx";
+import { CHAT_VIEW_MODES } from "@dms/shared";
 import { useChatRooms, useSocket } from "@/features/chat/hooks/index.js";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { CHAT_ROOM_TYPES } from "@/features/chat/utils/chatConstants.js";
@@ -44,7 +45,7 @@ export function ChatContainer({
 
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
+  const [viewMode, setViewMode] = useState(CHAT_VIEW_MODES.LIST);
   const [typingRooms, setTypingRooms] = useState({});
   const [widgetOpen, setWidgetOpen] = useState(false); // Widget only
   const isAdmin = checkIfAdmin(user);
@@ -129,7 +130,7 @@ export function ChatContainer({
       if (selectedRoomId === roomId) {
         setSelectedRoomId(null);
         if (type === "page" && isMobile) {
-          setViewMode("LIST");
+          setViewMode(CHAT_VIEW_MODES.LIST);
         }
         router.replace("?");
       }
@@ -184,7 +185,7 @@ export function ChatContainer({
     if (type !== "page") return;
     if (roomIdFromParams) {
       setSelectedRoomId(roomIdFromParams);
-      if (isMobile) setViewMode("CHAT");
+      if (isMobile) setViewMode(CHAT_VIEW_MODES.CHAT);
     } else {
       // clear searchPArams
       router.replace("?");
@@ -217,7 +218,7 @@ export function ChatContainer({
     await deleteRoom(roomId);
     if (selectedRoomId === roomId) {
       setSelectedRoomId(null);
-      if (isMobile) setViewMode("LIST");
+      if (isMobile) setViewMode(CHAT_VIEW_MODES.LIST);
     }
   };
   function handleLeaveRoom(roomId) {
@@ -226,7 +227,7 @@ export function ChatContainer({
     leaveRoom(roomId);
     if (selectedRoomId === roomId) {
       setSelectedRoomId(null);
-      if (isMobile) setViewMode("LIST");
+      if (isMobile) setViewMode(CHAT_VIEW_MODES.LIST);
     }
   }
 
@@ -235,7 +236,7 @@ export function ChatContainer({
     if (type === "page") {
       router.replace(`?roomId=${room.id}`);
     }
-    if (isMobile) setViewMode("CHAT");
+    if (isMobile) setViewMode(CHAT_VIEW_MODES.CHAT);
   };
 
   const handleOpenCreateRoom = () => {
@@ -275,11 +276,11 @@ export function ChatContainer({
         roomId={selectedRoomId}
         onClose={() => {
           if (type === "widget") {
-            setViewMode("LIST");
+            setViewMode(CHAT_VIEW_MODES.LIST);
             setSelectedRoomId(null);
             router.replace("?");
           } else if (type === "page" && isMobile) {
-            setViewMode("LIST");
+            setViewMode(CHAT_VIEW_MODES.LIST);
             setSelectedRoomId(null);
             router.replace("?");
           } else {

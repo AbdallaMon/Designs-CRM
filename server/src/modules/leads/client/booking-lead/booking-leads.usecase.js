@@ -7,7 +7,12 @@ import { bookingLeadsEmails } from "./booking-leads.emails.js";
 import { AppError } from "../../../../shared/errors/AppError.js";
 import { bookingLeadsRepository } from "./booking-leads.repo.js";
 import { sendEmail } from "../../../../infra/mail/send-mail.js";
-import { leadsMessagesCodes, messagesNames } from "@dms/shared";
+import { BOOKING_LEAD_REQUEST_STATUSES, leadsMessagesCodes, messagesNames } from "@dms/shared";
+import {
+  issuePublicFunnelCapability,
+  PUBLIC_FUNNEL_PURPOSES,
+  verifyPublicFunnelCapability,
+} from "../../../../infra/upload/public-funnel-capability.js";
 
 const TK = messagesNames.leadsMessages;
 
@@ -60,6 +65,7 @@ function mapBookingLeadResponse(lead) {
     hasArchitecturalPlan: lead.hasArchitecturalPlan ?? null,
     serviceType: lead.serviceType ?? null,
     decisionMaker: lead.decisionMaker ?? null,
+    source: lead.source ?? null,
     name: normalizeDraftString(client.name),
     phone: normalizeDraftString(client.phone),
     email: normalizeDraftEmail(client.email),
@@ -75,18 +81,35 @@ function mapBookingLeadResponse(lead) {
 }
 
 class BookingLeadsUsecase {
-  async createBookingLead({ name, phone }) {
+  async createBookingLead({ name, phone, source }) {
     const lead = await bookingLeadsRepository.createDraft({
       clientDraft: {
         name,
         phone,
         email: buildDraftEmail(),
       },
+      source,
     });
 
     await notifyLeadCreated(lead);
 
-    return mapBookingLeadResponse(lead);
+    const capability = issuePublicFunnelCapability({
+      purpose: PUBLIC_FUNNEL_PURPOSES.BOOKING_LEAD,
+      leadId: lead.id,
+    });
+
+    return {
+      ...mapBookingLeadResponse(lead),
+      capabilityToken: capability.token,
+      capabilityExpiresIn: capability.expiresIn,
+    };
+  }
+
+  authorizeBookingLead(leadId, token) {
+    return verifyPublicFunnelCapability(token, {
+      purpose: PUBLIC_FUNNEL_PURPOSES.BOOKING_LEAD,
+      leadId,
+    });
   }
 
   async getBookingLead(leadId) {
@@ -97,7 +120,7 @@ class BookingLeadsUsecase {
   async updateBookingLeadStep(leadId, { field, value }) {
     const existingLead = await this.#getExistingOrThrow(leadId);
 
-    if (existingLead.bookingRequestStatus === "SUBMITTED") {
+    if (existingLead.bookingRequestStatus === BOOKING_LEAD_REQUEST_STATUSES.SUBMITTED) {
       throw new AppError({
         code: leadsMessagesCodes.BOOKING_LEAD_ALREADY_SUBMITTED,
         statusCode: 409,
@@ -108,7 +131,7 @@ class BookingLeadsUsecase {
     const leadData = isLeadField(field)
       ? {
           [field]: value,
-          bookingRequestStatus: "IN_PROGRESS",
+          bookingRequestStatus: BOOKING_LEAD_REQUEST_STATUSES.IN_PROGRESS,
         }
       : {};
 
@@ -131,7 +154,7 @@ class BookingLeadsUsecase {
   async submitBookingLead(leadId, payload) {
     const existingLead = await this.#getExistingOrThrow(leadId);
 
-    if (existingLead.bookingRequestStatus === "SUBMITTED") {
+    if (existingLead.bookingRequestStatus === BOOKING_LEAD_REQUEST_STATUSES.SUBMITTED) {
       throw new AppError({
         code: leadsMessagesCodes.BOOKING_LEAD_ALREADY_SUBMITTED,
         statusCode: 409,
@@ -152,7 +175,7 @@ class BookingLeadsUsecase {
       }
     }
 
-    leadData.bookingRequestStatus = "SUBMITTED";
+    leadData.bookingRequestStatus = BOOKING_LEAD_REQUEST_STATUSES.SUBMITTED;
     leadData.bookingSubmittedAt = new Date();
 
     const updatedLead = await bookingLeadsRepository.submit({
@@ -161,6 +184,13 @@ class BookingLeadsUsecase {
       leadData,
       clientData,
     });
+    if (!updatedLead) {
+      throw new AppError({
+        code: leadsMessagesCodes.BOOKING_LEAD_ALREADY_SUBMITTED,
+        statusCode: 409,
+        translationKey: TK,
+      });
+    }
 
     // master 03ca4d3: thank the client by email after a successful booking submit.
     const clientEmail = updatedLead.client?.email;

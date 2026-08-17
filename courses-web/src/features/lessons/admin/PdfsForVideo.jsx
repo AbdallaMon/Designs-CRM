@@ -23,9 +23,11 @@ import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput"
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import { MdAdd, MdClose, MdDownload, MdPictureAsPdf } from "react-icons/md";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { videoPdfPayload } from "@/app/helpers/contracts/coursePayloads";
 
 const LessonVideoPdfManager = ({ lessonId, courseId, lessonVideoId }) => {
   const [open, setOpen] = useState(false);
@@ -74,18 +76,14 @@ const LessonVideoPdfManager = ({ lessonId, courseId, lessonVideoId }) => {
 
   const handleAddPdf = async () => {
     if (!pdfTitle.trim()) {
-      setAlertError("Please enter a title for the PDF");
+      setAlertError(FEEDBACK.PDF_TITLE_REQUIRED);
       return;
     }
     if (!pdfUrl) {
-      setAlertError("You must upload a pdf");
+      setAlertError(FEEDBACK.PDF_UPLOAD_REQUIRED);
     }
     const req = await handleRequestSubmit(
-      {
-        title: pdfTitle,
-        url: pdfUrl,
-        lessonVideoId,
-      },
+      videoPdfPayload({ title: pdfTitle, url: pdfUrl }),
       setToastLoading,
       `courses/${courseId}/lessons/${lessonId}/videos/${lessonVideoId}/pdfs`
     );

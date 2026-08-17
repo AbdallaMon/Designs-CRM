@@ -1,4 +1,5 @@
 "use client";
+import { CHAT_MEMBER_ROLES } from "@dms/shared";
 
 import React, {
   useState,
@@ -182,15 +183,15 @@ export function ChatWindow({
   const currentUserMember = members?.find(
     (m) => m.userId === user?.id || m.clientId == clientId
   );
-  const currentUserRole = currentUserMember?.role || "MEMBER";
+  const currentUserRole = currentUserMember?.role || CHAT_MEMBER_ROLES.MEMBER;
 
   // Join room when it changes
   useEffect(() => {
     if (roomId && user && socket && socket?.connected && !clientId) {
-      joinChatRoom(roomId, user);
+      joinChatRoom(roomId);
     }
     if (roomId && clientId && socket && socket?.connected) {
-      joinChatRoomAsClient(roomId, clientId);
+      joinChatRoomAsClient(roomId);
     }
   }, [roomId, user, clientId, socket, socket?.connected]);
 
@@ -226,7 +227,7 @@ export function ChatWindow({
       if (data.roomId === roomId) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
-        markMessageAsRead(roomId, data.id, user.id);
+        markMessageAsRead(roomId, data.id);
         setNewMessagesCount((prev) => prev + 1);
         // scrollToBottom();
         inputRef.current?.focus();
@@ -430,7 +431,6 @@ export function ChatWindow({
       emitPinMessage({
         messageId: message.id,
         roomId: roomId,
-        userId: user?.id,
       });
     },
     [roomId, user?.id]
@@ -440,7 +440,6 @@ export function ChatWindow({
       emitUnpinMessage({
         messageId: message.id,
         roomId: roomId,
-        userId: user?.id,
       });
     },
     [roomId, user?.id]

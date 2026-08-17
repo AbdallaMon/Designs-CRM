@@ -12,7 +12,7 @@ export function EditSpace({ onUpdate, space }) {
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
 
@@ -22,7 +22,7 @@ export function EditSpace({ onUpdate, space }) {
     <OpenItemDialog
       component={EditSpaceForm}
       name={"Space"}
-      slug={"image-session/space"}
+      slug="space"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       type="EDIT"
@@ -44,3 +44,4 @@ function EditSpaceForm({ data, setData, setValid, initialData }) {
     </>
   );
 }
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";

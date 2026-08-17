@@ -1,4 +1,8 @@
 "use client";
+import {
+  IMAGE_SESSION_STATUSES, FORM_VALIDATION_MESSAGES as FORM_ERRORS,
+  PROFILES,
+} from "@dms/shared";
 import React, { useEffect, useState } from "react";
 import {
   Dialog,
@@ -168,17 +172,17 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   const getStepperSteps = () => [
-    { key: "INITIAL", label: "Setup" },
-    { key: "PREVIEW_COLOR_PATTERN", label: "Color Pattern" },
-    { key: "SELECTED_COLOR_PATTERN", label: "Color Confirmed" },
-    { key: "PREVIEW_MATERIAL", label: "Material" },
-    { key: "SELECTED_MATERIAL", label: "Material Confirmed" },
-    { key: "PREVIEW_STYLE", label: "Style" },
-    { key: "SELECTED_STYLE", label: "Style Confirmed" },
-    { key: "PREVIEW_IMAGES", label: "Images" },
-    { key: "SELECTED_IMAGES", label: "Images Confirmed" },
-    { key: "PDF_GENERATED", label: "PDF Ready" },
-    { key: "SUBMITTED", label: "Complete" },
+    { key: IMAGE_SESSION_STATUSES.INITIAL, label: "Setup" },
+    { key: IMAGE_SESSION_STATUSES.PREVIEW_COLOR_PATTERN, label: "Color Pattern" },
+    { key: IMAGE_SESSION_STATUSES.SELECTED_COLOR_PATTERN, label: "Color Confirmed" },
+    { key: IMAGE_SESSION_STATUSES.PREVIEW_MATERIAL, label: "Material" },
+    { key: IMAGE_SESSION_STATUSES.SELECTED_MATERIAL, label: "Material Confirmed" },
+    { key: IMAGE_SESSION_STATUSES.PREVIEW_STYLE, label: "Style" },
+    { key: IMAGE_SESSION_STATUSES.SELECTED_STYLE, label: "Style Confirmed" },
+    { key: IMAGE_SESSION_STATUSES.PREVIEW_IMAGES, label: "Images" },
+    { key: IMAGE_SESSION_STATUSES.SELECTED_IMAGES, label: "Images Confirmed" },
+    { key: IMAGE_SESSION_STATUSES.PDF_GENERATED, label: "PDF Ready" },
+    { key: IMAGE_SESSION_STATUSES.SUBMITTED, label: "Complete" },
   ];
 
   const getCurrentStepIndex = (status) => {
@@ -246,7 +250,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
 
   const handleCreateSession = async () => {
     if (selectedSpaces.length === 0) {
-      setAlertError("Please select at least one space");
+      setAlertError(FORM_ERRORS.SELECT_SPACE);
       return;
     }
     const createRequest = await handleRequestSubmit(
@@ -268,7 +272,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   const renderPDFSection = (session) => {
-    if (session.sessionStatus === "PDF_GENERATED" && session.pdfUrl) {
+    if (session.sessionStatus === IMAGE_SESSION_STATUSES.PDF_GENERATED && session.pdfUrl) {
       return (
         <Box mb={2}>
           <Typography variant="subtitle2" gutterBottom>
@@ -288,7 +292,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
       );
     }
 
-    if (session.sessionStatus === "SUBMITTED" && session.pdfUrl) {
+    if (session.sessionStatus === IMAGE_SESSION_STATUSES.SUBMITTED && session.pdfUrl) {
       return (
         <Box mb={2}>
           <Typography variant="subtitle2" gutterBottom>
@@ -309,7 +313,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
     }
 
     // Handle cases where PDF should be generated but isn't available
-    if (["SELECTED_IMAGES", "PDF_GENERATED"].includes(session.sessionStatus)) {
+    if ([IMAGE_SESSION_STATUSES.SELECTED_IMAGES, IMAGE_SESSION_STATUSES.PDF_GENERATED].includes(session.sessionStatus)) {
       if (session.error) {
         return (
           <Box mb={2}>
@@ -364,14 +368,14 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
     // For earlier stages, show appropriate message
     if (
       [
-        "INITIAL",
-        "PREVIEW_COLOR_PATTERN",
-        "SELECTED_COLOR_PATTERN",
-        "PREVIEW_MATERIAL",
-        "SELECTED_MATERIAL",
-        "PREVIEW_STYLE",
-        "SELECTED_STYLE",
-        "PREVIEW_IMAGES",
+        IMAGE_SESSION_STATUSES.INITIAL,
+        IMAGE_SESSION_STATUSES.PREVIEW_COLOR_PATTERN,
+        IMAGE_SESSION_STATUSES.SELECTED_COLOR_PATTERN,
+        IMAGE_SESSION_STATUSES.PREVIEW_MATERIAL,
+        IMAGE_SESSION_STATUSES.SELECTED_MATERIAL,
+        IMAGE_SESSION_STATUSES.PREVIEW_STYLE,
+        IMAGE_SESSION_STATUSES.SELECTED_STYLE,
+        IMAGE_SESSION_STATUSES.PREVIEW_IMAGES,
       ].includes(session.sessionStatus)
     ) {
       return (
@@ -388,10 +392,10 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   if (
-    user.profile !== "ADMIN" &&
-    user.profile !== "SUPER_ADMIN" &&
-    !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-    user.profile !== "DESIGNER_3D"
+    user.profile !== PROFILES.ADMIN &&
+    user.profile !== PROFILES.SUPER_ADMIN &&
+    ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+    user.profile !== PROFILES.DESIGNER_3D
   )
     return null;
 
@@ -468,7 +472,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
 
                           <Box display="flex" gap={1.5} alignItems="center">
                             {(isAdmin ||
-                              !["PDF_GENERATED", "SUBMITTED"].includes(
+                              ![IMAGE_SESSION_STATUSES.PDF_GENERATED, IMAGE_SESSION_STATUSES.SUBMITTED].includes(
                                 session.sessionStatus
                               )) && (
                               <DeleteModal

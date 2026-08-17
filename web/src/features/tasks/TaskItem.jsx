@@ -1,4 +1,5 @@
 "use client";
+import { TASK_STATUSES } from "@dms/shared";
 
 import React from "react";
 import { Box, useTheme } from "@mui/material";
@@ -17,11 +18,11 @@ import { NotesComponent } from "@/shared/components/common/Notes.jsx";
 // status → { label (ar), color } for the StatusPill in each task card header.
 const taskStatusPill = (theme, status) => {
   switch (status) {
-    case "DONE":
+    case TASK_STATUSES.DONE:
       return { label: "Done", color: theme.palette.success.main };
-    case "IN_PROGRESS":
+    case TASK_STATUSES.IN_PROGRESS:
       return { label: "In Progress", color: theme.palette.info.main };
-    case "TODO":
+    case TASK_STATUSES.TODO:
     default:
       return { label: "To Do", color: theme.palette.text.secondary };
   }
@@ -31,9 +32,9 @@ export const TaskItem = ({ task, setTasks, name }) => {
   const theme = useTheme();
   const pill = taskStatusPill(theme, task.status);
   const accent =
-    task.status === "DONE"
+    task.status === TASK_STATUSES.DONE
       ? theme.palette.success.main
-      : task.status === "IN_PROGRESS"
+      : task.status === TASK_STATUSES.IN_PROGRESS
       ? theme.palette.info.main
       : theme.palette.divider;
 

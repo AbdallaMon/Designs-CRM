@@ -2,9 +2,10 @@
 // legacy createOperationalExpense also requires category + paymentDate (preserved as a
 // service-side check); we assert them at the edge too. `validate(...)` returns 422.
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 const positiveAmount = z.coerce.number().refine((n) => Number.isFinite(n) && n > 0, {
-  message: "amount must be a positive number",
+  message: V.POSITIVE_NUMBER_REQUIRED,
 });
 
 export class ExpenseValidation {

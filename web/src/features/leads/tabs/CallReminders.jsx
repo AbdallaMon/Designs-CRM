@@ -1,3 +1,4 @@
+import { CALL_REMINDER_STATUSES, LEAD_STATUSES, PROFILES } from "@dms/shared";
 import React from "react";
 import { Button, Stack, Typography, useTheme } from "@mui/material";
 
@@ -70,10 +71,10 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
 
   const visibleCalls = callReminders?.filter((call) => {
     if (
-      user.profile !== "ADMIN" &&
-      user.profile !== "SUPER_ADMIN" &&
-      !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-      user.profile !== "SUPER_SALES" &&
+      user.profile !== PROFILES.ADMIN &&
+      user.profile !== PROFILES.SUPER_ADMIN &&
+      ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+      user.profile !== PROFILES.SUPER_SALES &&
       call.userId !== user.id
     ) {
       return false;
@@ -124,7 +125,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                     : "No time selected"
                 }
                 subtitle={
-                  call.status !== "IN_PROGRESS"
+                  call.status !== LEAD_STATUSES.IN_PROGRESS
                     ? `Done at ${dayjs(call.updatedAt).format("DD/MM/YYYY")}`
                     : undefined
                 }
@@ -133,7 +134,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                     label={call.status.replace(/_/g, " ")}
                     color={c}
                     icon={
-                      call.status === "DONE" ? (
+                      call.status === CALL_REMINDER_STATUSES.DONE ? (
                         <RiCheckboxCircleLine size={15} />
                       ) : (
                         <RiAlarmLine size={15} />
@@ -149,8 +150,8 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                 }
                 actions={
                   <>
-                    {user.profile !== "ACCOUNTANT" &&
-                      call.status === "IN_PROGRESS" && (
+                    {user.profile !== PROFILES.ACCOUNTANT &&
+                      call.status === LEAD_STATUSES.IN_PROGRESS && (
                         <CallResultDialog
                           lead={lead}
                           setCallReminders={setCallReminders}
@@ -172,7 +173,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                 }
               >
                 <Stack spacing={1.5}>
-                  {call.status === "IN_PROGRESS" && <InProgressCall call={call} />}
+                  {call.status === LEAD_STATUSES.IN_PROGRESS && <InProgressCall call={call} />}
                   <CardBlock label="Reason">{call.reminderReason}</CardBlock>
                   {call.callResult && (
                     <CardBlock label="Result" color={theme.palette.success.main}>

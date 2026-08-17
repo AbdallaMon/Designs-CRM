@@ -1,12 +1,26 @@
+import { TELEGRAM_CONNECTION_STATUSES } from "@dms/shared";
 import { TELEGRAM_CONSTANTS } from "../telegram.constant.js";
 export const mapTelegramPhone = (phoneNumber) => {
   return phoneNumber.replace(/\s/g, "");
 };
 export const TELEGRAM_AUTH_CONNECTION_SELECT = {
+  id: true,
   name: true,
   apiId: true,
   apiHash: true,
   sessionString: true,
+  encryptedCredential: {
+    select: {
+      ciphertext: true,
+      algorithm: true,
+      keyVersion: true,
+      dataIv: true,
+      dataAuthTag: true,
+      wrappedDataKey: true,
+      keyIv: true,
+      keyAuthTag: true,
+    },
+  },
   isActive: true,
   status: true,
   lastCheckedAt: true,
@@ -20,13 +34,15 @@ export const TELEGRAM_AUTH_CONNECTION_SELECT = {
 };
 export const mapTelegramDataToDTO = (data) => {
   return {
-    phoneNumber: data.phoneNumber,
-    status: data.status,
-    lastCheckedAt: data.lastCheckedAt,
-    lastConnectedAt: data.lastConnectedAt,
-    lastError: data.lastError,
+    phoneNumber: data?.phoneNumber ?? null,
+    status: data?.status ?? TELEGRAM_CONNECTION_STATUSES.DISCONNECTED,
   };
 };
+
+export const mapTelegramAuthStepToDTO = (data) => ({
+  phoneNumber: data?.phoneNumber ?? null,
+  teleStatus: data?.teleStatus,
+});
 
 export const mapTelegramStatus = ({ data, teleStatus }) => {
   switch (teleStatus) {

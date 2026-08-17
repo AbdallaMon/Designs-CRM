@@ -1,3 +1,4 @@
+import { EMIRATES } from "@dms/shared";
 // sessionHelpers.js
 // Helpers extracted from ContractSession.jsx (kept unchanged behavior)
 import dayjs from "dayjs";
@@ -27,7 +28,7 @@ export const formatAED = (value, lng) => {
 };
 
 export const emirateOrCountryLabel = ({ emirate, country }, lng) => {
-  if (!emirate || emirate === "OUTSIDE") {
+  if (!emirate || emirate === EMIRATES.OUTSIDE) {
     if (country && COUNTRY_LABEL[country]) return COUNTRY_LABEL[country][lng];
     return country || "-";
   }

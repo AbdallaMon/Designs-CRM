@@ -20,7 +20,11 @@ import timezone from "dayjs/plugin/timezone.js";
 import { availabilityRepository } from "./availability.repo.js";
 import { getCalendarDataForMonth } from "./month-view.usecase.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { calendarMessagesCodes } from "@dms/shared";
+import {
+  CALENDAR_VIEW_TYPES,
+  calendarMessagesCodes,
+  PROFILES,
+} from "@dms/shared";
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -49,7 +53,7 @@ export async function getAvailableDaysImpl({ month, adminId, type, userId }) {
       lte: end.toDate(),
     },
   };
-  if (type === "CLIENT") {
+  if (type === CALENDAR_VIEW_TYPES.CLIENT) {
     const now = dayjs().toDate();
     where.slots = {
       some: {
@@ -250,7 +254,7 @@ export async function getAvailableSlotsForDayImpl({
 
   const now = dayjs().toDate();
   let slotWhere = {};
-  if (type === "CLIENT") {
+  if (type === CALENDAR_VIEW_TYPES.CLIENT) {
     slotWhere.startTime = {
       gt: now,
     };
@@ -416,7 +420,7 @@ class AvailabilityUsecase {
       month,
       adminId,
       userId: authUser.id,
-      type: type || "ADMIN",
+      type: type || CALENDAR_VIEW_TYPES.ADMIN,
       timezone: timezone || DEFAULT_TZ,
     });
   }
@@ -431,7 +435,7 @@ class AvailabilityUsecase {
       dayId,
       userId: authUser.id,
       timezone: timezone || DEFAULT_TZ,
-      type: type || "ADMIN",
+      type: type || CALENDAR_VIEW_TYPES.ADMIN,
     });
   }
 
@@ -494,7 +498,8 @@ class AvailabilityUsecase {
   // + superSalesId passed through.
   getCalendarMonth({ query, authUser }) {
     const isAdmin = Boolean(authUser.isAdminTier);
-    const hasSuperSalesScope = authUser.currentProfileKey === "SUPER_SALES";
+    const hasSuperSalesScope =
+      authUser.currentProfileKey === PROFILES.SUPER_SALES;
     return getCalendarDataForMonth({
       year: query.year,
       month: query.month,

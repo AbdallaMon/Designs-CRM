@@ -23,6 +23,7 @@ class AuthRepository {
       data: {
         password,
       },
+      select: { id: true },
     });
   }
 

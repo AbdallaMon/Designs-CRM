@@ -93,9 +93,15 @@ class ChatController {
   }
 
   async getMessagePage(req, res) {
-    const { messageId } = req.params;
+    const { roomId, messageId } = req.params;
     const { limit } = req.query;
-    const result = await chatUsecase.getMessagePage(messageId, limit);
+    const result = await chatUsecase.getMessagePage(
+      roomId,
+      messageId,
+      req.auth.id,
+      null,
+      limit,
+    );
     return ok(res, result, chatMessagesCodes.MESSAGES_FETCHED, TK);
   }
 
@@ -129,14 +135,24 @@ class ChatController {
     const userId = req.auth.id;
     const { messageId } = req.params;
     const { emoji } = req.body;
-    const reaction = await chatUsecase.addReaction(messageId, userId, emoji);
+    const reaction = await chatUsecase.addReaction({
+      messageId,
+      userId,
+      clientId: null,
+      emoji,
+    });
     return ok(res, reaction, chatMessagesCodes.REACTION_ADDED, TK);
   }
 
   async removeReaction(req, res) {
     const userId = req.auth.id;
     const { messageId, emoji } = req.params;
-    await chatUsecase.removeReaction(messageId, userId, emoji);
+    await chatUsecase.removeReaction({
+      messageId,
+      userId,
+      clientId: null,
+      emoji,
+    });
     return ok(res, null, chatMessagesCodes.REACTION_REMOVED, TK);
   }
 

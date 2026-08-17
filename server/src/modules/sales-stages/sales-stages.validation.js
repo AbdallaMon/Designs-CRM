@@ -1,24 +1,19 @@
 // sales-stages validation — Zod schemas. The mutating body is `.strict()` (reject
 // unknown fields → mass-assignment hardening: legacy spread `...req.body` into the
 // service). The clientLeadId path param is coerced. Failures auto-return 422 + details.
+import { SALES_STAGE_TYPES } from "@dms/shared";
 import { z } from "zod";
 
-const SALES_STAGE_TYPES = [
-  "INITIAL_CONTACT",
-  "SOCIAL_MEDIA_CHECK",
-  "WHATSAPP_QA",
-  "MEETING_BOOKED",
-  "CLIENT_INFO_UPLOADED",
-  "CONSULTATION_BOOKED",
-  "FOLLOWUP_AFTER_MEETING",
-  "HANDLE_OBJECTIONS",
-  "DEAL_CLOSED",
-  "AFTER_SALES_FOLLOWUP",
-];
+const PERSISTED_SALES_STAGE_TYPES = Object.values(SALES_STAGE_TYPES).filter(
+  (stage) => stage !== SALES_STAGE_TYPES.NOT_INITIATED,
+);
 
 // The "virtual" not-initiated sentinel the legacy flow uses for the first/last hop —
 // it is NOT a real SalesStageType row (the service skips persistence for it).
-const STAGE_KEY = z.enum([...SALES_STAGE_TYPES, "NOT_INITIATED"]);
+const STAGE_KEY = z.enum([
+  ...PERSISTED_SALES_STAGE_TYPES,
+  SALES_STAGE_TYPES.NOT_INITIATED,
+]);
 
 export class SalesStagesValidation {
   static clientLeadIdParam = z.object({

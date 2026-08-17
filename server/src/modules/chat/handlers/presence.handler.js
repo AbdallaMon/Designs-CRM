@@ -5,15 +5,13 @@
  * @param {{ io: import("socket.io").Server, ctx: object, usecase: import("../chat.usecase.js").ChatUsecase }} deps
  */
 export function registerPresenceHandlers(socket, { io, ctx, usecase }) {
-  socket.on("online", (data) => {
-    const { id, user } = data;
-    ctx.userId = id;
-
+  socket.on("online", () => {
     io.emit("user:online", {
-      userId: id,
+      userId: ctx.userId,
+      clientId: ctx.clientId,
       socketId: socket.id,
       timestamp: new Date(),
-      user,
+      user: ctx.kind === "staff" ? ctx.actor : null,
     });
   });
 

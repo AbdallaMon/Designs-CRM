@@ -15,16 +15,20 @@
 //      handler uses `uploadFile(body, clientLeadId)`. We wrap the CORRECT `uploadFile`.
 //   3. The admin route emitted English/Arabic prose as the success message; the v2
 //      envelope carries a language-neutral CODE instead (sanctioned contract change).
-import XLSX from "xlsx";
+import { Readable } from "node:stream";
+import ExcelJS from "exceljs";
 import { AppError } from "../../../shared/errors/AppError.js";
 import {
-  adminResidualMessagesCodes,
+  EMIRATES, LEAD_CATEGORIES, LEAD_LOCATIONS, LEAD_STATUSES, adminResidualMessagesCodes,
   authMessagesCodes,
   leadsMessagesCodes,
 } from "@dms/shared";
 import { adminLeadsRepository } from "./admin-leads.repo.js";
 import { leadRepository } from "../../leads/lead/lead.repo.js";
-import { newLeadNotification } from "../../../infra/notifications/index.js";
+import {
+  consultedLeadNotification,
+  newLeadNotification,
+} from "../../../infra/notifications/index.js";
 import {
   addUsersToATeleChannelUsingQueue,
   createChannelAndAddUsers,
@@ -120,16 +124,61 @@ export async function addAllProjectUsersToChannel({ clientLeadId }) {
 // new-lead side effects use the CORRECT fns the public handler uses (deviation #2):
 // leadRepository.generateCodeForNewLead / leadRepository.uploadFile (imported at top).
 
+function normalizeSpreadsheetCell(value) {
+  if (!value || value instanceof Date || typeof value !== "object") {
+    return value;
+  }
+  if (Object.hasOwn(value, "result")) return value.result;
+  if (typeof value.text === "string") return value.text;
+  if (Array.isArray(value.richText)) {
+    return value.richText.map((part) => part.text || "").join("");
+  }
+  return String(value);
+}
+
+function spreadsheetRowValues(row) {
+  return row.values.slice(1).map(normalizeSpreadsheetCell);
+}
+
+async function readSpreadsheetRows(file) {
+  const workbook = new ExcelJS.Workbook();
+  const isCsv =
+    file.mimetype === "text/csv" ||
+    String(file.originalname || "")
+      .toLowerCase()
+      .endsWith(".csv");
+  const worksheet = isCsv
+    ? await workbook.csv.read(Readable.from(file.buffer))
+    : (await workbook.xlsx.load(file.buffer)).worksheets[0];
+
+  if (!worksheet) return [];
+
+  const rows = [];
+  worksheet.eachRow({ includeEmpty: true }, (row) => {
+    rows.push(spreadsheetRowValues(row));
+  });
+  return rows;
+}
+
+function formatSpreadsheetDate(value) {
+  if (!value) return new Date().toISOString();
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === "number") {
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    return new Date(excelEpoch + value * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+  }
+  return value;
+}
+
 class AdminLeadsUsecase {
   // ── bulk excel import ─────────────────────────────────────────────────────────────
   // Orchestration ported VERBATIM from the legacy createLeadFromExcelData (XLSX parse +
   // per-row client/lead/note writes through the repo). The controller owns req/res (the
   // no-file 400, the success 200, and the 500 envelope).
   async importLeadsFromExcel({ file }) {
-    const workbook = XLSX.read(file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const fileData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    const fileData = await readSpreadsheetRows(file);
 
     // Header row
     const headers = fileData[0];
@@ -161,14 +210,12 @@ class AdminLeadsUsecase {
         ? parseFloat(row[4])
         : 0;
       const averagePrice = !isNaN(parseFloat(row[4])) ? parseFloat(row[4]) : 0;
-      const modifiedDate = row[9]
-        ? XLSX.SSF.format("yyyy-mm-dd", row[9])
-        : new Date().toISOString();
+      const modifiedDate = formatSpreadsheetDate(row[9]);
 
       const clientLead = await adminLeadsRepository.createClientLead({
         data: {
           clientId: client.id,
-          selectedCategory: "OLDLEAD",
+          selectedCategory: LEAD_CATEGORIES.OLD_LEAD,
           type: "NONE",
           description: row[3] || null,
           price,
@@ -237,7 +284,29 @@ class AdminLeadsUsecase {
 
   // ── admin lead field update (lead-scoped; checker ran at the route) ──────────────
   updateLeadField({ id, body }) {
-    return adminLeadsRepository.updateLeadField({ data: this.#buildSingleFieldUpdate(body), leadId: id });
+    const data = this.#buildSingleFieldUpdate(body);
+    const isConsultationCompletion =
+      body.field === "initialConsult" && body.initialConsult === true;
+
+    if (!isConsultationCompletion) {
+      return adminLeadsRepository.updateLeadField({ data, leadId: id });
+    }
+
+    return this.#completeInitialConsult({ id, data });
+  }
+
+  async #completeInitialConsult({ id, data }) {
+    const previousLead = await adminLeadsRepository.findLeadInitialConsult({ leadId: id });
+    const updatedLead = await adminLeadsRepository.updateLeadField({
+      data,
+      leadId: id,
+    });
+
+    if (previousLead?.initialConsult === false) {
+      await consultedLeadNotification(updatedLead.id);
+    }
+
+    return updatedLead;
   }
 
   // ── admin client field update (client-keyed; no single lead to scope) ────────────
@@ -288,7 +357,7 @@ class AdminLeadsUsecase {
         client: { connect: { id: client.id } },
         selectedCategory: body.category,
         type: body.item,
-        status: "NEW",
+        status: LEAD_STATUSES.NEW,
         description: `${body.category} ${body.item} ${
           body.category === "DESIGN" ? (body.emirate ? body.emirate : "OUTSIDE UAE") : ""
         }`,
@@ -298,7 +367,7 @@ class AdminLeadsUsecase {
 
       if (body.clientDescription) data.clientDescription = body.clientDescription;
       if (body.emirate) data.emirate = body.emirate;
-      if (body.location === "OUTSIDE_UAE") data.emirate = "OUTSIDE";
+      if (body.location === LEAD_LOCATIONS.OUTSIDE_UAE) data.emirate = EMIRATES.OUTSIDE;
 
       if (body.timeToContact) {
         const date = new Date(body.timeToContact);
@@ -320,7 +389,7 @@ class AdminLeadsUsecase {
         data.priceWithOutDiscount = priceRangeValues[body.priceOption];
       }
 
-      if (body.category === "CONSULTATION") {
+      if (body.category === LEAD_CATEGORIES.CONSULTATION) {
         data.price = consultationLeadPrices[body.item];
         data.averagePrice = Number(consultationLeadPrices[body.item]);
         data.priceWithOutDiscount = Number(consultationLeadPrices[body.item]);

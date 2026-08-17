@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   PERMISSIONS,
   ALL_PERMISSIONS,
+  PROFILE_PERMISSION_DEFAULTS,
   PROFILES,
   USER_ROLES,
   NAVIGATION,
@@ -44,29 +45,29 @@ describe("my_day permission wiring", () => {
   it("admins hold both personal and team queues through all-permissions access", () => {
     expect(permissionsForPersona(R.ADMIN)).toContain(VIEW);
     expect(permissionsForPersona(R.SUPER_ADMIN)).toContain(VIEW);
-    expect(PROFILES.ADMIN).toContain(VIEW);
-    expect(PROFILES.SUPER_ADMIN).toContain(VIEW);
-    expect(PROFILES.ADMIN).toContain(TEAM);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.ADMIN]).toContain(VIEW);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.SUPER_ADMIN]).toContain(VIEW);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.ADMIN]).toContain(TEAM);
   });
 
   it("profiles: sales tiers + designers hold the personal queue", () => {
     for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"]) {
-      expect(PROFILES[key]).toContain(VIEW);
+      expect(PROFILE_PERMISSION_DEFAULTS[key]).toContain(VIEW);
     }
   });
 
   it("profiles: only SUPER_SALES tiers + admins hold the team lens", () => {
     for (const key of ["SUPER_SALES", "ADMIN", "SUPER_ADMIN"]) {
-      expect(PROFILES[key]).toContain(TEAM);
+      expect(PROFILE_PERMISSION_DEFAULTS[key]).toContain(TEAM);
     }
     for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D", "ACCOUNTANT", "CONTACT_INITIATOR"]) {
-      expect(PROFILES[key]).not.toContain(TEAM);
+      expect(PROFILE_PERMISSION_DEFAULTS[key]).not.toContain(TEAM);
     }
   });
 
   it("accountant + contact-initiator hold the personal queue (2026-07-15 additive: collections + first-touch queues)", () => {
-    expect(PROFILES.ACCOUNTANT).toContain(VIEW);
-    expect(PROFILES.CONTACT_INITIATOR).toContain(VIEW);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.ACCOUNTANT]).toContain(VIEW);
+    expect(PROFILE_PERMISSION_DEFAULTS[PROFILES.CONTACT_INITIATOR]).toContain(VIEW);
     expect(permissionsForPersona(R.ACCOUNTANT)).toContain(VIEW);
     expect(permissionsForPersona(R.CONTACT_INITIATOR)).toContain(VIEW);
   });

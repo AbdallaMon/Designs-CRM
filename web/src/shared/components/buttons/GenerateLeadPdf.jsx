@@ -1,3 +1,4 @@
+import { LEAD_STATUSES, PROFILES } from "@dms/shared";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import dayjs from "dayjs";
@@ -89,7 +90,7 @@ export function generatePDF(clientLead, user) {
 
   addHeader();
 
-  if (clientLead.status !== "NEW") {
+  if (clientLead.status !== LEAD_STATUSES.NEW) {
     addSectionTitle("Client Information");
     addField("Name", clientLead.client?.name);
     addField("Phone", clientLead.client?.phone);
@@ -117,7 +118,7 @@ export function generatePDF(clientLead, user) {
 
   if (!checkIfADesigner(user)) {
     addSectionTitle("Price Information");
-    if (clientLead.status === "FINALIZED") {
+    if (clientLead.status === LEAD_STATUSES.FINALIZED) {
       addField("Final Price", formatCurrency(clientLead.averagePrice));
       addField("Price Note", clientLead.priceNote);
       addField("Discount", `${clientLead.discount || 0}%`);
@@ -131,7 +132,7 @@ export function generatePDF(clientLead, user) {
   }
 
   // Admin-specific
-  if (["ADMIN", "SUPER_ADMIN"].includes(user.profile)) {
+  if ([PROFILES.ADMIN, PROFILES.SUPER_ADMIN].includes(user.profile)) {
     addSectionTitle("Assigned Staff");
     addField("Lead staff", clientLead.assignedTo.name);
 

@@ -1,4 +1,5 @@
 "use client";
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS, PROFILES } from "@dms/shared";
 import React, { useState } from "react";
 import {
   Card,
@@ -32,7 +33,7 @@ const inputs = [
     pattern: {
       required: {
         value: true,
-        message: "Please enter a name",
+            message: FORM_ERRORS.ENTER_NAME,
       },
     },
   },
@@ -47,7 +48,7 @@ const inputs = [
     pattern: {
       required: {
         value: true,
-        message: "Please enter a description",
+            message: FORM_ERRORS.ENTER_DESCRIPTION,
       },
     },
   },
@@ -177,7 +178,7 @@ function FixedDataSlider({ data, loading, setData }) {
       }}
     >
       {loading && <LoadingOverlay />}
-      {user.profile === "ADMIN" && (
+      {user.profile === PROFILES.ADMIN && (
         <Box sx={{ width: "fit-content", ml: "auto" }}>
           <CreateModal
             label={"Create new data"}
@@ -241,7 +242,7 @@ function FixedDataSlider({ data, loading, setData }) {
         {data?.map((item, index) => (
           <SwiperSlide key={index} style={{ width: "auto" }}>
             <FixedCardData
-              admin={user.profile === "ADMIN"}
+              admin={user.profile === PROFILES.ADMIN}
               data={item}
               setData={setData}
             />

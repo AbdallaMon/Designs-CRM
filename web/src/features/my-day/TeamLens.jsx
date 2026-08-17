@@ -1,4 +1,5 @@
 "use client";
+import { MY_DAY_SIGNAL_TYPES } from "@dms/shared";
 // Supervisor rollup: exceptions first (only breached thresholds), person cards below.
 // Every exception and every person card is now ACTIONABLE — clicking drills down to the
 // exact leads/calls behind the count:
@@ -25,18 +26,18 @@ const DOMAIN_LABEL = { sales: "Sales team", designers: "Designers" };
 function exceptionAction(e) {
   const p = e.params ?? {};
   switch (e.type) {
-    case "CALL_OVERDUE_TEAM":
+    case MY_DAY_SIGNAL_TYPES.CALL_OVERDUE_TEAM:
       return p.userId != null ? { kind: "drawer", target: { userId: p.userId, name: p.userName, focus: "overdue" } } : null;
-    case "LEAD_STALE_TEAM":
+    case MY_DAY_SIGNAL_TYPES.LEAD_STALE_TEAM:
       return p.userId != null ? { kind: "drawer", target: { userId: p.userId, name: p.userName, focus: "stale" } } : null;
-    case "REP_OVER_CAPACITY":
+    case MY_DAY_SIGNAL_TYPES.REP_OVER_CAPACITY:
       return p.userId != null ? { kind: "drawer", target: { userId: p.userId, name: p.userName } } : null;
-    case "CONTRACT_SIGNING_STALLED":
+    case MY_DAY_SIGNAL_TYPES.CONTRACT_SIGNING_STALLED:
       return p.leadId != null ? { kind: "link", href: `/dashboard/deals/${p.leadId}` } : null;
-    case "DELIVERY_OVERDUE_TEAM":
-    case "DELIVERY_DUE_SOON_TEAM":
+    case MY_DAY_SIGNAL_TYPES.DELIVERY_OVERDUE_TEAM:
+    case MY_DAY_SIGNAL_TYPES.DELIVERY_DUE_SOON_TEAM:
       return p.leadId != null ? { kind: "link", href: `/dashboard/work-stages/${p.leadId}` } : null;
-    case "LEAD_UNCLAIMED_AGING":
+    case MY_DAY_SIGNAL_TYPES.LEAD_UNCLAIMED_AGING:
       return { kind: "unclaimed" };
     default:
       return null;

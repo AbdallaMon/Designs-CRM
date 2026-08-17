@@ -1,4 +1,5 @@
 "use client";
+import { PAYMENT_STATUSES } from "@dms/shared";
 import React from "react";
 import { Box, Button, Container } from "@mui/material";
 import AdminTable from "@/shared/components/AdminTable";
@@ -29,7 +30,7 @@ const OverduePayments = () => {
     `accounting/payments?type=OVERDUE&status=OVERDUE&`,
     false,
     {
-      status: "OVERDUE",
+      status: PAYMENT_STATUSES.OVERDUE,
     }
   );
   const { setLoading } = useToastContext();

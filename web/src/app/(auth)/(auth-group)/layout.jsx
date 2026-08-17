@@ -38,8 +38,9 @@ export default function HandleAuth({ children }) {
       <Image
         src="/admin-background.jpg"
         alt="Admin Dashboard Background"
-        layout="fill"
-        objectFit="cover"
+        fill
+        sizes="100vw"
+        style={{ objectFit: "cover" }}
         quality={100}
       />
       <Box

@@ -16,6 +16,7 @@ import {
 
 import { RelatedLinks } from "@/shared/components/common/RelatedLinks.jsx";
 import { getData } from "@/app/helpers/functions/getData";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import {
   MdAccessTime,
   MdCalendarToday,
@@ -52,9 +53,7 @@ export default function TaskDetails({ id, showBackButton = true }) {
     const watchdog = setTimeout(() => {
       if (cancelled) return;
       setLoading(false);
-      setError(
-        "The server didn't respond in time. Please retry — if this keeps happening the tasks service may be down."
-      );
+      setError(FEEDBACK.TASK_SERVER_TIMEOUT);
     }, 20000);
 
     async function fetchTaskData() {
@@ -68,10 +67,10 @@ export default function TaskDetails({ id, showBackButton = true }) {
         setTask(res.data);
       } else if (res) {
         // Settled but failed (403/404/500…): show the real reason, not a blank spinner.
-        setError(res.error?.reason || res.message || "Unable to load this task.");
+        setError(res.error?.reason || res.message || FEEDBACK.TASK_LOAD_FAILED);
       } else {
         // getData swallowed a network error and returned undefined.
-        setError("Couldn't reach the server. Check your connection and retry.");
+        setError(FEEDBACK.SERVER_UNREACHABLE);
       }
     }
 

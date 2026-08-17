@@ -3,13 +3,13 @@ import {
   Failed,
   Success,
 } from "@/shared/components/feedback/loaders/toast/ToastUpdate";
-import { apiRequest } from "./apiClient";
+import { apiRequest, normalizeMutationResult } from "./apiClient";
 import { resolveMessage } from "@/app/helpers/messages/resolveMessage";
 import { describeApiError } from "./richError";
 
 // Mutating request against the /v2 backend. The backend returns a language-neutral CODE in
 // `message` (e.g. LOGIN_SUCCESS / INVALID_CREDENTIALS), so the toast text is resolved to an
-// Arabic display string here. The full envelope (incl. `data`) is returned to the caller —
+// English display string here. The full envelope (incl. `data`) is returned to the caller —
 // callers read the payload under `response.data.*`.
 export async function handleRequestSubmit(
   data,
@@ -39,8 +39,8 @@ export async function handleRequestSubmit(
     } catch {
       response = { message: request.statusText };
     }
-    response.status = reqStatus;
-    const ok = request.ok || response?.success === true;
+    response = normalizeMutationResult(response, reqStatus);
+    const ok = response.success;
     if (ok) {
       await toast.update(
         id,

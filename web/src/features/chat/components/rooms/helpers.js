@@ -1,9 +1,10 @@
+import { CHAT_ROOM_TYPES } from "@dms/shared";
 import { CHAT_ROOM_TYPE_LABELS } from "@/features/chat/utils/chatConstants.js";
 
 export const getRoomAvatar = (room) => {
   if (!room) return null;
   if (room.avatarUrl) return room.avatarUrl;
-  if (room.type === "STAFF_TO_STAFF") {
+  if (room.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF) {
     const otherMember = room.otherMembers?.[0];
     return (
       otherMember?.user?.profilePicture || otherMember?.client?.profilePicture
@@ -14,14 +15,14 @@ export const getRoomAvatar = (room) => {
 
 export const getRoomLabel = (room) => {
   if (!room) return "Loading...";
-  if (room.type === "STAFF_TO_STAFF") {
+  if (room.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF) {
     const otherMember = room.otherMembers?.[0];
     if (otherMember?.user) {
       return otherMember?.user?.name;
     }
   }
   if (room.name) return room.name;
-  if (room.type === "CLIENT_TO_STAFF") {
+  if (room.type === CHAT_ROOM_TYPES.CLIENT_TO_STAFF) {
     const member = room.members?.find((m) => m.user);
     return member?.user?.name || "Client";
   }

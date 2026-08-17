@@ -1,3 +1,4 @@
+import { COURSE_PROGRESS_STATUSES } from "@dms/shared";
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -69,7 +70,7 @@ const LessonComponent = ({
   };
 
   function calculateProgress() {
-    return completed ? "COMPLETED" : "IN PROGRESS";
+    return completed ? COURSE_PROGRESS_STATUSES.COMPLETED : "IN PROGRESS";
   }
 
   const getSectionIcon = (section) => {
@@ -369,7 +370,7 @@ const LessonComponent = ({
             </Stack>
 
             {/* Completion Alert */}
-            {calculateProgress() === "COMPLETED" && (
+            {calculateProgress() === COURSE_PROGRESS_STATUSES.COMPLETED && (
               <Slide direction="up" in timeout={500}>
                 <Alert
                   severity="success"
@@ -385,7 +386,7 @@ const LessonComponent = ({
                   }}
                 >
                   <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                    🎉 Congratulations! You've completed this lesson.
+                    🎉 Congratulations! You have completed this lesson.
                   </Typography>
                   <Typography variant="body1">
                     You can now proceed to the next lesson or review the content

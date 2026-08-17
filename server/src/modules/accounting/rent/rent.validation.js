@@ -2,11 +2,12 @@
 // legacy createARent / renewRentAndMakeOutCome also require name + the date fields
 // (preserved as service-side checks); we assert the essentials at the edge too.
 import { z } from "zod";
+import { validationMessagesCodes as V } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
 const positiveAmount = z.coerce.number().refine((n) => Number.isFinite(n) && n > 0, {
-  message: "amount must be a positive number",
+  message: V.POSITIVE_NUMBER_REQUIRED,
 });
 
 export class RentValidation {

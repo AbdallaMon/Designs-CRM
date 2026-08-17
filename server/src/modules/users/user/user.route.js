@@ -10,6 +10,9 @@ import { UserValidation } from "./user.validation.js";
 
 const P = PERMISSIONS.USER;
 const router = Router();
+const requireManageUserScope = AuthMiddleware.requireSpecialChecker(
+  userController.checkIfUserCanManageUser,
+);
 
 router.use(AuthMiddleware.requireAuth);
 
@@ -60,6 +63,7 @@ router.put(
   "/max-leads/:userId",
   AuthMiddleware.requirePermissions([P.SET_MAX_LEADS]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.maxLeads),
   asyncHandler(userController.setMaxLeads),
 );
@@ -67,6 +71,7 @@ router.put(
   "/max-leads-per-day/:userId",
   AuthMiddleware.requirePermissions([P.SET_MAX_LEADS]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.maxLeadsPerDay),
   asyncHandler(userController.setMaxLeadsPerDay),
 );
@@ -93,24 +98,28 @@ router.get(
   "/:userId/last-seen",
   AuthMiddleware.requirePermissions([P.VIEW_LAST_SEEN]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   asyncHandler(userController.getLastSeen),
 );
 router.get(
   "/:userId/logs",
   AuthMiddleware.requirePermissions([P.VIEW_LOGS]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   asyncHandler(userController.getLogs),
 );
 router.get(
   "/:userId/restricted-countries",
   AuthMiddleware.requirePermissions([P.MANAGE_RESTRICTED_COUNTRIES]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   asyncHandler(userController.getRestrictedCountries),
 );
 router.post(
   "/:userId/restricted-countries",
   AuthMiddleware.requirePermissions([P.MANAGE_RESTRICTED_COUNTRIES]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.restrictedCountries),
   asyncHandler(userController.updateRestrictedCountries),
 );
@@ -119,6 +128,7 @@ router.put(
   "/:userId/profiles",
   AuthMiddleware.requirePermissions([P.MANAGE_PROFILES]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.updateUserProfiles),
   asyncHandler(userController.updateProfiles),
 );
@@ -126,12 +136,14 @@ router.get(
   "/:userId/auto-assignments",
   AuthMiddleware.requirePermissions([P.MANAGE_AUTO_ASSIGNMENTS]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   asyncHandler(userController.getAutoAssignments),
 );
 router.put(
   "/:userId/auto-assignments",
   AuthMiddleware.requirePermissions([P.MANAGE_AUTO_ASSIGNMENTS]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.manageAutoAssignments),
   asyncHandler(userController.updateAutoAssignments),
 );
@@ -140,6 +152,7 @@ router.post(
   "/:userId/actions/change-status",
   AuthMiddleware.requirePermissions([P.UPDATE]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.changeStatus),
   asyncHandler(userController.changeStatus),
 );
@@ -149,6 +162,7 @@ router.put(
   "/:userId",
   AuthMiddleware.requirePermissions([P.UPDATE]),
   validate(UserValidation.userIdParams, "params"),
+  requireManageUserScope,
   validate(UserValidation.updateUser),
   asyncHandler(userController.updateUser),
 );

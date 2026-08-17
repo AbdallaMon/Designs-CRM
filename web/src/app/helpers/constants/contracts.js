@@ -1,3 +1,4 @@
+import { CONTRACT_LEVELS as CONTRACT_LEVEL_CODES } from "@dms/shared";
 import { MdBlock } from "react-icons/md";
 import {
   FaBullhorn,
@@ -136,37 +137,37 @@ export const contractLevel = {
 
 export const CONTRACT_LEVELSENUM = [
   {
-    enum: "LEVEL_1",
+    enum: CONTRACT_LEVEL_CODES.LEVEL_1,
     label: "تحليل وتقييم",
     labelAr: "تحليل وتقييم",
     labelEn: "Analysis & Assessment",
   },
   {
-    enum: "LEVEL_2",
+    enum: CONTRACT_LEVEL_CODES.LEVEL_2,
     label: "تخطيط المساحات",
     labelAr: "تخطيط المساحات",
     labelEn: "Space Planning",
   },
   {
-    enum: "LEVEL_3",
+    enum: CONTRACT_LEVEL_CODES.LEVEL_3,
     label: "تصميم 3D",
     labelAr: "تصميم 3D",
     labelEn: "3D Design",
   },
   {
-    enum: "LEVEL_4",
+    enum: CONTRACT_LEVEL_CODES.LEVEL_4,
     label: "مخططات تنفيذية",
     labelAr: "مخططات تنفيذية",
     labelEn: "Working Drawings",
   },
   {
-    enum: "LEVEL_5",
+    enum: CONTRACT_LEVEL_CODES.LEVEL_5,
     label: "حساب كميات واسعار",
     labelAr: "حساب كميات واسعار",
     labelEn: "BOQ & Pricing",
   },
-  { enum: "LEVEL_6", label: "تنفيذ", labelAr: "تنفيذ", labelEn: "Execution" },
-  { enum: "LEVEL_7", label: "تسويق", labelAr: "تسويق", labelEn: "Marketing" },
+  { enum: CONTRACT_LEVEL_CODES.LEVEL_6, label: "تنفيذ", labelAr: "تنفيذ", labelEn: "Execution" },
+  { enum: CONTRACT_LEVEL_CODES.LEVEL_7, label: "تسويق", labelAr: "تسويق", labelEn: "Marketing" },
 ];
 
 export const contractLevelStatus = {

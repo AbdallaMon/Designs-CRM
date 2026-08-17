@@ -21,7 +21,7 @@
 // permission code is the gate and the service supplies the scope. We pass req.auth as the
 // `user` exactly as legacy passed getCurrentUser(req).
 import { AppError } from "../../../shared/errors/AppError.js";
-import { contractsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
+import { CONTRACT_PAYMENT_STATUSES, contractsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
 import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import { contractRepository } from "./contract.repo.js";
@@ -80,6 +80,13 @@ class ContractUsecase {
     return row;
   }
 
+  #assertChildContract({ row, contractId }) {
+    if (contractId != null && Number(row?.contractId) !== Number(contractId)) {
+      throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+    }
+    return row;
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
   //  CONTRACT-LEVEL
   // ════════════════════════════════════════════════════════════════════════════
@@ -93,6 +100,16 @@ class ContractUsecase {
   // POST / — create a contract for a lead (WRITE scope on the target lead, from the body).
   async createContract({ payload, authUser, auditCtx }) {
     await this.assertLeadMutate({ clientLeadId: payload.clientLeadId, authUser });
+    if (payload.oldContractId != null && payload.markOldAsCancelled) {
+      const oldContract = await this.#scopeByContract({
+        contractId: payload.oldContractId,
+        authUser,
+        mode: "mutate",
+      });
+      if (Number(oldContract.clientLeadId) !== Number(payload.clientLeadId)) {
+        throw new AppError({ code: contractsMessagesCodes.CONTRACT_NOT_FOUND, statusCode: 404 });
+      }
+    }
     const contract = await createContract({ payload });
     // Semantic audit: a contract was created for the lead.
     await recordAction(auditCtx, {
@@ -158,20 +175,22 @@ class ContractUsecase {
   async updateStage({ contractId, stageId, newStage, authUser }) {
     // Scope by the stage's parent contract → lead, AND verify the stage belongs to the
     // path contract (path ids authoritative). The stage resolver gives us contractId.
-    await this.#scopeByResolved({
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getStageClientLeadId({ stageId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return updateContractStage({ stageId, newStage });
   }
 
   async deleteStage({ contractId, stageId, authUser }) {
-    await this.#scopeByResolved({
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getStageClientLeadId({ stageId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return deleteContractStage({ stageId });
   }
 
@@ -183,34 +202,37 @@ class ContractUsecase {
     return createNewContractPayment({ contractId, payment });
   }
 
-  async updatePayment({ paymentId, newPayment, authUser }) {
-    await this.#scopeByResolved({
-      resolver: () => contractRepository.getPaymentClientLeadId({ paymentId }),
-      authUser,
-      mode: "mutate",
-    });
-    return updateContractPayment({ paymentId, newPayment });
-  }
-
-  async deletePayment({ paymentId, authUser }) {
-    await this.#scopeByResolved({
-      resolver: () => contractRepository.getPaymentClientLeadId({ paymentId }),
-      authUser,
-      mode: "mutate",
-    });
-    return deleteContractPayment({ paymentId });
-  }
-
-  async updatePaymentStatus({ paymentId, status, authUser, auditCtx }) {
+  async updatePayment({ contractId, paymentId, newPayment, authUser }) {
     const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getPaymentClientLeadId({ paymentId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
+    return updateContractPayment({ paymentId, newPayment });
+  }
+
+  async deletePayment({ contractId, paymentId, authUser }) {
+    const row = await this.#scopeByResolved({
+      resolver: () => contractRepository.getPaymentClientLeadId({ paymentId }),
+      authUser,
+      mode: "mutate",
+    });
+    this.#assertChildContract({ row, contractId });
+    return deleteContractPayment({ paymentId });
+  }
+
+  async updatePaymentStatus({ contractId, paymentId, status, authUser, auditCtx }) {
+    const row = await this.#scopeByResolved({
+      resolver: () => contractRepository.getPaymentClientLeadId({ paymentId }),
+      authUser,
+      mode: "mutate",
+    });
+    this.#assertChildContract({ row, contractId });
     const result = await updateContractPaymentStatus({ paymentId, status });
     // Semantic audit: only a transition to a PAID state (RECEIVED / TRANSFERRED — the two
     // "money collected" statuses the payment-status control allows) is a "payment paid".
-    if (status === "RECEIVED" || status === "TRANSFERRED") {
+    if (status === CONTRACT_PAYMENT_STATUSES.RECEIVED || status === CONTRACT_PAYMENT_STATUSES.TRANSFERRED) {
       await recordAction(auditCtx, {
         module: AUDIT_MODULES.CONTRACT,
         action: AUDIT_ACTIONS.CONTRACT_PAYMENT_PAID,
@@ -224,12 +246,13 @@ class ContractUsecase {
     return result;
   }
 
-  async updatePaymentAmounts({ paymentId, amountLost, amountReceived, status, authUser }) {
-    await this.#scopeByResolved({
+  async updatePaymentAmounts({ contractId, paymentId, amountLost, amountReceived, status, authUser }) {
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getPaymentClientLeadId({ paymentId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return updateContractPaymentAmounts({ paymentId, amountLost, amountReceived, status });
   }
 
@@ -241,21 +264,23 @@ class ContractUsecase {
     return createContractDrawing({ contractId, drawing });
   }
 
-  async updateDrawing({ drawId, newDrawing, authUser }) {
-    await this.#scopeByResolved({
+  async updateDrawing({ contractId, drawId, newDrawing, authUser }) {
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getDrawingClientLeadId({ drawId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return updateContractDrwaing({ drawId, newDrawing });
   }
 
-  async deleteDrawing({ drawId, authUser }) {
-    await this.#scopeByResolved({
+  async deleteDrawing({ contractId, drawId, authUser }) {
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getDrawingClientLeadId({ drawId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return deleteContractDrawing({ drawId });
   }
 
@@ -267,21 +292,23 @@ class ContractUsecase {
     return createContractSpecialItem({ contractId, item });
   }
 
-  async updateSpecialItem({ specialItemId, newSpecialItem, authUser }) {
-    await this.#scopeByResolved({
+  async updateSpecialItem({ contractId, specialItemId, newSpecialItem, authUser }) {
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getSpecialItemClientLeadId({ specialItemId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return updateContractSpecialItem({ specialItemId, newSpecialItem });
   }
 
-  async deleteSpecialItem({ specialItemId, authUser }) {
-    await this.#scopeByResolved({
+  async deleteSpecialItem({ contractId, specialItemId, authUser }) {
+    const row = await this.#scopeByResolved({
       resolver: () => contractRepository.getSpecialItemClientLeadId({ specialItemId }),
       authUser,
       mode: "mutate",
     });
+    this.#assertChildContract({ row, contractId });
     return deleteContractSpecialItem({ specialItemId });
   }
 }

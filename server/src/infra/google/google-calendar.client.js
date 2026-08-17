@@ -1,7 +1,5 @@
-// Google Calendar INFRA client — third-party OAuth/Calendar integration (moved verbatim from
-// modules/calendar/legacy/google-calendar.js). Owns the module-level `oauth2Client` singleton
-// and the Google env config. BEHAVIOR-FROZEN: logic is identical to the legacy service; only
-// the location + the prisma import path changed.
+// Google Calendar INFRA client — third-party OAuth/Calendar integration. OAuth2Client instances
+// are deliberately request/user scoped so credentials can never bleed across concurrent users.
 //
 // NOTE (future repo target): the DB writes inside handleOAuthCallback / disconnectGoogleCalendar
 // / createCalendarEvent / updateCalendarEvent (user.update, meetingReminder.update) remain inline
@@ -13,23 +11,70 @@
 // verbatim preserves the exact side-effect ordering the google usecase's `connect` relies on.
 import { google } from "googleapis";
 import prisma from "../prisma/prisma.js";
+import { integrationCredentialEncryption } from "../security/integration-credential-encryption.js";
+import { googleCalendarRepository } from "../../modules/calendar/google/google.repo.js";
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+function toGoogleCredentialView(stored) {
+  if (!stored) return null;
+  if (stored.googleEncryptedCredential) {
+    const credentials = integrationCredentialEncryption.decrypt({
+      ciphertext: stored.googleEncryptedCredential.ciphertext,
+      metadata: stored.googleEncryptedCredential,
+    });
+    return {
+      googleRefreshToken: credentials.refreshToken ?? null,
+      googleAccessToken: credentials.accessToken ?? null,
+      googleTokenExpiresAt: stored.googleTokenExpiresAt,
+      googleCalendarId: stored.googleCalendarId,
+    };
+  }
+  return stored;
+}
+
+async function readGoogleCredentials(userId) {
+  const stored = await googleCalendarRepository.findCredentialStorage({ userId });
+  return toGoogleCredentialView(stored);
+}
+
+async function writeGoogleCredentials({
+  userId,
+  refreshToken,
+  accessToken,
+  tokenExpiresAt,
+  calendarId,
+}) {
+  const encrypted = integrationCredentialEncryption.encrypt({
+    refreshToken: refreshToken ?? null,
+    accessToken: accessToken ?? null,
+  });
+  return googleCalendarRepository.replaceEncryptedCredentials({
+    userId,
+    ciphertext: encrypted.ciphertext,
+    metadata: encrypted.metadata,
+    tokenExpiresAt,
+    calendarId,
+  });
+}
+
+export function createGoogleOAuthClient() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI,
+  );
+}
 
 /**
  * Generate OAuth2 URL for user to authorize
  */
-export function getAuthUrl(userId) {
+export function getAuthUrl(state) {
   const scopes = ["https://www.googleapis.com/auth/calendar"];
+  const oauth2Client = createGoogleOAuthClient();
 
   return oauth2Client.generateAuthUrl({
     access_type: "offline", // Required for refresh token
     scope: scopes,
-    state: userId.toString(), // Pass userId to retrieve after callback
+    state,
     prompt: "consent", // Force consent screen to get refresh token
   });
 }
@@ -38,17 +83,15 @@ export function getAuthUrl(userId) {
  * Exchange authorization code for tokens and save to DB
  */
 export async function handleOAuthCallback(code, userId) {
+  const oauth2Client = createGoogleOAuthClient();
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    // Save tokens to database
-    await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: {
-        googleRefreshToken: tokens.refresh_token,
-        googleAccessToken: tokens.access_token,
-        googleTokenExpiresAt: new Date(tokens.expiry_date),
-        googleCalendarId: null, // Will fetch from calendar API
-      },
+    await writeGoogleCredentials({
+      userId,
+      refreshToken: tokens.refresh_token,
+      accessToken: tokens.access_token,
+      tokenExpiresAt: new Date(tokens.expiry_date),
+      calendarId: null,
     });
 
     // Fetch primary calendar ID
@@ -58,19 +101,16 @@ export async function handleOAuthCallback(code, userId) {
     const primaryCalendar = calendarList.data.items.find((cal) => cal.primary);
 
     if (primaryCalendar) {
-      await prisma.user.update({
-        where: { id: parseInt(userId) },
-        data: {
-          googleCalendarId: primaryCalendar.id,
-          googleEmail: primaryCalendar.summary,
-        },
+      await googleCalendarRepository.updateCalendarIdentity({
+        userId,
+        calendarId: primaryCalendar.id,
+        googleEmail: primaryCalendar.summary,
       });
     }
 
     return { success: true };
-  } catch (error) {
-    console.error("OAuth callback error:", error);
-    throw new Error("Failed to connect Google Calendar");
+  } catch {
+    throw new Error("GOOGLE_OAUTH_EXCHANGE_FAILED");
   }
 }
 
@@ -78,18 +118,13 @@ export async function handleOAuthCallback(code, userId) {
  * Get authenticated calendar client for user
  */
 export async function getCalendarClient(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(userId) },
-    select: {
-      googleRefreshToken: true,
-      googleAccessToken: true,
-      googleTokenExpiresAt: true,
-    },
-  });
+  const user = await readGoogleCredentials(userId);
 
   if (!user.googleRefreshToken) {
     throw new Error("Google Calendar not connected");
   }
+
+  const oauth2Client = createGoogleOAuthClient();
 
   // Check if token is expired
   const now = new Date();
@@ -103,13 +138,12 @@ export async function getCalendarClient(userId) {
 
     const { credentials } = await oauth2Client.refreshAccessToken();
 
-    // Update in DB
-    await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: {
-        googleAccessToken: credentials.access_token,
-        googleTokenExpiresAt: new Date(credentials.expiry_date),
-      },
+    await writeGoogleCredentials({
+      userId,
+      refreshToken: user.googleRefreshToken,
+      accessToken: credentials.access_token,
+      tokenExpiresAt: new Date(credentials.expiry_date),
+      calendarId: user.googleCalendarId,
     });
 
     oauth2Client.setCredentials(credentials);
@@ -136,10 +170,7 @@ export async function createCalendarEvent(meetingReminder) {
 
   try {
     const calendar = await getCalendarClient(userId);
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { googleCalendarId: true },
-    });
+    const user = await googleCalendarRepository.findCalendarIdentity({ userId });
     const clientLead = await prisma.clientLead.findUnique({
       where: { id: meetingReminder.clientLeadId },
       select: {
@@ -189,8 +220,8 @@ export async function createCalendarEvent(meetingReminder) {
     });
 
     return response.data;
-  } catch (error) {
-    console.error("Create calendar event error:", error);
+  } catch {
+    console.error("GOOGLE_CALENDAR_EVENT_CREATE_FAILED");
     return;
   }
 }
@@ -207,10 +238,7 @@ export async function updateCalendarEvent(meetingReminder) {
 
   try {
     const calendar = await getCalendarClient(userId);
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { googleCalendarId: true },
-    });
+    const user = await googleCalendarRepository.findCalendarIdentity({ userId });
 
     const event = {
       summary: `Meeting with Client Lead #${meetingReminder.clientLeadId}`,
@@ -232,8 +260,8 @@ export async function updateCalendarEvent(meetingReminder) {
       eventId: meetingReminder.googleEventId,
       resource: event,
     });
-  } catch (error) {
-    console.error("Update calendar event error:", error);
+  } catch {
+    console.error("GOOGLE_CALENDAR_EVENT_UPDATE_FAILED");
   }
 }
 
@@ -249,17 +277,14 @@ export async function deleteCalendarEvent(meetingReminder) {
 
   try {
     const calendar = await getCalendarClient(userId);
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { googleCalendarId: true },
-    });
+    const user = await googleCalendarRepository.findCalendarIdentity({ userId });
 
     await calendar.events.delete({
       calendarId: user.googleCalendarId || "primary",
       eventId: meetingReminder.googleEventId,
     });
-  } catch (error) {
-    console.error("Delete calendar event error:", error);
+  } catch {
+    console.error("GOOGLE_CALENDAR_EVENT_DELETE_FAILED");
   }
 }
 
@@ -267,41 +292,24 @@ export async function deleteCalendarEvent(meetingReminder) {
  * Disconnect Google Calendar
  */
 export async function disconnectGoogleCalendar(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(userId) },
-    select: {
-      googleRefreshToken: true,
-      googleAccessToken: true,
-      googleCalendarId: true,
-      googleTokenExpiresAt: true,
-    },
-  });
+  const user = await readGoogleCredentials(userId);
 
   // Revoke token with Google
   if (user.googleRefreshToken || user.googleAccessToken) {
     try {
+      const oauth2Client = createGoogleOAuthClient();
       oauth2Client.setCredentials({
         access_token: user.googleAccessToken,
         refresh_token: user.googleRefreshToken,
       });
       await oauth2Client.revokeCredentials();
-    } catch (error) {
-      console.error("Error revoking Google credentials:", error);
+    } catch {
+      console.error("GOOGLE_CREDENTIAL_REVOKE_FAILED");
       // Continue with local cleanup even if revoke fails
     }
   }
 
-  // Clear from database
-  await prisma.user.update({
-    where: { id: parseInt(userId) },
-    data: {
-      googleRefreshToken: null,
-      googleAccessToken: null,
-      googleTokenExpiresAt: null,
-      googleCalendarId: null,
-      googleEmail: null,
-    },
-  });
+  await googleCalendarRepository.clearCredentials({ userId });
 }
 
 export async function isGoogleCalendarConnected(userId) {
@@ -311,8 +319,8 @@ export async function isGoogleCalendarConnected(userId) {
       return await resyncMeetingRemindersWithGoogleCalendar(Number(userId));
     }
     return false;
-  } catch (error) {
-    console.error("Error checking Google Calendar connection:", error);
+  } catch {
+    console.error("GOOGLE_CALENDAR_CONNECTION_CHECK_FAILED");
     return false;
   }
 }
@@ -331,12 +339,11 @@ export async function resyncMeetingRemindersWithGoogleCalendar(userId) {
       googleEventId: null,
     },
   });
-  console.log(meetingReminders, "meetingReminders");
   for (const meeting of meetingReminders) {
     try {
       await createCalendarEvent(meeting);
-    } catch (e) {
-      console.error("Resync meeting reminder error:", e);
+    } catch {
+      console.error("GOOGLE_CALENDAR_RESYNC_FAILED");
     }
   }
   return true;

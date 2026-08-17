@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES, USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -124,7 +125,7 @@ export const ProjectDetails = ({
   const [deleteDesigner, setDeleteDesigner] = useState(false);
   const { setLoading } = useToastContext();
   const { user } = useAuth();
-  const cantDoActions = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile);
+  const cantDoActions = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile);
   const { setAlertError } = useAlertContext();
   const isAdmin = checkIfAdmin(user);
   const isDesigner = checkIfADesigner(user);
@@ -165,7 +166,7 @@ export const ProjectDetails = ({
 
   const handleMenuClose = async (value) => {
     if (!canChangeStatus) {
-      setAlertError("You do not have permission to perform this action.");
+      setAlertError(FEEDBACK.PERMISSION_DENIED);
       return;
     }
     const request = await handleRequestSubmit(
@@ -204,7 +205,7 @@ export const ProjectDetails = ({
 
   const handleSubmit = async (e) => {
     if (!canEditFields) {
-      setAlertError("You do not have permission to perform this action.");
+      setAlertError(FEEDBACK.PERMISSION_DENIED);
       return;
     }
     e.preventDefault();

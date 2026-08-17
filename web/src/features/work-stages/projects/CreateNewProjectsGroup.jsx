@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { FaFolderPlus, FaTimes } from "react-icons/fa";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 const CreateProjectsGroup = ({ clientLeadId, onGroupCreated }) => {
   const [open, setOpen] = useState(false);
@@ -39,7 +40,7 @@ const CreateProjectsGroup = ({ clientLeadId, onGroupCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !title.trim()) {
-      setAlertError("Group title is required");
+      setAlertError(FEEDBACK.GROUP_TITLE_REQUIRED);
       return;
     }
 

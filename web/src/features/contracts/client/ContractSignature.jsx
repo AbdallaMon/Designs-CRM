@@ -22,6 +22,11 @@ import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProv
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { FloatingActionButton } from "@/features/image-session/client-session/Utility.jsx";
+import {
+  CLIENT_CONTRACT_FEEDBACK_MESSAGES as CONTRACT_FEEDBACK,
+  PUBLIC_UPLOAD_PURPOSES,
+  localizedClientContractFeedback,
+} from "@dms/shared";
 
 // ===== Signature image processing constants
 const TARGET_RATIO_W = 5;
@@ -145,11 +150,13 @@ const OnlineSignPanel = ({
       />
 
       <Stack direction="row" spacing={1} sx={{ mt: 2, width: "100%" }}>
-        <FloatingActionButton
-          disabled={disabled}
-          handleClick={handleBack}
-          type="BACK"
-        />
+        {handleBack && (
+          <FloatingActionButton
+            disabled={disabled}
+            handleClick={handleBack}
+            type="BACK"
+          />
+        )}
         <Box sx={{ flexGrow: 1 }} />
         <Button variant="outlined" onClick={onClear}>
           {lng === "ar" ? "مسح" : "Clear"}
@@ -279,6 +286,7 @@ const ContractSignature = ({
   const { setProgress, setOverlay } = useUploadContext();
   const { setLoading: setToastLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
+  const feedback = (message) => localizedClientContractFeedback(message, lng);
 
   // method: online | image | hand
   const [method, setMethod] = useState("online");
@@ -301,26 +309,20 @@ const ContractSignature = ({
 
   const handleExternalUploadOnline = async () => {
     if (sigCanvas.current && sigCanvas.current.isEmpty()) {
-      setAlertError(
-        lng === "ar" ? "يرجى التوقيع قبل الحفظ." : "Please sign before saving."
-      );
+      setAlertError(feedback(CONTRACT_FEEDBACK.SIGN_BEFORE_SAVING));
       return;
     }
     const file = await getSignatureAsFile();
     if (!file) {
-      setAlertError(
-        lng === "ar" ? "تعذر قراءة التوقيع." : "Could not read the signature."
-      );
+      setAlertError(feedback(CONTRACT_FEEDBACK.SIGNATURE_READ_FAILED));
       return;
     }
     const uploadResponse = await uploadInChunks(file, setProgress, setOverlay, {
-      publicAccess: { purpose: "CONTRACT", token },
+      publicAccess: { purpose: PUBLIC_UPLOAD_PURPOSES.CONTRACT, token },
     });
     const url = uploadResponse?.url;
     if (!url) {
-      setAlertError(
-        lng === "ar" ? "فشل رفع التوقيع." : "Failed to upload signature."
-      );
+      setAlertError(feedback(CONTRACT_FEEDBACK.SIGNATURE_UPLOAD_FAILED));
       return;
     }
     const request = await handleRequestSubmit(
@@ -356,9 +358,7 @@ const ContractSignature = ({
 
     const chosen = fileArg || sigImageFile;
     if (!chosen) {
-      setAlertError(
-        lng === "ar" ? "اختر صورة للتوقيع." : "Please choose a signature image."
-      );
+      setAlertError(feedback(CONTRACT_FEEDBACK.SIGNATURE_IMAGE_REQUIRED));
       return;
     }
     try {
@@ -373,19 +373,13 @@ const ContractSignature = ({
       setProcessedBlob(blob);
       setProcessedPreview(previewUrl);
     } catch (e) {
-      setImgErr(
-        lng === "ar"
-          ? "خطأ أثناء معالجة الصورة. جرّب صورة أخرى أو قصّها بشكل أوضح."
-          : "Error processing the image. Try another image or crop more tightly."
-      );
+      setImgErr(feedback(CONTRACT_FEEDBACK.SIGNATURE_IMAGE_PROCESSING_FAILED));
     }
   };
 
   const handleImageConfirmUpload = async () => {
     if (!processedBlob) {
-      setAlertError(
-        lng === "ar" ? "لا توجد معاينة جاهزة." : "No preview generated yet."
-      );
+      setAlertError(feedback(CONTRACT_FEEDBACK.SIGNATURE_PREVIEW_REQUIRED));
       return;
     }
     const file = new File(
@@ -394,13 +388,11 @@ const ContractSignature = ({
       { type: "image/png" }
     );
     const uploadResponse = await uploadInChunks(file, setProgress, setOverlay, {
-      publicAccess: { purpose: "CONTRACT", token },
+      publicAccess: { purpose: PUBLIC_UPLOAD_PURPOSES.CONTRACT, token },
     });
     const url = uploadResponse?.url;
     if (!url) {
-      setAlertError(
-        lng === "ar" ? "فشل رفع التوقيع." : "Failed to upload signature."
-      );
+      setAlertError(feedback(CONTRACT_FEEDBACK.SIGNATURE_UPLOAD_FAILED));
       return;
     }
     const request = await handleRequestSubmit(

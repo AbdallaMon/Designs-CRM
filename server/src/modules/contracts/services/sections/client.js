@@ -1,3 +1,4 @@
+import { EMIRATES } from "@dms/shared";
 import { pickFontsForText, ASCII_RE } from "../contract-pdf-context.js";
 import { getRTLTextX, reText, splitTextIntoLines, reverseString } from "../../../../infra/pdf/pdf-helpers.js";
 import { FIXED_TEXT, COUNTRY_LABEL, EMIRATE_LABEL, UAE_LABEL } from "../witten-blocks-data.js";
@@ -21,7 +22,7 @@ export async function renderClientSection(ctx, { lng, contract, fonts, colors })
     lng === "ar" ? contract.title : contract.enTitle || contract.title;
 
   const address = (() => {
-    if (!emirate || emirate === "OUTSIDE") {
+    if (!emirate || emirate === EMIRATES.OUTSIDE) {
       if (country && COUNTRY_LABEL[country]) return COUNTRY_LABEL[country][lng];
       return country || (lng === "ar" ? "—" : "-");
     }

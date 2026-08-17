@@ -1,3 +1,9 @@
+import {
+  CALL_REMINDER_STATUSES,
+  LEAD_STATUSES,
+  PROFILES,
+  REMINDER_TYPES,
+} from "@dms/shared";
 import React from "react";
 import { Button, Stack, useTheme } from "@mui/material";
 import { NewClientMeetingDialog } from "@/features/leads/dialogs/MeetingsDialog";
@@ -89,10 +95,10 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
 
   const visibleMeetings = meetingReminders?.filter((call) => {
     if (
-      user.profile !== "ADMIN" &&
-      user.profile !== "SUPER_ADMIN" &&
-      !["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile) &&
-      user.profile !== "SUPER_SALES" &&
+      user.profile !== PROFILES.ADMIN &&
+      user.profile !== PROFILES.SUPER_ADMIN &&
+      ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
+      user.profile !== PROFILES.SUPER_SALES &&
       call.userId !== user.id
     ) {
       return false;
@@ -156,7 +162,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                 accent={accent}
                 title={dayjs(call.time).format("MM/DD/YYYY, h:mm A")}
                 subtitle={
-                  call.status !== "IN_PROGRESS"
+                  call.status !== LEAD_STATUSES.IN_PROGRESS
                     ? `Done at ${dayjs(call.updatedAt).format("DD/MM/YYYY")}`
                     : `#${call.id}`
                 }
@@ -165,7 +171,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                     label={call.status.replace(/_/g, " ")}
                     color={c}
                     icon={
-                      call.status === "DONE" ? (
+                      call.status === CALL_REMINDER_STATUSES.DONE ? (
                         <RiCheckboxCircleLine size={15} />
                       ) : (
                         <RiAlarmLine size={15} />
@@ -190,14 +196,14 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                 }
                 actions={
                   <>
-                    {user.profile !== "ACCOUNTANT" &&
-                      call.status === "IN_PROGRESS" && (
+                    {user.profile !== PROFILES.ACCOUNTANT &&
+                      call.status === LEAD_STATUSES.IN_PROGRESS && (
                         <CallResultDialog
                           lead={lead}
                           setCallReminders={setMeetingReminders}
                           call={call}
                           setleads={setleads}
-                          reminderType="MEETING"
+                          reminderType={REMINDER_TYPES.MEETING}
                           text="Update result"
                         />
                       )}
@@ -236,8 +242,8 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                     )}
                   </Stack>
 
-                  {call.status === "IN_PROGRESS" && (
-                    <InProgressCall call={call} type="MEETING" />
+                  {call.status === LEAD_STATUSES.IN_PROGRESS && (
+                    <InProgressCall call={call} type={REMINDER_TYPES.MEETING} />
                   )}
 
                   <CardBlock label="Reason">{call.reminderReason}</CardBlock>

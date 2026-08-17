@@ -12,7 +12,7 @@ function AttemptsLimit({ attempts, setAttempts, testId, userId }) {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `courses/tests/${testId}/attempts/increase?userId=${userId}&`,
+      `courses/tests/${testId}/attempts/increase?userId=${userId}`,
       false,
       "Updating",
       false
@@ -32,7 +32,7 @@ function AttemptsLimit({ attempts, setAttempts, testId, userId }) {
     const req = await handleRequestSubmit(
       {},
       setToastLoading,
-      `courses/tests/${testId}/attempts/decrease?userId=${userId}&`,
+      `courses/tests/${testId}/attempts/decrease?userId=${userId}`,
       false,
       "Updating",
       false

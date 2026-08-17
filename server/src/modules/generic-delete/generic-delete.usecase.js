@@ -1,11 +1,11 @@
 // Allow-listed model deletion. Prisma I/O is delegated to genericDeleteRepository;
-// scope, time windows, and MeetingReminder cleanup remain in this usecase.
+// scope, time windows, and post-commit side effects remain in this usecase.
 import dayjs from "dayjs";
 import { AppError } from "../../shared/errors/AppError.js";
 import {
-  authMessagesCodes,
+  PROFILES, authMessagesCodes,
+  generalMessagesCodes,
   hasPermission,
-  PERMISSIONS,
   projectsMessagesCodes,
 } from "@dms/shared";
 import { deleteCalendarEvent } from "../../infra/google/google-calendar.client.js";
@@ -13,12 +13,36 @@ import { genericDeleteRepository } from "./generic-delete.repo.js";
 import { leadRepository } from "../leads/lead/lead.repo.js";
 import { projectRepository } from "../projects/project/project.repo.js";
 import { checkNoteDeletionAccess } from "../notes/note.usecase.js";
+import { getGenericDeleteDefinition } from "./generic-delete.config.js";
+
+function notFound() {
+  return new AppError({
+    code: generalMessagesCodes.NOT_FOUND,
+    statusCode: 404,
+  });
+}
+
+function assertActionPermission({ authUser, permission }) {
+  if (!hasPermission(authUser?.permissions, permission)) {
+    throw new AppError({
+      code: authMessagesCodes.PERMISSION_DENIED,
+      statusCode: 403,
+    });
+  }
+}
 
 export async function deleteAllowedModel({ id, isAdmin, data, hasSuperSalesScope }) {
   const model = data.model;
+  const definition = getGenericDeleteDefinition(model);
+  if (!definition) {
+    throw new AppError({
+      code: generalMessagesCodes.VALIDATION_ERROR,
+      statusCode: 422,
+    });
+  }
   const item = await genericDeleteRepository.findModelCreatedAt({ model, id });
   if (!item) {
-    throw new AppError({ code: projectsMessagesCodes.NOTE_TARGET_NOT_FOUND, statusCode: 404 });
+    throw notFound();
   }
 
   if (!isAdmin) {
@@ -35,22 +59,17 @@ export async function deleteAllowedModel({ id, isAdmin, data, hasSuperSalesScope
       throw new AppError({ code: projectsMessagesCodes.DELETE_NOT_ALLOWED, statusCode: 409 });
     }
   }
-  if (model === "MeetingReminder") {
-    const meeting = await genericDeleteRepository.findMeetingReminder({ id });
-    if (meeting && meeting.googleEventId) {
-      await deleteCalendarEvent(meeting);
-    }
-    if (meeting && meeting.availableSlotId) {
-      await genericDeleteRepository.freeAvailableSlot({
-        availableSlotId: meeting.availableSlotId,
-      });
-    }
+  if (definition.action === "delete-meeting") {
+    const meeting = await genericDeleteRepository.deleteMeetingReminderWithCleanup({ id });
+    if (!meeting) throw notFound();
+    if (meeting.googleEventId) await deleteCalendarEvent(meeting);
+    return { data: item };
   }
 
   // Contract has RESTRICT foreign keys (projects, notes, delivery-schedule stage links)
   // that make a plain delete fail (P2003). Tear it down in FK-safe order, keeping projects
   // (contractId nulled) and delivery schedules (stage link nulled). See the repo method.
-  if (model === "contract" || model === "Contract") {
+  if (definition.action === "delete-contract") {
     await genericDeleteRepository.deleteContractWithDependents({ id });
     return { data: item };
   }
@@ -58,7 +77,7 @@ export async function deleteAllowedModel({ id, isAdmin, data, hasSuperSalesScope
   // ClientLeadUpdate has RESTRICT foreign keys (its SharedUpdates + Notes) that make a plain
   // delete fail (P2003). Tear down the update's own scoped children first, server-side, so we
   // never rely on a client-supplied cascade. See the repo method.
-  if (model === "ClientLeadUpdate") {
+  if (definition.action === "delete-client-lead-update") {
     await genericDeleteRepository.deleteClientLeadUpdateWithDependents({ id });
     return { data: item };
   }
@@ -73,26 +92,28 @@ class GenericDeleteUsecase {
   }
 
   async checkIfUserCanDeleteModel({ id, body, authUser }) {
-    if (body.model === "Note") {
+    const definition = getGenericDeleteDefinition(body.model);
+    if (!definition) {
+      throw new AppError({
+        code: generalMessagesCodes.VALIDATION_ERROR,
+        statusCode: 422,
+      });
+    }
+    assertActionPermission({
+      authUser,
+      permission: definition.permission,
+    });
+
+    if (definition.scope === "note") {
       return checkNoteDeletionAccess({ id, authUser });
     }
     const target = await genericDeleteRepository.resolveTarget({
       model: body.model,
       id,
     });
-    if (!target) throw new AppError({ code: projectsMessagesCodes.NOTE_TARGET_NOT_FOUND, statusCode: 404 });
+    if (!target) throw notFound();
 
-    if (target.kind === "site-utility") {
-      if (
-        !hasPermission(
-          authUser?.permissions,
-          PERMISSIONS.SITE_UTILITY.PAYMENT_CONDITION_DELETE,
-        )
-      ) {
-        throw new AppError({ code: authMessagesCodes.PERMISSION_DENIED, statusCode: 403 });
-      }
-      return target;
-    }
+    if (target.kind === "site-utility") return target;
     if (target.kind === "project") {
       const where = projectRepository.buildAuthUserProjectWhere({
         authUser,
@@ -120,10 +141,16 @@ class GenericDeleteUsecase {
         statusCode: 400,
       });
     }
+    if (!getGenericDeleteDefinition(body.model)) {
+      throw new AppError({
+        code: generalMessagesCodes.VALIDATION_ERROR,
+        statusCode: 422,
+      });
+    }
     return deleteAllowedModel({
       id: Number(id),
       isAdmin: this.isAdminUser(authUser),
-      hasSuperSalesScope: authUser?.currentProfileKey === "SUPER_SALES",
+      hasSuperSalesScope: authUser?.currentProfileKey === PROFILES.SUPER_SALES,
       data: { model: body.model },
     });
   }

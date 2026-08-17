@@ -3,6 +3,13 @@ import { allowedOrigins } from "../../config/env.js";
 import { normalizeOrigin } from "./socket.helpers.js";
 import { registerChatSocketHandlers } from "../../modules/chat/chat.socket.js";
 import { setIo, getIo } from "./io-registry.js";
+import { generalMessagesCodes } from "@dms/shared";
+import {
+  authenticateSocket,
+  isAllowedSocketRequest,
+  joinSocketIdentityRoom,
+  toSocketConnectError,
+} from "./socket.auth.js";
 
 /**
  * Initialises Socket.IO on the given HTTP server.
@@ -16,8 +23,8 @@ export function initSocket(httpServer) {
     allowRequest: (req, callback) => {
       const origin = normalizeOrigin(req.headers.origin);
       req.headers.origin = origin; // normalise for downstream middleware
-      const allowed = !origin || allowedOrigins.includes(origin);
-      callback(allowed ? null : "Not allowed by CORS", allowed);
+      const allowed = isAllowedSocketRequest(req, allowedOrigins);
+      callback(allowed ? null : generalMessagesCodes.UNAUTHORIZED, allowed);
     },
     cors: {
       origin: true, // fine-grained control is handled by allowRequest above
@@ -27,6 +34,17 @@ export function initSocket(httpServer) {
 
   // Publish the instance to the leaf registry so usecases resolve it without a cycle.
   setIo(io);
+
+  io.use(async (socket, next) => {
+    try {
+      const ctx = await authenticateSocket(socket);
+      socket.data.chat = ctx;
+      joinSocketIdentityRoom(socket, ctx);
+      return next();
+    } catch (error) {
+      return next(toSocketConnectError(error));
+    }
+  });
 
   // Override Access-Control-Allow-Origin with the normalised origin on every response
   io.engine.on("headers", (headers, req) => {
@@ -39,19 +57,7 @@ export function initSocket(httpServer) {
   });
 
   io.on("connection", (socket) => {
-    // Build a mutable context object shared by all handlers for this socket session.
-    // Presence handler may override userId/clientId when "online" fires.
-    const ctx = {
-      userId: Number(socket.handshake.query.userId) || null,
-      clientId: socket.handshake.query.clientId || null,
-    };
-
-    // Join initial rooms from handshake query
-    if (ctx.userId) {
-      socket.join(`user:${ctx.userId}`);
-    } else if (ctx.clientId) {
-      socket.join(`client:${ctx.clientId}`);
-    }
+    const ctx = socket.data.chat;
 
     // Delegate all chat-related events to the chat module
     registerChatSocketHandlers(socket, { io, ctx });

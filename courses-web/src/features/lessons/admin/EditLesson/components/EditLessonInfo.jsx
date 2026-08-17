@@ -21,6 +21,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
+import { lessonPayload } from "@/app/helpers/contracts/coursePayloads";
 
 // Enhanced Edit Lesson Info Component
 const EditLessonInfo = ({ courseId, lessonId }) => {
@@ -65,8 +66,9 @@ const EditLessonInfo = ({ courseId, lessonId }) => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.title.trim() || !formData.duration) return;
     const req = await handleRequestSubmit(
-      formData,
+      lessonPayload(formData),
       setToastLoading,
       `courses/${courseId}/lessons/${lessonId}`,
       false,

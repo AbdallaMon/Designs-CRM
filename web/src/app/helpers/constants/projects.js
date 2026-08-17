@@ -1,4 +1,6 @@
 // Work Stages for 3D Designer
+import { TASK_STATUSES, WORK_DEPARTMENTS } from "@dms/shared";
+
 export const ThreeDWorkStages = {
   CLIENT_COMMUNICATION: "Client Communication",
   DESIGN_STAGE: "Design Stage",
@@ -74,12 +76,12 @@ export const DEPARTMENTS = [
     label: "2D Quantity Calculation",
     color: "#118AB2",
   },
-  { value: "STAFF", label: "Staff", color: "#6C5CE7" },
-  { value: "ADMIN", label: "Admin only", color: "#E74C3C" },
+  { value: WORK_DEPARTMENTS.STAFF, label: "Staff", color: "#6C5CE7" },
+  { value: WORK_DEPARTMENTS.ADMIN, label: "Admin only", color: "#E74C3C" },
 ];
 
 export const PRIORITY = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
-export const TASKSTATUS = ["TODO", "IN_PROGRESS", "DONE"];
+export const TASKSTATUS = [TASK_STATUSES.TODO, TASK_STATUSES.IN_PROGRESS, TASK_STATUSES.DONE];
 
 export function getPriorityOrder(priority) {
   const priorityMap = {

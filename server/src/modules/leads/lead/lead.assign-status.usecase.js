@@ -17,7 +17,13 @@ import {
 import { ClientLeadStatus } from "../../../infra/config/enums.js";
 import { telegramChannelQueue } from "../../../infra/queues/telegram-channel.queue.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes } from "@dms/shared";
+import {
+  LEAD_STATUSES, KANBAN_VIEW_TYPES,
+  leadsMessagesCodes,
+  NOTIFICATION_TYPES,
+  PROFILES,
+  WORK_DEPARTMENTS,
+} from "@dms/shared";
 
 // ════════════════════════════════════════════════════════════════════════════════
 //  REPO-BACKED module functions (ported 1:1 from the legacy shared/legacy/lead-services.js
@@ -31,7 +37,22 @@ import { leadsMessagesCodes } from "@dms/shared";
 // on assignment; any other status is preserved. Extracted verbatim from the previous
 // inline ternary so behavior is identical — exported for direct testing (#5).
 export function claimStatus(lead) {
-  return !lead || lead.status === "ON_HOLD" || lead.status === "NEW" ? "IN_PROGRESS" : lead.status;
+  return !lead || lead.status === LEAD_STATUSES.ON_HOLD || lead.status === LEAD_STATUSES.NEW ? LEAD_STATUSES.IN_PROGRESS : lead.status;
+}
+
+// Admin assignment is also the consultation handoff for leads that still belong to
+// either intake pool: consulted NEW or non-consulted. Advance both lifecycle fields in
+// the same Prisma update. Reassigning a later consulted deal preserves its workflow state.
+export function assignmentLifecycleFields(lead, isAdmin) {
+  const shouldStartConsultedDeal =
+    Boolean(isAdmin) &&
+    Boolean(lead) &&
+    (lead.status === LEAD_STATUSES.NEW || lead.initialConsult === false);
+
+  return {
+    status: shouldStartConsultedDeal ? LEAD_STATUSES.IN_PROGRESS : claimStatus(lead),
+    ...(shouldStartConsultedDeal ? { initialConsult: true } : {}),
+  };
 }
 
 export async function checkIfUserAllowedToTakeALead(userId, country) {
@@ -45,8 +66,8 @@ export async function checkIfUserAllowedToTakeALead(userId, country) {
 export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   const clientLead = await leadRepository.findFullLead({ id: clientLeadId });
   if (
-    clientLead.status !== "NEW" &&
-    clientLead.status !== "ON_HOLD" &&
+    clientLead.status !== LEAD_STATUSES.NEW &&
+    clientLead.status !== LEAD_STATUSES.ON_HOLD &&
     !isAdmin
   ) {
     throw new AppError({ code: leadsMessagesCodes.LEAD_ALREADY_ASSIGNED, statusCode: 400 });
@@ -62,7 +83,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     where: {
       userId: userId,
       status: {
-        notIn: ["FINALIZED", "REJECTED", "ON_HOLD", "CONVERTED"],
+        notIn: [LEAD_STATUSES.FINALIZED, LEAD_STATUSES.REJECTED, LEAD_STATUSES.ON_HOLD, LEAD_STATUSES.CONVERTED],
       },
     },
   });
@@ -87,7 +108,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   ) {
     throw new AppError({ code: leadsMessagesCodes.LEAD_MAX_PER_DAY_REACHED, statusCode: 400 });
   }
-  if (clientLead.status === "ON_HOLD" || isAdmin) {
+  if (clientLead.status === LEAD_STATUSES.ON_HOLD || isAdmin) {
     const shadowLead = await leadRepository.createLead({
       data: {
         clientId: clientLead.clientId,
@@ -97,8 +118,8 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
         type: clientLead.type,
         emirate: clientLead.emirate,
         price: clientLead.price,
-        status: "CONVERTED",
-        leadType: "CONVERTED",
+        status: LEAD_STATUSES.CONVERTED,
+        leadType: LEAD_STATUSES.CONVERTED,
         previousLeadId: clientLead.id,
       },
     });
@@ -108,7 +129,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     data: {
       userId: userId,
       assignedAt: new Date(),
-      status: claimStatus(clientLead),
+      ...assignmentLifecycleFields(clientLead, isAdmin),
     },
   });
   await assignLeadNotification(clientLeadId, userId, updatedClientLead);
@@ -137,13 +158,13 @@ export async function updateClientLeadStatus({
 }) {
   if (!isAdmin) {
     if (
-      oldStatus === "FINALIZED" ||
-      oldStatus === "REJECTED" ||
+      oldStatus === LEAD_STATUSES.FINALIZED ||
+      oldStatus === LEAD_STATUSES.REJECTED ||
       oldStatus === "ARCHIVED"
     ) {
       throw new AppError({ code: leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
     }
-    if (oldStatus === "ON_HOLD") {
+    if (oldStatus === LEAD_STATUSES.ON_HOLD) {
       throw new AppError({ code: leadsMessagesCodes.LEAD_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
     }
   }
@@ -152,7 +173,7 @@ export async function updateClientLeadStatus({
     status,
     updatedAt: new Date(),
   };
-  if (oldStatus !== "ARCHIVED" && status === "FINALIZED") {
+  if (oldStatus !== "ARCHIVED" && status === LEAD_STATUSES.FINALIZED) {
     data.finalizedDate = new Date();
   }
   let heading = isAdmin
@@ -186,7 +207,7 @@ export async function updateClientLeadStatus({
 </div>
         `;
   }
-  if (isAdmin && oldStatus === "FINALIZED") {
+  if (isAdmin && oldStatus === LEAD_STATUSES.FINALIZED) {
     await leadRepository.deleteInvoiceNotesByLead({ clientLeadId });
     await leadRepository.deleteInvoicesByLead({ clientLeadId });
     await leadRepository.deletePaymentNotesByLead({ clientLeadId });
@@ -198,13 +219,15 @@ export async function updateClientLeadStatus({
     lead.id,
     heading,
     content,
-    updatePrice ? "FINAL_PRICE_ADDED" : "LEAD_UPDATED",
+    updatePrice
+      ? NOTIFICATION_TYPES.FINAL_PRICE_ADDED
+      : NOTIFICATION_TYPES.LEAD_UPDATED,
     lead.userId,
     isAdmin,
     !isAdmin ? lead.userId : null,
-    status === "FINALIZED",
+    status === LEAD_STATUSES.FINALIZED,
   );
-  if (status === "FINALIZED") {
+  if (status === LEAD_STATUSES.FINALIZED) {
     const hasChannel = await leadRepository.findTelegramChannelByLead({
       clientLeadId: lead.id,
     });
@@ -229,7 +252,7 @@ export async function updateClientLeadStatus({
 export async function markClientLeadAsConverted(
   clientLeadId,
   reasonToConvert,
-  status = "CONVERTED",
+  status = LEAD_STATUSES.CONVERTED,
   withInclude = false,
 ) {
   const reason = reasonToConvert || "Overdue";
@@ -240,7 +263,7 @@ export async function markClientLeadAsConverted(
     reason,
     withInclude,
   });
-  if (status === "ON_HOLD") {
+  if (status === LEAD_STATUSES.ON_HOLD) {
     await convertALeadNotification(lead);
   }
   return lead;
@@ -254,7 +277,7 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
     {};
   const where = {
     assignedTo: { isNot: null },
-    status: { notIn: ["NEW", "CONVERTED"] },
+    status: { notIn: [LEAD_STATUSES.NEW, LEAD_STATUSES.CONVERTED] },
     leadType: "NORMAL",
   };
   if (filters?.range) {
@@ -288,15 +311,18 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
   if (searchParams.userId) {
     where.userId = searchParams.userId;
 
-    if (user?.currentProfileKey !== "PRIMARY_SALES" && user?.currentProfileKey !== "SUPER_SALES") {
+    if (
+      user?.currentProfileKey !== PROFILES.PRIMARY_SALES &&
+      user?.currentProfileKey !== PROFILES.SUPER_SALES
+    ) {
       where.status = {
         notIn: [
-          "NEW",
+          LEAD_STATUSES.NEW,
           "ARCHIVED",
-          "ON_HOLD",
-          "FINALIZED",
-          "REJECTED",
-          "CONVERTED",
+          LEAD_STATUSES.ON_HOLD,
+          LEAD_STATUSES.FINALIZED,
+          LEAD_STATUSES.REJECTED,
+          LEAD_STATUSES.CONVERTED,
         ],
       };
     }
@@ -308,10 +334,10 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
   const updatesWhere = {};
   const sharedUpdatesWhere = {};
   if (!isAdmin) {
-    sharedUpdatesWhere.type = "STAFF";
+    sharedUpdatesWhere.type = WORK_DEPARTMENTS.STAFF;
     updatesWhere.OR = [
       {
-        department: "STAFF",
+        department: WORK_DEPARTMENTS.STAFF,
         sharedSettings: {
           some: {
             isArchived: false,
@@ -322,7 +348,7 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
       {
         sharedSettings: {
           some: {
-            type: "STAFF",
+            type: WORK_DEPARTMENTS.STAFF,
             isArchived: false,
           },
         },
@@ -341,7 +367,7 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
       {
         sharedSettings: {
           some: {
-            type: "ADMIN",
+            type: WORK_DEPARTMENTS.ADMIN,
             isArchived: false,
           },
         },
@@ -352,11 +378,11 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
   if (filters.contractLevel && filters.contractLevel !== "all") {
     where.contracts = {
       some: {
-        status: "IN_PROGRESS",
+        status: LEAD_STATUSES.IN_PROGRESS,
         stages: {
           some: {
             title: { in: [filters.contractLevel] },
-            stageStatus: "IN_PROGRESS",
+            stageStatus: LEAD_STATUSES.IN_PROGRESS,
           },
         },
       },
@@ -387,8 +413,8 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
     if (
       filters?.range &&
       searchParams.status !== "ARCHIVED" &&
-      searchParams.status !== "FINALIZED" &&
-      searchParams.type !== "CONTRACTLEVELS"
+      searchParams.status !== LEAD_STATUSES.FINALIZED &&
+      searchParams.type !== KANBAN_VIEW_TYPES.CONTRACT_LEVELS
     ) {
       const { startDate, endDate } = filters.range;
       const now = dayjs();
@@ -401,8 +427,8 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
     } else {
       if (
         searchParams.status !== "ARCHIVED" &&
-        searchParams.status !== "FINALIZED" &&
-        searchParams.type !== "CONTRACTLEVELS"
+        searchParams.status !== LEAD_STATUSES.FINALIZED &&
+        searchParams.type !== KANBAN_VIEW_TYPES.CONTRACT_LEVELS
       ) {
         where.assignedAt = {
           gte: dayjs().subtract(3, "month").toDate(),
@@ -411,8 +437,8 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
       }
     }
     if (
-      (searchParams.status === "FINALIZED" ||
-        searchParams.type === "CONTRACTLEVELS") &&
+      (searchParams.status === LEAD_STATUSES.FINALIZED ||
+        searchParams.type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) &&
       filters?.finalizedRange
     ) {
       const { startDate, endDate } = filters.finalizedRange;
@@ -448,25 +474,25 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
     const updatesWhere = {};
     const sharedUpdatesWhere = {};
 
-    if (searchParams.type === "CONTRACTLEVELS") {
+    if (searchParams.type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) {
       delete where.status;
       where.contracts = {
         some: {
-          status: "IN_PROGRESS",
+          status: LEAD_STATUSES.IN_PROGRESS,
           stages: {
             some: {
               title: { in: [searchParams.status] },
-              stageStatus: "IN_PROGRESS",
+              stageStatus: LEAD_STATUSES.IN_PROGRESS,
             },
           },
         },
       };
     }
     if (!isAdmin) {
-      sharedUpdatesWhere.type = "STAFF";
+      sharedUpdatesWhere.type = WORK_DEPARTMENTS.STAFF;
       updatesWhere.OR = [
         {
-          department: "STAFF",
+          department: WORK_DEPARTMENTS.STAFF,
           sharedSettings: {
             some: {
               isArchived: false,
@@ -477,7 +503,7 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
         {
           sharedSettings: {
             some: {
-              type: "STAFF",
+              type: WORK_DEPARTMENTS.STAFF,
               isArchived: false,
             },
           },
@@ -496,7 +522,7 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
         {
           sharedSettings: {
             some: {
-              type: "ADMIN",
+              type: WORK_DEPARTMENTS.ADMIN,
               isArchived: false,
             },
           },
@@ -507,11 +533,11 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
     if (filters.contractLevel && filters.contractLevel !== "all") {
       where.contracts = {
         some: {
-          status: "IN_PROGRESS",
+          status: LEAD_STATUSES.IN_PROGRESS,
           stages: {
             some: {
               title: { in: [filters.contractLevel] },
-              stageStatus: "IN_PROGRESS",
+              stageStatus: LEAD_STATUSES.IN_PROGRESS,
             },
           },
         },

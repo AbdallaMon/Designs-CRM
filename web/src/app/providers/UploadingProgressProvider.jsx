@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 import { createContext, useContext, useState } from "react";
 import {
   Backdrop,
@@ -10,52 +10,7 @@ import {
   Fade,
   Stack,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { MdCloud } from "react-icons/md";
-
-// Custom styled components
-const StyledBackdrop = styled(Backdrop)(({ theme }) => ({
-  zIndex: 9999998,
-  backgroundColor: "rgba(0, 0, 0, 0.7)",
-  backdropFilter: "blur(4px)",
-}));
-
-const ProgressContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: theme.spacing(2),
-  background: `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  boxShadow: theme.shadows[10],
-  minWidth: 400,
-  maxWidth: 500,
-  width: "90%",
-}));
-
-const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
-  height: 12,
-  borderRadius: 6,
-  backgroundColor: theme.palette.grey[200],
-  "& .MuiLinearProgress-bar": {
-    borderRadius: 6,
-    background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-  },
-}));
-
-const AnimatedIcon = styled(MdCloud)(({ theme }) => ({
-  fontSize: 48,
-  color: theme.palette.primary.main,
-  animation: "bounce 2s infinite",
-  "@keyframes bounce": {
-    "0%, 20%, 50%, 80%, 100%": {
-      transform: "translateY(0)",
-    },
-    "40%": {
-      transform: "translateY(-8px)",
-    },
-    "60%": {
-      transform: "translateY(-4px)",
-    },
-  },
-}));
 
 export const UploadingContext = createContext(null);
 
@@ -90,13 +45,45 @@ export default function UploadingProvider({ children }) {
       }}
     >
       <>
-        <StyledBackdrop open={overLay} transitionDuration={300}>
+        <Backdrop
+          open={overLay}
+          transitionDuration={300}
+          sx={{
+            zIndex: 9999998,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(4px)",
+          }}
+        >
           <Fade in={overLay} timeout={500}>
-            <ProgressContainer elevation={10}>
+            <Paper
+              elevation={10}
+              sx={{
+                p: 4,
+                borderRadius: 2,
+                background: (theme) =>
+                  `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+                boxShadow: (theme) => theme.shadows[10],
+                minWidth: { xs: 0, sm: 400 },
+                maxWidth: 500,
+                width: "90%",
+              }}
+            >
               <Stack spacing={3} alignItems="center">
                 {/* Animated Upload Icon */}
                 <Box display="flex" alignItems="center" justifyContent="center">
-                  <AnimatedIcon />
+                  <Box
+                    component={MdCloud}
+                    sx={{
+                      fontSize: 48,
+                      color: "primary.main",
+                      animation: "upload-cloud-bounce 2s infinite",
+                      "@keyframes upload-cloud-bounce": {
+                        "0%, 20%, 50%, 80%, 100%": { transform: "translateY(0)" },
+                        "40%": { transform: "translateY(-8px)" },
+                        "60%": { transform: "translateY(-4px)" },
+                      },
+                    }}
+                  />
                 </Box>
 
                 {/* File Name */}
@@ -128,11 +115,21 @@ export default function UploadingProvider({ children }) {
 
                 {/* Progress Bar Container */}
                 <Box sx={{ width: "100%", position: "relative" }}>
-                  <StyledLinearProgress
+                  <LinearProgress
                     variant="determinate"
                     value={progress}
                     color={getProgressColor()}
-                    sx={{ mb: 1 }}
+                    sx={{
+                      mb: 1,
+                      height: 12,
+                      borderRadius: 6,
+                      backgroundColor: "grey.200",
+                      "& .MuiLinearProgress-bar": {
+                        borderRadius: 6,
+                        background: (theme) =>
+                          `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                      },
+                    }}
                   />
 
                   {/* Progress Percentage */}
@@ -206,9 +203,9 @@ export default function UploadingProvider({ children }) {
                   Please don&lsquo;t close this window while uploading
                 </Typography>
               </Stack>
-            </ProgressContainer>
+            </Paper>
           </Fade>
-        </StyledBackdrop>
+        </Backdrop>
         {children}
       </>
     </UploadingContext.Provider>

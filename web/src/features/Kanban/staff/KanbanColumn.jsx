@@ -1,4 +1,5 @@
 "use client";
+import { LEAD_STATUSES, KANBAN_VIEW_TYPES } from "@dms/shared";
 import {
   statusColors,
   KanbanLeadsStatus,
@@ -36,7 +37,7 @@ const ItemTypes = {
 
 // Deal transitions that are effectively irreversible from the board — dropping a card
 // onto one of these asks for confirmation first (FINALIZED keeps its own dedicated modal).
-const TERMINAL_DEAL_STATUSES = new Set(["REJECTED", "ARCHIVED"]);
+const TERMINAL_DEAL_STATUSES = new Set([LEAD_STATUSES.REJECTED, "ARCHIVED"]);
 
 const ColumnHeader = styled(Box, {
   shouldForwardProp: (prop) => prop !== "statusColor",
@@ -172,7 +173,7 @@ const KanbanColumn = ({
         ? { status: newStatus, oldStatus, id: l.projects[0].id }
         : { status: newStatus, oldStatus },
       isNotStaff ? setLoading : setToastLoading,
-      `${isNotStaff ? "projects/designers" : "client-leads"}/${
+      `${isNotStaff ? "projects/designers" : "leads"}/${
         l.id
       }/actions/change-status`,
       false,
@@ -190,10 +191,10 @@ const KanbanColumn = ({
   };
 
   const movelead = async (l, newStatus) => {
-    if (type === "CONTRACTLEVELS") return;
+    if (type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) return;
 
     // Deals moving to FINALIZED go through the finalize modal (price/contract capture).
-    if (!isNotStaff && newStatus === "FINALIZED") {
+    if (!isNotStaff && newStatus === LEAD_STATUSES.FINALIZED) {
       setCurrentId(l.id);
       setFinalizeModel(true);
       setCurrentLead(l);
@@ -434,7 +435,10 @@ const KanbanColumn = ({
           )}
           <Stack spacing={1.25}>
             {leads?.map((lead) => {
-              if (type === "STAFF" || type === "CONTRACTLEVELS") {
+              if (
+                type === KANBAN_VIEW_TYPES.STAFF ||
+                type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS
+              ) {
                 return (
                   <LeadCard
                     key={lead.id}

@@ -100,7 +100,7 @@ chatRouter.get(
 chatRouter.get(
   "/rooms/:roomId/messages/:messageId/page",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
-  validate(chatSchemas.messageIdParams, "params"),
+  validate(chatSchemas.roomMessageParams, "params"),
   AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.getMessagePage, "query"),
   asyncHandler(chatController.getMessagePage),

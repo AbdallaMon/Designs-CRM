@@ -1,6 +1,7 @@
 import { Controller } from "react-hook-form";
 import { Alert, Box, Snackbar, TextField } from "@mui/material";
 import { useState } from "react";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 export default function MuiFileField({
   control,
@@ -25,7 +26,7 @@ export default function MuiFileField({
 
     if (file) {
       if (input.acceptOnly === "pdf" && file.type !== "application/pdf") {
-        setError("الملف يجب أن يكون بصيغة PDF فقط");
+        setError(FEEDBACK.FILE_MUST_BE_PDF);
         setValue(id, null);
         setPreview(null);
         return;
@@ -33,13 +34,13 @@ export default function MuiFileField({
         input.acceptOnly === "image" &&
         !file.type.startsWith("image/")
       ) {
-        setError("الملف يجب أن يكون صورة فقط");
+        setError(FEEDBACK.FILE_MUST_BE_IMAGE);
         setValue(id, null);
         setPreview(null);
         return;
       }
       if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-        setError("نوع الملف غير مدعوم (يجب ان يكون الملف صورة او pdf)");
+        setError(FEEDBACK.FILE_TYPE_UNSUPPORTED);
         setValue(id, null);
         setPreview(null);
         return;

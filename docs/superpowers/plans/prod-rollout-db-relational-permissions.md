@@ -23,8 +23,8 @@ run them **from the package** — no raw `npx prisma …` / `node …/seed.js` p
 | `migrate:status` | `prisma migrate status` | check applied/pending migrations |
 | `migrate:deploy` | `prisma migrate deploy` | apply pending migrations (prod-safe, no shadow DB, no reset) |
 | `seed` | `node prisma/seed.js` | upsert the PermissionCode/Profile/ProfilePermission catalog |
-| `migrate:users` | `node scripts/migrate-users-to-profiles.js` | assign UserProfiles + set currentProfileId (idempotent) |
-| `prod:rollout` | `migrate:deploy && seed && migrate:users` | the three data steps in order (one-shot) |
+| `migrate:users` | `node scripts/migrate-users-to-profiles.js` | dry-run by default; assign UserProfiles + set currentProfileId with explicit apply flags |
+| `prod:rollout` | `migrate:deploy && seed && migrate:users -- --apply --backup-confirmed` | the three data steps in order (one-shot) |
 
 Run any of them from the repo root with `-w @dms/db`, or after `cd packages/db`:
 
@@ -71,10 +71,13 @@ export DATABASE_URL="mysql://<user>:<pass>@<prod-host>:3306/<db>"   # bash/sh
 4. **Migrate users → profiles (idempotent, no truncation).**
    ```bash
    npm run migrate:users -w @dms/db
+   npm run migrate:users -w @dms/db -- --apply --backup-confirmed
+   npm run migrate:users -w @dms/db
    ```
    For every user: assigns a `UserProfile` per profile derived from
    `role`+`isPrimary`+`isSuperSales`+`subRoles`, and sets `currentProfileId` **only if null**.
-   Prints `✅ User migration: S users, A assignments, C currents set`; a re-run reports `currents set: 0`.
+   The first and last commands are read-only previews. The final preview must report
+   `usersMissingCurrentProfile: 0`.
 
    > **Or run steps 2–4 as one command:** `npm run prod:rollout -w @dms/db`
    > (chains `migrate:deploy && seed && migrate:users`). Prefer the individual steps the first
@@ -128,7 +131,7 @@ awk '/^-- / { keep = ($0 ~ /^-- AlterTable/); next } keep { print }' /tmp/drift.
 grep -iE 'drop[[:space:]]+(column|table)|truncate' /tmp/cols.sql && echo "STOP - review /tmp/cols.sql" || echo "SAFE"
 # 4) apply, then finish
 npx prisma db execute --schema packages/db/prisma/schema.prisma --file /tmp/cols.sql
-npm run migrate:users -w @dms/db
+npm run migrate:users -w @dms/db -- --apply --backup-confirmed
 ```
 
 The skipped foreign keys/indexes are optional hardening — add them later from `/tmp/drift.sql` **after**

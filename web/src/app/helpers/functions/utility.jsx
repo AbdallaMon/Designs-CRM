@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 import dayjs from "dayjs";
 import { Box, Button, Link, Paper, Typography } from "@mui/material";
 import React from "react";
@@ -161,39 +162,48 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 };
 
 export const checkIfADesigner = (user) => {
-  return user?.profile === "DESIGNER_2D" || user?.profile === "DESIGNER_3D";
+  return user?.profile === PROFILES.DESIGNER_2D || user?.profile === PROFILES.DESIGNER_3D;
 };
 export const checkIfThreeDDesigner = (user) => {
-  return user?.profile === "DESIGNER_3D";
+  return user?.profile === PROFILES.DESIGNER_3D;
 };
 export const checkIfTwoDDesigner = (user) => {
-  return user?.profile === "DESIGNER_2D";
+  return user?.profile === PROFILES.DESIGNER_2D;
 };
 export const checkIfStaff = (user) => {
-  return ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user?.profile);
+  return [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user?.profile);
 };
 export const checkIfPrimaryStaff = (user) => {
   // Primary-tier includes super-sales (super ⊇ primary), matching backend #isPrimaryScope.
-  return user?.profile === "PRIMARY_SALES" || user?.profile === "SUPER_SALES";
+  return user?.profile === PROFILES.PRIMARY_SALES || user?.profile === PROFILES.SUPER_SALES;
 };
 export const checkIfAdmin = (user) => {
-  return ["ADMIN", "SUPER_ADMIN", "CONTACT_INITIATOR"].includes(user?.profile);
+  return [PROFILES.ADMIN, PROFILES.SUPER_ADMIN, PROFILES.CONTACT_INITIATOR].includes(user?.profile);
 };
 export const checkIfAdminOnly = (user) => {
-  return user?.profile === "ADMIN" || user?.profile === "SUPER_ADMIN";
+  return user?.profile === PROFILES.ADMIN || user?.profile === PROFILES.SUPER_ADMIN;
 };
 export const checkIfAdminOrSuperSales = (user) => {
-  return ["ADMIN", "SUPER_ADMIN", "SUPER_SALES"].includes(user?.profile);
+  return [PROFILES.ADMIN, PROFILES.SUPER_ADMIN, PROFILES.SUPER_SALES].includes(user?.profile);
 };
 
 export const checkIfAdminOrSuperOrContactInitiator = (user) => {
-  return ["ADMIN", "SUPER_ADMIN", "SUPER_SALES", "CONTACT_INITIATOR"].includes(
+  return [PROFILES.ADMIN, PROFILES.SUPER_ADMIN, PROFILES.SUPER_SALES, PROFILES.CONTACT_INITIATOR].includes(
     user?.profile,
   );
 };
 export function ensureHttps(url) {
   if (typeof url !== "string") return url;
-  return url.startsWith("http://") ? url.replace("http://", "https://") : url;
+  if (!url.startsWith("http://")) return url;
+
+  try {
+    const { hostname } = new URL(url);
+    if (["localhost", "127.0.0.1", "::1"].includes(hostname)) return url;
+  } catch {
+    return url;
+  }
+
+  return url.replace("http://", "https://");
 }
 
 // Single source of truth for money formatting. The studio bills in AED, so

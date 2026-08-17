@@ -5,6 +5,7 @@ import { MdAdd as Add } from "react-icons/md";
 import { CreateTitleOrDesc } from "@/features/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 const AddNewItem = ({ type, onAdd, isLoading }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +21,7 @@ const AddNewItem = ({ type, onAdd, isLoading }) => {
       setItem(null);
       setIsOpen(false);
     } else {
-      setAlertError("Please fill the data in all language");
+      setAlertError(FEEDBACK.FILL_ALL_LANGUAGES);
     }
   };
 

@@ -1,3 +1,4 @@
+import { TELEGRAM_CONNECTION_STATUSES } from "@dms/shared";
 import { env } from "../../config/env.js";
 import {
   CONTENT_TYPES,
@@ -12,7 +13,7 @@ async function initTelegram() {
   return await TelegramAuthusecase.updateTelegramAuthConnection({
     apiId: env.TELE_API_ID,
     apiHash: env.TELE_API_HASH,
-    status: "DISCONNECTED",
+    status: TELEGRAM_CONNECTION_STATUSES.DISCONNECTED,
     updatedByUserId: null,
   });
 }
@@ -36,7 +37,6 @@ export async function coonnectToTelegramV2() {
       await telegramManager.connect();
     }
     const health = await telegramManager.checkHealth();
-    console.log("Telegram health check result:", health);
 
     if (!health.authorized && !telegramAuth.notifiedOfDisconnection) {
       const reauthEmail = TelegramAuthEmails.reAuthAlert();
@@ -56,7 +56,7 @@ export async function coonnectToTelegramV2() {
       ok: true,
       ...health,
     };
-  } catch (e) {
-    console.log("Telegram error. Skipping Telegram connection.", e.message);
+  } catch {
+    return;
   }
 }

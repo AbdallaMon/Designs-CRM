@@ -8,8 +8,6 @@ import { ok, created } from "../../../shared/http/response.js";
 import {
   coursesMessagesCodes,
   messagesNames,
-  hasPermission,
-  PERMISSIONS,
 } from "@dms/shared";
 import { staffCourseUsecase } from "./staff-course.usecase.js";
 import {
@@ -31,7 +29,9 @@ class StaffCourseController {
   checkIfUserCanAccessAttempt(req) {
     return staffCourseUsecase.checkIfUserCanAccessAttempt({
       attemptId: parseInt(req.params.attamptId, 10),
+      testId: parseInt(req.params.testId, 10),
       authUserId: req.auth.id,
+      authUser: req.auth,
     });
   }
 
@@ -41,7 +41,9 @@ class StaffCourseController {
   checkIfUserCanMutateAttempt(req) {
     return staffCourseUsecase.checkIfUserCanMutateAttempt({
       attemptId: parseInt(req.params.attemptId, 10),
+      testId: parseInt(req.params.testId, 10),
       authUserId: req.auth.id,
+      authUser: req.auth,
     });
   }
 
@@ -51,6 +53,7 @@ class StaffCourseController {
     const courses = await staffCourseUsecase.listCourses({
       skip,
       take,
+      authUser: req.auth,
     });
     const items = decorateStaffCourseList(courses, {
       permissions: req.auth.permissions,
@@ -76,6 +79,7 @@ class StaffCourseController {
     const course = await staffCourseUsecase.getCourse({
       courseId: req.params.courseId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     const data = decorateStaffCourseDetail(course, {
       permissions: req.auth.permissions,
@@ -87,6 +91,7 @@ class StaffCourseController {
     const data = await staffCourseUsecase.getUserCourseProgress({
       courseId: req.params.courseId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.PROGRESS_FETCHED, TK);
   }
@@ -95,7 +100,9 @@ class StaffCourseController {
   async getLesson(req, res) {
     const data = await staffCourseUsecase.getLesson({
       lessonId: req.params.lessonId,
+      courseId: req.params.courseId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.LESSON_FETCHED, TK);
   }
@@ -108,6 +115,7 @@ class StaffCourseController {
       lessonId: req.params.lessonId,
       courseId: req.params.courseId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.LESSON_COMPLETED, TK);
   }
@@ -116,7 +124,9 @@ class StaffCourseController {
   async getHomeworks(req, res) {
     const data = await staffCourseUsecase.getHomeworks({
       lessonId: req.params.lessonId,
+      courseId: req.params.courseId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.HOMEWORKS_FETCHED, TK);
   }
@@ -127,19 +137,17 @@ class StaffCourseController {
       courseId: req.params.courseId,
       userId: req.auth.id,
       data: req.body,
+      authUser: req.auth,
     });
     return created(res, data ?? null, coursesMessagesCodes.HOMEWORK_SAVED, TK);
   }
 
   // ── tests ──────────────────────────────────────────────────────────────────────
   async getTest(req, res) {
-    // L1: the "admin bypass" (skip the lesson-access/previous-lessons gates) is keyed
-    // on the COURSE.VIEW permission code, NOT a role string. A manager who can view
-    // course management still gets the unrestricted read; everyone else is gated.
-    const isAdmin = hasPermission(req.auth.permissions, PERMISSIONS.COURSE.VIEW);
     const data = await staffCourseUsecase.getUserTest({
       testId: req.params.testId,
-      userId: isAdmin ? null : req.auth.id,
+      userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.TEST_FETCHED, TK);
   }
@@ -147,6 +155,8 @@ class StaffCourseController {
   async getTestQuestions(req, res) {
     const data = await staffCourseUsecase.getUserTestQuestions({
       testId: req.params.testId,
+      userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.TEST_QUESTION_FETCHED, TK);
   }
@@ -156,6 +166,7 @@ class StaffCourseController {
     const data = await staffCourseUsecase.getUserAttempts({
       testId: req.params.testId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.ATTEMPTS_FETCHED, TK);
   }
@@ -163,7 +174,9 @@ class StaffCourseController {
   async getUserAttempt(req, res) {
     const data = await staffCourseUsecase.getUserAttempt({
       attemptId: req.params.attamptId,
+      testId: req.params.testId,
       userId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.ATTEMPT_FETCHED, TK);
   }
@@ -172,6 +185,7 @@ class StaffCourseController {
     const data = await staffCourseUsecase.createAttempt({
       userId: req.auth.id,
       testId: req.params.testId,
+      authUser: req.auth,
     });
     return created(res, data, coursesMessagesCodes.ATTEMPT_CREATED, TK);
   }
@@ -183,6 +197,7 @@ class StaffCourseController {
       questionId: req.params.questionId,
       testId: req.params.testId,
       authUserId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.ANSWER_SUBMITTED, TK);
   }
@@ -192,6 +207,9 @@ class StaffCourseController {
   async endAttempt(req, res) {
     const data = await staffCourseUsecase.endAttempt({
       attemptId: req.params.attemptId,
+      testId: req.params.testId,
+      authUserId: req.auth.id,
+      authUser: req.auth,
     });
     return ok(res, data, coursesMessagesCodes.ATTEMPT_ENDED, TK);
   }

@@ -1,3 +1,4 @@
+import { LEAD_STATUSES } from "@dms/shared";
 // Telegram finalized-lead enqueuer — folded from the standalone `server/tele-cron.js`.
 // Logic + 10-minute cadence preserved verbatim. Changes vs the standalone:
 //   - Telegram is NOT connected here (the bootstrap connects the single GramJS client once).
@@ -16,7 +17,7 @@ export function startTelegramCron() {
     try {
       const finalizedLeads = await prisma.clientLead.findMany({
         where: {
-          status: { in: ["FINALIZED", "ARCHIVED"] },
+          status: { in: [LEAD_STATUSES.FINALIZED, "ARCHIVED"] },
         },
         select: {
           id: true,

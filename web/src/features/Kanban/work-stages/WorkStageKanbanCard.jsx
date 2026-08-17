@@ -1,4 +1,5 @@
 "use client";
+import { KANBAN_VIEW_TYPES } from "@dms/shared";
 import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import {
@@ -18,7 +19,7 @@ import Link from "next/link";
 import { statusColors } from "@/app/helpers/constants";
 import { NewNoteDialog } from "@/features/leads/dialogs/NoteDialog";
 import { NewCallDialog } from "@/features/leads/dialogs/CallsDialog";
-import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
+import { checkIfAdmin } from "@/app/helpers/functions/utility.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
@@ -46,7 +47,10 @@ const WorkStageKanbanCard = ({
     type: ItemTypes.CARD,
     item: {
       id: lead.id,
-      status: type === "STAFF" ? lead.status : lead.projects?.[0]?.status,
+      status:
+        type === KANBAN_VIEW_TYPES.STAFF
+          ? lead.status
+          : lead.projects?.[0]?.status,
       ...lead,
     },
   });
@@ -79,7 +83,10 @@ const WorkStageKanbanCard = ({
 
   return (
     <div ref={drag}>
-      <StyledCard status={type === "STAFF" ? lead.status : project.status} groupId={project.groupId}>
+      <StyledCard
+        status={type === KANBAN_VIEW_TYPES.STAFF ? lead.status : project.status}
+        groupId={project.groupId}
+      >
         <FloatingIdBadge
           leadId={lead.id}
           backgroundColor={"white"}

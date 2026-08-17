@@ -1,4 +1,6 @@
+import { validationMessagesCodes as V } from "@dms/shared";
 import { z } from "zod";
+import { publicLeadSourceSchema } from "../public-lead-source.js";
 
 // ── Field sets (still needed by usecase to route data to lead vs client) ───────
 
@@ -31,15 +33,15 @@ export function isClientField(field) {
 // ── Shared field schemas ───────────────────────────────────────────────────────
 
 const phoneSchema = z
-  .string({ error: "phone must be a string" })
+  .string({ error: V.EXPECTED_STRING })
   .trim()
-  .min(1, "phone is required")
-  .regex(/^[0-9+()\-\s]{6,20}$/, "phone must be a valid phone number");
+  .min(1, V.FIELD_REQUIRED)
+  .regex(/^[0-9+()\-\s]{6,20}$/, V.INVALID_PHONE_NUMBER);
 
 const emailSchema = z
-  .string({ error: "email must be a string" })
+  .string({ error: V.EXPECTED_STRING })
   .trim()
-  .email("email must be a valid email address");
+  .email(V.INVALID_EMAIL_ADDRESS);
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -48,19 +50,21 @@ class BookingLeadSchemas {
     leadId: z.coerce
       .number()
       .int()
-      .positive("leadId must be a positive integer"),
+      .positive(V.POSITIVE_INTEGER_REQUIRED),
   });
 
   // name/phone are optional at registration (master fdefbbf "edit client register"):
   // missing values fall back to the same draft placeholders the legacy funnel writes.
   createBookingLead = z
     .object({
-      name: z.string({ error: "name must be a string" }).trim().optional(),
-      phone: z.string({ error: "phone must be a string" }).trim().optional(),
+      name: z.string({ error: V.EXPECTED_STRING }).trim().optional(),
+      phone: z.string({ error: V.EXPECTED_STRING }).trim().optional(),
+      source: publicLeadSourceSchema.optional(),
     })
     .transform((body) => ({
       name: body.name || "draft",
       phone: body.phone || "+0123456789",
+      source: body.source,
     }));
 
   // PATCH accepts exactly one allow-listed field at a time.
@@ -83,52 +87,52 @@ class BookingLeadSchemas {
     .refine(
       (data) =>
         Object.values(data).filter((value) => value !== undefined).length === 1,
-      "PATCH requires exactly one supported field per request",
+      V.EXACTLY_ONE_FIELD_REQUIRED,
     );
 
   submitBookingLead = z.object({
     location: z
-      .string({ error: "location must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "location is required"),
+      .min(1, V.FIELD_REQUIRED),
     projectType: z
-      .string({ error: "projectType must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "projectType is required"),
+      .min(1, V.FIELD_REQUIRED),
     projectStage: z
-      .string({ error: "projectStage must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "projectStage is required"),
+      .min(1, V.FIELD_REQUIRED),
     previousWork: z
-      .string({ error: "previousWork must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "previousWork is required"),
+      .min(1, V.FIELD_REQUIRED),
     hasArchitecturalPlan: z
-      .string({ error: "hasArchitecturalPlan must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "hasArchitecturalPlan is required"),
+      .min(1, V.FIELD_REQUIRED),
     serviceType: z
-      .string({ error: "serviceType must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "serviceType is required"),
+      .min(1, V.FIELD_REQUIRED),
     decisionMaker: z
-      .string({ error: "decisionMaker must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "decisionMaker is required"),
+      .min(1, V.FIELD_REQUIRED),
     name: z
-      .string({ error: "name must be a string" })
+      .string({ error: V.EXPECTED_STRING })
       .trim()
-      .min(1, "name is required"),
+      .min(1, V.FIELD_REQUIRED),
     phone: phoneSchema,
     email: emailSchema,
     contactAgreement: z
-      .boolean({ error: "contactAgreement must be a boolean" })
-      .refine((v) => v === true, "contactAgreement must be accepted"),
+      .boolean({ error: V.EXPECTED_BOOLEAN })
+      .refine((v) => v === true, V.AGREEMENT_REQUIRED),
     contactInitialPriceAgreement: z
-      .boolean({ error: "contactInitialPriceAgreement must be a boolean" })
+      .boolean({ error: V.EXPECTED_BOOLEAN })
       .refine(
         (v) => v === true,
-        "contactInitialPriceAgreement must be accepted",
+        V.AGREEMENT_REQUIRED,
       ),
   });
 }

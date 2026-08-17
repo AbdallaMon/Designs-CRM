@@ -1,3 +1,5 @@
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
+
 export const loginInputs = [
     {
         data: {
@@ -9,11 +11,11 @@ export const loginInputs = [
         pattern: {
             required: {
                 value: true,
-                message: "Please enter your email",
+                message: FORM_ERRORS.ENTER_EMAIL,
             },
             pattern: {
                 value: /\w+@[a-z]+\.[a-z]{2,}/gi,
-                message: "Please enter a valid email address",
+                message: FORM_ERRORS.INVALID_EMAIL_ADDRESS,
             },
         },
     },
@@ -27,7 +29,7 @@ export const loginInputs = [
         pattern: {
             required: {
                 value: true,
-                message: "Please enter your password",
+                message: FORM_ERRORS.ENTER_PASSWORD,
             },
         },
     },

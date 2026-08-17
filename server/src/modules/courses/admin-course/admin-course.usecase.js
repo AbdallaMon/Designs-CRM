@@ -4,9 +4,13 @@
 // the legacy admin course service (same shapes, same aggregation,
 // same side effects), restructured into the layered module.
 import { AppError } from "../../../shared/errors/AppError.js";
-import { coursesMessagesCodes } from "@dms/shared";
+import { coursesMessagesCodes, generalMessagesCodes } from "@dms/shared";
 import { adminCourseRepository } from "./admin-course.repo.js";
 import { staffCourseUsecase } from "../staff-course/staff-course.usecase.js";
+import {
+  getCourseQuestionValidationMessage,
+  isValidPublishedTest,
+} from "../course-test-validity.js";
 
 // `endAttempt` re-scores an attempt after a text answer is approved (legacy imported it
 // from the staff service). Delegates to the staff usecase's scoring routine — the single
@@ -14,6 +18,17 @@ import { staffCourseUsecase } from "../staff-course/staff-course.usecase.js";
 const endAttempt = (args) => staffCourseUsecase.endAttempt(args);
 
 class AdminCourseUsecase {
+  #assertValidQuestion(question) {
+    const message = getCourseQuestionValidationMessage(question);
+    if (message) {
+      throw new AppError({
+        code: generalMessagesCodes.VALIDATION_ERROR,
+        statusCode: 422,
+        details: [{ path: "choices", message }],
+      });
+    }
+  }
+
   // ── courses ──────────────────────────────────────────────────────────────────
   // Legacy `getCourses({ limit, skip })` → { data: courses, totalPages, total }.
   async listCourses({ skip, take }) {
@@ -259,6 +274,18 @@ class AdminCourseUsecase {
 
   // Legacy `createTest({ key, id, attemptLimit, type, timeLimit, title, published })`.
   async createTest({ key, id, attemptLimit, type, timeLimit, title, published }) {
+    if (published) {
+      throw new AppError({
+        code: generalMessagesCodes.VALIDATION_ERROR,
+        statusCode: 422,
+        details: [
+          {
+            path: "published",
+            message: coursesMessagesCodes.TEST_MUST_START_AS_DRAFT,
+          },
+        ],
+      });
+    }
     return adminCourseRepository.createTest({
       data: {
         [key]: id,
@@ -274,6 +301,24 @@ class AdminCourseUsecase {
   // M2: assign only whitelisted Test scalars; coerce numeric fields. FKs
   // (courseId/lessonId/id) are intentionally NOT assignable via edit.
   async editTest({ data, testId }) {
+    if (data.published === true) {
+      const test = await adminCourseRepository.getTestForPublishing({ id: testId });
+      if (!test) {
+        throw new AppError({ code: coursesMessagesCodes.TEST_NOT_FOUND, statusCode: 404 });
+      }
+      if (!isValidPublishedTest(test.questions)) {
+        throw new AppError({
+          code: generalMessagesCodes.VALIDATION_ERROR,
+          statusCode: 422,
+          details: [
+            {
+              path: "published",
+              message: coursesMessagesCodes.TEST_VALID_QUESTION_REQUIRED,
+            },
+          ],
+        });
+      }
+    }
     const update = {};
     if (data.title !== undefined) update.title = data.title;
     if (data.type !== undefined) update.type = data.type;
@@ -308,6 +353,7 @@ class AdminCourseUsecase {
 
   // Legacy `createTestQuestion` — next order, nested-create choices.
   async createTestQuestion({ id, data }) {
+    this.#assertValidQuestion(data);
     const last = await adminCourseRepository.getLastQuestionOrder({ testId: id });
     const nextOrder = last ? last.order + 1 : 1;
     const choices = data.choices.map((choice) => ({
@@ -329,6 +375,40 @@ class AdminCourseUsecase {
 
   // Legacy `editQuestion` — per-choice CREATE/DELETE/update, then update the text.
   async editQuestion({ data, questionId }) {
+    const current = await adminCourseRepository.getQuestionById({ id: questionId });
+    if (!current) {
+      throw new AppError({ code: coursesMessagesCodes.TEST_NOT_FOUND, statusCode: 404 });
+    }
+    const finalChoices = new Map(
+      current.choices.map((choice) => [Number(choice.id), { ...choice }]),
+    );
+    const createdChoices = [];
+    for (const choice of data.choices) {
+      if (choice.type === "DELETE") {
+        finalChoices.delete(Number(choice.id));
+      } else if (choice.type === "CREATE") {
+        createdChoices.push({
+          text: choice.text,
+          isCorrect: choice.isCorrect,
+          order: choice.order,
+        });
+      } else {
+        const existing = finalChoices.get(Number(choice.id));
+        if (existing) {
+          finalChoices.set(Number(choice.id), {
+            ...existing,
+            text: choice.text,
+            isCorrect: choice.isCorrect,
+            order: choice.order,
+          });
+        }
+      }
+    }
+    this.#assertValidQuestion({
+      type: current.type,
+      choices: [...finalChoices.values(), ...createdChoices],
+    });
+
     for (const choice of data.choices) {
       if (choice.type === "DELETE") {
         await adminCourseRepository.deleteChoice({ id: Number(choice.id) });

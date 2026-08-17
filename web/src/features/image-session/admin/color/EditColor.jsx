@@ -28,7 +28,7 @@ export function EditColor({ onUpdate, initialData }) {
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
 
@@ -52,7 +52,7 @@ export function EditColor({ onUpdate, initialData }) {
       component={EditColorForm}
       name={"Color"}
       modelType={"COLOR_PATTERN"}
-      slug={`image-session/colors`}
+      slug="colors"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       awaitCheck={true}
@@ -130,3 +130,4 @@ function EditColorForm({ data, setData, initialData }) {
     </>
   );
 }
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";

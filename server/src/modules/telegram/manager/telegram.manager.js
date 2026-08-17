@@ -85,13 +85,13 @@ class TelegramManager {
         //   lastName: me?.lastName || null,
         // },
       };
-    } catch (error) {
+    } catch {
       return {
         ok: false,
         connected: this.client?.connected ?? false,
         authorized: false,
         user: null,
-        error: error.message,
+        error: adminResidualMessagesCodes.TELEGRAM_CONNECTION_FAILED,
       };
     }
   }
@@ -133,14 +133,14 @@ class TelegramManager {
     };
   }
   async verifyCode({ phoneNumber, phoneCodeHash, phoneCode }) {
-    const result = await this.client.invoke(
+    await this.client.invoke(
       new Api.auth.SignIn({
         phoneNumber,
         phoneCodeHash,
         phoneCode,
       }),
     );
-    return { ...result, phoneNumber, phoneCodeHash, phoneCode };
+    return true;
   }
 
   async verifyPassword(password) {
@@ -167,3 +167,5 @@ export function getTelegramManager() {
   }
   return telegramManager;
 }
+
+export { TelegramManager };

@@ -1,7 +1,7 @@
 // Dashboard Prisma I/O. The usecase supplies an authentication-derived recent-activity
 // scope: admin profiles may select an actor; every other profile is self-scoped.
 import { AppError } from "../../shared/errors/AppError.js";
-import { authMessagesCodes } from "@dms/shared";
+import { LEAD_STATUSES, PROFILE_FAMILIES, authMessagesCodes } from "@dms/shared";
 import prisma from "../../infra/prisma/prisma.js";
 
 class DashboardRepository {
@@ -67,7 +67,7 @@ class DashboardRepository {
     return prisma.user.findMany({
       where: {
         userProfiles: {
-          some: { profile: { family: "SALES" } },
+          some: { profile: { family: PROFILE_FAMILIES.SALES } },
         },
       },
       select: { id: true },
@@ -98,7 +98,7 @@ class DashboardRepository {
 
   findLatestNewLeads() {
     return prisma.clientLead.findMany({
-      where: { status: "NEW" },
+      where: { status: LEAD_STATUSES.NEW },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: {

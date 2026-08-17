@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { apiRequest } from "@/app/helpers/functions/apiClient";
 import { usePermission } from "@/app/hooks/usePermission";
@@ -21,10 +22,17 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { FiLayers } from "react-icons/fi";
 import { PROFILE_LABEL } from "@/features/users/pages/users/config.jsx";
+import { applyProfilesToUserRows } from "@/features/users/user-management-state.js";
 
 // The three hierarchical STAFF-sales profiles — a user may hold at most ONE of them
 // (other families combine freely). Mirrored by the backend guard in user.usecase.
-const SALES_TIER = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
+const SALES_TIER = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES];
+
+function assignedProfileIds(userProfiles) {
+  return userProfiles
+    .map((up) => up.profileId ?? up.profile?.id)
+    .filter((id) => id != null);
+}
 
 // Admin manager for a user's DB-relational permission PROFILES: pick the assigned
 // set + which is the active (current) one. Replaces role/sub-role juggling for the
@@ -41,26 +49,33 @@ export function ProfileManagerDialog({
   onClose,
 }) {
   const [open, setOpen] = useState(startOpen);
+  const initialHeldIds = assignedProfileIds(userProfiles);
   const closeDialog = () => {
     setOpen(false);
     onClose?.();
   };
   const [allProfiles, setAllProfiles] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [current, setCurrent] = useState(currentProfileId ?? null);
+  const [selectedIds, setSelectedIds] = useState(initialHeldIds);
+  const [current, setCurrent] = useState(
+    currentProfileId ?? initialHeldIds[0] ?? null,
+  );
   const { setLoading } = useToastContext();
   const { hasPermission } = usePermission();
   const admin = hasPermission(USER_CODES.MANAGE_PROFILES);
 
   const heldIds = useMemo(
-    () => userProfiles.map((up) => up.profileId ?? up.profile?.id).filter((x) => x != null),
+    () => assignedProfileIds(userProfiles),
     [userProfiles],
   );
 
-  useEffect(() => {
-    if (!open) return;
+  const openDialog = () => {
     setSelectedIds(heldIds);
     setCurrent(currentProfileId ?? heldIds[0] ?? null);
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
     (async () => {
       const res = await apiRequest("users/assignable-profiles");
       if (res.ok) {
@@ -68,7 +83,7 @@ export function ProfileManagerDialog({
         setAllProfiles(body?.data?.items ?? body?.data ?? []);
       }
     })();
-  }, [open, heldIds, currentProfileId]);
+  }, [open]);
 
   // Sales tier is mutually exclusive: at most one of Sales / Primary sales / Super sales.
   const keyById = useMemo(
@@ -104,9 +119,17 @@ export function ProfileManagerDialog({
       "PUT",
     );
     if (req.status === 200 || req?.success === true) {
-      if (setData) setData((prev) => (Array.isArray(prev) ? [...prev] : prev));
-      window.location.reload();
-      setOpen(false);
+      if (setData) {
+        setData((prev) =>
+          applyProfilesToUserRows(prev, {
+            userId,
+            profileIds: req.data?.profileIds ?? selectedIds,
+            currentProfileId: req.data?.currentProfileId ?? current,
+            availableProfiles: allProfiles,
+          }),
+        );
+      }
+      closeDialog();
     }
   }
 
@@ -115,7 +138,7 @@ export function ProfileManagerDialog({
     if (hideTrigger) return null;
     return (
       <Button
-        onClick={() => setOpen(true)}
+        onClick={openDialog}
         variant="contained"
         fullWidth
         startIcon={<FiLayers />}

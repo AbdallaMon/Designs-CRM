@@ -1,4 +1,5 @@
 "use client";
+import { CHAT_MEMBER_ROLES } from "@dms/shared";
 
 import React, { useCallback, useState } from "react";
 import {
@@ -147,14 +148,14 @@ export function AddMembersDialog({
                     </Box>
 
                     {/* Role badge */}
-                    {canManageMembers && !m.clientId && m.role !== "ADMIN" && (
+                    {canManageMembers && !m.clientId && m.role !== CHAT_MEMBER_ROLES.ADMIN && (
                       <MarkAsModerator
                         member={m}
                         onMark={() => reFetchMembers()}
                         roomId={roomId}
                       />
                     )}
-                    {m.role !== "ADMIN" && !m.clientId && canManageMembers && (
+                    {m.role !== CHAT_MEMBER_ROLES.ADMIN && !m.clientId && canManageMembers && (
                       <Box>
                         <IconButton
                           size="small"
@@ -168,18 +169,18 @@ export function AddMembersDialog({
                     <Box>
                       <Chip
                         label={
-                          m.role === "ADMIN"
+                          m.role === CHAT_MEMBER_ROLES.ADMIN
                             ? "Admin"
-                            : m.role === "MODERATOR"
+                            : m.role === CHAT_MEMBER_ROLES.MODERATOR
                             ? "Moderator"
                             : m.client
                             ? "Client"
                             : "Member"
                         }
                         color={
-                          m.role === "ADMIN"
+                          m.role === CHAT_MEMBER_ROLES.ADMIN
                             ? "primary"
-                            : m.role === "MODERATOR"
+                            : m.role === CHAT_MEMBER_ROLES.MODERATOR
                             ? "secondary"
                             : m.client
                             ? "info"
@@ -322,7 +323,7 @@ function MarkAsModerator({ member, onMark, roomId }) {
   async function handleConfirm() {
     const req = await handleRequestSubmit(
       {
-        role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
+        role: member.role === CHAT_MEMBER_ROLES.MODERATOR ? CHAT_MEMBER_ROLES.MEMBER : CHAT_MEMBER_ROLES.MODERATOR,
       },
       setLoading,
       `chat/rooms/${roomId}/members/${member.id}`,
@@ -339,16 +340,16 @@ function MarkAsModerator({ member, onMark, roomId }) {
   return (
     <>
       <Button variant="outlined" onClick={() => setConfirmOpen(true)}>
-        Mark as {member.role === "MODERATOR" ? "Member" : "Moderator"}
+        Mark as {member.role === CHAT_MEMBER_ROLES.MODERATOR ? "Member" : "Moderator"}
       </Button>
       <ConfirmDialog
         title={`Mark ${member.user?.name || "Unknown"} as ${
-          member.role === "MODERATOR" ? "Member" : "Moderator"
+          member.role === CHAT_MEMBER_ROLES.MODERATOR ? "Member" : "Moderator"
         }`}
         description={`Are you sure you want to mark ${
           member.user?.name || "this user"
         } as ${
-          member.role === "MODERATOR" ? "a regular member" : "a moderator"
+          member.role === CHAT_MEMBER_ROLES.MODERATOR ? "a regular member" : "a moderator"
         }?`}
         open={openConfirm}
         onConfirm={handleConfirm}

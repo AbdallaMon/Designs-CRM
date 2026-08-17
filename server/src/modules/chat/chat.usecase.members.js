@@ -1,6 +1,6 @@
 import { getIo } from "../../infra/socket/io-registry.js";
 import { AppError } from "../../shared/errors/AppError.js";
-import { chatMessagesCodes } from "@dms/shared";
+import { CHAT_MEMBER_ROLES, chatMessagesCodes } from "@dms/shared";
 import { chatRepository } from "./chat.repo.js";
 
 
@@ -36,7 +36,7 @@ export const memberMethods = {
     const requester = await chatRepository.getMember({ roomId, userId });
     if (
       !requester ||
-      (requester.role !== "ADMIN" && requester.role !== "MODERATOR")
+      (requester.role !== CHAT_MEMBER_ROLES.ADMIN && requester.role !== CHAT_MEMBER_ROLES.MODERATOR)
     ) {
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
     }
@@ -44,7 +44,7 @@ export const memberMethods = {
     const memberData = userIds.map((uid) => ({
       roomId: Number(roomId),
       userId: Number(uid),
-      role: "MEMBER",
+      role: CHAT_MEMBER_ROLES.MEMBER,
     }));
     await chatRepository.addRoomMembers(memberData);
 
@@ -77,7 +77,7 @@ export const memberMethods = {
 
     const isSelf = memberToRemove.userId === Number(userId);
     const isAdmin =
-      requester?.role === "ADMIN" || requester?.role === "MODERATOR";
+      requester?.role === CHAT_MEMBER_ROLES.ADMIN || requester?.role === CHAT_MEMBER_ROLES.MODERATOR;
 
     if (!isSelf && !isAdmin) {
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
@@ -135,7 +135,7 @@ export const memberMethods = {
     if (!requester)
       throw new AppError({ code: chatMessagesCodes.ROOM_FORBIDDEN_ACTION, statusCode: 403 });
 
-    const validRoles = ["ADMIN", "MODERATOR", "MEMBER"];
+    const validRoles = [CHAT_MEMBER_ROLES.ADMIN, CHAT_MEMBER_ROLES.MODERATOR, CHAT_MEMBER_ROLES.MEMBER];
     if (!validRoles.includes(role)) throw new AppError({ code: chatMessagesCodes.INVALID_MEMBER_ROLE, statusCode: 400 });
 
     const updated = await chatRepository.updateMemberRole(memberId, role);

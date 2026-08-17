@@ -1,4 +1,5 @@
 import { generalMessagesCodes, messagesNames } from "@dms/shared";
+import { exposeAssetReferences } from "../../infra/upload/asset-access.js";
 
 const GENERAL_MESSAGES = messagesNames.generalMessages;
 
@@ -15,9 +16,12 @@ function assertMessageCode(message) {
 
 function successResponse(res, data, message, translationKey) {
   assertMessageCode(message);
+  const responseData = res.locals?.preserveCanonicalAssetReferences
+    ? data
+    : exposeAssetReferences(data);
   return res
     .status(200)
-    .json({ success: true, message, data, translationKey });
+    .json({ success: true, message, data: responseData, translationKey });
 }
 
 export function ok(

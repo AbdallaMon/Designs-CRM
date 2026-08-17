@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { HOMEWORK_TYPES } from "@dms/shared";
 import {
   Table,
   TableBody,
@@ -61,9 +62,9 @@ const HomeworkTable = ({ courseId, lessonId }) => {
   // Get icon based on homework type
   const getTypeIcon = (type) => {
     switch (type) {
-      case "VIDEO":
+      case HOMEWORK_TYPES.VIDEO:
         return <VideoIcon color="error" />;
-      case "SUMMARY":
+      case HOMEWORK_TYPES.SUMMARY:
         return <SummaryIcon color="primary" />;
       default:
         return <SummaryIcon color="action" />;
@@ -73,9 +74,9 @@ const HomeworkTable = ({ courseId, lessonId }) => {
   // Get color for homework type chip
   const getTypeColor = (type) => {
     switch (type) {
-      case "VIDEO":
+      case HOMEWORK_TYPES.VIDEO:
         return "error";
-      case "SUMMARY":
+      case HOMEWORK_TYPES.SUMMARY:
         return "primary";
       default:
         return "default";
@@ -201,7 +202,7 @@ const HomeworkTable = ({ courseId, lessonId }) => {
         >
           <Box>
             <Typography variant="h6" component="div">
-              {selectedStudent?.name}'s Homeworks
+              {selectedStudent?.name}&apos;s Homeworks
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {selectedStudent?.email} •{" "}

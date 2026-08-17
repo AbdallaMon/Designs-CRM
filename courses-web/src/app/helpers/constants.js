@@ -1,3 +1,5 @@
+import { COURSE_QUESTION_TYPES } from "@dms/shared";
+
 export const initialPageLimit = 20;
 export const totalLimitPages = [10, 20, 50, 100];
 export const simpleModalStyle = {
@@ -25,13 +27,7 @@ export const NotificationType = {
   OTHER: "Other",
 };
 
-export const QuestionTypes = {
-  MULTIPLE_CHOICE: "MULTIPLE_CHOICE",
-  SINGLE_CHOICE: "SINGLE_CHOICE",
-  TRUE_FALSE: "TRUE_FALSE",
-  TEXT: "TEXT",
-  ORDERING: "ORDERING",
-};
+export const QuestionTypes = COURSE_QUESTION_TYPES;
 
 export const QuestionTypesLabels = {
   MULTIPLE_CHOICE: "Multiple choice",

@@ -9,12 +9,12 @@ export function FileLinkRow({ att, iframe, handleMediaReady }) {
   const fileUrl = att?.fileUrl;
   const { icon: Icon, color, label } = getFileConfig(mime);
 
-  if (!fileUrl) return null;
   useEffect(() => {
     if (!isPdf(mime)) {
       handleMediaReady?.();
     }
-  }, [att]);
+  }, [handleMediaReady, mime]);
+  if (!fileUrl) return null;
   return (
     <>
       {iframe && isPdf(mime) ? (

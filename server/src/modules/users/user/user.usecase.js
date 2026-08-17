@@ -4,6 +4,8 @@ import bcrypt from "bcrypt";
 import dayjs from "dayjs";
 import { AppError } from "../../../shared/errors/AppError.js";
 import {
+  PROFILE_FAMILIES,
+  PROFILES,
   userMessagesCodes,
   AUDIT_MODULES,
   AUDIT_ACTIONS,
@@ -16,6 +18,8 @@ import {
   computeUserCapabilities,
   computeProfileCapabilities,
   isAdminTier,
+  isUserManagementOperator,
+  canManageUser,
   formatUserLogs,
 } from "./user.dto.js";
 
@@ -66,7 +70,13 @@ export async function getUserLogs(userId, month, year) {
 }
 
 // Non-admin self-service edits cannot change authorization or administrative fields.
-const PROFILE_SELF_EDITABLE = ["name", "telegramUsername", "profilePicture"];
+const PROFILE_SELF_EDITABLE = [
+  "name",
+  "telegramUsername",
+  "profilePicture",
+  "allowNotification",
+  "allowEmailing",
+];
 
 // Admin-tier profile edits use an explicit allow-list. Passwords are always hashed.
 const PROFILE_ADMIN_EDITABLE = [
@@ -78,6 +88,8 @@ const PROFILE_ADMIN_EDITABLE = [
   "password",
   "maxLeadsCounts",
   "maxLeadCountPerDay",
+  "allowNotification",
+  "allowEmailing",
 ];
 
 const USER_IDENTITY_FIELDS = [
@@ -112,24 +124,57 @@ export class UserUsecase {
   async checkIfUserCanAccessProfile({ userId, authUser }) {
     const targetId = Number(userId);
     const isSelf = targetId === Number(authUser.id);
-    if (!isSelf && !isAdminTier(authUser)) {
+    if (!isSelf && !isUserManagementOperator(authUser)) {
       throw new AppError({ code: userMessagesCodes.USER_PROFILE_ACCESS_DENIED, statusCode: 403 });
     }
-    const target = await userRepository.findUserIdById({ userId: targetId });
+    const target = isSelf
+      ? await userRepository.findUserIdById({ userId: targetId })
+      : await userRepository.findUserManagementScope({ userId: targetId });
     if (!target) throw new AppError({ code: userMessagesCodes.USER_PROFILE_NOT_FOUND, statusCode: 404 });
-    return { id: target.id, isSelf, adminTier: isAdminTier(authUser) };
+    if (!isSelf && !canManageUser(target, authUser)) {
+      throw new AppError({ code: userMessagesCodes.USER_PROFILE_ACCESS_DENIED, statusCode: 403 });
+    }
+    return {
+      id: target.id,
+      isSelf,
+      adminTier:
+        isAdminTier(authUser) ||
+        (!isSelf && authUser?.currentProfileKey === PROFILES.SUPER_SALES),
+    };
   }
 
   // Write scope: same self-OR-admin rule (stricter behavior is in the field whitelist).
   async checkIfUserCanMutateProfile({ userId, authUser }) {
     const targetId = Number(userId);
     const isSelf = targetId === Number(authUser.id);
-    if (!isSelf && !isAdminTier(authUser)) {
+    if (!isSelf && !isUserManagementOperator(authUser)) {
       throw new AppError({ code: userMessagesCodes.USER_PROFILE_MUTATE_DENIED, statusCode: 403 });
     }
-    const target = await userRepository.findUserIdById({ userId: targetId });
+    const target = isSelf
+      ? await userRepository.findUserIdById({ userId: targetId })
+      : await userRepository.findUserManagementScope({ userId: targetId });
     if (!target) throw new AppError({ code: userMessagesCodes.USER_PROFILE_NOT_FOUND, statusCode: 404 });
-    return { id: target.id, isSelf, adminTier: isAdminTier(authUser) };
+    if (!isSelf && !canManageUser(target, authUser)) {
+      throw new AppError({ code: userMessagesCodes.USER_PROFILE_MUTATE_DENIED, statusCode: 403 });
+    }
+    return {
+      id: target.id,
+      isSelf,
+      adminTier:
+        isAdminTier(authUser) ||
+        (!isSelf && authUser?.currentProfileKey === PROFILES.SUPER_SALES),
+    };
+  }
+
+  async checkIfUserCanManageUser({ userId, authUser }) {
+    const target = await userRepository.findUserManagementScope({ userId });
+    if (!target) {
+      throw new AppError({ code: userMessagesCodes.USER_PROFILE_NOT_FOUND, statusCode: 404 });
+    }
+    if (!canManageUser(target, authUser)) {
+      throw new AppError({ code: userMessagesCodes.USER_PROFILE_MUTATE_DENIED, statusCode: 403 });
+    }
+    return { id: target.id };
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -283,8 +328,13 @@ export class UserUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  DB-RELATIONAL PROFILES (admin assign / remove + active)
   // ════════════════════════════════════════════════════════════════════════════
-  async listAssignableProfiles() {
-    return { items: await userRepository.listAssignableProfiles() };
+  async listAssignableProfiles({ authUser }) {
+    let where = {};
+    if (authUser?.currentProfileKey === PROFILES.SUPER_ADMIN) where = { key: { not: PROFILES.ADMIN } };
+    if (authUser?.currentProfileKey === PROFILES.SUPER_SALES) {
+      where = { family: PROFILE_FAMILIES.SALES };
+    }
+    return { items: await userRepository.listAssignableProfiles({ where }) };
   }
 
   /**
@@ -302,10 +352,17 @@ export class UserUsecase {
     if (profiles.length !== desired.length) {
       throw new AppError({ code: userMessagesCodes.USER_PROFILE_NOT_ALLOWED, statusCode: 400 });
     }
+    if (
+      (authUser?.currentProfileKey === PROFILES.SUPER_ADMIN && profiles.some((p) => p.key === PROFILES.ADMIN)) ||
+      (authUser?.currentProfileKey === PROFILES.SUPER_SALES &&
+        profiles.some((p) => p.family !== PROFILE_FAMILIES.SALES))
+    ) {
+      throw new AppError({ code: userMessagesCodes.USER_PROFILE_NOT_ALLOWED, statusCode: 403 });
+    }
 
     // Sales tier is mutually exclusive: at most one of Sales / Primary sales / Super sales
     // (hierarchical variants of the same STAFF-sales role). Other families combine freely.
-    const SALES_TIER = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
+    const SALES_TIER = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES];
     if (profiles.filter((p) => SALES_TIER.includes(p.key)).length > 1) {
       throw new AppError({ code: userMessagesCodes.USER_SALES_TIER_EXCLUSIVE, statusCode: 400 });
     }

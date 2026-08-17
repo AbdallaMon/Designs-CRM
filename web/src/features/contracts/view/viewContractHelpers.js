@@ -1,10 +1,11 @@
+import { CONTRACT_PAYMENT_STATUSES, WORK_STAGE_STATUSES } from "@dms/shared";
 export const canEditStageDays = (stageStatus) =>
-  stageStatus === "IN_PROGRESS" || stageStatus === "NOT_STARTED";
-export const canDeleteStage = (stageStatus) => stageStatus === "NOT_STARTED";
+  stageStatus === WORK_STAGE_STATUSES.IN_PROGRESS || stageStatus === WORK_STAGE_STATUSES.NOT_STARTED;
+export const canDeleteStage = (stageStatus) => stageStatus === WORK_STAGE_STATUSES.NOT_STARTED;
 
 // payments: allow delete only when NOT_DUE or DUE (but not received/transfered)
 export const canDeletePayment = (status) =>
-  status === "NOT_DUE" || status === "DUE";
+  status === CONTRACT_PAYMENT_STATUSES.NOT_DUE || status === CONTRACT_PAYMENT_STATUSES.DUE;
 
 // tiny diff util so we only send changed fields
 export function diffPayload(original, changed) {

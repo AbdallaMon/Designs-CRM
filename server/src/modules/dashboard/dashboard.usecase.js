@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 // Dashboard analytics orchestration. Prisma stays in repositories/aggregations and
 // request scope is derived from the authenticated user's active profile. Admin-tier
 // profiles may select a staff filter; other profiles are forced to their own user ID.
@@ -19,7 +20,7 @@ class DashboardUsecase {
   // Admin-tier predicate — the legacy `isAdmin` union, read from the TOKEN (req.auth).
   #isAdminTier(authUser) {
     return Boolean(authUser?.isAdminTier) ||
-      authUser?.currentProfileKey === "SUPER_SALES";
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES;
   }
 
   // Resolve the effective staffId scope from the authenticated caller. Admin-tier may
@@ -59,7 +60,7 @@ class DashboardUsecase {
   // commission recompute side-effect, gated on the TOKEN role — preserved).
   getLeadsStatus({ query, authUser }) {
     const sp = this.#buildSearchParams({ query, authUser });
-    return getDashboardLeadStatusData(sp, Boolean(authUser.isAdminTier));
+    return getDashboardLeadStatusData(sp, this.#isAdminTier(authUser));
   }
 
   // GET /monthly-performance — 12-month lead/revenue trend, scoped to the caller (legacy

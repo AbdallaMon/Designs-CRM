@@ -1,4 +1,5 @@
 "use client";
+import { CONTRACT_PAYMENT_STATUSES } from "@dms/shared";
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -35,10 +36,10 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 
 const STATUS_OPTS = [
-  { value: "DUE", label: "Due" },
-  { value: "RECEIVED", label: "Received" },
-  { value: "TRANSFERRED", label: "Transferred" },
-  { value: "NOT_DUE", label: "Not due" },
+  { value: CONTRACT_PAYMENT_STATUSES.DUE, label: "Due" },
+  { value: CONTRACT_PAYMENT_STATUSES.RECEIVED, label: "Received" },
+  { value: CONTRACT_PAYMENT_STATUSES.TRANSFERRED, label: "Transferred" },
+  { value: CONTRACT_PAYMENT_STATUSES.NOT_DUE, label: "Not due" },
   { value: "ALL", label: "All" },
 ];
 
@@ -137,8 +138,8 @@ function ChangeStatus({ disableChange, payment, onChangeStatus, status }) {
         disabled={disableChange}
         IconComponent={FiChevronDown}
       >
-        <MenuItem value={"RECEIVED"}>Received</MenuItem>
-        <MenuItem value={"TRANSFERRED"}>Transferred</MenuItem>
+        <MenuItem value={CONTRACT_PAYMENT_STATUSES.RECEIVED}>Received</MenuItem>
+        <MenuItem value={CONTRACT_PAYMENT_STATUSES.TRANSFERRED}>Transferred</MenuItem>
       </Select>
     </FormControl>
   );
@@ -146,7 +147,7 @@ function ChangeStatus({ disableChange, payment, onChangeStatus, status }) {
 
 function PaymentRow({ payment, onChangeStatus, onEditAmounts }) {
   const theme = useTheme();
-  const disableChange = payment.status === "NOT_DUE";
+  const disableChange = payment.status === CONTRACT_PAYMENT_STATUSES.NOT_DUE;
   return (
     <Box
       sx={{
@@ -226,7 +227,7 @@ function PaymentAmountsDialog({ open, onClose, payment, onSave, loading }) {
   const [amountReceived, setAmountReceived] = useState(0);
   const { setLoading } = useToastContext();
   const [status, setStatus] = useState(payment?.status || "");
-  const disableChange = payment?.status === "NOT_DUE";
+  const disableChange = payment?.status === CONTRACT_PAYMENT_STATUSES.NOT_DUE;
   useEffect(() => {
     if (payment) {
       setAmountLost(payment.amountLost ?? 0);
@@ -420,7 +421,7 @@ export default function ContractPaymentsPage() {
     total: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("DUE"); // default: due payments
+  const [status, setStatus] = useState(CONTRACT_PAYMENT_STATUSES.DUE); // default: due payments
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [amountDialog, setAmountDialog] = useState({
@@ -471,7 +472,7 @@ export default function ContractPaymentsPage() {
 
   const handleChangeStatus = async (paymentId, newStatus) => {
     // guard: allow only RECEIVED or TRANSFERRED
-    if (newStatus !== "RECEIVED" && newStatus !== "TRANSFERRED") return;
+    if (newStatus !== CONTRACT_PAYMENT_STATUSES.RECEIVED && newStatus !== CONTRACT_PAYMENT_STATUSES.TRANSFERRED) return;
 
     const req = await handleRequestSubmit(
       { status: newStatus },

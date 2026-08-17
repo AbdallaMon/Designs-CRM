@@ -59,10 +59,6 @@ export async function handleProjectReminder({
   type,
 }) {
   try {
-    // ✅ Do your action here (e.g., send notification)
-    console.log(
-      `Sending ${timeLeft}-day reminder to clientLeadId: ${clientLeadId}`,
-    );
     const note = {
       id: `${projectId}-${clientLeadId}-${notifiedKey}`,
       clientLeadId: Number(clientLeadId),
@@ -79,10 +75,5 @@ export async function handleProjectReminder({
       },
     };
     await uploadANote(note);
-  } catch (error) {
-    console.error(
-      `❌ Failed to handle reminder for project ${projectId}:`,
-      error,
-    );
-  }
+  } catch {}
 }

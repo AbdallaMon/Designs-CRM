@@ -1,5 +1,5 @@
 // Pure helper that turns a backend error envelope into a UI-ready description: the
-// resolved (Arabic) denial reason plus any explained-redirect metadata the backend sent
+// resolved denial reason plus any explained-redirect metadata the backend sent
 // (redirectTo / redirectText / dontRedirect). Kept pure and side-effect free so it can be
 // unit-tested under vitest-node and reused by both handleSubmit and getData without
 // depending on a router — actual navigation is wired by a later RouteGuard task.
@@ -14,8 +14,18 @@ import { resolveMessage } from "../messages/resolveMessage";
  * @returns {{ message: string, redirectTo: string|null, redirectText: string|null, dontRedirect: boolean }}
  */
 export function describeApiError(body = {}) {
+  const details = Array.isArray(body.details)
+    ? body.details
+        .map((detail) => {
+          if (!detail || typeof detail !== "object") return null;
+          const path = detail.path ? `${detail.path}: ` : "";
+          return detail.message ? `${path}${detail.message}` : null;
+        })
+        .filter(Boolean)
+    : [];
+  const baseMessage = resolveMessage(body.message);
   return {
-    message: resolveMessage(body.message),
+    message: details.length ? `${baseMessage}. ${details.join("; ")}` : baseMessage,
     redirectTo: body.redirectTo ?? null,
     redirectText: body.redirectText ? resolveMessage(body.redirectText) : null,
     dontRedirect: Boolean(body.dontRedirect),

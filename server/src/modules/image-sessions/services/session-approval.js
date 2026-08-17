@@ -1,3 +1,4 @@
+import { IMAGE_SESSION_STATUSES } from "@dms/shared";
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { uploadToFTPHttpAsBuffer } from "../../../infra/upload/ftp-upload.js";
@@ -62,7 +63,7 @@ export async function approveSession({ token, clientLeadId, id, pdfUrl }) {
   await prisma.clientImageSession.update({
     where: { id: Number(id) },
     data: {
-      sessionStatus: "SUBMITTED",
+      sessionStatus: IMAGE_SESSION_STATUSES.SUBMITTED,
       pdfUrl: pdfUrl,
     },
   });

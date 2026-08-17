@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import React from "react";
 import ConfirmWithActionModel from "@/shared/components/models/ConfirmsWithActionModel.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -21,7 +22,7 @@ function UpdateInitialConsultButton({ clientLead, fullWidth, onSuccess }) {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
 
-  if (user.profile !== "ADMIN" && user.profile !== "SUPER_SALES") return null;
+  if (user.profile !== PROFILES.ADMIN && user.profile !== PROFILES.SUPER_SALES) return null;
   if (clientLead.initialConsult !== false) return null;
 
   async function handleConfirm() {

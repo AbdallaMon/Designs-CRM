@@ -1,4 +1,5 @@
 import { socketErrorEnvelope } from "./socket-error.js";
+import { requireSocketRoom } from "./socket-room-access.js";
 
 /**
  * WebRTC call signalling handlers (initiated, answered, ended).
@@ -10,6 +11,7 @@ export function registerCallHandlers(socket, { io, ctx, usecase }) {
   socket.on("call:initiated", async (data) => {
     const { callType, roomId } = data;
     if (!callType || !roomId) return;
+    if (!requireSocketRoom(socket, ctx, roomId)) return;
     try {
       await usecase.initiateCall({ roomId, callType, userId: ctx.userId });
     } catch (err) {
@@ -21,6 +23,7 @@ export function registerCallHandlers(socket, { io, ctx, usecase }) {
   socket.on("call:answered", async (data) => {
     const { callId, roomId } = data;
     if (!callId || !roomId) return;
+    if (!requireSocketRoom(socket, ctx, roomId)) return;
     try {
       await usecase.answerCall({ callId, roomId, userId: ctx.userId });
     } catch (err) {
@@ -32,6 +35,7 @@ export function registerCallHandlers(socket, { io, ctx, usecase }) {
   socket.on("call:ended", async (data) => {
     const { callId, roomId } = data;
     if (!callId || !roomId) return;
+    if (!requireSocketRoom(socket, ctx, roomId)) return;
     try {
       await usecase.endCall({ callId, roomId, userId: ctx.userId });
     } catch (err) {

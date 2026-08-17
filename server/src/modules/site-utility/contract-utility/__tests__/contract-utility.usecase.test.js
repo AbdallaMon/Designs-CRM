@@ -5,7 +5,11 @@ vi.mock("../contract-utility.repo.js", () => ({
   contractUtilityRepository: {
     getUtility: vi.fn(),
     createUtility: vi.fn(),
+    upsertUtility: vi.fn(),
     updateUtility: vi.fn(),
+    createStageClause: vi.fn(),
+    createSpecialClause: vi.fn(),
+    createLevelClause: vi.fn(),
   },
 }));
 
@@ -28,12 +32,13 @@ describe("ContractUtilityUsecase.saveObligations", () => {
     // supply the fixed singleton id (1) so the first obligations save succeeds.
     const created = { id: 1, ...INPUT };
     contractUtilityRepository.getUtility.mockResolvedValue(null);
-    contractUtilityRepository.createUtility.mockResolvedValue(created);
+    contractUtilityRepository.upsertUtility.mockResolvedValue(created);
 
     const result = await contractUtilityUsecase.saveObligations({ input: INPUT });
 
-    expect(contractUtilityRepository.createUtility).toHaveBeenCalledWith({
-      data: { ...INPUT, id: 1 },
+    expect(contractUtilityRepository.upsertUtility).toHaveBeenCalledWith({
+      id: 1,
+      create: { ...INPUT, id: 1 },
     });
     expect(contractUtilityRepository.updateUtility).not.toHaveBeenCalled();
     expect(result).toBe(created);
@@ -50,5 +55,33 @@ describe("ContractUtilityUsecase.saveObligations", () => {
     expect(contractUtilityRepository.updateUtility).toHaveBeenCalledWith({ id: 1, data: INPUT });
     expect(contractUtilityRepository.createUtility).not.toHaveBeenCalled();
     expect(result).toBe(updated);
+  });
+});
+
+describe("ContractUtilityUsecase clause creation", () => {
+  it.each([
+    ["createStageClause", "createStageClause"],
+    ["createSpecialClause", "createSpecialClause"],
+    ["createLevelClause", "createLevelClause"],
+  ])("creates the missing singleton before %s", async (usecaseMethod, repoMethod) => {
+    contractUtilityRepository.getUtility.mockResolvedValue(null);
+    contractUtilityRepository.upsertUtility.mockResolvedValue({ id: 1 });
+    contractUtilityRepository[repoMethod].mockResolvedValue({ id: 10 });
+
+    await contractUtilityUsecase[usecaseMethod]({ input: { order: 0 } });
+
+    expect(contractUtilityRepository.upsertUtility).toHaveBeenCalledWith({
+      id: 1,
+      create: {
+        id: 1,
+        obligationsPartyOneAr: "",
+        obligationsPartyOneEn: "",
+        obligationsPartyTwoAr: "",
+        obligationsPartyTwoEn: "",
+      },
+    });
+    expect(contractUtilityRepository[repoMethod]).toHaveBeenCalledWith({
+      data: { order: 0, contractUtilityId: 1 },
+    });
   });
 });

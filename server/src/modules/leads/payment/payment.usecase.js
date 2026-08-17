@@ -1,3 +1,4 @@
+import { CONTRACT_LEVELS } from "@dms/shared";
 // leads/payment usecase — business logic / orchestration for lead payments. Prisma NEVER
 // appears here (only paymentRepository). Ported 1:1 from the legacy
 // shared/legacy/payment-services.js: the payment-array shaping stays here, Prisma I/O is
@@ -17,7 +18,7 @@ export async function makePayments(data, leadId) {
     payment.amount = Number(payment.amount);
     payment.paymentReason = payment.paymentReason;
     payment.clientLeadId = Number(leadId);
-    payment.paymentLevel = "LEVEL_1";
+    payment.paymentLevel = CONTRACT_LEVELS.LEVEL_1;
   });
   await paymentRepository.createManyPayments({ data });
   return data;
@@ -35,7 +36,7 @@ export async function makeExtraServicePayments({
     payment.amount = Number(payment.amount);
     payment.paymentReason = paymentReason || "Extra service";
     payment.clientLeadId = Number(leadId);
-    payment.paymentLevel = "LEVEL_1";
+    payment.paymentLevel = CONTRACT_LEVELS.LEVEL_1;
   });
   await paymentRepository.createManyPayments({ data });
   await paymentRepository.createExtraService({

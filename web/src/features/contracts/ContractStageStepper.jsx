@@ -1,4 +1,5 @@
 "use client";
+import { WORK_STAGE_STATUSES } from "@dms/shared";
 
 // Horizontal pipeline of a contract's stages. Replaces the old ContractStage grid card:
 // the stages are an `order`ed pipeline, so a stepper is the honest, compact shape for them.
@@ -16,9 +17,9 @@ import { contractLevel } from "@/app/helpers/constants";
 // NOT_STARTED → error (red): a not-yet-started stage is not an error.
 function nodeColors(theme, stageStatus) {
   switch (stageStatus) {
-    case "COMPLETED":
+    case WORK_STAGE_STATUSES.COMPLETED:
       return { main: theme.palette.success.main, filled: true };
-    case "IN_PROGRESS":
+    case WORK_STAGE_STATUSES.IN_PROGRESS:
       return { main: theme.palette.primary.main, filled: false, active: true };
     default:
       return { main: theme.palette.text.disabled, filled: false };
@@ -32,10 +33,10 @@ function StageNode({ stage, isLast }) {
   const LevelIcon = conf?.icon;
 
   const label = conf?.name || stage?.title || "Stage";
-  const isCompleted = stage?.stageStatus === "COMPLETED";
+  const isCompleted = stage?.stageStatus === WORK_STAGE_STATUSES.COMPLETED;
   const statusLabel = isCompleted
     ? "Completed"
-    : stage?.stageStatus === "IN_PROGRESS"
+    : stage?.stageStatus === WORK_STAGE_STATUSES.IN_PROGRESS
     ? "In progress"
     : "Not started";
   // Name color: in-progress dominant (primary), completed success-green, not-started a
@@ -63,7 +64,7 @@ function StageNode({ stage, isLast }) {
               transition: "all .2s ease",
             }}
           >
-            {stage?.stageStatus === "COMPLETED" ? (
+            {stage?.stageStatus === WORK_STAGE_STATUSES.COMPLETED ? (
               <FaCheck />
             ) : LevelIcon ? (
               <LevelIcon />
@@ -113,7 +114,7 @@ function StageNode({ stage, isLast }) {
             alignSelf: "flex-start",
             mt: active ? "18px" : "15px", // centre the connector on the node circle
             bgcolor:
-              stage?.stageStatus === "COMPLETED"
+              stage?.stageStatus === WORK_STAGE_STATUSES.COMPLETED
                 ? theme.palette.success.main
                 : alpha(theme.palette.text.disabled, 0.35),
           }}

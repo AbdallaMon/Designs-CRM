@@ -1,3 +1,4 @@
+import { TASK_STATUSES, PROJECT_STATUSES, PROFILES } from "@dms/shared";
 // projects/project repository — Prisma I/O ONLY (no business rules, no AppError).
 // Read queries + the scope `where` builders are the keystone of the PROJECTS domain.
 //
@@ -50,8 +51,8 @@ class ProjectRepository {
   model = prisma.project;
 
   hasFullScope({ currentProfileKey, isAdminTier }, mode) {
-    if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
-    return mode !== "mutate" && currentProfileKey === "ACCOUNTANT";
+    if (currentProfileKey === PROFILES.SUPER_SALES || isAdminTier) return true;
+    return mode !== "mutate" && currentProfileKey === PROFILES.ACCOUNTANT;
   }
 
   // Translate the auth user → a Prisma `where` fragment for the Project model.
@@ -169,7 +170,7 @@ class ProjectRepository {
     const { now } = todayRange();
     const meetingOrNot = {
       OR: [
-        { meeting: { is: { status: { in: ["IN_PROGRESS"] } } } },
+        { meeting: { is: { status: { in: [PROJECT_STATUSES.IN_PROGRESS] } } } },
         { meeting: null },
         { meetingReminderId: null },
       ],
@@ -502,7 +503,7 @@ class ProjectRepository {
               where: {
                 ...taskFilter,
                 status: {
-                  in: ["TODO", "IN_PROGRESS"],
+                  in: [TASK_STATUSES.TODO, PROJECT_STATUSES.IN_PROGRESS],
                 },
               },
               select: {
@@ -565,7 +566,7 @@ class ProjectRepository {
     const { now } = todayRange();
     const meetingOrNot = {
       OR: [
-        { meeting: { is: { status: { in: ["IN_PROGRESS"] } } } },
+        { meeting: { is: { status: { in: [PROJECT_STATUSES.IN_PROGRESS] } } } },
         { meeting: null },
         { meetingReminderId: null },
       ],
@@ -620,7 +621,7 @@ class ProjectRepository {
               where: {
                 ...taskFilter,
                 status: {
-                  in: ["TODO", "IN_PROGRESS"],
+                  in: [TASK_STATUSES.TODO, PROJECT_STATUSES.IN_PROGRESS],
                 },
               },
               select: {

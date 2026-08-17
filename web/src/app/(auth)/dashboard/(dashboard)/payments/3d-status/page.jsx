@@ -3,13 +3,12 @@ import { ThreeDWorkStages } from "@/app/helpers/constants";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import AccountantKanbanBoard from "@/features/Kanban/accountant/AccountantKanbanBoard";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import { PAYMENT_STATUSES, USER_FEEDBACK_MESSAGES } from "@dms/shared";
 
 export default function AccountantPage() {
   const { setAlertError } = useAlertContext();
   const moveCard = async (payment, newPaymentLevel, setPayments) => {
-    setAlertError(
-      "You are not allowed to change three d stages only payment levels"
-    );
+    setAlertError(USER_FEEDBACK_MESSAGES.PAYMENT_STAGE_CHANGE_DENIED);
   };
   const links = [
     {
@@ -29,7 +28,7 @@ export default function AccountantPage() {
       statusArray={Object.keys(ThreeDWorkStages)}
       links={links}
       moveCard={moveCard}
-      status="NOT_PAID"
+      status={PAYMENT_STATUSES.NOT_PAID}
       type="three-d"
     />
   );

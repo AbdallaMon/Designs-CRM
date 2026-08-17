@@ -1,10 +1,10 @@
 // image-sessions/client validation — the PUBLIC client image-selection surface. The TOKEN
 // is the authentication; the session is derived FROM the token, never from a client-supplied
 // id (the v2 usecase OVERRIDES `session.id`/`clientLeadId` with the token-resolved values).
-// Bodies that carry a session keep `.passthrough()` on the `session`/`sessionData` object
-// (it carries many display fields the FROZEN PDF builder reads), but the top-level body is
-// `.strict()` to block injected sibling fields. The status enum is constrained to the real
-// SessionStatus values so a bad status is a clean 422 instead of a DB error.
+// Bodies that carry a session keep `.passthrough()` on the `session`/`sessionData` object for
+// frontend compatibility, but server-resolved values remain authoritative. Top-level bodies
+// are `.strict()` so invalid workflow fields fail validation before reaching persistence.
+import { IMAGE_SESSION_STATUSES, validationMessagesCodes as V } from "@dms/shared";
 import { z } from "zod";
 
 // SSRF hardening for the PUBLIC generate-pdf surface. The frozen builder does
@@ -25,23 +25,17 @@ const SIGNATURE_URL = z
       !v.includes("://") && // no embedded scheme (http:// etc.)
       !v.startsWith("//") && // no protocol-relative / host hijack
       !v.includes("@"), // no userinfo@host trick
-    { message: "INVALID_SIGNATURE_URL" },
+    { message: V.INVALID_SIGNATURE_URL },
   );
 
-// SessionStatus enum — packages/db/prisma/schema.prisma l.1662-1674.
-const SESSION_STATUS = z.enum([
-  "INITIAL",
-  "PREVIEW_COLOR_PATTERN",
-  "SELECTED_COLOR_PATTERN",
-  "PREVIEW_MATERIAL",
-  "SELECTED_MATERIAL",
-  "PREVIEW_STYLE",
-  "SELECTED_STYLE",
-  "PREVIEW_IMAGES",
-  "SELECTED_IMAGES",
-  "PDF_GENERATED",
-  "SUBMITTED",
+const CLIENT_NAVIGATION_STATUS = z.enum([
+  IMAGE_SESSION_STATUSES.PREVIEW_COLOR_PATTERN,
+  IMAGE_SESSION_STATUSES.PREVIEW_MATERIAL,
+  IMAGE_SESSION_STATUSES.PREVIEW_STYLE,
+  IMAGE_SESSION_STATUSES.PREVIEW_IMAGES,
+  IMAGE_SESSION_STATUSES.SELECTED_IMAGES,
 ]);
+const choice = z.object({ id: z.coerce.number().int().positive() }).passthrough();
 
 // A session object that carries (at least) the token used to resolve the real session
 // server-side. `.passthrough()` — the FE sends the full session (many display fields used by
@@ -50,24 +44,26 @@ const SESSION_STATUS = z.enum([
 const sessionWithToken = z.object({ token: z.string().min(1) }).passthrough();
 
 const idParam = z.coerce.number().int().positive();
+const referenceToken = z.string().trim().min(1).max(4096).optional();
 
 export class ClientImageSessionValidation {
   // ── reference-data reads (query) ─────────────────────────────────────────────────────
-  static pageInfoQuery = z.object({ lng: z.string().optional(), type: z.string().optional() }).passthrough();
+  static pageInfoQuery = z.object({ lng: z.string().optional(), type: z.string().optional(), token: referenceToken }).passthrough();
   static prosConsQuery = z
     .object({
       id: z.union([z.coerce.number().int(), z.string()]).optional(),
       type: z.string().optional(),
       lng: z.string().optional(),
       isClient: z.string().optional(),
+      token: referenceToken,
     })
     .passthrough();
-  static lngQuery = z.object({ lng: z.string().optional() }).passthrough();
+  static lngQuery = z.object({ lng: z.string().optional(), token: referenceToken }).passthrough();
   static imagesQuery = z
-    .object({ spaceIds: z.string().optional(), styleId: z.union([z.coerce.number().int(), z.string()]).optional() })
+    .object({ spaceIds: z.string().optional(), styleId: z.union([z.coerce.number().int(), z.string()]).optional(), token: referenceToken })
     .passthrough();
   static sessionQuery = z.object({ token: z.string().min(1) }).passthrough();
-  static modelDataQuery = z.object({ model: z.string().min(1) }).passthrough();
+  static modelDataQuery = z.object({ model: z.string().min(1), token: referenceToken }).passthrough();
 
   // ── params ─────────────────────────────────────────────────────────────────────────────
   static imageIdParam = z.object({ imageId: idParam });
@@ -82,7 +78,7 @@ export class ClientImageSessionValidation {
   static changeStatus = z
     .object({
       token: z.string().min(1),
-      sessionStatus: SESSION_STATUS,
+      sessionStatus: CLIENT_NAVIGATION_STATUS,
     })
     .strict();
 
@@ -90,30 +86,30 @@ export class ClientImageSessionValidation {
   static saveColor = z
     .object({
       session: sessionWithToken,
-      selectedColor: z.any(),
+      selectedColor: choice,
       customColors: z.array(z.any()).nullish(),
-      status: SESSION_STATUS,
+      status: z.literal(IMAGE_SESSION_STATUSES.SELECTED_COLOR_PATTERN),
     })
     .strict();
   static saveMaterials = z
     .object({
       session: sessionWithToken,
-      selectedMaterials: z.array(z.any()),
-      status: SESSION_STATUS,
+      selectedMaterials: z.array(choice).min(1),
+      status: z.literal(IMAGE_SESSION_STATUSES.SELECTED_MATERIAL),
     })
     .strict();
   static saveStyle = z
     .object({
       session: sessionWithToken,
-      selectedStyle: z.any(),
-      status: SESSION_STATUS,
+      selectedStyle: choice,
+      status: z.literal(IMAGE_SESSION_STATUSES.SELECTED_STYLE),
     })
     .strict();
   static saveImages = z
     .object({
       session: sessionWithToken,
-      selectedImages: z.array(z.any()),
-      status: SESSION_STATUS,
+      selectedImages: z.array(choice).min(1),
+      status: z.literal(IMAGE_SESSION_STATUSES.PREVIEW_IMAGES),
     })
     .strict();
 
@@ -122,7 +118,7 @@ export class ClientImageSessionValidation {
     .object({
       sessionData: sessionWithToken,
       signatureUrl: SIGNATURE_URL,
-      sessionStatus: SESSION_STATUS,
+      sessionStatus: z.literal(IMAGE_SESSION_STATUSES.PDF_GENERATED),
       lng: z.union([z.string(), z.boolean()]).nullish(),
     })
     .strict();

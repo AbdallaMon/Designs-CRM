@@ -1,9 +1,10 @@
 import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export const inputs = [
   {
     data: { id: "amount", label: "Amount to be paid", type: "number" },
-    pattern: { required: { value: true, message: "Amount is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.AMOUNT_REQUIRED } },
   },
   {
     data: {
@@ -13,7 +14,7 @@ export const inputs = [
       defaultValue: new Date(),
     },
     useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.DATE_REQUIRED } },
   },
   {
     data: {
@@ -21,7 +22,7 @@ export const inputs = [
       label: "Attachment",
       type: "file",
     },
-    pattern: { required: { value: true, message: "Attachment is required" } },
+    pattern: { required: { value: true, message: FORM_ERRORS.ATTACHMENT_REQUIRED } },
   },
 ];
 

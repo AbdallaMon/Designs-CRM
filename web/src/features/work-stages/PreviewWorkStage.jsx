@@ -1,7 +1,8 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useEffect } from "react";
 
-import { checkIfADesigner, checkIfAdmin } from "@/app/helpers/functions/utility.js";
+import { checkIfADesigner, checkIfAdmin } from "@/app/helpers/functions/utility.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { PROJECT_CODES } from "@/app/helpers/permissionCodes";
@@ -48,7 +49,7 @@ const LeadContent = ({
     type === "3D_Modification" ||
     (type === "3D_Designer" && lead.projects?.[0]?.status === "Modification");
 
-  const isDesignerView = checkIfADesigner(user) || user.profile === "EXECUTOR_2D";
+  const isDesignerView = checkIfADesigner(user) || user.profile === PROFILES.EXECUTOR_2D;
 
   const workStageCtx = {
     lead,

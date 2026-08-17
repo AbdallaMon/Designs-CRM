@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import bullmqConnection from "../redis/bullmq.connection.js";
 import { uploadItemsToTele } from "../telegram/telegram-functions.js";
 import { coonnectToTelegramV2 } from "../../modules/telegram/connect.js";
+import { INTEGRATION_ERROR_CODES } from "@dms/shared";
 
 export const telegramUploadWorker = new Worker(
   "telegram-upload-queue",
@@ -15,7 +16,7 @@ export const telegramUploadWorker = new Worker(
 );
 
 telegramUploadWorker.on("failed", async (job, err) => {
-  if (err.message.includes("AUTH_KEY_UNREGISTERED")) {
+  if (err.message.includes(INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED)) {
     await coonnectToTelegramV2();
     console.log("Reconnected to Telegram successfully!");
   }

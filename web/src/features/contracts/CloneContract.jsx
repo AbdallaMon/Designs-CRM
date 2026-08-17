@@ -1,4 +1,5 @@
 "use client";
+import { CONTRACT_LEVELS } from "@dms/shared";
 
 import React, { useEffect, useState } from "react";
 import {
@@ -111,7 +112,7 @@ export default function CloneContract({
       const match =
         levels.find((x) => x.label === s.title) ||
         levels.find((x) => x.enum === s.levelEnum);
-      return match || { enum: s.title || "LEVEL_1", label: s.title || "Stage" };
+      return match || { enum: s.title || CONTRACT_LEVELS.LEVEL_1, label: s.title || "Stage" };
     });
     setSelectedStages(deduced);
     const meta = {};

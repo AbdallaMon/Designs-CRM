@@ -9,6 +9,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useSearchParams } from "next/navigation";
 import { CHAT_LIMITS } from "@/features/chat/utils/chatConstants.js";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 export function useChatRooms({
   category = null,
@@ -76,7 +77,7 @@ export function useChatRooms({
         const hasMore = page + 1 < (response.totalPages || 1);
         setHasMore(hasMore);
       } else {
-        setError("Failed to fetch chat rooms");
+      setError(FEEDBACK.CHAT_ROOMS_LOAD_FAILED);
       }
     } catch (err) {
       setError(err.message);

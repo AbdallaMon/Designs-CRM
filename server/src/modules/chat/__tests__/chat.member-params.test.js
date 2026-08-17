@@ -55,3 +55,16 @@ describe("DELETE/PUT /rooms/:roomId/members/:memberId params validation", () => 
     expect(bothPresent).toBe(false);
   });
 });
+
+describe("GET /rooms/:roomId/messages/:messageId/page params validation", () => {
+  it("roomMessageParams preserves both IDs for the cross-room check", () => {
+    const req = { params: { roomId: "7", messageId: "42" } };
+    const { req: out, err } = runMiddlewares(
+      [validate(chatSchemas.roomMessageParams, "params")],
+      req,
+    );
+
+    expect(err).toBeNull();
+    expect(out.params).toEqual({ roomId: 7, messageId: 42 });
+  });
+});

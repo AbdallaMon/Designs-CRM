@@ -29,6 +29,11 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import ChoiceEditor from "./components/ChoiceEditor";
 import SavedQuestion from "./components/SavedQuestion";
+import {
+  questionCreatePayload,
+  questionOrderPayload,
+  validateQuestionDraft,
+} from "@/app/helpers/contracts/coursePayloads";
 
 const TestQuestionManager = ({ testId }) => {
   const [questions, setQuestions] = useState([]);
@@ -166,21 +171,7 @@ const TestQuestionManager = ({ testId }) => {
     });
   }, []);
 
-  // Optimize validateQuestion with useCallback
-  const validateQuestion = useCallback((question) => {
-    if (!question.question.trim()) return "Question text is required";
-    if (!question.type) return "Question type is required";
-    if (question.type !== QuestionTypes.TEXT) {
-      if (question.choices.length < 2) return "At least 2 choices are required";
-      if (question.choices.some((c) => !c.text.trim()))
-        return "All choices must have text";
-      console.log(question.choices, "choices");
-      if (!question.choices.some((c) => c.isCorrect || c.order))
-        return "At least one correct answer is required";
-    }
-
-    return null;
-  }, []);
+  const validateQuestion = validateQuestionDraft;
 
   const saveQuestion = useCallback(async () => {
     const validation = validateQuestion(newQuestion);
@@ -190,7 +181,7 @@ const TestQuestionManager = ({ testId }) => {
     }
 
     const req = await handleRequestSubmit(
-      newQuestion,
+      questionCreatePayload(newQuestion),
       setToastLoading,
       `courses/tests/${testId}/test-questions`,
       false,
@@ -253,7 +244,7 @@ const TestQuestionManager = ({ testId }) => {
 
   const saveReOrdering = useCallback(async () => {
     const req = await handleRequestSubmit(
-      questions,
+      questionOrderPayload(questions),
       setToastLoading,
       `courses/tests/${testId}/test-questions/re-order`,
       false,
@@ -465,7 +456,7 @@ const TestQuestionManager = ({ testId }) => {
             No questions created yet
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Click "Create New Question" to get started
+            Click &quot;Create New Question&quot; to get started
           </Typography>
         </Paper>
       )}

@@ -4,7 +4,13 @@
 // a role-only fallback for un-migrated sessions — NEVER the legacy isSuperSales/isPrimary
 // flags (CLAUDE.md §2.8).
 import { AppError } from "../../shared/errors/AppError.js";
-import { myDayMessagesCodes, messagesNames } from "@dms/shared";
+import {
+  CALL_REMINDER_STATUSES, LEAD_COCKPIT_ACTION_KINDS, LEAD_STATUSES, MY_DAY_SIGNAL_TYPES, MY_DAY_URGENCY, MY_DAY_FAMILIES,
+  PROFILES,
+  REMINDER_TYPES,
+  myDayMessagesCodes,
+  messagesNames,
+} from "@dms/shared";
 import { myDayRepository } from "./my-day.repo.js";
 import { leadRepository } from "../leads/lead/lead.repo.js";
 import { computeCockpit, poolTouchSeverity } from "../leads/lead/lead.cockpit.js";
@@ -18,14 +24,14 @@ const TK = messagesNames.myDayMessages;
 export const MY_DAY_QUEUE_CAP = 50;
 
 // Profile → queue family. SUPER_SALES supervises but ALSO works own deals (spec §3).
-const SALES_PROFILE_KEYS = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
-const DESIGNER_PROFILE_KEYS = ["DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"];
+const SALES_PROFILE_KEYS = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES];
+const DESIGNER_PROFILE_KEYS = [PROFILES.DESIGNER_3D, PROFILES.DESIGNER_2D, PROFILES.EXECUTOR_2D];
 
 function familyOf(profileKey) {
-  if (SALES_PROFILE_KEYS.includes(profileKey)) return "SALES";
-  if (DESIGNER_PROFILE_KEYS.includes(profileKey)) return "DESIGNER";
-  if (profileKey === "ACCOUNTANT") return "FINANCE";
-  if (profileKey === "CONTACT_INITIATOR") return "INITIATOR";
+  if (SALES_PROFILE_KEYS.includes(profileKey)) return MY_DAY_FAMILIES.SALES;
+  if (DESIGNER_PROFILE_KEYS.includes(profileKey)) return MY_DAY_FAMILIES.DESIGNER;
+  if (profileKey === PROFILES.ACCOUNTANT) return MY_DAY_FAMILIES.FINANCE;
+  if (profileKey === PROFILES.CONTACT_INITIATOR) return MY_DAY_FAMILIES.INITIATOR;
   return null;
 }
 
@@ -68,7 +74,10 @@ class MyDayUsecase {
       overdue: new Date(r.time).getTime() < now.getTime(),
       reminderReason: r.reminderReason ?? null,
     });
-    return [...calls.map(toRow("CALL")), ...meetings.map(toRow("MEETING"))].sort(
+    return [
+      ...calls.map(toRow(REMINDER_TYPES.CALL)),
+      ...meetings.map(toRow(REMINDER_TYPES.MEETING)),
+    ].sort(
       (a, b) => new Date(a.time) - new Date(b.time),
     );
   }
@@ -86,7 +95,7 @@ class MyDayUsecase {
     // target was listed via sales work → the SALES queue (all reads keyed purely by userId)
     // itemizes it. (Previously this threw MY_DAY_PROFILE_UNSUPPORTED, making every such card /
     // exception open an empty/errored drawer.)
-    const family = targetFamily(targetUser) ?? "SALES";
+    const family = targetFamily(targetUser) ?? MY_DAY_FAMILIES.SALES;
     if (family === "DESIGNER") return this.#designerTargetQueue({ user: targetUser, now });
     return this.#salesTargetQueue({ user: targetUser, now });
   }
@@ -145,7 +154,13 @@ class MyDayUsecase {
       overdueCalls: overdueCalls.length,
       unsigned: unsigned.length,
     };
-    return MyDayDto.toTargetQueue({ user, family: "SALES", counts, items, now });
+      return MyDayDto.toTargetQueue({
+        user,
+        family: MY_DAY_FAMILIES.SALES,
+        counts,
+        items,
+        now,
+      });
   }
 
   // DESIGNER drill-down: the rep's active stages, on-track ones INCLUDED (empty signals →
@@ -165,8 +180,8 @@ class MyDayUsecase {
             {
               projectType: p.type,
               contractLevel: PROJECT_TYPE_TO_LEVEL[p.type] ?? null,
-              projectStatus: "IN_PROGRESS",
-              stageStatus: "IN_PROGRESS",
+              projectStatus: CALL_REMINDER_STATUSES.IN_PROGRESS,
+              stageStatus: CALL_REMINDER_STATUSES.IN_PROGRESS,
               deliveryAt,
             },
           ],
@@ -174,7 +189,7 @@ class MyDayUsecase {
         now,
       );
       items.push({
-        kind: "WORK_STAGE",
+        kind: MY_DAY_SIGNAL_TYPES.WORK_STAGE,
         projectId: p.id,
         leadId: p.clientLeadId,
         clientName: p.clientLead?.client?.name ?? null,
@@ -216,7 +231,7 @@ class MyDayUsecase {
   }
 
   async #queueFor({ userId, profileKey, family, now }) {
-    if (family === "SALES") {
+    if (family === MY_DAY_FAMILIES.SALES) {
       const [bundles, total] = await Promise.all([
         leadRepository.findCockpitBundlesForUser({ userId, take: MY_DAY_QUEUE_CAP }),
         leadRepository.countMyDayLeads({ userId }),
@@ -253,8 +268,8 @@ class MyDayUsecase {
               {
                 projectType: p.type,
                 contractLevel: PROJECT_TYPE_TO_LEVEL[p.type] ?? null,
-                projectStatus: "IN_PROGRESS", // repo already filtered to active projects
-                stageStatus: "IN_PROGRESS",
+                projectStatus: CALL_REMINDER_STATUSES.IN_PROGRESS, // repo already filtered to active projects
+                stageStatus: CALL_REMINDER_STATUSES.IN_PROGRESS,
                 deliveryAt,
               },
             ],
@@ -263,7 +278,7 @@ class MyDayUsecase {
         );
         if (!signals.length) continue;
         items.push({
-          kind: "WORK_STAGE",
+          kind: MY_DAY_SIGNAL_TYPES.WORK_STAGE,
           projectId: p.id,
           leadId: p.clientLeadId,
           clientName: p.clientLead?.client?.name ?? null,
@@ -279,14 +294,14 @@ class MyDayUsecase {
 
     // FINANCE (accountant) — collections queue: every lead whose active contract carries
     // a DUE ContractPayment, run through the engine's ACCOUNTANT ruleset (spec §6.1).
-    if (family === "FINANCE") {
+    if (family === MY_DAY_FAMILIES.FINANCE) {
       const bundles = await leadRepository.findCockpitBundlesWithDuePayments({
         take: MY_DAY_QUEUE_CAP,
       });
       const items = bundles
         .map((b) => {
           const { health, actions } = computeCockpit(normalizeBundle(b), now, {
-            profileKey: profileKey ?? "ACCOUNTANT",
+            profileKey: profileKey ?? PROFILES.ACCOUNTANT,
           });
           return {
             kind: "LEAD",
@@ -331,7 +346,7 @@ class MyDayUsecase {
             kind: "LEAD",
             leadId: l.id,
             clientName: l.client?.name ?? null,
-            status: "NEW",
+            status: LEAD_STATUSES.NEW,
             sortAt: l.createdAt ?? null,
             signals: [
               {
@@ -342,7 +357,7 @@ class MyDayUsecase {
                     (now.getTime() - new Date(l.createdAt).getTime()) / 3600_000,
                   ),
                 },
-                cta: { kind: "GOTO_TAB", capability: null, tabKey: null },
+                cta: { kind: LEAD_COCKPIT_ACTION_KINDS.GOTO_TAB, capability: null, tabKey: null },
               },
             ],
           };
@@ -383,7 +398,7 @@ class MyDayUsecase {
 
     // Everyone else holding my_day.team.view is a SUPER_SALES-tier supervisor:
     // sales-domain targets only.
-    if (targetFamily(target) === "SALES") return target;
+      if (targetFamily(target) === MY_DAY_FAMILIES.SALES) return target;
     throw new AppError({
       code: myDayMessagesCodes.MY_DAY_TEAM_SCOPE_DENIED,
       statusCode: 403,
@@ -428,24 +443,24 @@ class MyDayUsecase {
     const exceptions = [];
     for (const g of stale) {
       exceptions.push({
-        type: "LEAD_STALE_TEAM",
+        type: MY_DAY_SIGNAL_TYPES.LEAD_STALE_TEAM,
         severity: "warning",
         params: { userId: g.userId, userName: nameById.get(g.userId) ?? null, count: g._count._all },
       });
     }
     if (unclaimed > 0) {
-      exceptions.push({ type: "LEAD_UNCLAIMED_AGING", severity: "warning", params: { count: unclaimed } });
+      exceptions.push({ type: MY_DAY_SIGNAL_TYPES.LEAD_UNCLAIMED_AGING, severity: "warning", params: { count: unclaimed } });
     }
     for (const g of overdueCalls) {
       exceptions.push({
-        type: "CALL_OVERDUE_TEAM",
+        type: MY_DAY_SIGNAL_TYPES.CALL_OVERDUE_TEAM,
         severity: "critical",
         params: { userId: g.userId, userName: nameById.get(g.userId) ?? null, count: g._count._all },
       });
     }
     for (const c of signing) {
       exceptions.push({
-        type: "CONTRACT_SIGNING_STALLED",
+        type: MY_DAY_SIGNAL_TYPES.CONTRACT_SIGNING_STALLED,
         severity: "warning",
         params: {
           leadId: c.clientLeadId,
@@ -459,7 +474,7 @@ class MyDayUsecase {
     for (const p of load) {
       if (p.maxLeads != null && p.activeLeads > p.maxLeads) {
         exceptions.push({
-          type: "REP_OVER_CAPACITY",
+          type: MY_DAY_SIGNAL_TYPES.REP_OVER_CAPACITY,
           severity: "warning",
           params: { userId: p.userId, userName: p.name, activeCount: p.activeLeads, maxCount: p.maxLeads },
         });
@@ -469,7 +484,7 @@ class MyDayUsecase {
     const people = load.map((p) => ({
       userId: p.userId,
       name: p.name,
-      family: "SALES",
+      family: MY_DAY_FAMILIES.SALES,
       activeCount: p.activeLeads,
       maxCount: p.maxLeads,
       staleCount: staleById.get(p.userId) ?? 0,
@@ -494,7 +509,7 @@ class MyDayUsecase {
         .map((a) => a.user)
         .filter(Boolean);
       exceptions.push({
-        type: isOverdue ? "DELIVERY_OVERDUE_TEAM" : "DELIVERY_DUE_SOON_TEAM",
+        type: isOverdue ? MY_DAY_SIGNAL_TYPES.DELIVERY_OVERDUE_TEAM : MY_DAY_SIGNAL_TYPES.DELIVERY_DUE_SOON_TEAM,
         severity: isOverdue ? "critical" : "warning",
         params: {
           projectId: d.project?.id ?? null,
@@ -535,9 +550,9 @@ function compactHealth(health) {
     levelsTotal: health.contract?.levelsTotal ?? null,
     paymentFlag:
       health.payment?.overdueCount > 0
-        ? "OVERDUE"
+        ? MY_DAY_URGENCY.OVERDUE
         : health.payment?.hasDue
-          ? "DUE"
+          ? MY_DAY_URGENCY.DUE
           : health.contract
             ? "OK"
             : null,
@@ -547,7 +562,7 @@ function compactHealth(health) {
 // Earliest live-stage delivery date, else the project fallback (spec §5.2).
 function resolveDeliveryAt(project) {
   const liveDeliveries = (project.contractStages ?? [])
-    .filter((s) => s.stageStatus !== "COMPLETED" && s.deliverySchedule?.deliveryAt)
+    .filter((s) => s.stageStatus !== MY_DAY_URGENCY.COMPLETED && s.deliverySchedule?.deliveryAt)
     .map((s) => new Date(s.deliverySchedule.deliveryAt))
     .sort((a, b) => a - b);
   return liveDeliveries[0] ?? project.deliveryTime ?? null;

@@ -10,6 +10,7 @@ import { MultiAutoCompleteSelector } from "@/features/image-session/admin/shared
 import ImageLoader from "@/features/image-session/admin/shared/ImageLoader.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";
 
 export function EditDesignImage({ onUpdate, initialData }) {
   const { setLoading } = useToastContext();
@@ -19,13 +20,13 @@ export function EditDesignImage({ onUpdate, initialData }) {
     if (!data) {
       return {
         error: true,
-        message: "No thing to update",
+        message: FORM_ERRORS.NOTHING_TO_UPDATE,
       };
     }
     if (data.spaceIds && data.spaceIds.length === 0) {
       return {
         error: true,
-        message: "Select at least one sapce",
+        message: FORM_ERRORS.SELECT_SPACE,
       };
     }
     if (data.file) {
@@ -48,7 +49,7 @@ export function EditDesignImage({ onUpdate, initialData }) {
       component={EditDesignImageForm}
       name={"Images"}
       modelType={"DesignImage"}
-      slug={`image-session/images`}
+      slug="images"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       awaitCheck={true}

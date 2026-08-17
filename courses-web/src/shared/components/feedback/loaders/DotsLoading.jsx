@@ -8,20 +8,15 @@ export default function DotsLoader({ instantLoading }) {
 
   useEffect(() => {
     if (typeof window !== "undefined" && !instantLoading) {
+      // The server-rendered loader is removed once the client is ready.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
     } else {
       setLoading(true);
     }
-  }, []);
+  }, [instantLoading]);
 
-  useEffect(() => {
-    if (!loading) {
-      const dotContainer = document.querySelector(".dot_container");
-      window.setTimeout(() => {
-        dotContainer.remove();
-      }, 100);
-    }
-  }, [loading]);
+  if (!loading) return null;
 
   return (
     <div className={`dot_container ${styles.dot_container}`}>

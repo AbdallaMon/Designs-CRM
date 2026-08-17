@@ -18,6 +18,7 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getPriorityOrder } from "@/app/helpers/constants";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 // Arabic copy. `name` is the singular noun the call site passes ("Modification" / "Task").
 const arName = (name) => (name === "Modification" ? "Modification" : "Task");
@@ -72,7 +73,7 @@ export function CreateTaskModal({
 
   const handleSubmit = useCallback(async () => {
     if (!title) {
-      setAlertError("Title is required");
+      setAlertError(FEEDBACK.TITLE_REQUIRED);
       return;
     }
     const data = {

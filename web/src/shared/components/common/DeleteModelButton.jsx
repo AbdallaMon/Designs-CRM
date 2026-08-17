@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import React, { useState } from "react";
 import dayjs from "dayjs";
 import {
@@ -37,7 +38,7 @@ export default function DeleteModelButton({
   const isOlderThanTimeLimit =
     dayjs().diff(dayjs(item.createdAt), "minute") > timeLimit;
   const hasExtendedDeleteWindow =
-    user.profile === "SUPER_SALES" &&
+    user.profile === PROFILES.SUPER_SALES &&
     dayjs().diff(dayjs(item.createdAt), "day") < 2;
   const isAdmin = checkIfAdmin(user);
   const isMeeting = model === "MeetingReminder";
@@ -45,7 +46,7 @@ export default function DeleteModelButton({
     isAdmin ||
     !isOlderThanTimeLimit ||
     hasExtendedDeleteWindow ||
-    (isMeeting && user.profile === "SUPER_SALES");
+    (isMeeting && user.profile === PROFILES.SUPER_SALES);
 
   if (!canDelete) return null;
 

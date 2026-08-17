@@ -3,14 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { Box, Paper, Typography, useTheme, useMediaQuery } from "@mui/material";
+import { Box } from "@mui/material";
 import Image from "next/image";
 
 export default function HandleAuth({ children }) {
     const { isLoggedIn } = useAuth();
     const router = useRouter();
-    const theme = useTheme();
-
     useEffect(() => {
         function handleRedirect() {
             const redirect = window.localStorage.getItem("redirect");
@@ -39,9 +37,10 @@ export default function HandleAuth({ children }) {
               <Image
                     src="/admin-background.jpg"
                     alt="Admin Dashboard Background"
-                    layout="fill"
-                    objectFit="cover"
-                    quality={100}
+                    fill
+                    priority
+                    sizes="100vw"
+                    style={{ objectFit: "cover" }}
               />
               <Box
                     sx={{

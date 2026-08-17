@@ -1,6 +1,7 @@
+import { LEAD_STATUSES, PROFILES, USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import React, { useEffect, useState } from "react";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import {
   Alert,
@@ -77,13 +78,13 @@ export function FinalizeModal({
   const finalizeRequest = async () => {
     const request = await handleRequestSubmit(
       {
-        status: "FINALIZED",
+        status: LEAD_STATUSES.FINALIZED,
         averagePrice,
         updatePrice,
         discount: discount,
         priceWithOutDiscount: price,
         oldStatus: lead.status,
-        isAdmin: user.profile === "ADMIN",
+        isAdmin: user.profile === PROFILES.ADMIN,
         priceNote,
       },
       setLoading,
@@ -97,7 +98,7 @@ export function FinalizeModal({
       if (setLead) {
         setLead((oldLead) => ({
           ...oldLead,
-          status: "FINALIZED",
+          status: LEAD_STATUSES.FINALIZED,
           averagePrice,
           priceWithOutDiscount: price,
           discount,
@@ -109,7 +110,7 @@ export function FinalizeModal({
             l.id === id
               ? {
                   ...l,
-                  status: "FINALIZED",
+                  status: LEAD_STATUSES.FINALIZED,
                   averagePrice: Number(averagePrice),
                   priceNote,
                 }
@@ -128,7 +129,7 @@ export function FinalizeModal({
   // the only change in behavior: we always show a dialog before proceeding
   async function submit() {
     if (!price || Number(price) <= 0) {
-      setAlertError("Please enter a valid price agreed upon by the client.");
+      setAlertError(FEEDBACK.VALID_AGREED_PRICE_REQUIRED);
       return;
     }
 
@@ -138,7 +139,7 @@ export function FinalizeModal({
       currentContract ||
       (hasAnyContracts &&
         lead.contracts.some(
-          (c) => (c?.status || "").toUpperCase() === "IN_PROGRESS"
+          (c) => (c?.status || "").toUpperCase() === LEAD_STATUSES.IN_PROGRESS
         ));
     // choose which number to compare with the contract
     const finalPriceNumber =
@@ -235,7 +236,7 @@ export function FinalizeModal({
           onChange={(e) => {
             const v = Number(e.target.value);
             if (v > 100 || v < 0) {
-              setAlertError("Discount must be less than 100 or more than 0");
+      setAlertError(FEEDBACK.DISCOUNT_RANGE_INVALID);
               return;
             }
             setDiscount(v);

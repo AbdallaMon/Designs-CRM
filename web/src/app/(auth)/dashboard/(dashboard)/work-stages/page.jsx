@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 import { useState } from "react";
 import { Tab, Tabs, Box } from "@mui/material";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -46,7 +47,7 @@ function TwoDBoard() {
 export default function Page() {
   const { user } = useAuth();
   if (!user?.profile) return null;
-  if (user.profile === "DESIGNER_2D") {
+  if (user.profile === PROFILES.DESIGNER_2D) {
     return <TwoDBoard />;
   }
   return <WorkStagesKanban type={PROJECT_TYPES_ENUM.ThreeD.DESIGNER} />;

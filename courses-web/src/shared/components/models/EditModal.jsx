@@ -39,11 +39,11 @@ const EditModal = ({
     }
     if (handleBeforeSubmit)
       dataToSubmit = await handleBeforeSubmit(formData, item);
-    if (extraEditParams === undefined) extraEditParams = "";
+    const editParams = extraEditParams ?? "";
     const result = await handleRequestSubmit(
       dataToSubmit,
       setToastLoading,
-      `${href}/${item.id}${extraEditParams}`,
+      `${href}/${item.id}${editParams}`,
       false,
       "Editing",
       null,

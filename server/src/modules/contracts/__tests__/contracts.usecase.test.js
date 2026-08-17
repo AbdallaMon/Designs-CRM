@@ -55,7 +55,10 @@ vi.mock("../services/contract-pdf.service.js", () => ({
 vi.mock("../client/client-contract.repo.js", () => ({
   getContractSessionByToken: vi.fn(),
   getDefaultContractUtilityData: vi.fn(),
-  changeContractSessionStatus: vi.fn(),
+  transitionContractSessionStatus: vi.fn(),
+  setContractSigningSignature: vi.fn(),
+  completeContractFinalization: vi.fn(),
+  runWithContractFinalizationLock: vi.fn(),
 }));
 
 vi.mock("../services/generate-contract-pdf.js", () => ({
@@ -151,6 +154,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   installLeadScope();
   installRepoScope(100);
+  clientContractServices.runWithContractFinalizationLock.mockImplementation(({ task }) => task());
+  clientContractServices.setContractSigningSignature.mockResolvedValue(true);
+  clientContractServices.completeContractFinalization.mockResolvedValue(true);
 });
 
 const AUTH = { id: 5, role: "STAFF" };
@@ -263,6 +269,25 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
     expect(contractServices.createContract).not.toHaveBeenCalled();
   });
 
+  it("create: rejects an oldContractId outside the target lead before cancellation", async () => {
+    contractRepository.getContractClientLeadId.mockImplementation(async ({ contractId }) =>
+      Number(contractId) === 8
+        ? { id: 8, clientLeadId: 200 }
+        : { id: Number(contractId), clientLeadId: 100 },
+    );
+    await expect(
+      contractUsecase.createContract({
+        payload: {
+          clientLeadId: 100,
+          oldContractId: 8,
+          markOldAsCancelled: true,
+        },
+        authUser: AUTH,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(contractServices.createContract).not.toHaveBeenCalled();
+  });
+
   it("getById: resolves contract→lead and uses ACCESS scope (read)", async () => {
     contractServices.getContractDetailsById.mockResolvedValue({ id: 7 });
     await contractUsecase.getContractById({ contractId: 7, authUser: AUTH });
@@ -301,6 +326,23 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
     expect(contractServices.deleteContractStage).not.toHaveBeenCalled();
   });
 
+  it("nested child mutations reject an id belonging to another contract", async () => {
+    contractRepository.getStageClientLeadId.mockResolvedValue({
+      id: 42,
+      contractId: 8,
+      clientLeadId: 100,
+    });
+    await expect(
+      contractUsecase.updateStage({
+        contractId: 7,
+        stageId: 42,
+        newStage: { deliveryDays: 0 },
+        authUser: AUTH,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(contractServices.updateContractStage).not.toHaveBeenCalled();
+  });
+
   it("paymentsGrouped: passes req.auth as `user` (frozen-service role-scope preserved)", async () => {
     contractServices.getContractPaymentsGroupedService.mockResolvedValue({ items: [], total: 0 });
     await contractUsecase.getGroupedPayments({ page: 2, limit: 5, status: "DUE", authUser: AUTH });
@@ -317,13 +359,60 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
 //  PUBLIC SIGNING — token authoritative, no body override (IDOR safety)
 // ════════════════════════════════════════════════════════════════════════════
 describe("ClientContractUsecase public signing — token is authoritative", () => {
+  it("returns only the current public contract-page DTO", async () => {
+    clientContractServices.getContractSessionByToken.mockResolvedValue({
+      id: 1,
+      arToken: "tok",
+      enToken: "secret-en-token",
+      sessionStatus: "INITIAL",
+      internalCost: 500,
+      commissionEligible: true,
+      assignments: [{ id: 9 }],
+      paymentsNew: [{
+        id: 2,
+        amount: 100,
+        paymentSessionId: "secret-session",
+        project: { assignments: [{ id: 3 }], internalCost: 50 },
+        conditionItem: { labelAr: "a", labelEn: "e", internalCode: "x" },
+      }],
+      clientLead: {
+        id: 4,
+        code: "L-4",
+        emirate: "DUBAI",
+        country: null,
+        crmScore: 99,
+        client: { name: "Client", phone: "1", email: "c@example.com", password: "secret" },
+      },
+    });
+    clientContractServices.getDefaultContractUtilityData.mockResolvedValue({
+      obligationsPartyOneAr: "one",
+      internalCostTemplate: "secret",
+      stageClauses: [],
+      specialClauses: [],
+      levelClauses: [],
+    });
+
+    const result = await clientContractUsecase.getSession({ token: "tok" });
+    expect(result.data).toMatchObject({ id: 1, arToken: "tok", sessionStatus: "INITIAL" });
+    expect(result.data).not.toHaveProperty("enToken");
+    expect(result.data).not.toHaveProperty("assignments");
+    expect(result.data).not.toHaveProperty("internalCost");
+    expect(result.data.paymentsNew[0]).not.toHaveProperty("paymentSessionId");
+    expect(result.data.paymentsNew[0]).not.toHaveProperty("project");
+    expect(result.data.clientLead).not.toHaveProperty("crmScore");
+    expect(result.data.clientLead.client).not.toHaveProperty("password");
+    expect(result.contractUtility).not.toHaveProperty("internalCostTemplate");
+  });
+
   it("changeStatus keys the session by the TOKEN only (no client id override)", async () => {
-    clientContractServices.changeContractSessionStatus.mockResolvedValue({ id: 1 });
-    await clientContractUsecase.changeStatus({ token: "tok-abc", sessionStatus: "VIEWING" });
-    expect(clientContractServices.changeContractSessionStatus).toHaveBeenCalledWith({ token: "tok-abc", sessionStatus: "VIEWING" });
-    // the legacy `id` selector is NOT forwarded — no key but token.
-    const arg = clientContractServices.changeContractSessionStatus.mock.calls[0][0];
-    expect(arg).not.toHaveProperty("id");
+    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1, sessionStatus: "INITIAL" });
+    clientContractServices.transitionContractSessionStatus.mockResolvedValue({ id: 1, sessionStatus: "SIGNING" });
+    await clientContractUsecase.changeStatus({ token: "tok-abc", sessionStatus: "SIGNING" });
+    expect(clientContractServices.transitionContractSessionStatus).toHaveBeenCalledWith({
+      contractId: 1,
+      fromStatus: "INITIAL",
+      toStatus: "SIGNING",
+    });
   });
 
   it("changeStatus throws CONTRACT_SESSION_INVALID when no token", async () => {
@@ -334,26 +423,80 @@ describe("ClientContractUsecase public signing — token is authoritative", () =
   });
 
   it("generatePdf operates ONLY on the token's session (SIGNING → 🔒 build → REGISTERED)", async () => {
-    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1 });
-    clientContractServices.changeContractSessionStatus.mockResolvedValue({});
+    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1, sessionStatus: "SIGNING" });
     buildAndUploadContractPdf.mockResolvedValue({});
     await clientContractUsecase.generatePdf({ token: "tok-xyz", signatureUrl: "s.png", lng: "ar" });
 
-    // every session mutation is keyed by the SAME token; the PDF builder gets that token.
-    expect(clientContractServices.changeContractSessionStatus).toHaveBeenCalledTimes(2);
-    expect(clientContractServices.changeContractSessionStatus.mock.calls[0][0]).toMatchObject({ token: "tok-xyz", sessionStatus: "SIGNING" });
-    expect(clientContractServices.changeContractSessionStatus.mock.calls[1][0]).toMatchObject({ token: "tok-xyz", sessionStatus: "REGISTERED" });
+    expect(clientContractServices.setContractSigningSignature).toHaveBeenCalledWith({
+      contractId: 1,
+      signatureUrl: "s.png",
+    });
+    expect(clientContractServices.completeContractFinalization).toHaveBeenCalledWith({ contractId: 1 });
     expect(buildAndUploadContractPdf).toHaveBeenCalledWith({ token: "tok-xyz", signatureUrl: "s.png", lng: "ar" });
   });
 
+  it("rejects direct registration and backward signing transitions", async () => {
+    clientContractServices.getContractSessionByToken
+      .mockResolvedValueOnce({ id: 1, sessionStatus: "INITIAL" })
+      .mockResolvedValueOnce({ id: 1, sessionStatus: "SIGNING" });
+    await expect(
+      clientContractUsecase.changeStatus({ token: "tok", sessionStatus: "REGISTERED" }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    await expect(
+      clientContractUsecase.changeStatus({ token: "tok", sessionStatus: "INITIAL" }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(clientContractServices.transitionContractSessionStatus).not.toHaveBeenCalled();
+  });
+
+  it("treats an already registered finalization as idempotent", async () => {
+    clientContractServices.getContractSessionByToken.mockResolvedValue({
+      id: 1,
+      sessionStatus: "REGISTERED",
+      pdfLinkAr: "/a.pdf",
+      pdfLinkEn: "/e.pdf",
+    });
+    await expect(
+      clientContractUsecase.generatePdf({ token: "tok", signatureUrl: "s.png", lng: "ar" }),
+    ).resolves.toEqual({});
+    expect(buildAndUploadContractPdf).not.toHaveBeenCalled();
+  });
+
+  it("serializes concurrent finalization so the frozen builder runs once", async () => {
+    let status = "SIGNING";
+    let queue = Promise.resolve();
+    clientContractServices.getContractSessionByToken.mockImplementation(async () => ({
+      id: 1,
+      sessionStatus: status,
+    }));
+    clientContractServices.runWithContractFinalizationLock.mockImplementation(({ task }) => {
+      const run = queue.then(task);
+      queue = run.catch(() => undefined);
+      return run;
+    });
+    clientContractServices.completeContractFinalization.mockImplementation(async () => {
+      status = "REGISTERED";
+      return true;
+    });
+    buildAndUploadContractPdf.mockResolvedValue({});
+
+    await Promise.all([
+      clientContractUsecase.generatePdf({ token: "tok", signatureUrl: "s.png", lng: "ar" }),
+      clientContractUsecase.generatePdf({ token: "tok", signatureUrl: "s.png", lng: "ar" }),
+    ]);
+
+    expect(buildAndUploadContractPdf).toHaveBeenCalledTimes(1);
+    expect(clientContractServices.completeContractFinalization).toHaveBeenCalledTimes(1);
+  });
+
   it("generatePdf maps a frozen-builder failure to a language-neutral code (no prose)", async () => {
-    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1 });
-    clientContractServices.changeContractSessionStatus.mockResolvedValue({});
+    clientContractServices.getContractSessionByToken.mockResolvedValue({ id: 1, sessionStatus: "SIGNING" });
     buildAndUploadContractPdf.mockRejectedValue(new Error("boom"));
     await expect(clientContractUsecase.generatePdf({ token: "t", signatureUrl: "s", lng: "ar" })).rejects.toMatchObject({
       statusCode: 500,
       message: contractsMessagesCodes.CONTRACT_PDF_GENERATION_FAILED,
     });
+    expect(clientContractServices.setContractSigningSignature).toHaveBeenCalled();
+    expect(clientContractServices.completeContractFinalization).not.toHaveBeenCalled();
   });
 });
 
@@ -403,6 +546,30 @@ describe("contracts validation — money + mass-assignment", () => {
   it("updatePaymentAmounts: rejects a negative amountLost", () => {
     const r = ContractValidation.updatePaymentAmounts.safeParse({ amountLost: -1, amountReceived: 5 });
     expect(r.success).toBe(false);
+  });
+
+  it("update schemas preserve explicit clears and zero values", () => {
+    const basics = ContractValidation.updateBasics.safeParse({
+      title: "",
+      enTitle: null,
+      projectGroupId: "",
+    });
+    const payment = ContractValidation.updatePayment.safeParse({
+      amount: 0,
+      note: null,
+      conditionId: "",
+      type: null,
+    });
+    const stage = ContractValidation.updateStage.safeParse({
+      deliveryDays: 0,
+      deptDeliveryDays: null,
+    });
+    expect(basics.success).toBe(true);
+    expect(basics.data).toEqual({ title: "", enTitle: null, projectGroupId: null });
+    expect(payment.success).toBe(true);
+    expect(payment.data).toEqual({ amount: 0, note: null, conditionId: null, type: null });
+    expect(stage.success).toBe(true);
+    expect(stage.data).toEqual({ deliveryDays: 0, deptDeliveryDays: null });
   });
 
   it("changePaymentStatus: rejects an unknown body field", () => {

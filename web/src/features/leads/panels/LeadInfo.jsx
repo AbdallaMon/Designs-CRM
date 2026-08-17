@@ -1,42 +1,39 @@
 "use client";
-import { Typography, Grid, useTheme } from "@mui/material";
+import { LEAD_STATUSES } from "@dms/shared";
+import { Typography, Grid, Link, useTheme } from "@mui/material";
 import { InfoCard } from "@/features/leads/core/InfoCard.jsx";
 import { FinalPriceCalc } from "@/features/leads/core/FinalPriceCalc.jsx";
 import { BsBuilding } from "react-icons/bs";
 import dayjs from "dayjs";
 import { LEAD_SOURCE_LABELS, LeadCategory } from "@/app/helpers/constants";
 import { EditFieldButton } from "@/shared/components/common/EditFieldButton.jsx";
+import { usePermission } from "@/app/hooks/usePermission.js";
+import { ADMIN_RESIDUAL_CODES } from "@/app/helpers/permissionCodes.js";
+import { applyLeadFieldUpdate } from "./leadFieldState.js";
+
+function safeLeadSource(value) {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
 
 export function LeadInfo({ lead, setleads, setLead }) {
   const theme = useTheme();
-  function onUpdate(item, type, data) {
-    const update = type
-      ? {
-          [type]: { ...lead[type], [item]: data[item] },
-        }
-      : {
-          [item]: data[item],
-        };
-    if (setLead) {
-      setLead((oldLead) => ({
-        ...oldLead,
-        update,
-      }));
-    }
-    if (setleads) {
-      setleads((oldLeads) =>
-        oldLeads.map((l) => {
-          if (l.id === lead.id) {
-            return {
-              ...lead,
-              update,
-            };
-          } else {
-            return l;
-          }
-        })
-      );
-    }
+  const { hasPermission } = usePermission();
+  const canEditLead = hasPermission(ADMIN_RESIDUAL_CODES.LEAD_EDIT);
+  const sourceUrl = safeLeadSource(lead.source);
+
+  function onUpdate(field, updatedEntity) {
+    applyLeadFieldUpdate({
+      leadId: lead.id,
+      field,
+      updatedEntity,
+      setLead,
+      setLeads: setleads,
+    });
   }
   return (
     <InfoCard title="Lead Information" icon={BsBuilding} theme={theme}>
@@ -48,6 +45,23 @@ export function LeadInfo({ lead, setleads, setLead }) {
           <Typography variant="body1">
             {LeadCategory[lead.selectedCategory]}
           </Typography>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Typography color="text.secondary" variant="caption">
+            Lead source
+          </Typography>
+          {sourceUrl ? (
+            <Link
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ display: "block", overflowWrap: "anywhere" }}
+            >
+              {lead.source}
+            </Link>
+          ) : (
+            <Typography variant="body1">Unknown</Typography>
+          )}
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography color="text.secondary" variant="caption">
@@ -74,7 +88,7 @@ export function LeadInfo({ lead, setleads, setLead }) {
               : "Unknown"}
           </Typography>
         </Grid>
-        {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && (
+        {(lead.status === LEAD_STATUSES.FINALIZED || lead.status === "ARCHIVED") && (
           <Grid
             size={{ xs: 6 }}
             sx={{
@@ -84,12 +98,13 @@ export function LeadInfo({ lead, setleads, setLead }) {
             }}
           >
             <EditFieldButton
+              canEdit={canEditLead}
               path={`admin/leads/update/${lead.id}`}
               reqType="POST"
               field="finalizedDate"
               inputType="date"
               onUpdate={(data) => {
-                onUpdate("finalizedDate", null, data);
+                onUpdate("finalizedDate", data);
               }}
             >
               <Typography color="text.secondary" variant="caption">

@@ -19,6 +19,7 @@ import AttemptsList from "./components/AttemptsList";
 import AllQuestionsView from "./components/AllQuestionsView";
 import ReviewView from "./components/ReviewView";
 import NewAttemptDialog from "./components/NewAttemptDialog";
+import { describeApiError } from "@/app/helpers/functions/richError";
 
 const TestComponent = ({
   courseId,
@@ -85,27 +86,28 @@ const TestComponent = ({
   }
   async function saveAnswer(attemptId, questionId, answer) {
     setSavingAnswers((prev) => [...prev, questionId]);
-    const request = await apiRequest(
-      `staff-courses/tests/${testId}/attampts/${attemptId}/questions/${questionId}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ answer }),
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+    try {
+      const request = await apiRequest(
+        `staff-courses/tests/${testId}/attampts/${attemptId}/questions/${questionId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ answer }),
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+      const body = await request.json().catch(() => ({}));
+      if (!request.ok || body.success === false) {
+        setErrorQuestions((prev) => [...new Set([...prev, questionId])]);
+        throw new Error(describeApiError(body).message);
       }
-    );
-    await request.json();
-    if (request.status === 200) {
-      setSavingAnswers((prev) => prev.filter((id) => id !== questionId));
       setErrorQuestions((prev) => prev.filter((id) => id !== questionId));
+    } finally {
+      setSavingAnswers((prev) => prev.filter((id) => id !== questionId));
     }
   }
 
-  useEffect(() => {
-    loadTestData();
-  }, [testId, userId]);
-
-  const loadTestData = async () => {
+  async function loadTestData() {
     setLoading(true);
     try {
       const [test, , attemptsData] = await Promise.all([
@@ -113,7 +115,7 @@ const TestComponent = ({
         getTestQuestions(),
         getUserAttempts(),
       ]);
-      const ongoingAttempt = attemptsData.find((a) => !a.endTime);
+      const ongoingAttempt = attemptsData?.find((a) => !a.endTime);
       if (ongoingAttempt) {
         setCurrentAttempt(ongoingAttempt);
         setViewMode("test");
@@ -125,9 +127,9 @@ const TestComponent = ({
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const loadUserAnswers = (answers) => {
+  function loadUserAnswers(answers) {
     const answersMap = {};
     answers.forEach((answer) => {
       answersMap[answer.questionId] = {
@@ -136,9 +138,9 @@ const TestComponent = ({
       };
     });
     setUserAnswers(answersMap);
-  };
+  }
 
-  const startTimer = (attempt, test) => {
+  function startTimer(attempt, test) {
     if (!test?.timeLimit) return;
 
     const startTime = new Date(attempt.startTime);
@@ -154,32 +156,26 @@ const TestComponent = ({
         handleSubmitAttempt(attempt, test);
       }
     }
-  };
+  }
 
   useEffect(() => {
-    let interval;
-    if (!isTimerRunning || timeLeft === 0) {
-      if (currentAttempt) {
-        handleSubmitAttempt();
-      }
-    }
-    if (isTimerRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
+    // Test data is synchronized from the API whenever the selected test/user changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTestData();
+  }, [testId, userId]);
 
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-    // timeLeft MUST be a dependency: the body reads it to decide auto-submit, and the
-    // interval recreates each tick via the functional setTimeLeft updater (idempotent).
+  useEffect(() => {
+    if (!isTimerRunning) return;
+    const timeout = window.setTimeout(() => {
+      if (timeLeft <= 1) {
+        setIsTimerRunning(false);
+        if (currentAttempt) handleSubmitAttempt();
+        return;
+      }
+      setTimeLeft((previous) => Math.max(previous - 1, 0));
+    }, 1000);
+    return () => window.clearTimeout(timeout);
   }, [isTimerRunning, timeLeft, currentAttempt]);
-  useEffect(() => {}, []);
   const handleStartNewAttempt = async () => {
     try {
       const newAttempt = await createAttempt();
@@ -210,17 +206,17 @@ const TestComponent = ({
     }
   };
 
-  const handleSubmitAttempt = async (attempt, preLoadedTest) => {
+  async function handleSubmitAttempt(attempt, preLoadedTest) {
     const now = new Date();
-    const startTime = new Date(
-      !currentAttempt ? attempt.startTime : currentAttempt.startTime
-    );
-    const timeLimitMs =
-      (!test ? preLoadedTest.timeLimit : test.timeLimit) * 60 * 1000; // minutes to ms
-    const expireTime = new Date(startTime.getTime() + timeLimitMs);
+    const activeAttempt = currentAttempt || attempt;
+    const activeTest = test || preLoadedTest;
+    const startTime = new Date(activeAttempt?.startTime);
+    const expireTime = activeTest?.timeLimit
+      ? new Date(startTime.getTime() + activeTest.timeLimit * 60 * 1000)
+      : null;
 
-    const isTimeLeft = now < expireTime;
-    if (isTimeLeft) {
+    const shouldValidateAnswers = !expireTime || now < expireTime;
+    if (shouldValidateAnswers) {
       if (savingAnswers?.length > 0) {
         return;
       }
@@ -283,7 +279,7 @@ const TestComponent = ({
     } catch (error) {
       console.error("Failed to submit attempt:", error);
     }
-  };
+  }
   const lastAttempt = attempts?.length ? attempts[attempts.length - 1] : null;
   const attemptLimit = test
     ? Math.max(lastAttempt?.attemptLimit ?? 0, test.attemptLimit)
@@ -303,6 +299,7 @@ const TestComponent = ({
 
   const isAttemptExpired = (attempt, test) => {
     if (attempt.endTime) return true;
+    if (!test?.timeLimit) return false;
 
     const startTime = new Date(attempt.startTime).getTime(); // ms
     const now = Date.now(); // ms

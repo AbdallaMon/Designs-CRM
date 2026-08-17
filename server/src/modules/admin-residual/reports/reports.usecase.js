@@ -1,3 +1,4 @@
+import { LEAD_STATUSES } from "@dms/shared";
 // admin-residual/reports usecase — legacy `/admin/reports/*`.
 //
 // TWO kinds of endpoints:
@@ -57,7 +58,7 @@ class ReportsUsecase {
           : {},
         filters.reportType === "finalized"
           ? {
-              status: "FINALIZED",
+              status: LEAD_STATUSES.FINALIZED,
             }
           : {},
       ].filter((condition) => Object.keys(condition).length > 0),

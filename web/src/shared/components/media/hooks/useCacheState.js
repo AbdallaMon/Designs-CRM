@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isInCache } from "@/shared/components/media/utility.js";
+import { isInPrivateMediaCache } from "@/shared/components/media/privateCacheState.js";
 
 export function useCacheStatus(url) {
   const [cached, setCached] = useState(null); // null = unknown
@@ -12,7 +12,7 @@ export function useCacheStatus(url) {
       return;
     }
 
-    isInCache(url).then((v) => {
+    isInPrivateMediaCache(url).then((v) => {
       if (alive) setCached(Boolean(v));
     });
 

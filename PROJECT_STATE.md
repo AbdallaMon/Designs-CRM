@@ -3,7 +3,214 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-08-02** · Branch: `feat/workstage-flow-redesign`
+> Last updated: **2026-08-17** · Branch: `feat/workstage-flow-redesign`
+>
+> **LATEST (2026-08-17) — PDF frame/footer cleanup and durable intro assets ✅.**
+> Per explicit user authorization to change frozen PDF behavior, image-session PDFs no longer draw the hand-built
+> outer/inner page borders or the footer background, border, and separator line; the Generated/date and page-count text
+> remains, with `SiteUtility.pdfFrame` as the sole page frame. Contract PDFs were confirmed by code inspection to already
+> use only that PDF frame and a text-only footer. Website PDF-utility uploads now persist the canonical upload reference
+> instead of an expiring signed URL, so the configured intro remains available to contract generation, and image-session
+> intro rendering now shares the PNG/JPEG-capable contract renderer. No schema, migration, database, or authorization change.
+>
+> **LATEST (2026-08-17) — contract-utility editing works on fresh unseeded databases ✅.**
+> Stage, special, and level clause creation no longer fails with `CONTRACT_UTILITY_NOT_FOUND` when the required
+> `ContractUtility` singleton has not been seeded. The shared resolver atomically creates an editable singleton shell
+> with the schema-required obligation fields, and the obligations save uses the same race-safe upsert path. Existing
+> singleton IDs and data remain authoritative. Focused verification passed: **22/22 tests across 3/3 files** covering
+> obligations, all three clause families, site-utility behavior, validation, and permissions. No schema, migration,
+> production database, permission, contract-PDF, or legal-default change.
+>
+> **LATEST (2026-08-17) — client image-session note uploads and deferred side effects fixed ✅.**
+> Public client note attachments now use the existing `IMAGE_SESSION` upload purpose with the owning session token,
+> matching the signature flow and backend session-scope validation, and notes persist the canonical upload reference
+> instead of an expiring access URL. Telegram note/file propagation no longer sleeps inside the HTTP request; the
+> existing two-second delay is carried by the BullMQ job itself. Notification/email fan-out remains worker-queued.
+> Focused verification passed: **42/42 tests across 5/5 files** covering client note scope, upload validation/security,
+> canonical note attachment references, and delayed Telegram queue jobs. No schema, database, permission grant, or PDF change.
+>
+> **LATEST (2026-08-17) — local image-session image URLs fixed ✅.**
+> The shared frontend HTTPS normalizer now preserves loopback HTTP URLs (`localhost`, `127.0.0.1`, and `::1`),
+> so client image-session gallery cards and previews no longer rewrite local asset URLs to unavailable HTTPS.
+> Non-local HTTP image URLs continue to be upgraded to HTTPS. No backend, schema, database, or PDF behavior changed.
+>
+> **LATEST (2026-08-17) — accurate reminder durations and shared contract enforcement ✅.**
+> Client and staff reminder emails now calculate the displayed time from the scheduled event at send time,
+> round it to the nearest whole hour, and keep a minimum of `1 Hour`; the 15-minute/4-hour/12-hour delivery
+> windows and notified flags are unchanged. Profile, retained role, permission, workflow, upload-purpose,
+> reminder-type, API message-code, and shared form-feedback values were centralized in `@dms/shared` across
+> `server`, `web`, and `courses-web`; the drifted chat filter `CLIENT` was corrected to the backend contract
+> value `CLIENT_LEADS`. `npm run contracts:check` now parses all production JS/JSX/MJS and fails when these
+> contract values or user-facing error literals are reintroduced manually, excluding only the frozen PDF
+> subsystem. Verification: **1236/1236 tests across 146/146 files**, frontend/backend endpoint parity, both
+> production builds, the contract audit, courses lint (**0 errors / 23 warnings**), and `git diff --check`
+> passed. Main-web full lint remains at the documented pre-existing **143 errors / 106 warnings** while its
+> production build passes. No schema, database, authorization-grant, reminder-window, or PDF behavior changed.
+>
+> **LATEST (2026-08-17) — eleven browser-E2E findings and completed-register refresh fixed ✅.**
+> ADMIN now correctly outranks SUPER_ADMIN in management lists and every target-user mutation; lead
+> detail assignment data is reduced to safe identity fields; designer navigation points only to real
+> routes; lead-pool mutations refresh dependent counts; route-specific headings and assignment wording
+> are correct; and the reproduced Next/MUI hydration, image, date-picker, select, grid, and hook warnings
+> were repaired. Public contracts with missing utility data now render a localized safe warning without
+> touching frozen PDF generation. The external `C:\coding\eng-ahmed\eng-ahmed` registration flow honors
+> `?lng`, exposes accessible email errors, localizes created/uploaded toasts and every upload-progress
+> state, and restores a completed success screen after refresh through a short-lived capability-protected
+> status endpoint. That endpoint returns only `id`, `completed`, and `item` and denies requests without the
+> matching capability; the success screen keeps Arabic/English and starts a clean registration without a
+> stale lead ID. Browser verification confirmed ADMIN/SUPER_ADMIN hierarchy, the narrowed lead payload,
+> the safe contract fallback, English/Arabic completed-register refresh, and the clean new-registration
+> action. Verification: **1218/1218 tests across 144/144 files**, frontend/backend endpoint parity,
+> main-web and courses production builds, external targeted lint/tests and production build, focused
+> syntax/lint checks, and targeted diff checks passed. The full main-web lint still contains unrelated
+> pre-existing repository debt documented below; no schema, migration, production DB, or PDF behavior
+> changed.
+>
+> **LATEST (2026-08-17) — private external document storage and production cutover tooling ✅.**
+> Uploads now live under one external `ASSET_STORAGE_ROOT` instead of the repository or a public
+> `public_html` directory. Database values remain canonical `/uploads/<key>` references; authorized API
+> responses replace exact and embedded note/HTML references with short-lived HMAC-signed
+> `/v2/files/content/<key>` URLs. The public static `/uploads` mount and Next rewrite were removed,
+> protected image-session catalogs require a client session token or admin permission, public funnel
+> uploads remain purpose/draft-bound, PDF readers resolve canonical files locally, email/Telegram links
+> receive bounded signed lifetimes, and legacy remote reads reject untrusted origins/redirects. Chat and
+> document responses are private-cache only and the service worker removes its old media caches.
+> Copy-first and database-normalization scripts are dry-run/idempotent, hash-verify files, reject symlinks,
+> refuse conflicting overwrites, scan every Prisma String/JSON field with cursor pagination, and require
+> explicit backup confirmation before writes. The user-run sequence and same-host/container mounts are in
+> `docs/operations/private-upload-cutover.md`; production readiness is checked without printing secrets by
+> `npm run env:check:production`. The current production file passes every check except the two intentional
+> user inputs: the new `dream_studio_crm` `DATABASE_URL` and a new independent asset-signing secret.
+> `BOOKING_ORIGIN` keeps its `/register` Stripe base while CORS/CSRF now derive its origin correctly. The
+> external `C:\coding\eng-ahmed\eng-ahmed` registration app matches the capability/upload/source contract;
+> its tests, lint, and production build pass. Verification: **1206/1206 tests across 140/140 files**, both
+> CRM Next production builds, external Next build/lint, Prisma schema validation, frontend/backend endpoint
+> parity, PDF smoke tests, env parity, dependency tree, and `npm audit` (**0 vulnerabilities**) passed.
+> Known non-deployment QA debt remains: full main-web lint reports **150 errors / 113 warnings** in existing
+> React compiler/hook rules (the production build passes), courses lint has **0 errors / 23 warnings**, and a
+> local Windows `prisma generate` retry is blocked by another running Node process holding Prisma's engine
+> DLL; generate remains an explicit production-container rollout step.
+>
+> **LATEST (2026-08-17) — courses frontend/backend validation and runtime parity hardened ✅.**
+> The current `courses-web` UI was compared with `AbdallaMon/Design-courses` and keeps that established
+> user-visible structure/assets while its mutation layer was repaired end to end. Pure payload builders
+> now whitelist course, lesson, video, PDF, link, test, question, ordering, and homework bodies and parse
+> through the real backend Zod schemas. All successful 2xx responses (including creates returning 201)
+> drive the expected close/refetch/redirect behavior; structured validation details reach the user; new
+> tests start as drafts and can publish only after valid questions exist. Backend course schemas now use
+> strict ids, enums, numeric bounds, command bodies, and separate create/edit contracts. Learner answer
+> saves report failures, ordering no longer mutates during render, untimed tests no longer auto-submit and
+> still require answers, and timed tests submit only at zero. The live login smoke also fixed a reload/auth
+> refresh loop, legacy Next Image warnings, and Emotion/MUI App Router hydration by adding the supported
+> Next 16 cache provider. Verification: focused cross-layer, admin/staff, and endpoint
+> suites **57/57**; courses lint **0 errors** (23 non-blocking legacy warnings, down from 39 errors/34 warnings);
+> courses production build passed; Next route compilation reported zero issues; a clean Playwright login
+> smoke rendered with zero console errors/warnings and no API requests. The repository-wide suite is
+> **1185/1186**: its sole failure is outside courses in the concurrently modified upload-security test,
+> which expects a missing `uploadUsecase.resolvePublicContent`. No schema, migration, production DB, main
+> `web`, or frozen PDF behavior changed. Design and plan: `docs/superpowers/specs/2026-08-17-courses-validation-parity-and-reliability-design.md`
+> and `docs/superpowers/plans/2026-08-17-courses-validation-parity-and-reliability.md`.
+>
+> **LATEST (2026-08-17) — admin assignment now completes the intake handoff ✅.**
+> Individual admin assignment now treats a lead that is `NEW` or `initialConsult:false` as an intake
+> handoff: the same Prisma update assigns the owner and atomically writes `initialConsult:true` plus
+> `status:IN_PROGRESS`. Reassigning a later already-consulted deal preserves its current workflow
+> status; staff self-claim does not gain authority to mark a non-consulted lead as consulted, and the
+> existing ON_HOLD reclaim behavior is unchanged. The assignment response now includes
+> `initialConsult` alongside status/assignee. Verification: the complete leads-module suite passed
+> **145/145 tests across 16/16 files**. No frontend, schema, database-migration, or PDF change.
+>
+> **LATEST (2026-08-17) — external register email-validation/resume mismatch fixed ✅.**
+> A capability-bound `/register` resume in `C:\coding\eng-ahmed\eng-ahmed` previously used the numeric
+> `leadId` as a truthy substitute for the already accepted email, then resent that value to
+> `complete-register`; the CRM correctly returned `422 VALIDATION_ERROR` for an address such as `"77"`.
+> Draft-existence state is now separate from the email value, the completion request no longer resends
+> email, and both external email-entry paths use the same practical format rule as the CRM register
+> schema. On the backend, `complete-register` strips legacy email keys because the capability-bound
+> usecase neither reads nor updates email; initial registration still requires and validates it.
+> Verification: focused CRM public-lead tests **11/11**, external email-contract tests **2/2**, targeted
+> external lint passed, and the external Next production build passed. No schema, database, or PDF change.
+>
+> **LATEST (2026-08-17) — fresh local database migration + runtime connection alignment ✅.**
+> The public-lead `P2022` was caused by two local env files targeting different database servers:
+> the running server still used the old MySQL `design-system` schema without `ClientLead.source`, while
+> Prisma migration commands targeted the new MariaDB `dream_studio_crm` schema. `server/.env` now uses
+> the same local connection as `packages/db/prisma/.env`; all 10 canonical migrations were deployed to
+> `dream_studio_crm`, Prisma Client was regenerated, and a real `prisma.clientLead.findFirst()` succeeds.
+> The migration SQL already uses PascalCase identifiers (`ClientLead`); this MariaDB instance reports
+> `lower_case_table_names=1`, so it intentionally stores/displays physical table names in lowercase and
+> Prisma migrations cannot override that server setting. Verification: migration status up to date,
+> schema validation passed, 119 tables with the required `source` default, env parity passed, and focused
+> public-lead tests **10/10**. No production database was touched and the fresh local database was not seeded.
+>
+> **LATEST (2026-08-16) — public-funnel source, external booking compatibility, concurrency, and dependency fixes ✅.**
+> `ClientLead.source` is now a required origin string with DB default
+> `https://booking.ahmadmobayed.com`; both public lead funnels send `window.location.origin`, the
+> backend validates/normalizes it, and CRM lead preview renders a safe HTTP(S) source link. The
+> canonical migration `20260816192802_add_client_lead_source` was generated and verified against a
+> disposable fresh database, which was then removed. The external
+> `C:\coding\eng-ahmed\eng-ahmed` register/booking app now uses the canonical `/v2` paths, envelope,
+> capability headers, upload exchange, and booking action endpoint; capabilities stay in same-tab
+> memory/session storage and never enter URLs. Cookie-independent public mutations are explicitly
+> CSRF-exempt, while public completion and booking submit use transactional single-winner claims.
+> Upload/admin-import validation now emits message codes. The vulnerable `xlsx` dependency was
+> removed, Excel import uses tested ExcelJS parsing, and patched `uuid@11.1.1` is enforced with a
+> fail-closed upstream-manifest compatibility patch. A real integration-credential master key is in
+> ignored runtime env files and examples contain placeholders only. Verification: **1173/1173 tests
+> across 134/134 files**, both CRM Next builds, external register lint + production build, Prisma
+> validate/generate, clean install, `npm ls --all`, `npm audit` (**0 vulnerabilities**), env parity,
+> targeted lint, and both diff checks passed. The frozen `report-pdf.js` raw JSON fallback remains an
+> explicit contract exception because changing it would violate the repository's PDF behavior lock.
+> The existing local developer DB still has unrelated encryption-migration history drift; it was not
+> reset or manually altered, so that local history must be reconciled before running `migrate dev`.
+>
+> **LATEST (2026-08-16) — Prompt 13 environment/tooling gate ✅; review blockers remain.**
+> The safe examples now mirror the authoritative key names and order in `server/.env`, `web/.env`,
+> `courses-web/.env.production`, and `packages/db/prisma/.env`; `npm run env:check` verifies that
+> parity without reading values. Next 16 lint now runs through ESLint for both frontends, and shared
+> JSX-bearing `.js` modules were safely renamed to `.jsx`, removing the Vitest/Rolldown parse failure.
+> Verification: **1156/1156 tests** across **130/130 files**, both Next production builds, Prisma
+> validate/generate, `npm ls --all`, env parity, and `git diff --check` passed. Lint is operational
+> but not green: `web` has **158 errors / 119 warnings** and `courses-web` has **39 errors / 34
+> warnings** in existing source. Review also found two deployment/integration blockers that were not
+> silently changed: the new encrypted Google/Telegram write path requires
+> `INTEGRATION_CREDENTIALS_MASTER_KEY`, which is absent from the authoritative backend env, and the
+> external `C:\coding\eng-ahmed\eng-ahmed` register/booking client does not yet implement the new
+> public-funnel capability/header/upload/action contract. No live env value or frozen PDF logic changed.
+>
+> **LATEST (2026-08-16) — lead edit permissions/state, assignment notifications, ON_HOLD pool, and notes route ✅.**
+> Lead/client inline edit affordances now follow the exact `admin_residual.lead.edit` and
+> `admin_residual.client.edit` permission codes, and successful name/phone/finalized-date writes merge into both the
+> open detail and list state immediately. Individual admin assign/convert-to-user now notifies the recipient in
+> addition to admins. The lead-pool page exposes **New non-consulted → New consulted → On hold leads** through explicit
+> `lead.pool.*.view` permissions; the backend enforces the matching query access and suppresses unauthorized summary
+> counts. The shared Notes component now maps its legacy `shared` slug to canonical `/v2/notes`, fixing
+> `POST /v2/shared/notes → 404 NOT_FOUND`. Verification: focused tests **23/23**, expanded lead/shared-permission tests
+> **220/220** across **26/26 files**, `web` production build passed, and `git diff --check` found no whitespace errors.
+> No schema, production database, or frozen PDF change.
+>
+> **LATEST (2026-08-16) — profile settings persistence + Google connection state ✅.**
+> Fixed the migrated user-profile endpoint dropping `allowNotification` and `allowEmailing` on writes and omitting
+> both values from reads; the safe profile projection now also returns the non-secret `googleEmail` identity. The
+> profile dialog now derives Google connection state from the dedicated self-scoped
+> `GET /v2/calendar/google/status` response (refresh-token presence) and refreshes it on open, callback, disconnect,
+> and an already-connected response, so a connected user sees the Disconnect action immediately. Inline profile
+> errors now read the current flat frontend error shape. Added repository-projection and self-edit regression tests.
+> Verification: focused profile/calendar tests **74/74**, `web` production build **44/44 routes**. The full Vitest
+> run executed **936/936 tests green** across **97 passing suites**; one unrelated existing frontend suite failed
+> before collection because Vitest/Rolldown does not parse JSX in `web/src/app/helpers/constants/ui.js` under its
+> current `.js` loader configuration. No schema, production database, or frozen PDF change.
+>
+> **LATEST (2026-08-16) — lead consultation notification lifecycle + safe missing-detail actions ✅.**
+> Publicly registered leads remain `initialConsult:false`, and their creation/registration notifications now target
+> active ADMIN/SUPER_ADMIN profiles only. The first successful `false→true` consultation transition emits a separate
+> `NEW_LEAD` notification to active NORMAL_SALES/PRIMARY_SALES/SUPER_SALES profiles, without duplicating it on repeated
+> writes. The sales claimable pool now requires `initialConsult:true`, so a hidden non-consulted lead cannot surface a
+> Start/Take Deal action. The preview also clears stale lead data before every detail request and ignores superseded
+> responses, preventing actions from a previously opened lead appearing on a missing/denied record. Lead-pool tabs are
+> now ordered **New non-consulted → New consulted → Overdue**. Verification: focused lifecycle/scope tests **14/14**,
+> full server suite **821/821** across **77/77 files**, and `web` production build **44/44 static pages**. No schema,
+> production database, or frozen PDF change.
 >
 > **LATEST (2026-08-02) — production configuration + one-command migration-history reconciliation ✅.**
 > The duplicate main-web `CRM_ORIGIN` setting was removed from the backend, CORS fallback, Stripe/registration
@@ -581,3 +788,29 @@ courses-web restructured from the flat verbatim port into `web/`'s `features` + 
 - **Theme:** `colors.js` + `MUIContext.jsx` copied byte-identical from web/ (same export surface: default `colors` + `COLORS`/`STATUS_COLORS`/`NotificationColors`/`contractLevelColors`). courses-web now renders in web/'s caramel theme. No new deps (MUIContext uses only createTheme/ThemeProvider; web/'s RTL/stylis wiring lives in web/'s root layout and isn't needed here).
 - **Verification:** 3 grouped commits (shared → features → theme), each gated by `next build`. Final: grep gate clean (no `UiComponents`/`DataViewer`/`taost`/`FormComponents`/`@/app/models` specifiers), `next build` green (14 routes, identical to Phase 1). `web/` untouched. Live screen-smoke against a running backend still pending (needs user env).
 - **NOT done (deliberate, deferred):** component dedup against web/'s shared components (web/ isn't a package; cross-workspace imports painful) and extracting a shared theme package outside web/ — both belong to the eventual courses-web→web/ merge.
+
+---
+
+## Update 2026-08-17 — sales assignment, transferred reminders, and SUPER_SALES parity
+
+Fixed the sales/user-management regressions and reconciled active-profile `SUPER_SALES`
+authority with the deployed-master behavior plus the approved permissions matrix. Design and
+plan: `docs/superpowers/{specs,plans}/2026-08-17-{sales-directory-user-state-and-reminder-transfer,super-sales-master-parity}*`.
+
+- Convert/assign pickers now query assigned `NORMAL_SALES` **or** `PRIMARY_SALES` profiles;
+  `SUPER_SALES` directory access remains constrained to non-admin SALES-family accounts.
+- Profile assignment no longer reloads the page. Profile saves reconcile the row locally, and
+  identity edits preserve relational `userProfiles/currentProfile` UI state.
+- Transferred calls/meetings are visible to both their creator and the lead's current owner. A
+  reminder may be updated by its creator, current lead owner, or full lead scope
+  (`ADMIN`/`SUPER_ADMIN`/`SUPER_SALES`).
+- Lead/project/task/update inner workflow branches now honor the active `SUPER_SALES` profile
+  where their permission/scope layers already grant supervisor authority. The inverted deals
+  aggregation `isAdmin` signal was corrected.
+- Express errors delegate when headers are already sent, preventing a second response and
+  `ERR_HTTP_HEADERS_SENT` noise.
+- Verification: full Vitest suite green (**145 files / 1,233 tests**), static frontend↔backend
+  endpoint-parity tests green, and the web production build succeeds. Scoped lint on every
+  touched frontend file has zero errors (one existing `AdminTable` `<img>` warning). The global
+  web lint remains red on the repository's pre-existing React-compiler rule backlog in unrelated
+  files.

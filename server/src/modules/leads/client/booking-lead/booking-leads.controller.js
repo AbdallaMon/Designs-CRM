@@ -5,19 +5,25 @@ import { leadsMessagesCodes, messagesNames } from "@dms/shared";
 const TK = messagesNames.leadsMessages;
 
 class BookingLeadsController {
+  authorizeBookingLead = (req) =>
+    bookingLeadsUsecase.authorizeBookingLead(
+      req.params.leadId,
+      req.get("x-funnel-token"),
+    );
+
   async createBookingLead(req, res) {
     const lead = await bookingLeadsUsecase.createBookingLead(req.body);
     return created(res, lead, leadsMessagesCodes.BOOKING_LEAD_CREATED, TK);
   }
 
   async getBookingLead(req, res) {
-    const { leadId } = req.params;
+    const { leadId } = req.scoped;
     const lead = await bookingLeadsUsecase.getBookingLead(leadId);
     return ok(res, lead);
   }
 
   async updateBookingLead(req, res) {
-    const { leadId } = req.params;
+    const { leadId } = req.scoped;
 
     const [entry] = Object.entries(req.body).filter(
       ([, v]) => v !== undefined,
@@ -32,7 +38,7 @@ class BookingLeadsController {
   }
 
   async submitBookingLead(req, res) {
-    const { leadId } = req.params;
+    const { leadId } = req.scoped;
     const lead = await bookingLeadsUsecase.submitBookingLead(leadId, req.body);
     return ok(res, lead, leadsMessagesCodes.BOOKING_LEAD_SUBMITTED, TK);
   }

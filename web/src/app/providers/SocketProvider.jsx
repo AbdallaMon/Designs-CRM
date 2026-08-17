@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { initSocket } from "@/features/chat/utils/index.js";
+import {
+  disconnectSocket,
+  initSocket,
+} from "@/features/chat/utils/index.js";
 import { useAuth } from "./AuthProvider";
 import DotsLoader from "@/shared/components/feedback/loaders/DotsLoading.jsx";
 
@@ -9,54 +12,34 @@ export const SocketContext = createContext(null);
 
 const url = process.env.NEXT_PUBLIC_URL;
 
-export default function SocketProvider({ children, clientId }) {
+export default function SocketProvider({ children, chatToken = null }) {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const socketRef = useRef(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !user.id) return;
+    const staffId = user?.id ?? null;
+    if (!staffId && !chatToken) return;
 
     if (!socketRef.current) {
       const newSocket = initSocket(url, {
-        query: { userId: user.id, type: "user" },
+        auth: chatToken ? { chatToken } : {},
       });
 
       socketRef.current = newSocket;
       setSocket(newSocket);
 
-      newSocket.emit("user:online", {
-        userId: user.id,
-      });
+      newSocket.emit(chatToken ? "client:online" : "user:online");
       setLoading(false);
     }
 
     return () => {
-      // Don't disconnect on unmount - keep socket alive
+      disconnectSocket();
+      socketRef.current = null;
+      setSocket(null);
     };
-  }, [user]);
-  useEffect(() => {
-    if (!clientId) return;
-
-    if (!socketRef.current) {
-      const newSocket = initSocket(url, {
-        query: { clientId: clientId, type: "client" },
-      });
-
-      socketRef.current = newSocket;
-      setSocket(newSocket);
-
-      newSocket.emit("client:online", {
-        clientId,
-      });
-      setLoading(false);
-    }
-
-    return () => {
-      // Don't disconnect on unmount - keep socket alive
-    };
-  }, [clientId]);
+  }, [user?.id, chatToken]);
   const contextValue = {
     socket,
   };

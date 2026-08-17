@@ -1,64 +1,62 @@
-// Generic-delete Prisma I/O. The caller resolves an allow-listed Prisma delegate name;
-// scope, time windows, cleanup orchestration, and sequencing stay in the usecase.
+// Generic-delete Prisma I/O. Client model names resolve through an explicit server-owned
+// delegate map; scope, time windows, and side-effect sequencing stay in the usecase.
 import prisma from "../../infra/prisma/prisma.js";
+import { getGenericDeleteDefinition } from "./generic-delete.config.js";
+
+const PRISMA_DELEGATES = Object.freeze({
+  note: (client) => client.note,
+  file: (client) => client.file,
+  priceOffers: (client) => client.priceOffers,
+  extraService: (client) => client.extraService,
+  meetingReminder: (client) => client.meetingReminder,
+  callReminder: (client) => client.callReminder,
+  clientLeadUpdate: (client) => client.clientLeadUpdate,
+  deliverySchedule: (client) => client.deliverySchedule,
+  contract: (client) => client.contract,
+  contractPaymentCondition: (client) => client.contractPaymentCondition,
+  task: (client) => client.task,
+});
+
+function resolveDelegate({ model, client = prisma }) {
+  const definition = getGenericDeleteDefinition(model);
+  const resolve = definition && PRISMA_DELEGATES[definition.delegate];
+  return resolve ? resolve(client) : null;
+}
 
 class GenericDeleteRepository {
   async resolveTarget({ model, id }) {
     const targetId = Number(id);
-    switch (model) {
-      case "File":
-        return prisma.file.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "PriceOffers":
-        return prisma.priceOffers.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "ExtraService":
-        return prisma.extraService.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "MeetingReminder":
-        return prisma.meetingReminder.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "CallReminder":
-        return prisma.callReminder.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "ClientLeadUpdate":
-        return prisma.clientLeadUpdate.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "DeliverySchedule":
-        return prisma.deliverySchedule.findUnique({
-          where: { id: targetId },
-          select: { projectId: true },
-        }).then((row) => row && ({ kind: "project", projectId: row.projectId }));
-      case "contract":
-        return prisma.contract.findUnique({
-          where: { id: targetId },
-          select: { clientLeadId: true },
-        }).then((row) => row && ({ kind: "lead", clientLeadId: row.clientLeadId }));
-      case "contractPaymentCondition":
-        return prisma.contractPaymentCondition.findUnique({
-          where: { id: targetId },
-          select: { id: true },
-        }).then((row) => row && ({ kind: "site-utility" }));
-      default:
-        return null;
+    const definition = getGenericDeleteDefinition(model);
+    const delegate = resolveDelegate({ model });
+    if (!definition || !delegate || definition.scope === "note") return null;
+
+    if (definition.scope === "lead") {
+      const row = await delegate.findUnique({
+        where: { id: targetId },
+        select: { clientLeadId: true },
+      });
+      return row && { kind: "lead", clientLeadId: row.clientLeadId };
     }
+    if (definition.scope === "project") {
+      const row = await delegate.findUnique({
+        where: { id: targetId },
+        select: { projectId: true },
+      });
+      return row && { kind: "project", projectId: row.projectId };
+    }
+
+    const row = await delegate.findUnique({
+      where: { id: targetId },
+      select: { id: true },
+    });
+    return row && { kind: "site-utility" };
   }
 
   // createdAt supports the delete-window guard.
   findModelCreatedAt({ model, id }) {
-    return prisma[model].findUnique({
+    const delegate = resolveDelegate({ model });
+    if (!delegate) return null;
+    return delegate.findUnique({
       where: {
         id: Number(id),
       },
@@ -68,39 +66,43 @@ class GenericDeleteRepository {
     });
   }
 
-  // MeetingReminder detail for calendar cleanup.
-  findMeetingReminder({ id }) {
-    return prisma.meetingReminder.findUnique({
-      where: {
-        id: Number(id),
-      },
-      select: {
-        availableSlotId: true,
-        googleEventId: true,
-        userId: true,
-        adminId: true,
-      },
-    });
-  }
-
-  // Free the booked slot when a MeetingReminder is deleted.
-  freeAvailableSlot({ availableSlotId }) {
-    return prisma.availableSlot.update({
-      where: {
-        id: availableSlotId,
-      },
-      data: {
-        isBooked: false,
-        meetingReminderId: null,
-      },
-    });
-  }
-
   deleteModel({ model, id }) {
-    return prisma[model].delete({
+    const delegate = resolveDelegate({ model });
+    if (!delegate) return null;
+    return delegate.delete({
       where: {
         id: Number(id),
       },
+    });
+  }
+
+  // Slot cleanup and MeetingReminder deletion are one database transaction. Google
+  // Calendar deletion is intentionally not here; the usecase performs it post-commit.
+  deleteMeetingReminderWithCleanup({ id }) {
+    const meetingId = Number(id);
+    return prisma.$transaction(async (tx) => {
+      const meeting = await tx.meetingReminder.findUnique({
+        where: { id: meetingId },
+        select: {
+          availableSlotId: true,
+          googleEventId: true,
+          userId: true,
+          adminId: true,
+        },
+      });
+      if (!meeting) return null;
+
+      if (meeting.availableSlotId) {
+        await tx.availableSlot.update({
+          where: { id: meeting.availableSlotId },
+          data: {
+            isBooked: false,
+            meetingReminderId: null,
+          },
+        });
+      }
+      await tx.meetingReminder.delete({ where: { id: meetingId } });
+      return meeting;
     });
   }
 
@@ -140,17 +142,19 @@ class GenericDeleteRepository {
   // update's own sub-tree only — the server decides the cascade (the client cannot).
   async deleteClientLeadUpdateWithDependents({ id }) {
     const updateId = Number(id);
-    const sharedUpdates = await prisma.sharedUpdate.findMany({
-      where: { updateId },
-      select: { id: true },
+    return prisma.$transaction(async (tx) => {
+      const sharedUpdates = await tx.sharedUpdate.findMany({
+        where: { updateId },
+        select: { id: true },
+      });
+      const sharedUpdateIds = sharedUpdates.map((sharedUpdate) => sharedUpdate.id);
+      await tx.note.deleteMany({ where: { updateId } });
+      await tx.note.deleteMany({
+        where: { sharedUpdateId: { in: sharedUpdateIds } },
+      });
+      await tx.sharedUpdate.deleteMany({ where: { updateId } });
+      return tx.clientLeadUpdate.delete({ where: { id: updateId } });
     });
-    const sharedUpdateIds = sharedUpdates.map((s) => s.id);
-    return prisma.$transaction([
-      prisma.note.deleteMany({ where: { updateId } }),
-      prisma.note.deleteMany({ where: { sharedUpdateId: { in: sharedUpdateIds } } }),
-      prisma.sharedUpdate.deleteMany({ where: { updateId } }),
-      prisma.clientLeadUpdate.delete({ where: { id: updateId } }),
-    ]);
   }
 }
 

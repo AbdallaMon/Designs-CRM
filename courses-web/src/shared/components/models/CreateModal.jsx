@@ -28,19 +28,20 @@ const CreateModal = ({
   const handleClose = () => setOpen(false);
   const onSubmit = async (formData) => {
     try {
-      if (extraProps.extraId) {
-        href = `${href}?extraId=${extraProps.extraId}`;
-      }
+      const requestHref = extraProps?.extraId
+        ? `${href}?extraId=${extraProps.extraId}`
+        : href;
+      let dataToSubmit = formData;
       if (handleBeforeSubmit) {
-        formData = await handleBeforeSubmit(formData);
+        dataToSubmit = await handleBeforeSubmit(dataToSubmit);
       }
       if (extraSubmitData) {
-        formData = { ...formData, ...extraSubmitData };
+        dataToSubmit = { ...dataToSubmit, ...extraSubmitData };
       }
       const result = await handleRequestSubmit(
-        formData,
+        dataToSubmit,
         setToastLoading,
-        `${href}`,
+        requestHref,
         false,
         "Creating"
       );

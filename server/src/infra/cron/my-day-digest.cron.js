@@ -1,3 +1,4 @@
+import { PROFILES } from "@dms/shared";
 // Morning digest — 08:00 Asia/Dubai, personal queues only (spec 2026-07-15 §6.3, user
 // decision D3): every active holder of a personal My Day queue with a non-empty queue
 // gets an in-app notification + email with their top items. Supervisors/admins are NOT
@@ -20,14 +21,14 @@ export const DIGEST_TOP_N = 5;
 // pre-filters the candidate list; the per-user PROFILE dispatch inside getMyQueue is the
 // real gate (an admin-profiled user throws MY_DAY_PROFILE_UNSUPPORTED and is skipped).
 const DIGEST_PROFILE_KEYS = [
-  "NORMAL_SALES",
-  "PRIMARY_SALES",
-  "SUPER_SALES",
-  "DESIGNER_3D",
-  "DESIGNER_2D",
-  "EXECUTOR_2D",
-  "ACCOUNTANT",
-  "CONTACT_INITIATOR",
+  PROFILES.NORMAL_SALES,
+  PROFILES.PRIMARY_SALES,
+  PROFILES.SUPER_SALES,
+  PROFILES.DESIGNER_3D,
+  PROFILES.DESIGNER_2D,
+  PROFILES.EXECUTOR_2D,
+  PROFILES.ACCOUNTANT,
+  PROFILES.CONTACT_INITIATOR,
 ];
 
 // One human line per queue item (notification content is prose like the other senders;

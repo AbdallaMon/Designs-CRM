@@ -13,7 +13,6 @@ import {
   emitEditMessage,
   sendNewMessage,
 } from "@/features/chat/utils/socketIO.js";
-import { useAuth } from "@/app/providers/AuthProvider";
 import { CHAT_LIMITS } from "@/features/chat/utils/chatConstants.js";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
 
@@ -29,7 +28,6 @@ export function useChatMessages(roomId, initialPage = 0, clientId, token) {
   const [replyLoaded, setReplyLoaded] = useState(false);
   const [replayLoadingMessageId, setReplayLoadingMessageId] = useState(null);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
-  const { user } = useAuth();
   // ✅ attach this ref to your scrollable messages container (Box/Paper/etc)
   const scrollContainerRef = useRef(null);
   const pageRef = useRef(page);
@@ -205,19 +203,19 @@ export function useChatMessages(roomId, initialPage = 0, clientId, token) {
     // setMessages((prev) => [...prev, optimisticMessage]);
 
     sendNewMessage({
-      data: { ...messageData, roomId, user, userId: user.id },
+      data: { ...messageData, roomId },
     });
 
     return null;
   };
 
   const editMessage = async (messageId, content) => {
-    emitEditMessage({ roomId, messageId, content, userId: user.id });
+    emitEditMessage({ roomId, messageId, content });
     return null;
   };
 
   const deleteMessage = async (messageId) => {
-    emitDeleteMessage({ messageId, roomId, userId: user.id });
+    emitDeleteMessage({ messageId, roomId });
     return null;
   };
   const deleteSelectedMessages = async (selectedMessages) => {

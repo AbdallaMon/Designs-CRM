@@ -13,6 +13,7 @@ import {
   sendReminderToUser,
 } from "../mail/email-templates.js";
 import prisma from "../../../prisma/prisma.js";
+import { CALL_REMINDER_STATUSES, REMINDER_TYPES } from "@dms/shared";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -30,7 +31,7 @@ export function startRemindersCron() {
     try {
       const reminders12h = await prisma.meetingReminder.findMany({
         where: {
-          status: "IN_PROGRESS",
+          status: CALL_REMINDER_STATUSES.IN_PROGRESS,
           time: {
             gte: in4h.toDate(), // between 12h and 4h
             lte: in12h.toDate(),
@@ -55,7 +56,7 @@ export function startRemindersCron() {
       });
       const reminders4h = await prisma.meetingReminder.findMany({
         where: {
-          status: "IN_PROGRESS",
+          status: CALL_REMINDER_STATUSES.IN_PROGRESS,
           time: {
             gte: in15min.toDate(), // between 4h and 15min
             lte: in4h.toDate(),
@@ -82,7 +83,7 @@ export function startRemindersCron() {
       const upcomingMeetings = await prisma.meetingReminder.findMany({
         where: {
           notified: false,
-          status: "IN_PROGRESS",
+          status: CALL_REMINDER_STATUSES.IN_PROGRESS,
           time: {
             gte: now.toDate(), // now → 15 min
             lte: in15min.toDate(),
@@ -108,7 +109,7 @@ export function startRemindersCron() {
       const upcomingCalls = await prisma.callReminder.findMany({
         where: {
           notified: false,
-          status: "IN_PROGRESS",
+          status: CALL_REMINDER_STATUSES.IN_PROGRESS,
           time: {
             lte: in15min.toDate(), // any time in the next 15 minutes or less
             gte: now.toDate(),
@@ -152,7 +153,7 @@ async function sendMeetingReminders(meetings, timeLabel) {
       clientName: meeting.clientLead.client.name,
       time: meeting.time,
       userTimezone: meeting.userTimezone || "Asia/Dubai",
-      type: "MEETING",
+      type: REMINDER_TYPES.MEETING,
       timeLabel,
     });
 
@@ -161,7 +162,7 @@ async function sendMeetingReminders(meetings, timeLabel) {
         userEmail: meeting.admin.email,
         userName: meeting.admin.name,
         time: meeting.time,
-        type: "MEETING",
+        type: REMINDER_TYPES.MEETING,
         timeLabel,
         clientLeadId: meeting.clientLead.id,
       });
@@ -170,7 +171,7 @@ async function sendMeetingReminders(meetings, timeLabel) {
         userEmail: meeting.clientLead.assignedTo.email,
         userName: meeting.clientLead.assignedTo.name,
         time: meeting.time,
-        type: "MEETING",
+        type: REMINDER_TYPES.MEETING,
         clientLeadId: meeting.clientLead.id,
         timeLabel,
       });
@@ -192,7 +193,7 @@ async function sendCallReminders(calls) {
       userEmail: call.clientLead.assignedTo.email,
       userName: call.clientLead.assignedTo.name,
       time: call.time,
-      type: "CALL",
+      type: REMINDER_TYPES.CALL,
       clientLeadId: call.clientLead.id,
     });
     await prisma.callReminder.update({

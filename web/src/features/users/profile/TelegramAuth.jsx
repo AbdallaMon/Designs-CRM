@@ -34,17 +34,22 @@ import { useEffect, useState } from "react";
 import { TELEGRAM_CONSTANTS } from "@/features/users/profile/constant.js";
 import RenderStepDescription from "@/features/users/profile/RenderStepDescription.jsx";
 import RenderTelegramAuthInput from "@/features/users/profile/RenderTelegramAuthInput.jsx";
+import {
+  TELEGRAM_CONNECTION_STATUSES, INTEGRATION_ERROR_CODES,
+  TELEGRAM_AUTH_STATES,
+  USER_FEEDBACK_MESSAGES,
+} from "@dms/shared";
 
 const STEPS = ["Phone Number", "Verification Code", "Connected"];
 
 const STEP_INDEX = {
-  PHONE_NUMBER: 0,
-  INIT: 0,
-  AWAIT_CODE: 1,
-  REQUIRE_PASSWORD: 1,
-  AWAIT_TO_REWRITE_2FA_PASSWORD: 1,
-  AWAIT_PASSWORD: 1,
-  SUCCESS: 2,
+  [TELEGRAM_AUTH_STATES.PHONE_NUMBER]: 0,
+  [TELEGRAM_AUTH_STATES.INIT]: 0,
+  [TELEGRAM_AUTH_STATES.AWAIT_CODE]: 1,
+  [TELEGRAM_AUTH_STATES.REQUIRE_PASSWORD]: 1,
+  [TELEGRAM_AUTH_STATES.AWAIT_TO_REWRITE_2FA_PASSWORD]: 1,
+  [TELEGRAM_AUTH_STATES.AWAIT_PASSWORD]: 1,
+  [TELEGRAM_AUTH_STATES.SUCCESS]: 2,
 };
 
 export default function TelegramAuth() {
@@ -56,7 +61,7 @@ export default function TelegramAuth() {
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
   const [currentTelegramAuthStep, setCurrentTelegramAuthStep] =
-    useState("INIT");
+    useState(TELEGRAM_AUTH_STATES.INIT);
   const [formData, setFormData] = useState({
     phoneNumber: "",
     code: "",
@@ -71,8 +76,8 @@ export default function TelegramAuth() {
       setLoading,
     });
     if (req.status === 200) {
-      if (req.data.status === "CONNECTED") {
-        setCurrentTelegramAuthStep("SUCCESS");
+      if (req.data.status === TELEGRAM_CONNECTION_STATUSES.CONNECTED) {
+        setCurrentTelegramAuthStep(TELEGRAM_AUTH_STATES.SUCCESS);
       }
     }
   }
@@ -83,7 +88,7 @@ export default function TelegramAuth() {
 
   function confirmReAuth() {
     setReAuthDialogOpen(false);
-    setCurrentTelegramAuthStep("PHONE_NUMBER");
+    setCurrentTelegramAuthStep(TELEGRAM_AUTH_STATES.PHONE_NUMBER);
     setFormData({ phoneNumber: "", code: "", password: "" });
     setAuthError(null);
   }
@@ -114,16 +119,14 @@ export default function TelegramAuth() {
     );
     if (
       req?.message ===
-      "The code you entered has expired. Please request a new code."
+      USER_FEEDBACK_MESSAGES.TELEGRAM_CODE_EXPIRED
     ) {
-      setCurrentTelegramAuthStep("INIT");
+      setCurrentTelegramAuthStep(TELEGRAM_AUTH_STATES.INIT);
       return;
     }
-    if (req?.message === "AUTH_KEY_UNREGISTERED") {
-      setAuthError(
-        "Incorrect password. The session key is invalid — please re-enter your password.",
-      );
-      setCurrentTelegramAuthStep("AWAIT_PASSWORD");
+    if (req?.message === INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED) {
+      setAuthError(USER_FEEDBACK_MESSAGES.TELEGRAM_SESSION_PASSWORD_INVALID);
+      setCurrentTelegramAuthStep(TELEGRAM_AUTH_STATES.AWAIT_PASSWORD);
       setFormData((prev) => ({ ...prev, password: "" }));
       return;
     }
@@ -133,13 +136,13 @@ export default function TelegramAuth() {
     if (!req || req.status !== 200) {
       setAuthError(
         req?.message ||
-          "We couldn't complete this step. Please check your input and try again.",
+          USER_FEEDBACK_MESSAGES.TELEGRAM_STEP_FAILED,
       );
       setFormData((prev) => ({ ...prev, password: "" }));
       return;
     }
     setCurrentTelegramAuthStep(req.data.teleStatus);
-    if (req?.data?.teleStatus === "SUCCESS") {
+    if (req?.data?.teleStatus === TELEGRAM_AUTH_STATES.SUCCESS) {
       await getTelegramAuth();
     }
   }
@@ -148,7 +151,7 @@ export default function TelegramAuth() {
     getTelegramAuth();
   }, []);
 
-  const isConnected = currentTelegramAuthStep === "SUCCESS";
+  const isConnected = currentTelegramAuthStep === TELEGRAM_AUTH_STATES.SUCCESS;
   const activeStep = STEP_INDEX[currentTelegramAuthStep] ?? 0;
   const isBusy = loading || toastLoading;
   const currentPhoneNumber = data?.phoneNumber || formData.phoneNumber;
@@ -246,15 +249,19 @@ export default function TelegramAuth() {
                   >
                     {isBusy
                       ? "Processing..."
-                      : currentTelegramAuthStep === "INIT" ||
-                          currentTelegramAuthStep === "PHONE_NUMBER"
+                      : currentTelegramAuthStep === TELEGRAM_AUTH_STATES.INIT ||
+                          currentTelegramAuthStep ===
+                            TELEGRAM_AUTH_STATES.PHONE_NUMBER
                         ? "Send Code"
-                        : currentTelegramAuthStep === "AWAIT_CODE"
+                        : currentTelegramAuthStep ===
+                            TELEGRAM_AUTH_STATES.AWAIT_CODE
                           ? "Verify Code"
-                          : currentTelegramAuthStep === "REQUIRE_PASSWORD" ||
+                          : currentTelegramAuthStep ===
+                                TELEGRAM_AUTH_STATES.REQUIRE_PASSWORD ||
                               currentTelegramAuthStep ===
-                                "AWAIT_TO_REWRITE_2FA_PASSWORD" ||
-                              currentTelegramAuthStep === "AWAIT_PASSWORD"
+                                TELEGRAM_AUTH_STATES.AWAIT_TO_REWRITE_2FA_PASSWORD ||
+                              currentTelegramAuthStep ===
+                                TELEGRAM_AUTH_STATES.AWAIT_PASSWORD
                             ? "Submit Password"
                             : "Continue"}
                   </Button>

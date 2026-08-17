@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES } from "@dms/shared";
 // Config-driven section registry for the WORK-STAGE (designer) preview.
 //
 // This mirrors the lead/deal detail registry (features/leads/config/leadSections.jsx)
@@ -33,7 +34,7 @@ import { ProjectDetails } from "@/features/work-stages/projects/ProjectDetails.j
 function WorkStageOverview({ lead, canManageProjects }) {
   const theme = useTheme();
   const { user } = useAuth();
-  const isStaff = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(user.profile);
+  const isStaff = [PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile);
   return (
     <Stack spacing={3}>
       {/* Lead info + related projects: hidden for STAFF (sales) viewers, as before. */}
@@ -71,7 +72,7 @@ function WorkStageOverview({ lead, canManageProjects }) {
                   />
                   <ProjectDetails
                     project={project}
-                    isStaff={user.profile !== "ADMIN" && user.profile !== "SUPER_ADMIN"}
+                    isStaff={user.profile !== PROFILES.ADMIN && user.profile !== PROFILES.SUPER_ADMIN}
                     withReleventLinks={true}
                   />
                 </Paper>
@@ -81,7 +82,7 @@ function WorkStageOverview({ lead, canManageProjects }) {
         </>
       )}
       {/* Contact info: shown to ADMIN (matches the previous surface's effective behavior). */}
-      {user.profile === "ADMIN" && <LeadContactInfo lead={lead} />}
+      {user.profile === PROFILES.ADMIN && <LeadContactInfo lead={lead} />}
     </Stack>
   );
 }

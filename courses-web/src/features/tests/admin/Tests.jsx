@@ -1,7 +1,8 @@
 "use client";
 
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import { useState, useEffect } from "react";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
+import { useCallback, useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -47,6 +48,11 @@ import DeleteModal from "@/shared/components/models/DeleteModal";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { FaClipboardList, FaQuestion, FaTypo3 } from "react-icons/fa";
+import {
+  testCreatePayload,
+  testEditPayload,
+} from "@/app/helpers/contracts/coursePayloads";
+import { useAlertContext } from "@/app/providers/MuiAlert";
 
 export function Tests({ type, id }) {
   const [data, setData] = useState({ title: "", tests: [] });
@@ -55,7 +61,6 @@ export function Tests({ type, id }) {
   const [defaultAttempts, setDefaultAttempts] = useState(2);
   const [title, setTitle] = useState("");
   const [timeLimit, setTimeLimit] = useState(60);
-  const [publish, setPublish] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editTest, setEditTest] = useState(null);
   const [editTitle, setEditTitle] = useState("");
@@ -64,36 +69,36 @@ export function Tests({ type, id }) {
   const [editPublish, setEditPublish] = useState(false);
   const { toastLoading: createLoading, setToastLoading: setCreateLoading } =
     useToastContext();
+  const { setAlertError } = useAlertContext();
 
-  useEffect(() => {
-    if (id && type) {
-      getTests();
-    }
-  }, [id, type]);
-
-  async function getTests() {
+  const getTests = useCallback(async () => {
     const key = type === "COURSE" ? "courseId" : "lessonId";
-    const endpoint = `courses/tests?key=${key}&id=${id}&`;
+    const endpoint = `courses/tests?key=${key}&id=${id}`;
 
     await getDataAndSet({
       url: endpoint,
       setData,
       setLoading,
     });
-  }
+  }, [id, type]);
+
+  useEffect(() => {
+    if (id && type) {
+      getTests();
+    }
+  }, [getTests, id, type]);
 
   async function handleCreateTest() {
     const key = type === "COURSE" ? "courseId" : "lessonId";
     const req = await handleRequestSubmit(
-      {
+      testCreatePayload({
         attemptLimit: defaultAttempts,
         testType: type === "COURSE" ? "FINAL" : "LESSON",
         title,
         timeLimit,
-        published: publish,
-      },
+      }),
       setCreateLoading,
-      `courses/tests?key=${key}&id=${id}&`,
+      `courses/tests?key=${key}&id=${id}`,
       false,
       "Creating",
       false
@@ -103,19 +108,22 @@ export function Tests({ type, id }) {
       setDefaultAttempts(2); // Reset to default
       setTimeLimit(60);
       setTitle("");
-      setPublish(false);
       window.location.href = `/dashboard/tests/${req.data.id}`;
     }
   }
   async function handleEditTest() {
     if (!editTest) return;
+    if (editPublish && !editTest._count?.questions) {
+      setAlertError(FEEDBACK.TEST_VALID_QUESTION_REQUIRED);
+      return;
+    }
     const req = await handleRequestSubmit(
-      {
+      testEditPayload({
         title: editTitle,
         timeLimit: editTimeLimit,
         attemptLimit: editAttempts,
         published: editPublish,
-      },
+      }),
       setCreateLoading,
       `courses/tests/${editTest.id}`,
       false,
@@ -136,7 +144,6 @@ export function Tests({ type, id }) {
     setDefaultAttempts(2);
     setTimeLimit(60);
     setTitle("");
-    setPublish(false);
   };
 
   const formatDuration = (duration) => {
@@ -179,7 +186,7 @@ export function Tests({ type, id }) {
             </Alert>
           )}
           {data?.tests?.map((test) => (
-            <Grid size={{ sm: 6, md: 4 }}>
+            <Grid key={test.id} size={{ sm: 6, md: 4 }}>
               <Card
                 sx={{
                   height: "100%",
@@ -409,15 +416,9 @@ export function Tests({ type, id }) {
               inputProps={{ min: 1, max: 10 }}
               helperText="Number of attempts users get by default (1-10)"
             />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={publish}
-                  onChange={(e) => setPublish(e.target.checked)}
-                />
-              }
-              label="Published"
-            />
+            <Alert severity="info">
+              New tests are created as drafts. Add valid questions, then publish the test from Edit.
+            </Alert>
           </Box>
         </DialogContent>
 

@@ -12,7 +12,7 @@ export function CreateSpace({ onUpdate }) {
     if (!allFilled) {
       return {
         error: true,
-        message: "Please fill all titles in all languages",
+        message: FORM_ERRORS.FILL_ALL_TITLES,
       };
     }
 
@@ -22,7 +22,7 @@ export function CreateSpace({ onUpdate }) {
     <OpenItemDialog
       component={CreateSpaceForm}
       name={"Space"}
-      slug={"image-session/space"}
+      slug="space"
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       type="CREATE"
@@ -42,3 +42,4 @@ function CreateSpaceForm({ data, setData, setValid }) {
     </>
   );
 }
+import { FORM_VALIDATION_MESSAGES as FORM_ERRORS } from "@dms/shared";

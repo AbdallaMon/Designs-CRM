@@ -7,7 +7,7 @@
 // task's parent project — there is no separate task-scope copy. Tasks not linked to a
 // project (projectId null) fall back to the legacy behavior (no project gate).
 import { AppError } from "../../../shared/errors/AppError.js";
-import { projectsMessagesCodes } from "@dms/shared";
+import { TASK_STATUSES, PROFILES, projectsMessagesCodes } from "@dms/shared";
 import { taskRepository } from "./task.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 import {
@@ -63,11 +63,11 @@ async function createNewTask({ data, isAdmin = false, staffId }) {
 
 export async function updateTask({ data, taskId, isAdmin = false, userId }) {
   const oldTask = await taskRepository.findTaskStatus({ id: taskId });
-  if (!isAdmin && oldTask.status === "DONE") {
+  if (!isAdmin && oldTask.status === TASK_STATUSES.DONE) {
     throw new AppError({ code: projectsMessagesCodes.TASK_STATUS_TRANSITION_FORBIDDEN, statusCode: 403 });
   }
 
-  if (data.status && data.status === "DONE") {
+  if (data.status && data.status === TASK_STATUSES.DONE) {
     data.finishedAt = new Date();
   }
   data.updatedAt = new Date();
@@ -142,7 +142,10 @@ export const taskOperations = {
 
 class TaskUsecase {
   isAdminUser(authUser) {
-    return Boolean(authUser?.isAdminTier);
+    return (
+      Boolean(authUser?.isAdminTier) ||
+      authUser?.currentProfileKey === PROFILES.SUPER_SALES
+    );
   }
 
   // The frontend sends `dueDate` as a date-only string ("2026-06-12"), but Prisma
@@ -185,11 +188,10 @@ class TaskUsecase {
     const searchParams = { ...query };
     if (
       [
-        "DESIGNER_3D",
-        "DESIGNER_2D",
-        "NORMAL_SALES",
-        "PRIMARY_SALES",
-        "SUPER_SALES",
+        PROFILES.DESIGNER_3D,
+        PROFILES.DESIGNER_2D,
+        PROFILES.NORMAL_SALES,
+        PROFILES.PRIMARY_SALES,
       ].includes(authUser.currentProfileKey)
     ) {
       searchParams.userId = authUser.id;
@@ -211,11 +213,10 @@ class TaskUsecase {
     const searchParams = { ...query };
     if (
       [
-        "DESIGNER_3D",
-        "DESIGNER_2D",
-        "NORMAL_SALES",
-        "PRIMARY_SALES",
-        "SUPER_SALES",
+        PROFILES.DESIGNER_3D,
+        PROFILES.DESIGNER_2D,
+        PROFILES.NORMAL_SALES,
+        PROFILES.PRIMARY_SALES,
       ].includes(authUser.currentProfileKey)
     ) {
       searchParams.userId = authUser.id;

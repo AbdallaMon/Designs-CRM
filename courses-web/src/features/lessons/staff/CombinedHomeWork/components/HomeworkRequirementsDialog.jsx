@@ -1,4 +1,5 @@
 import React from "react";
+import { HOMEWORK_TYPES } from "@dms/shared";
 import {
   Dialog,
   DialogTitle,
@@ -86,7 +87,7 @@ const HomeworkRequirementsDialog = ({
             <Button
               variant="outlined"
               startIcon={<FiVideo />}
-              onClick={() => handleUploadClick("VIDEO")}
+              onClick={() => handleUploadClick(HOMEWORK_TYPES.VIDEO)}
               size="large"
               sx={{
                 borderRadius: 2,
@@ -106,7 +107,7 @@ const HomeworkRequirementsDialog = ({
             <Button
               variant="outlined"
               startIcon={<FiFileText />}
-              onClick={() => handleUploadClick("SUMMARY")}
+              onClick={() => handleUploadClick(HOMEWORK_TYPES.SUMMARY)}
               color="secondary"
               size="large"
               sx={{
@@ -255,16 +256,16 @@ const HomeworkRequirementsDialog = ({
                             p: 1,
                             borderRadius: 2,
                             bgcolor:
-                              homework.type === "VIDEO"
+                                  homework.type === HOMEWORK_TYPES.VIDEO
                                 ? "primary.light"
                                 : "secondary.light",
                             color:
-                              homework.type === "VIDEO"
+                                  homework.type === HOMEWORK_TYPES.VIDEO
                                 ? "primary.contrastText"
                                 : "secondary.contrastText",
                           }}
                         >
-                          {homework.type === "VIDEO" ? (
+                                {homework.type === HOMEWORK_TYPES.VIDEO ? (
                             <FiVideo size={20} />
                           ) : (
                             <FiFileText size={20} />
@@ -290,11 +291,13 @@ const HomeworkRequirementsDialog = ({
                           >
                             <Chip
                               label={
-                                homework.type === "VIDEO" ? "Video" : "Summary"
+                                    homework.type === HOMEWORK_TYPES.VIDEO
+                                      ? "Video"
+                                      : "Summary"
                               }
                               size="small"
                               color={
-                                homework.type === "VIDEO"
+                                  homework.type === HOMEWORK_TYPES.VIDEO
                                   ? "primary"
                                   : "secondary"
                               }

@@ -1,0 +1,198 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { prismaMock } = vi.hoisted(() => {
+  const model = () => ({
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+    delete: vi.fn(),
+    count: vi.fn(),
+  });
+  return {
+    prismaMock: {
+      $transaction: vi.fn(),
+      contract: model(),
+      contractPayment: model(),
+      contractStage: model(),
+      contractDrawing: model(),
+      contractSpecialItem: model(),
+      project: model(),
+      client: model(),
+      deliverySchedule: model(),
+    },
+  };
+});
+
+vi.mock("../../../infra/prisma/prisma.js", () => ({ default: prismaMock }));
+vi.mock("../../projects/project/project.usecase.js", () => ({
+  assignProjectToUser: vi.fn(),
+}));
+
+import {
+  createContract,
+  createNewContractPayment,
+  deleteContractPayment,
+  updateContractBasics,
+  updateContractDrwaing,
+  updateContractPayment,
+  updateContractSpecialItem,
+  updateContractStage,
+} from "../contract/contract.workflow.repo.js";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  prismaMock.$transaction.mockImplementation((task) => task(prismaMock));
+});
+
+describe("contract workflow transactional writes", () => {
+  it("keeps the complete create graph inside one rollback boundary", async () => {
+    prismaMock.contract.create.mockResolvedValue({ id: 7 });
+    prismaMock.contractPayment.create.mockResolvedValue({ id: 11 });
+    prismaMock.contractStage.create.mockRejectedValue(new Error("stage insert failed"));
+
+    await expect(
+      createContract({
+        payload: {
+          clientLeadId: 100,
+          title: "Villa",
+          payments: [{ amount: 100, condition: "SIGNATURE" }],
+          stages: [{ levelEnum: "LEVEL_1", deliveryDays: 1, deptDeliveryDays: 1 }],
+        },
+      }),
+    ).rejects.toThrow("stage insert failed");
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(prismaMock.contract.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.contractPayment.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.contractStage.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("reassigns every linked stage and payment by contractId to the target lead/group", async () => {
+    prismaMock.contract.findUnique.mockResolvedValue({ id: 7, clientLeadId: 100 });
+    prismaMock.contractStage.findMany.mockResolvedValue([
+      { id: 1, project: { type: "2D_Study" } },
+      { id: 2, project: { type: "3D_Designer" } },
+    ]);
+    prismaMock.contractPayment.findMany.mockResolvedValue([
+      { id: 3, project: { type: "2D_Study" } },
+      { id: 4, project: { type: "3D_Designer" } },
+    ]);
+    prismaMock.project.findFirst.mockImplementation(async ({ where }) => ({
+      id: where.type === "2D_Study" ? 201 : 202,
+    }));
+    prismaMock.contractStage.update.mockResolvedValue({});
+    prismaMock.contractPayment.update.mockResolvedValue({});
+    prismaMock.contract.update.mockResolvedValue({});
+
+    await updateContractBasics({ contractId: 7, projectGroupId: 22 });
+
+    expect(prismaMock.contractStage.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { contractId: 7, projectId: { not: null } },
+      }),
+    );
+    expect(prismaMock.contractPayment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { contractId: 7, projectId: { not: null } },
+      }),
+    );
+    expect(prismaMock.project.findFirst).toHaveBeenCalledTimes(4);
+    for (const [{ where }] of prismaMock.project.findFirst.mock.calls) {
+      expect(where).toMatchObject({ groupId: 22, clientLeadId: 100 });
+    }
+    expect(prismaMock.contractStage.update).toHaveBeenCalledTimes(2);
+    expect(prismaMock.contractPayment.update).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps payment create/update/delete and total recomputation in their transactions", async () => {
+    prismaMock.contract.findUnique
+      .mockResolvedValueOnce({
+        id: 7,
+        clientLeadId: 100,
+        projectGroupId: 22,
+        amount: 10,
+        taxRate: 5,
+      })
+      .mockResolvedValueOnce({ id: 7, taxRate: 5, paymentsNew: [{ amount: 25 }] });
+    prismaMock.contractPayment.create.mockResolvedValue({ id: 1, amount: 25 });
+    prismaMock.contract.update.mockResolvedValue({});
+    await createNewContractPayment({
+      contractId: 7,
+      payment: { amount: 25, condition: "SIGNATURE" },
+    });
+
+    prismaMock.contractPayment.findUnique
+      .mockResolvedValueOnce({
+        id: 1,
+        contractId: 7,
+        contract: { clientLeadId: 100, projectGroupId: 22 },
+        project: null,
+      })
+      .mockResolvedValueOnce({ id: 2, contractId: 7, paymentCondition: "MILESTONE" });
+    prismaMock.contract.findUnique
+      .mockResolvedValueOnce({ id: 7, taxRate: 5, paymentsNew: [{ amount: 0 }] })
+      .mockResolvedValueOnce({ id: 7, taxRate: 5, paymentsNew: [] });
+    prismaMock.contractPayment.update.mockResolvedValue({});
+    prismaMock.contractPayment.delete.mockResolvedValue({});
+    await updateContractPayment({ paymentId: 1, newPayment: { amount: 0 } });
+    await deleteContractPayment({ paymentId: 2 });
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(3);
+    expect(prismaMock.contract.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { amount: 0, totalAmount: 0 } }),
+    );
+  });
+});
+
+describe("contract workflow explicit clears and zero values", () => {
+  it("does not silently ignore nullable clears or legitimate zero values", async () => {
+    prismaMock.contractPayment.findUnique.mockResolvedValue({
+      id: 1,
+      contractId: 7,
+      contract: { clientLeadId: 100, projectGroupId: 22 },
+      project: null,
+    });
+    prismaMock.contract.findUnique.mockResolvedValue({
+      id: 7,
+      taxRate: 5,
+      paymentsNew: [{ amount: 0 }],
+    });
+    prismaMock.contractPayment.update.mockResolvedValue({});
+    prismaMock.contract.update.mockResolvedValue({});
+    await updateContractPayment({
+      paymentId: 1,
+      newPayment: { amount: 0, note: null, conditionId: null, type: null },
+    });
+    expect(prismaMock.contractPayment.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { amount: 0, note: null, conditionId: null, projectId: null },
+    });
+
+    prismaMock.contractStage.update.mockResolvedValue({});
+    await updateContractStage({ stageId: 2, newStage: { deliveryDays: 0, deptDeliveryDays: null } });
+    expect(prismaMock.contractStage.update).toHaveBeenCalledWith({
+      where: { id: 2 },
+      data: { deliveryDays: 0, deptDeliveryDays: null },
+    });
+
+    prismaMock.contractDrawing.update.mockResolvedValue({});
+    await updateContractDrwaing({ drawId: 3, newDrawing: { fileName: null } });
+    expect(prismaMock.contractDrawing.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { fileName: null },
+    });
+
+    prismaMock.contractSpecialItem.update.mockResolvedValue({});
+    await updateContractSpecialItem({
+      specialItemId: 4,
+      newSpecialItem: { labelAr: null, labelEn: "" },
+    });
+    expect(prismaMock.contractSpecialItem.update).toHaveBeenCalledWith({
+      where: { id: 4 },
+      data: { labelAr: null, labelEn: "" },
+    });
+  });
+});

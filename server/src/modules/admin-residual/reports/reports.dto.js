@@ -1,3 +1,4 @@
+import { LEAD_STATUSES } from "@dms/shared";
 // admin-residual/reports DTO — pure output shaping for the (NON-frozen) report DATA
 // endpoints. `calculateSummary`, `processLeads` and `calculateStaffStats` are moved
 // VERBATIM from the legacy `admin-services.js` god-file (no Prisma, no side effects).
@@ -58,16 +59,16 @@ export const calculateStaffStats = (staff, dateRange) => {
 
     const totalLeads = filteredLeads.length;
     const finalized = filteredLeads.filter(
-      (lead) => lead.status === "FINALIZED",
+      (lead) => lead.status === LEAD_STATUSES.FINALIZED,
     ).length;
     const converted = filteredLeads.filter(
-      (lead) => lead.status === "CONVERTED",
+      (lead) => lead.status === LEAD_STATUSES.CONVERTED,
     ).length;
     const onHold = filteredLeads.filter(
-      (lead) => lead.status === "ON_HOLD",
+      (lead) => lead.status === LEAD_STATUSES.ON_HOLD,
     ).length;
     const rejected = filteredLeads.filter(
-      (lead) => lead.status === "REJECTED",
+      (lead) => lead.status === LEAD_STATUSES.REJECTED,
     ).length;
     // Calculate success rate
     const totalClosedLeads = finalized + converted + rejected + onHold;
@@ -84,7 +85,7 @@ export const calculateStaffStats = (staff, dateRange) => {
 
     // Calculate revenue and discount
     const totalRevenue = filteredLeads
-      .filter((lead) => lead.status === "FINALIZED")
+      .filter((lead) => lead.status === LEAD_STATUSES.FINALIZED)
       .reduce(
         (sum, lead) =>
           sum + parseFloat(Number(lead.averagePrice || 0).toFixed(2)),
@@ -93,7 +94,7 @@ export const calculateStaffStats = (staff, dateRange) => {
 
     // Calculate discount
     const totalDiscount = filteredLeads
-      .filter((lead) => lead.status === "FINALIZED")
+      .filter((lead) => lead.status === LEAD_STATUSES.FINALIZED)
       .reduce(
         (sum, lead) => sum + parseFloat(Number(lead.discount || 0).toFixed(2)),
         0,
@@ -113,7 +114,7 @@ export const calculateStaffStats = (staff, dateRange) => {
       totalLeads,
       activeLeads: filteredLeads.filter(
         (lead) =>
-          !["FINALIZED", "CONVERTED", "REJECTED", "ON_HOLD"].includes(
+          ![LEAD_STATUSES.FINALIZED, LEAD_STATUSES.CONVERTED, LEAD_STATUSES.REJECTED, LEAD_STATUSES.ON_HOLD].includes(
             lead.status,
           ),
       ).length,

@@ -9,6 +9,7 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
+import { HOMEWORK_TYPES } from "@dms/shared";
 import { FiUpload } from "react-icons/fi";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 
@@ -42,9 +43,11 @@ const HomeworkUploadDialog = ({
               p: 1,
               borderRadius: 2,
               bgcolor:
-                uploadType === "VIDEO" ? "primary.light" : "secondary.light",
+            uploadType === HOMEWORK_TYPES.VIDEO
+              ? "primary.light"
+              : "secondary.light",
               color:
-                uploadType === "VIDEO"
+            uploadType === HOMEWORK_TYPES.VIDEO
                   ? "primary.contrastText"
                   : "secondary.contrastText",
             }}
@@ -52,7 +55,7 @@ const HomeworkUploadDialog = ({
             <FiUpload size={20} />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Upload {uploadType === "VIDEO" ? "video" : "summary"}
+          Upload {uploadType === HOMEWORK_TYPES.VIDEO ? "video" : "summary"}
           </Typography>
         </Box>
       </DialogTitle>
@@ -71,15 +74,22 @@ const HomeworkUploadDialog = ({
           }}
           required
           placeholder={`Enter a title for the ${
-            uploadType === "VIDEO" ? "video" : "summary"
+            uploadType === HOMEWORK_TYPES.VIDEO ? "video" : "summary"
           }`}
         />
         <SimpleFileInput
           id="file"
           setData={setFile}
-          label={uploadType === "VIDEO" ? "Choose a video file" : "Choose a document"}
+          label={
+            uploadType === HOMEWORK_TYPES.VIDEO
+              ? "Choose a video file"
+              : "Choose a document"
+          }
           input={{
-            accept: uploadType === "VIDEO" ? "video/*" : "application/pdf",
+            accept:
+              uploadType === HOMEWORK_TYPES.VIDEO
+                ? "video/*"
+                : "application/pdf",
           }}
         />
       </DialogContent>

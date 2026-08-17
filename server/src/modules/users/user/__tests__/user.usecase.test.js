@@ -12,6 +12,7 @@ vi.mock("../../../../infra/audit/record-action.js", () => ({
 vi.mock("../user.repo.js", () => ({
   userRepository: {
     findUserIdById: vi.fn(),
+    findUserManagementScope: vi.fn(),
     findDirectory: vi.fn(),
     findManagementList: vi.fn(),
     findUserProfileById: vi.fn(),
@@ -31,6 +32,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   userRepository.findDirectory.mockResolvedValue([]);
   userRepository.findManagementList.mockResolvedValue({ users: [], total: 0 });
+  userRepository.findUserManagementScope.mockResolvedValue({
+    id: 99,
+    userProfiles: [
+      { profile: { key: "NORMAL_SALES", family: "SALES", isAdminTier: false } },
+    ],
+  });
 });
 
 const admin = {
@@ -43,6 +50,12 @@ const superSales = {
   id: 2,
   currentProfileKey: "SUPER_SALES",
   isAdminTier: false,
+  permissions: [],
+};
+const superAdmin = {
+  id: 5,
+  currentProfileKey: "SUPER_ADMIN",
+  isAdminTier: true,
   permissions: [],
 };
 const staff = {
@@ -78,17 +91,64 @@ describe("UserUsecase profile scope checkers (IDOR fix)", () => {
   });
 
   it("ACCESS: an admin-tier user may view ANY profile", async () => {
-    userRepository.findUserIdById.mockResolvedValue({ id: 99 });
+    userRepository.findUserManagementScope.mockResolvedValue({
+      id: 99,
+      userProfiles: [
+        { profile: { key: "SUPER_ADMIN", family: "ADMIN", isAdminTier: true } },
+      ],
+    });
     const scope = await userUsecase.checkIfUserCanAccessProfile({ userId: 99, authUser: admin });
     expect(scope).toMatchObject({ id: 99, isSelf: false, adminTier: true });
   });
 
-  it("ACCESS: SUPER_SALES does not become an admin profile", async () => {
+  it("HIERARCHY: SUPER_ADMIN cannot view or mutate an ADMIN account", async () => {
+    userRepository.findUserManagementScope.mockResolvedValue({
+      id: 1,
+      userProfiles: [
+        { profile: { key: "ADMIN", family: "ADMIN", isAdminTier: true } },
+      ],
+    });
+
     await expect(
-      userUsecase.checkIfUserCanAccessProfile({
-        userId: 50,
-        authUser: superSales,
-      }),
+      userUsecase.checkIfUserCanAccessProfile({ userId: 1, authUser: superAdmin }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+    await expect(
+      userUsecase.checkIfUserCanMutateProfile({ userId: 1, authUser: superAdmin }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("HIERARCHY: ADMIN can manage a SUPER_ADMIN account", async () => {
+    userRepository.findUserManagementScope.mockResolvedValue({
+      id: 5,
+      userProfiles: [
+        { profile: { key: "SUPER_ADMIN", family: "ADMIN", isAdminTier: true } },
+      ],
+    });
+
+    await expect(
+      userUsecase.checkIfUserCanManageUser({ userId: 5, authUser: admin }),
+    ).resolves.toEqual({ id: 5 });
+  });
+
+  it("ACCESS: SUPER_SALES may manage a sales target without becoming a global admin", async () => {
+    userRepository.findUserManagementScope.mockResolvedValue({
+      id: 50,
+      userProfiles: [
+        { profile: { key: "PRIMARY_SALES", family: "SALES", isAdminTier: false } },
+      ],
+    });
+    await expect(
+      userUsecase.checkIfUserCanAccessProfile({ userId: 50, authUser: superSales }),
+    ).resolves.toMatchObject({ id: 50, isSelf: false, adminTier: true });
+
+    userRepository.findUserManagementScope.mockResolvedValue({
+      id: 51,
+      userProfiles: [
+        { profile: { key: "DESIGNER_3D", family: "DESIGNER", isAdminTier: false } },
+      ],
+    });
+    await expect(
+      userUsecase.checkIfUserCanAccessProfile({ userId: 51, authUser: superSales }),
     ).rejects.toMatchObject({ statusCode: 403 });
   });
 
@@ -143,15 +203,27 @@ describe("UserUsecase.getProfile output safety", () => {
 });
 
 describe("UserUsecase.updateProfile self-edit whitelist (privilege-escalation fix)", () => {
-  it("a non-admin self-edit drops role/isActive/password and keeps safe fields", async () => {
+  it("a non-admin self-edit persists notification preferences and drops privileged fields", async () => {
     userRepository.updateUserProfile.mockImplementation(async ({ data }) => ({ id: 3, ...data }));
     await userUsecase.updateProfile({
       userId: 3,
-      body: { name: "New", role: "ADMIN", isActive: false, password: "x", isSuperSales: true },
+      body: {
+        name: "New",
+        allowNotification: false,
+        allowEmailing: false,
+        role: "ADMIN",
+        isActive: false,
+        password: "x",
+        isSuperSales: true,
+      },
       scoped: { isSelf: true, adminTier: false },
     });
     const passed = userRepository.updateUserProfile.mock.calls[0][0].data;
-    expect(passed).toEqual({ name: "New" });
+    expect(passed).toEqual({
+      name: "New",
+      allowNotification: false,
+      allowEmailing: false,
+    });
     expect(passed.role).toBeUndefined();
     expect(passed.isActive).toBeUndefined();
     expect(passed.password).toBeUndefined();

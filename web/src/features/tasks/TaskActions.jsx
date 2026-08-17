@@ -1,4 +1,5 @@
 "use client";
+import { PROFILES, formatTaskPriorityChangeDenied } from "@dms/shared";
 
 import { PRIORITY, TASKSTATUS } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -49,13 +50,11 @@ export function TaskActions({ name, task, setTasks, setTask }) {
       // Check permissions for priority changes
       if (
         type === MENU_TYPES.PRIORITY &&
-        user.profile !== "ADMIN" &&
-        user.profile !== "SUPER_ADMIN" &&
+        user.profile !== PROFILES.ADMIN &&
+        user.profile !== PROFILES.SUPER_ADMIN &&
         user.id !== task.createdById
       ) {
-        setAlertError(
-          `You are not allowed to change this ${name} priority. Only ${name} status can be changed.`
-        );
+        setAlertError(formatTaskPriorityChangeDenied(name));
         handleMenuClose();
         return;
       }
@@ -99,8 +98,8 @@ export function TaskActions({ name, task, setTasks, setTask }) {
   );
 
   const canChangePriority =
-    user.profile === "ADMIN" ||
-    user.profile === "SUPER_ADMIN" ||
+    user.profile === PROFILES.ADMIN ||
+    user.profile === PROFILES.SUPER_ADMIN ||
     user.id === task.createdById;
 
   return (

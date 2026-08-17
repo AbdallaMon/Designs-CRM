@@ -71,6 +71,7 @@ staffCourseRouter.post(
   "/tests/:testId/attampts",
   AuthMiddleware.requirePermissions([P.TAKE]),
   validate(StaffCourseValidation.testParams, "params"),
+  validate(StaffCourseValidation.emptyBody),
   asyncHandler(ctrl.createAttempt),
 );
 staffCourseRouter.post(
@@ -87,6 +88,7 @@ staffCourseRouter.put(
   "/tests/:testId/attampts/:attemptId",
   AuthMiddleware.requirePermissions([P.TAKE]),
   validate(StaffCourseValidation.endAttemptParams, "params"),
+  validate(StaffCourseValidation.emptyBody),
   // C2: end-attempt is OWNER-scoped (param spelled `attemptId`). Blocks ending /
   // re-scoring another user's attempt (IDOR).
   AuthMiddleware.requireSpecialChecker(ctrl.checkIfUserCanMutateAttempt),
@@ -118,6 +120,7 @@ staffCourseRouter.post(
   "/:courseId/lessons/:lessonId/actions/complete",
   AuthMiddleware.requirePermissions([P.TAKE]),
   validate(StaffCourseValidation.lessonParams, "params"),
+  validate(StaffCourseValidation.emptyBody),
   asyncHandler(ctrl.markLessonComplete),
 );
 staffCourseRouter.get(

@@ -1,14 +1,13 @@
-// client-portal/uploads route — PUBLIC client file uploads. Legacy `routes/client/uploads.js`
+// client-portal/uploads compatibility route. Legacy `routes/client/uploads.js`
 // (`POST /upload-chunk`, `POST /api/upload`), mounted PATHLESS under `/client`. Mounted under
 // v2 at `/v2/client/upload-chunk` and `/v2/client/api/upload` (paths preserved 1:1).
 //
-// PUBLIC BY DESIGN — clients upload lead attachments / signatures before any login session,
-// exactly like legacy and `/files/client/*`. 🔒 The chunk mechanism + the underlying frozen
-// handlers are UNCHANGED; only the multer wiring + handler invocation are relocated.
+// This remaining endpoint is NOT public: it accepts only a short-lived INTERNAL_PDF
+// capability whose subject must exactly match the uploaded filename. Public funnel files
+// use the scoped `/v2/files/client/*` routes instead.
 //
-// NOTE: this is the FROZEN-handler client upload surface. The separate `/v2/files/client/*`
-// (upload module) is a re-implemented storage provider — a DIFFERENT mechanism — so this
-// surface is migrated independently to preserve the frozen behavior the website relies on.
+// The compatibility path writes through the same private local storage provider as every
+// other upload; the old public_html/FTP behavior is no longer present.
 //
 // The third legacy endpoint (`POST /upload` → `uploadFiles`) was COMMENTED OUT in legacy
 // (dead) and is intentionally not mapped.

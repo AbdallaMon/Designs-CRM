@@ -40,6 +40,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay";
 import LessonVideoPdfManager from "../../PdfsForVideo";
+import { videoPayload } from "@/app/helpers/contracts/coursePayloads";
 
 // Enhanced Videos Section Component
 const VideosSection = ({ courseId, lessonId }) => {
@@ -74,7 +75,7 @@ const VideosSection = ({ courseId, lessonId }) => {
   const handleAddVideo = async () => {
     if (newVideo.url.trim()) {
       const req = await handleRequestSubmit(
-        newVideo,
+        videoPayload(newVideo),
         setToastLoading,
         `courses/${courseId}/lessons/${lessonId}/videos`,
         false,
@@ -110,7 +111,7 @@ const VideosSection = ({ courseId, lessonId }) => {
 
   const handleUpdateVideo = async () => {
     const req = await handleRequestSubmit(
-      editData,
+      videoPayload(editData),
       setToastLoading,
       `courses/${courseId}/lessons/${lessonId}/videos/${editingId}`,
       false,

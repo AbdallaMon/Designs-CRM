@@ -1,8 +1,15 @@
 import { getTeleClient } from "../connect-to-telegram.js";
 import prisma from "../../prisma/prisma.js";
 import { telegramMessageQueue } from "../../queues/telegram-message.queue.js";
-import { delay } from "./util.js";
 import { getChannelEntitiyByTeleRecordAndLeadId } from "./telegram-channels.js";
+import { buildAssetAccessUrl } from "../../upload/asset-access.js";
+import { env } from "../../../config/env.js";
+
+function telegramAssetUrl(reference) {
+  return buildAssetAccessUrl(reference, {
+    ttlSeconds: env.ASSET_EMAIL_URL_TTL_SECONDS,
+  });
+}
 
 export async function uploadItemsToTele({ clientLeadId }) {
   const channel = await getChannelEntitiyByTeleRecordAndLeadId({
@@ -59,7 +66,6 @@ export async function uploadItemsToTele({ clientLeadId }) {
 }
 
 export async function uploadANote(note, channel) {
-  await delay(2000);
   const existingJob = await telegramMessageQueue.getJob(`note-${note.id}`);
   if (existingJob) return;
 
@@ -78,6 +84,7 @@ export async function uploadANote(note, channel) {
         type: "fixed",
         delay: 10000,
       },
+      delay: 2000,
       jobId: `note-${note.id}`,
       removeOnComplete: true,
       removeOnFail: 2,
@@ -86,7 +93,6 @@ export async function uploadANote(note, channel) {
 }
 
 export async function uploadAnAttachment(file, channel) {
-  await delay(2000);
   const existingJob = await telegramMessageQueue.getJob(`file-${file.id}`);
   if (existingJob) return;
   await telegramMessageQueue.add(
@@ -104,6 +110,7 @@ export async function uploadAnAttachment(file, channel) {
         type: "fixed",
         delay: 10000,
       },
+      delay: 2000,
       jobId: `file-${file.id}`,
       removeOnComplete: true,
       removeOnFail: 2,
@@ -123,14 +130,13 @@ export async function uploadAQueueNote(note, channel) {
   }
 
   if (note.attachment) {
-    message += `\n\n📎 [Attachment Link](${note.attachment})`;
+    message += `\n\n📎 [Attachment Link](${telegramAssetUrl(note.attachment)})`;
   }
 
   const sent = await getTeleClient().sendMessage(channel, {
     message,
     parseMode: "",
   });
-  console.log("Message sent");
   // if (note.binMessage) {
   //   await getTeleClient().invoke(
   //     new Api.messages.UpdatePinnedMessage({
@@ -146,9 +152,6 @@ export async function uploadAQueueNote(note, channel) {
       where: note.update.where,
       data: note.update.data,
     });
-    console.log(
-      `Updated succssfully for key:${note.update.key} , where:${note.update.where}`,
-    );
   }
 }
 
@@ -169,7 +172,7 @@ export async function uploadAQueueAttachment(file, channel) {
     message += `\n\n📝 ${file.description}`;
   }
 
-  message += `\n\n🔗 [Open File](${file.url})`;
+  message += `\n\n🔗 [Open File](${telegramAssetUrl(file.url)})`;
 
   await getTeleClient().sendMessage(channel, {
     message,

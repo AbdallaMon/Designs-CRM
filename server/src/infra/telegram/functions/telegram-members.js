@@ -7,17 +7,12 @@ import { getChannelEntitiyByTeleRecordAndLeadId } from "./telegram-channels.js";
 
 export async function getUserEntitiy(user) {
   if (!user.telegramUsername) {
-    console.warn("⚠️ No telegramUsername for user:", user);
     return null;
   }
 
   try {
     return await getTeleClient().getEntity(user.telegramUsername);
-  } catch (err) {
-    console.error(
-      `❌ Failed to get entity for ${user.telegramUsername}:`,
-      err.message,
-    );
+  } catch {
     return null;
   }
 }
@@ -44,13 +39,7 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
           rank: "Admin",
         }),
       );
-
-      console.log(`✅ Invited @${user.username || user.id.value}`);
-    } catch (e) {
-      console.warn(
-        `❌ Failed to invite @${user.username || user.id.value}: ${e.message}`,
-      );
-    }
+    } catch {}
   }
 }
 
@@ -109,10 +98,7 @@ export async function addUserListToAChnnelUsingQueue({
           rank: "Admin",
         }),
       );
-      console.log(`✅ Invited @${userInpt.username || userInpt.id.value}`);
-    } catch (e) {
-      console.warn(`❌ Failed to invite : ${e.message}`);
-    }
+    } catch {}
   }
 }
 

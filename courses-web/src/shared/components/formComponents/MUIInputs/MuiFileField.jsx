@@ -2,6 +2,7 @@ import {Controller} from "react-hook-form";
 import {Alert, Box, Snackbar, TextField} from "@mui/material";
 import {useState} from "react";
 import Image from "next/image";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 export default function MuiFileField({
                                          control,
@@ -23,18 +24,18 @@ export default function MuiFileField({
 
         if (file) {
             if (input.acceptOnly === "pdf" && file.type !== "application/pdf") {
-                setError("The file must be a PDF.");
+                setError(FEEDBACK.FILE_MUST_BE_PDF);
                 setValue(id, null);
                 setPreview(null);
                 return;
             } else if (input.acceptOnly === "image" && !file.type.startsWith("image/")) {
-                setError("The file must be an image.");
+                setError(FEEDBACK.FILE_MUST_BE_IMAGE);
                 setValue(id, null);
                 setPreview(null);
                 return;
             }
             if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-                setError("Unsupported file type. Upload an image or PDF.");
+                setError(FEEDBACK.FILE_TYPE_UNSUPPORTED);
                 setValue(id, null);
                 setPreview(null);
                 return;

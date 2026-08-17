@@ -18,6 +18,7 @@ import {
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { MdAttachMoney, MdClose } from "react-icons/md";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 
 const AdminCommissionForm = ({ userId, onUpdate }) => {
   const [open, setOpen] = useState(false);
@@ -32,7 +33,7 @@ const AdminCommissionForm = ({ userId, onUpdate }) => {
   }
   const handleSubmit = async () => {
     if (!amount || !leadId || !commissionReason.trim()) {
-      setAlertError("Please fill in all required fields");
+      setAlertError(FEEDBACK.REQUIRED_FIELDS);
       return;
     }
 
@@ -55,7 +56,7 @@ const AdminCommissionForm = ({ userId, onUpdate }) => {
     } catch (error) {
       console.error("Error creating commission:", error);
       setAlertError(
-        error.response?.data?.error || "Failed to create commission"
+        error.response?.data?.error || FEEDBACK.COMMISSION_CREATE_FAILED
       );
       setLoading(false);
     }

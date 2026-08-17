@@ -44,8 +44,37 @@ export class PublicLeadRepository {
     return prisma.clientLead.findUnique({ where: { id: Number(id) } });
   }
 
+  findRegistrationStatusById(id) {
+    return prisma.clientLead.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, description: true, type: true },
+    });
+  }
+
   updateLead(id, data) {
     return prisma.clientLead.update({ where: { id: Number(id) }, data });
+  }
+
+  completeRegistrationDraft({ id, clientId, leadData, clientData }) {
+    return prisma.$transaction(async (tx) => {
+      const claimed = await tx.clientLead.updateMany({
+        where: {
+          id: Number(id),
+          description: "Didn't complete register yet",
+        },
+        data: leadData,
+      });
+      if (claimed.count !== 1) return null;
+
+      if (clientData && Object.keys(clientData).length > 0) {
+        await tx.client.update({
+          where: { id: Number(clientId) },
+          data: clientData,
+        });
+      }
+
+      return tx.clientLead.findUnique({ where: { id: Number(id) } });
+    });
   }
 
   findClientById(id) {

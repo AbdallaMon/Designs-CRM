@@ -1,3 +1,4 @@
+import { BOOKING_LEAD_REQUEST_STATUSES } from "@dms/shared";
 import {
   Card,
   CardContent,
@@ -55,7 +56,7 @@ export default function BookingLeadDetailsCard({ lead }) {
           <Chip
             size="small"
             color={
-              lead.bookingRequestStatus === "SUBMITTED" ? "success" : "default"
+              lead.bookingRequestStatus === BOOKING_LEAD_REQUEST_STATUSES.SUBMITTED ? "success" : "default"
             }
             label={statusValue}
           />

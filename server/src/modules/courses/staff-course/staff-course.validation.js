@@ -1,49 +1,37 @@
-// Zod schemas for the staff (course-consumption) surface. Failures auto-return 422
-// + details. Mirrors LEGACY inputs from `routes/courses/staffCourses.js`.
-//
-// NOTE on `role` (observable-behavior preservation): the legacy staff routes filter
-// courses/lessons by a CLIENT-SUPPLIED `req.query.role` (the CourseRole to match),
-// NOT the caller's actual role. This is preserved verbatim — it is a content filter,
-// not an authorization decision (authorization is the STAFF_COURSE code + published
-// flag + the lesson-access/attempt scope gates). `role` is optional, as in legacy
-// (an absent role simply matches no CourseRole rows).
+import { HOMEWORK_TYPES } from "@dms/shared";
 import { z } from "zod";
 
-const idParam = z.coerce.number().int();
+const idParam = z.coerce.number().int().positive();
 
 export class StaffCourseValidation {
-  // ── query ────────────────────────────────────────────────────────────────────
   static listQuery = z
     .object({
-      page: z.coerce.number().int().min(1).optional(),
-      limit: z.coerce.number().int().min(1).optional(),
+      page: z.coerce.number().int().positive().optional(),
+      limit: z.coerce.number().int().positive().optional(),
     })
-    .passthrough();
+    .strict();
 
+  static courseParams = z.object({ courseId: idParam }).strict();
+  static lessonParams = z.object({ courseId: idParam, lessonId: idParam }).strict();
+  static testParams = z.object({ testId: idParam }).strict();
+  static attemptParams = z
+    .object({ testId: idParam, attamptId: idParam })
+    .strict();
+  static endAttemptParams = z
+    .object({ testId: idParam, attemptId: idParam })
+    .strict();
+  static submitAnswerParams = z
+    .object({ testId: idParam, attemptId: idParam, questionId: idParam })
+    .strict();
 
-  // ── params ─────────────────────────────────────────────────────────────────────
-  static courseParams = z.object({ courseId: idParam });
-  static lessonParams = z.object({ courseId: idParam, lessonId: idParam });
-  static testParams = z.object({ testId: idParam });
-  static attemptParams = z.object({ testId: idParam, attamptId: idParam });
-  static endAttemptParams = z.object({ testId: idParam, attemptId: idParam });
-  static submitAnswerParams = z.object({
-    testId: idParam,
-    attemptId: idParam,
-    questionId: idParam,
-  });
-
-  // ── bodies ───────────────────────────────────────────────────────────────────
-  // Legacy `createAHomeWork` reads url/type/title.
+  static emptyBody = z.object({}).strict();
   static homeworkBody = z
     .object({
-      url: z.string().min(1),
-      type: z.string().min(1),
-      title: z.string().optional(),
+      url: z.string().trim().min(1),
+      type: z.enum(Object.values(HOMEWORK_TYPES)),
+      title: z.string().trim().min(1).optional(),
     })
-    .passthrough();
-
-  // Legacy `submitAnswer` reads `answer` ({ textAnswer?, selectedAnswers? }).
+    .strict();
   static submitAnswerBody = z
     .object({
       answer: z
@@ -51,7 +39,7 @@ export class StaffCourseValidation {
           textAnswer: z.string().nullable().optional(),
           selectedAnswers: z.array(z.string()).optional(),
         })
-        .passthrough(),
+        .strict(),
     })
-    .passthrough();
+    .strict();
 }

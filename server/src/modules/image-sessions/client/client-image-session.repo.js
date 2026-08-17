@@ -10,6 +10,7 @@
 // save-* writes, the token-keyed extras and image delete) lives in the named exports below,
 // moved verbatim from the legacy `image-session-services.js` + `client-image-services.js`
 // services and invoked from the usecase via lazy adapters — behavior-preserving.
+import { imageSessionsMessagesCodes } from "@dms/shared";
 import prisma from "../../../infra/prisma/prisma.js";
 import { deserializeTemplatesDeep } from "../image-sessions.helpers.js";
 import { serializeJsonField } from "../../../shared/utility/json-field.js";
@@ -42,6 +43,39 @@ class ClientImageSessionRepository {
       select: { imageSessionId: true },
     });
     return row;
+  }
+
+  findColorChoice({ colorId }) {
+    return prisma.colorPattern.findFirst({
+      where: { id: Number(colorId), isArchived: false },
+      select: { id: true },
+    });
+  }
+
+  findMaterialChoices({ materialIds }) {
+    return prisma.material.findMany({
+      where: { id: { in: materialIds.map(Number) }, isArchived: false },
+      select: { id: true },
+    });
+  }
+
+  findStyleChoice({ styleId }) {
+    return prisma.style.findFirst({
+      where: { id: Number(styleId), isArchived: false },
+      select: { id: true },
+    });
+  }
+
+  findDesignImageChoices({ imageIds, styleId, spaceIds }) {
+    return prisma.designImage.findMany({
+      where: {
+        id: { in: imageIds.map(Number) },
+        styleId: Number(styleId),
+        isArchived: false,
+        spaces: { some: { spaceId: { in: spaceIds.map(Number) } } },
+      },
+      select: { id: true },
+    });
   }
 }
 
@@ -172,30 +206,22 @@ export async function saveClientSelectedMaterials({
 }) {
   const sessionId = Number(session.id);
 
-  // 1. Clear existing materials for this session (optional, if replacing)
-  await prisma.materialOnClientImageSession.deleteMany({
-    where: { clientImageSessionId: sessionId },
-  });
-
-  // 2. Create new relations
   const createData = selectedMaterials.map((material) => ({
     clientImageSessionId: sessionId,
     materialId: material.id,
   }));
 
-  await prisma.materialOnClientImageSession.createMany({
-    data: createData,
+  return prisma.$transaction(async (tx) => {
+    await tx.materialOnClientImageSession.deleteMany({
+      where: { clientImageSessionId: sessionId },
+    });
+    await tx.materialOnClientImageSession.createMany({ data: createData });
+    await tx.clientImageSession.update({
+      where: { id: sessionId },
+      data: { sessionStatus: status },
+    });
+    return { message: imageSessionsMessagesCodes.IMAGE_SESSION_MATERIAL_SAVED };
   });
-
-  // 3. Update session status
-  await prisma.clientImageSession.update({
-    where: { id: sessionId },
-    data: {
-      sessionStatus: status,
-    },
-  });
-
-  return { message: "Materials saved successfully" };
 }
 
 export async function getStyleByLng({ lng }) {

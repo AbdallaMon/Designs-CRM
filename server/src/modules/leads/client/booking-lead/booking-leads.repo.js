@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import prisma from "../../../../infra/prisma/prisma.js";
 import { AppError } from "../../../../shared/errors/AppError.js";
-import { leadsMessagesCodes, messagesNames } from "@dms/shared";
+import { BOOKING_LEAD_REQUEST_STATUSES, LEAD_CATEGORIES, leadsMessagesCodes, messagesNames } from "@dms/shared";
 
 const TK = messagesNames.leadsMessages;
 
@@ -15,6 +15,7 @@ const bookingLeadSelect = {
   hasArchitecturalPlan: true,
   serviceType: true,
   decisionMaker: true,
+  source: true,
   bookingRequestStatus: true,
   bookingSubmittedAt: true,
   client: {
@@ -90,7 +91,7 @@ async function findExistingClientForSubmit(tx, { currentClientId, email }) {
 }
 
 export class BookingLeadsRepository {
-  async createDraft({ clientDraft }) {
+  async createDraft({ clientDraft, source }) {
     return prisma.$transaction(async (tx) => {
       const client = await tx.client.create({
         data: clientDraft,
@@ -100,8 +101,9 @@ export class BookingLeadsRepository {
       return tx.clientLead.create({
         data: {
           clientId: client.id,
-          selectedCategory: "CONSULTATION",
-          bookingRequestStatus: "IN_PROGRESS",
+          selectedCategory: LEAD_CATEGORIES.CONSULTATION,
+          bookingRequestStatus: BOOKING_LEAD_REQUEST_STATUSES.IN_PROGRESS,
+          ...(source ? { source } : {}),
         },
         select: bookingLeadSelect,
       });
@@ -152,8 +154,21 @@ export class BookingLeadsRepository {
 
   async submit({ leadId, clientId, leadData, clientData }) {
     return prisma.$transaction(async (tx) => {
+      const claimed = await tx.clientLead.updateMany({
+        where: {
+          id: Number(leadId),
+          bookingRequestStatus: { not: BOOKING_LEAD_REQUEST_STATUSES.SUBMITTED },
+        },
+        data: {
+          bookingRequestStatus: BOOKING_LEAD_REQUEST_STATUSES.SUBMITTED,
+          bookingSubmittedAt: leadData.bookingSubmittedAt,
+        },
+      });
+      if (claimed.count !== 1) return null;
+
       const hasSubmittedToday = await this.checkIfClientSubmittedLeadToday(
         clientData.email,
+        { client: tx, excludeLeadId: leadId },
       );
       if (hasSubmittedToday) {
         throw new AppError({
@@ -237,11 +252,15 @@ export class BookingLeadsRepository {
     });
   }
 
-  async checkIfClientSubmittedLeadToday(email) {
+  async checkIfClientSubmittedLeadToday(
+    email,
+    { client = prisma, excludeLeadId } = {},
+  ) {
     const todayStart = dayjs().startOf("day");
     const todayEnd = dayjs().endOf("day");
-    const existingLead = await prisma.clientLead.findFirst({
+    const existingLead = await client.clientLead.findFirst({
       where: {
+        ...(excludeLeadId ? { id: { not: Number(excludeLeadId) } } : {}),
         client: { email },
         createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
       },

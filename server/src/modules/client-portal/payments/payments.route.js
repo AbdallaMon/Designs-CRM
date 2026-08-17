@@ -3,20 +3,29 @@
 // mounted PATHLESS under `/client`. Mounted under v2 at `/v2/client/pay`,
 // `/v2/client/payment-status`, `/v2/client/stripe/backfill` (paths preserved 1:1).
 //
-// PUBLIC BY DESIGN — a prospective client pays the booking fee before any login session,
-// exactly like legacy and the booking funnel. 🔒 Stripe SDK calls are frozen (relocated
-// verbatim). No webhook/signature logic exists in this flow. `/stripe/backfill` keeps the
-// legacy secret-key gate. The payment-status verification now derives the target lead from
-// the VERIFIED Stripe session metadata (IDOR close — see usecase).
+// PUBLIC BY DESIGN — a prospective client pays before any login session. Checkout creation
+// requires the short-lived PUBLIC_REGISTER capability bound to the requested lead. Stripe
+// webhook fulfillment is signature verified; browser payment-status only reconciles a
+// server-retrieved session and derives its lead from Stripe metadata.
 import { Router } from "express";
 import { asyncHandler } from "../../../shared/middlewares/async-handler.js";
 import { validate } from "../../../shared/middlewares/validate.middleware.js";
 import { paymentsController } from "./payments.controller.js";
 import { PaymentsValidation } from "./payments.validation.js";
+import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
+import { checkoutCreationLimiter } from "./payments.rate-limiter.js";
+import { stripeWebhookRouter } from "./stripe-webhook.route.js";
 
 const router = Router();
 
-router.post("/pay", validate(PaymentsValidation.pay), asyncHandler(paymentsController.pay));
+router.use("/stripe", stripeWebhookRouter);
+router.post(
+  "/pay",
+  checkoutCreationLimiter,
+  validate(PaymentsValidation.pay),
+  AuthMiddleware.requireSpecialChecker(paymentsController.authorizePay),
+  asyncHandler(paymentsController.pay),
+);
 router.get(
   "/payment-status",
   validate(PaymentsValidation.statusQuery, "query"),

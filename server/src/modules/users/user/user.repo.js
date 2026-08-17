@@ -1,3 +1,8 @@
+import {
+  CHAT_ROOM_TYPES,
+  PROFILE_FAMILIES,
+  PROFILES,
+} from "@dms/shared";
 // User repository — Prisma I/O only.
 import prisma from "../../../infra/prisma/prisma.js";
 import dayjs from "dayjs";
@@ -9,6 +14,40 @@ function matchProfile(profileKey) {
   return {
     userProfiles: { some: { profile: { key: profileKey } } },
   };
+}
+
+function requestedProfileKeys(value) {
+  const values = Array.isArray(value) ? value : [value];
+  return [
+    ...new Set(
+      values
+        .flatMap((entry) => String(entry ?? "").split(","))
+        .map((key) => key.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function managementScopeWhere(currentUser) {
+  switch (currentUser?.currentProfileKey) {
+    case PROFILES.ADMIN:
+      return {};
+    case PROFILES.SUPER_ADMIN:
+      return { userProfiles: { none: { profile: { key: PROFILES.ADMIN } } } };
+    case PROFILES.SUPER_SALES:
+      return {
+        AND: [
+          {
+            userProfiles: {
+              some: { profile: { family: PROFILE_FAMILIES.SALES } },
+            },
+          },
+          { userProfiles: { none: { profile: { isAdminTier: true } } } },
+        ],
+      };
+    default:
+      return { userProfiles: { none: { profile: { isAdminTier: true } } } };
+  }
 }
 
 class UserRepository {
@@ -24,19 +63,48 @@ class UserRepository {
     });
   }
 
+  findUserManagementScope({ userId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: {
+        id: true,
+        userProfiles: {
+          select: {
+            profile: { select: { key: true, family: true, isAdminTier: true } },
+          },
+        },
+      },
+    });
+  }
+
   // ── Directory ─────────────────────────────────────────────────────────────────
   //   checkIfNotHasRelatedChat → exclude users already in a STAFF_TO_STAFF room with me
   //   checkIfHasRelatedChat    → only users already in such a room with me
   async findDirectory({ searchParams, currentUser, checkIfNotHasRelatedChat = false, checkIfHasRelatedChat = false }) {
     const params = { ...searchParams };
-    if (!params.profile) params.profile = "NORMAL_SALES";
+    if (!params.profile) params.profile = PROFILES.NORMAL_SALES;
 
     let where = {};
-    if (params.profile !== "all") {
-      where.OR = [matchProfile(params.profile)];
+    const profileKeys = requestedProfileKeys(params.profile);
+    if (!profileKeys.includes("all")) {
+      where.OR = profileKeys.map(matchProfile);
     }
     if (currentUser) {
-      const checkIfNotAdmin = !currentUser.isAdminTier;
+      const hasSuperSalesScope = currentUser.currentProfileKey === PROFILES.SUPER_SALES;
+      const checkIfNotAdmin = !currentUser.isAdminTier && !hasSuperSalesScope;
+      if (hasSuperSalesScope) {
+        const requestedScope = where.OR?.length ? { OR: where.OR } : null;
+        where = {
+          AND: [
+            requestedScope,
+          {
+            userProfiles: {
+              some: { profile: { family: PROFILE_FAMILIES.SALES } },
+            },
+          },
+          ].filter(Boolean),
+        };
+      }
       if (checkIfNotAdmin) {
         const user = await prisma.user.findUnique({
           where: { id: Number(currentUser.id) },
@@ -59,7 +127,7 @@ class UserRepository {
       where.chatMemberships = {
         none: {
           room: {
-            type: "STAFF_TO_STAFF",
+            type: CHAT_ROOM_TYPES.STAFF_TO_STAFF,
             members: { some: { userId: Number(currentUser.id), isDeleted: false } },
           },
         },
@@ -69,7 +137,7 @@ class UserRepository {
       where.chatMemberships = {
         some: {
           room: {
-            type: "STAFF_TO_STAFF",
+            type: CHAT_ROOM_TYPES.STAFF_TO_STAFF,
             members: { some: { userId: Number(currentUser.id), isDeleted: false } },
           },
         },
@@ -91,10 +159,7 @@ class UserRepository {
     const staffFilter = searchParams.staffId
       ? { userId: Number(searchParams.staffId) }
       : {};
-    let where = {
-      userProfiles: { none: { profile: { isAdminTier: true } } },
-      ...staffFilter,
-    };
+    const where = { ...managementScopeWhere(currentUser), ...staffFilter };
     if (currentUser) {
       where.id = { not: Number(currentUser.id) };
     }
@@ -102,13 +167,8 @@ class UserRepository {
       if (filters.status === "active") where.isActive = true;
       else if (filters.status === "banned") where.isActive = false;
     }
-    if (filters && filters.userId) where.id = Number(filters.userId);
-    if (
-      currentUser.currentProfileKey === "SUPER_SALES"
-    ) {
-      where.userProfiles = {
-        some: { profile: { family: "SALES" } },
-      };
+    if (filters && filters.userId) {
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { id: Number(filters.userId) }];
     }
     const [users, total] = await Promise.all([
       prisma.user.findMany({ where, skip, take, select: MANAGEMENT_SELECT }),
@@ -136,9 +196,9 @@ class UserRepository {
 
   // ── DB-relational profiles (admin assign/remove) ──────────────────────────────
   /** Assignable profiles for the admin picker (ordered). */
-  listAssignableProfiles() {
+  listAssignableProfiles({ where = {} } = {}) {
     return prisma.profile.findMany({
-      where: { isAssignable: true },
+      where: { isAssignable: true, ...where },
       orderBy: { sortOrder: "asc" },
       select: { id: true, key: true, label: true, family: true },
     });
@@ -443,6 +503,9 @@ const PROFILE_SELECT = {
   lastSeenAt: true,
   telegramUsername: true,
   profilePicture: true,
+  allowNotification: true,
+  allowEmailing: true,
+  googleEmail: true,
   maxLeadsCounts: true,
   maxLeadCountPerDay: true,
   currentProfileId: true,

@@ -9,6 +9,7 @@
 // delete + token reads + status change) lives in the named exports below, moved verbatim
 // from the legacy `image-session-services.js` service and invoked from the usecase via lazy
 // adapters — behavior-preserving.
+import { IMAGE_SESSION_STATUSES, imageSessionsMessagesCodes } from "@dms/shared";
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { deserializeTemplatesDeep } from "../image-sessions.helpers.js";
@@ -192,7 +193,7 @@ export async function deleteInProgressSession(sessionId, user) {
 
   if (!session) return { notFound: true };
   if (!user.isAdminTier) {
-    if (["PDF_GENERATED", "SUBMITTED"].includes(session.sessionStatus)) {
+    if ([IMAGE_SESSION_STATUSES.PDF_GENERATED, IMAGE_SESSION_STATUSES.SUBMITTED].includes(session.sessionStatus)) {
       return { locked: true };
     }
   }
@@ -222,7 +223,7 @@ export async function deleteInProgressSession(sessionId, user) {
     where: { id: sessionId },
   });
 
-  return { message: "Deleted succssfully" };
+  return { message: imageSessionsMessagesCodes.IMAGE_SESSION_DELETED };
 }
 
 export async function getSessionByToken({ token }) {
@@ -343,6 +344,43 @@ export async function changeSessionStatus({ token, id, sessionStatus, extra }) {
       sessionStatus,
       ...(extra && extra),
     },
+  });
+}
+
+export async function advanceClientSessionStatus({ token, fromStatus, toStatus }) {
+  const changed = await prisma.clientImageSession.updateMany({
+    where: { token, sessionStatus: fromStatus },
+    data: { sessionStatus: toStatus },
+  });
+  if (changed.count !== 1) return null;
+  return getSessionByToken({ token });
+}
+
+export async function claimPdfGeneration({ token, signatureUrl, staleBefore }) {
+  const claimed = await prisma.clientImageSession.updateMany({
+    where: {
+      token,
+      pdfUrl: null,
+      OR: [
+        { sessionStatus: IMAGE_SESSION_STATUSES.SELECTED_IMAGES },
+        { sessionStatus: IMAGE_SESSION_STATUSES.PDF_GENERATED, updatedAt: { lt: staleBefore } },
+      ],
+    },
+    data: { sessionStatus: IMAGE_SESSION_STATUSES.PDF_GENERATED, signatureUrl },
+  });
+  if (claimed.count !== 1) return null;
+  return getSessionByToken({ token });
+}
+
+export function releasePdfGenerationClaim({ token, claimUpdatedAt }) {
+  return prisma.clientImageSession.updateMany({
+    where: {
+      token,
+      sessionStatus: IMAGE_SESSION_STATUSES.PDF_GENERATED,
+      pdfUrl: null,
+      updatedAt: claimUpdatedAt,
+    },
+    data: { sessionStatus: IMAGE_SESSION_STATUSES.SELECTED_IMAGES },
   });
 }
 

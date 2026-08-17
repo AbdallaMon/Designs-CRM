@@ -1,7 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../../infra/prisma/prisma.js";
 import { AppError } from "../../shared/errors/AppError.js";
-import { chatMessagesCodes } from "@dms/shared";
+import {
+  CHAT_MEMBER_ROLES,
+  CHAT_ROOM_FILTERS,
+  CHAT_ROOM_TYPES,
+  chatMessagesCodes,
+} from "@dms/shared";
 import {
   memberSelect,
   messageInclude,
@@ -72,18 +77,21 @@ export class ChatRepository {
       },
     };
 
-    if (chatType === "DIRECT") where.type = "STAFF_TO_STAFF";
-    else if (chatType === "GROUP") where.type = "GROUP";
-    else if (chatType === "PROJECT")
-      where.type = { in: ["PROJECT_GROUP", "STAFF_GROUP"] };
-    else if (chatType === "CLIENT_LEADS") where.type = "CLIENT_TO_STAFF";
-    else if (chatType === "ARCHIVED") {
+    if (chatType === CHAT_ROOM_FILTERS.DIRECT) {
+      where.type = CHAT_ROOM_TYPES.STAFF_TO_STAFF;
+    }
+    else if (chatType === CHAT_ROOM_TYPES.GROUP) where.type = CHAT_ROOM_TYPES.GROUP;
+    else if (chatType === CHAT_ROOM_FILTERS.PROJECT)
+      where.type = { in: [CHAT_ROOM_TYPES.PROJECT_GROUP, CHAT_ROOM_TYPES.STAFF_GROUP] };
+    else if (chatType === CHAT_ROOM_FILTERS.CLIENT_LEADS) {
+      where.type = CHAT_ROOM_TYPES.CLIENT_TO_STAFF;
+    } else if (chatType === CHAT_ROOM_FILTERS.ARCHIVED) {
       where.members.some = {
         userId: parsedUserId,
         isDeleted: false,
         isArchived: true,
       };
-    } else if (chatType === "UNREAD") {
+    } else if (chatType === CHAT_ROOM_FILTERS.UNREAD) {
       where.messages = {
         some: {
           readReceipts: { none: { member: { userId: parsedUserId } } },
@@ -92,22 +100,22 @@ export class ChatRepository {
       };
     }
 
-    if (category === "ARCHIVED") {
+    if (category === CHAT_ROOM_FILTERS.ARCHIVED) {
       where.members.some = {
         userId: parsedUserId,
         isDeleted: false,
         isArchived: true,
       };
-    } else if (category === "DIRECT") {
-      where.type = "STAFF_TO_STAFF";
-    } else if (category === "PROJECT") {
-      where.type = { in: ["PROJECT_GROUP", "STAFF_GROUP"] };
+    } else if (category === CHAT_ROOM_FILTERS.DIRECT) {
+      where.type = CHAT_ROOM_TYPES.STAFF_TO_STAFF;
+    } else if (category === CHAT_ROOM_FILTERS.PROJECT) {
+      where.type = { in: [CHAT_ROOM_TYPES.PROJECT_GROUP, CHAT_ROOM_TYPES.STAFF_GROUP] };
     }
 
     if (search) {
       where.OR = [
         {
-          type: "STAFF_TO_STAFF",
+          type: CHAT_ROOM_TYPES.STAFF_TO_STAFF,
           members: {
             some: { isDeleted: false, user: { name: { contains: search } } },
           },
@@ -152,7 +160,7 @@ export class ChatRepository {
   async checkRoomExists({ userId, otherUserId }) {
     return prisma.chatRoom.findFirst({
       where: {
-        type: "STAFF_TO_STAFF",
+        type: CHAT_ROOM_TYPES.STAFF_TO_STAFF,
         AND: [
           { members: { some: { userId: Number(userId), isDeleted: false } } },
           {
@@ -274,7 +282,12 @@ export class ChatRepository {
     if (!room) return null;
     const chatMember = await prisma.chatMember.findFirst({
       where: { roomId: room.id, clientId: { not: null }, isDeleted: false },
-      select: { id: true, clientId: true, roomId: true },
+      select: {
+        id: true,
+        clientId: true,
+        roomId: true,
+        client: { select: { id: true, name: true } },
+      },
     });
     return { room, chatMember };
   }
@@ -289,6 +302,7 @@ export class ChatRepository {
         clientLeadId: true,
         isChatEnabled: true,
         allowFiles: true,
+        allowCalls: true,
         chatAccessToken: true,
         clientLead: { select: { id: true, clientId: true } },
       },
@@ -319,6 +333,7 @@ export class ChatRepository {
   // ── Members ────────────────────────────────────────────────────────────────
 
   async getMember({ roomId, userId, clientId }) {
+    if (!userId && !clientId) return null;
     const where = { roomId: Number(roomId), isDeleted: false };
     if (userId) where.userId = Number(userId);
     if (clientId) where.clientId = Number(clientId);
@@ -334,7 +349,7 @@ export class ChatRepository {
       where: {
         roomId: Number(roomId),
         userId: Number(userId),
-        role: { in: ["ADMIN", "MODERATOR"] },
+        role: { in: [CHAT_MEMBER_ROLES.ADMIN, CHAT_MEMBER_ROLES.MODERATOR] },
         isDeleted: false,
       },
     });
@@ -433,7 +448,7 @@ export class ChatRepository {
         userId: Number(userId),
         isDeleted: false,
         room: {
-          type: "STAFF_TO_STAFF",
+          type: CHAT_ROOM_TYPES.STAFF_TO_STAFF,
           members: { some: { userId: Number(userId), isDeleted: false } },
         },
       },
@@ -671,27 +686,46 @@ export class ChatRepository {
 
   // ── Reactions ──────────────────────────────────────────────────────────────
 
-  async upsertReaction({ messageId, userId, emoji }) {
+  async upsertReaction({ messageId, userId, clientId, emoji }) {
+    const identity = userId
+      ? { userId: Number(userId) }
+      : { clientId: Number(clientId) };
+    const unique = userId
+      ? {
+          messageId_userId_emoji: {
+            messageId: Number(messageId),
+            userId: Number(userId),
+            emoji,
+          },
+        }
+      : {
+          messageId_clientId_emoji: {
+            messageId: Number(messageId),
+            clientId: Number(clientId),
+            emoji,
+          },
+        };
     return prisma.chatReaction.upsert({
-      where: {
-        messageId_userId_emoji: {
-          messageId: Number(messageId),
-          userId: Number(userId),
-          emoji,
-        },
-      },
+      where: unique,
       update: {},
-      create: { messageId: Number(messageId), userId: Number(userId), emoji },
+      create: { messageId: Number(messageId), ...identity, emoji },
       include: {
         user: { select: { id: true, name: true } },
+        client: { select: { id: true, name: true } },
         message: { select: { roomId: true } },
       },
     });
   }
 
-  async findReaction({ messageId, userId, emoji }) {
+  async findReaction({ messageId, userId, clientId, emoji }) {
     return prisma.chatReaction.findFirst({
-      where: { messageId: Number(messageId), userId: Number(userId), emoji },
+      where: {
+        messageId: Number(messageId),
+        ...(userId
+          ? { userId: Number(userId) }
+          : { clientId: Number(clientId) }),
+        emoji,
+      },
       include: { message: { select: { roomId: true } } },
     });
   }
@@ -822,6 +856,13 @@ export class ChatRepository {
 
   async updateCall(callId, data) {
     return prisma.call.update({ where: { id: Number(callId) }, data });
+  }
+
+  async getCallById(callId) {
+    return prisma.call.findUnique({
+      where: { id: Number(callId) },
+      select: { id: true, roomId: true, status: true, startedAt: true },
+    });
   }
 
   async addCallParticipant({ callId, userId }) {

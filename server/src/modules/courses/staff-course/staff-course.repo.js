@@ -6,18 +6,25 @@ import prisma from "../../../infra/prisma/prisma.js";
 
 export class StaffCourseRepository {
   // ── courses (published + role-gated) ────────────────────────────────────────────
-  listPublishedCourses({ skip, take, client } = {}) {
+  listPublishedCourses({ skip, take, courseRole, client } = {}) {
     return (client ?? prisma).course.findMany({
       skip,
       take,
       include: { _count: { select: { lessons: true, tests: true } } },
-      where: { isPublished: true },
+      where: {
+        isPublished: true,
+        roles: { some: { role: courseRole } },
+      },
     });
   }
 
-  getPublishedCourse({ courseId, userId, client } = {}) {
+  getPublishedCourse({ courseId, userId, courseRole, client } = {}) {
     return (client ?? prisma).course.findFirst({
-      where: { id: courseId, isPublished: true },
+      where: {
+        id: courseId,
+        isPublished: true,
+        roles: { some: { role: courseRole } },
+      },
       include: {
         lessons: {
           where: { isPreviewable: true },
@@ -105,11 +112,16 @@ export class StaffCourseRepository {
   }
 
   // ── lessons (staff view + access gating) ──────────────────────────────────────────
-  getPreviewableLesson({ lessonId, client } = {}) {
-    return (client ?? prisma).lesson.findUnique({
+  getPreviewableLesson({ lessonId, courseId, courseRole, client } = {}) {
+    return (client ?? prisma).lesson.findFirst({
       where: {
         id: lessonId,
+        courseId,
         isPreviewable: true,
+        course: {
+          isPublished: true,
+          roles: { some: { role: courseRole } },
+        },
       },
       include: {
         videos: { include: { pdfs: true } },
@@ -199,11 +211,45 @@ export class StaffCourseRepository {
     });
   }
 
+  findCompletedLesson({ lessonId, courseProgressId, client } = {}) {
+    return (client ?? prisma).completedLesson.findFirst({
+      where: { lessonId, courseProgressId },
+    });
+  }
+
   // ── tests (staff) ────────────────────────────────────────────────────────────────
-  getPublishedTestWithRelations({ testId, client } = {}) {
-    return (client ?? prisma).test.findUnique({
-      where: { id: testId, published: true },
-      include: { course: true, lesson: true },
+  getPublishedTestWithRelations({ testId, courseRole, client } = {}) {
+    return (client ?? prisma).test.findFirst({
+      where: {
+        id: testId,
+        published: true,
+        OR: [
+          {
+            course: {
+              is: {
+                isPublished: true,
+                roles: { some: { role: courseRole } },
+              },
+            },
+          },
+          {
+            lesson: {
+              is: {
+                isPreviewable: true,
+                course: {
+                  isPublished: true,
+                  roles: { some: { role: courseRole } },
+                },
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        course: true,
+        lesson: true,
+        questions: { include: { choices: true }, orderBy: { order: "asc" } },
+      },
     });
   }
 
@@ -215,7 +261,17 @@ export class StaffCourseRepository {
     return (client ?? prisma).testQuestion.findMany({
       where: { testId },
       orderBy: { order: "asc" },
-      include: { choices: true },
+      include: {
+        choices: {
+          select: {
+            id: true,
+            questionId: true,
+            text: true,
+            value: true,
+            order: true,
+          },
+        },
+      },
     });
   }
 
@@ -245,7 +301,13 @@ export class StaffCourseRepository {
   getAttemptOwner({ attemptId, client } = {}) {
     return (client ?? prisma).testAttempt.findUnique({
       where: { id: attemptId },
-      select: { id: true, userId: true, testId: true, endTime: true },
+      select: {
+        id: true,
+        userId: true,
+        testId: true,
+        startTime: true,
+        endTime: true,
+      },
     });
   }
 
@@ -275,6 +337,34 @@ export class StaffCourseRepository {
       WHERE \`testId\` = ${testId} AND \`userId\` = ${userId}
       ORDER BY \`createdAt\` DESC
       LIMIT 1
+      FOR UPDATE`;
+    return rows[0];
+  }
+
+  async lockTestForUpdate({ testId, client } = {}) {
+    const db = client ?? prisma;
+    const rows = await db.$queryRaw`
+      SELECT \`id\` FROM \`Test\`
+      WHERE \`id\` = ${testId}
+      FOR UPDATE`;
+    return rows[0];
+  }
+
+  async getAttemptOwnerForUpdate({ attemptId, client } = {}) {
+    const db = client ?? prisma;
+    const rows = await db.$queryRaw`
+      SELECT \`id\`, \`userId\`, \`testId\`, \`startTime\`, \`endTime\`
+      FROM \`TestAttempt\`
+      WHERE \`id\` = ${attemptId}
+      FOR UPDATE`;
+    return rows[0];
+  }
+
+  async lockCourseForUpdate({ courseId, client } = {}) {
+    const db = client ?? prisma;
+    const rows = await db.$queryRaw`
+      SELECT \`id\` FROM \`Course\`
+      WHERE \`id\` = ${courseId}
       FOR UPDATE`;
     return rows[0];
   }

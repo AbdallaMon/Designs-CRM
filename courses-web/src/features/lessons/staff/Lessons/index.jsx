@@ -183,10 +183,12 @@ const LesssonView = ({ courseId }) => {
         (item) => item.id == itemId && type === item.type
       );
 
+      // This state mirrors a deep link after the course data becomes available.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedItem(item);
       setViewType(type);
     }
-  }, [type, itemId, course, userProgress, courseItems, selectedItem]);
+  }, [type, itemId, course, userProgress, courseItems, selectedItem, viewType]);
 
   const isItemAccessible = (item, index, items) => {
     return index <= lastAvailableIndex;

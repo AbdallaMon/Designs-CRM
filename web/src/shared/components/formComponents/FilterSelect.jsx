@@ -23,6 +23,7 @@ const FilterSelect = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const current = searchParams.get(param);
+  const selectedOption = options?.find((option) => option.id == current);
   useEffect(() => {
     if (searchParams.get(param)) {
       if (reset) {
@@ -34,7 +35,7 @@ const FilterSelect = ({
         }));
       }
     }
-  }, [searchParams]);
+  }, [param, reset, searchParams, setFilters]);
 
   function handleChange(event) {
     handleSearchParamsChange(event, param, searchParams, router, onChange);
@@ -57,9 +58,7 @@ const FilterSelect = ({
       >
         <InputLabel>{label}</InputLabel>
         <Select
-          value={
-            options?.find((option) => option.id == current)?.name || "All "
-          }
+          value={selectedOption?.id ?? ""}
           onChange={handleChange}
           label={label}
           disabled={loading}
@@ -72,7 +71,7 @@ const FilterSelect = ({
                 </Box>
               );
             }
-            return selected || "All";
+            return options?.find((option) => option.id == selected)?.name || "All";
           }}
         >
           {withAll && <MenuItem value="">All</MenuItem>}
