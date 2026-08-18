@@ -5,6 +5,30 @@
 >
 > Last updated: **2026-08-18** · Branch: `feat/workstage-flow-redesign`
 >
+> **LATEST (2026-08-18) — Kanban triage and project-type clarity redesign ✅.**
+> Deals, All Projects, and every Work Stage board now have a compact status navigator with visible
+> Previous/Next controls, clickable status pills, smooth column centering, and contextual empty states.
+> Deal cards promote one next client action with overdue/missing-follow-up treatment; All Projects
+> promotes the current contract stage; both use one latest-activity/age summary instead of expanded
+> call history. Finalized project updates show only the newest summary and open complete history in the
+> existing responsive dialog. Work Stage cards retain progress, aging, tasks, and delivery signals while
+> explicitly showing when no next task/delivery exists. `/dashboard/projects/:id` now opens with a prominent
+> readable Project Type header (including project ID/group) and repeats the type in its metadata row.
+> Safety checkpoint: `fe900202`. Verification: **17/17 focused tests**, targeted lint for the new/changed
+> Kanban and project-type code, the main web production build, and scoped `git diff --check` passed; authenticated
+> browser screenshot QA remains manual because the available test browser had no signed-in session. No endpoint,
+> permission, backend, schema, migration, database, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — optional Telegram file buttons and automatic bot membership ✅.**
+> When `TELEGRAM_BOT_TOKEN` is configured, the existing user-session integration now invites the
+> bot into each newly created lead megagroup and repairs missing membership before sending a file.
+> Lead files are sent by the bot with an inline `Open File` URL button while preserving the existing
+> uploader, filename, and description text. Missing configuration or any bot/API failure falls back
+> to the existing authenticated Markdown link, so channel creation and file notifications continue
+> without interruption. Verification: **11/11 Telegram tests**, Node syntax checks, and repository
+> `git diff --check` passed. No schema, migration, database, permission, upload-storage, attachment-
+> authorization, or PDF behavior changed.
+>
 > **LATEST (2026-08-18) — Lead Kanban cards use the compact Image Sessions action ✅.**
 > Deals and All Projects cards now place the existing accessible Image Sessions icon in the card-header
 > action group beside Preview, matching Work-stage cards and removing the full-width `View Sessions`

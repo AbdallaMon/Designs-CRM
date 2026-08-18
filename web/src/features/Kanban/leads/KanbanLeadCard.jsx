@@ -1,23 +1,16 @@
 "use client";
-import {
-  LEAD_STATUSES, KANBAN_VIEW_TYPES,
-  PROFILES,
-  WORK_DEPARTMENTS,
-} from "@dms/shared";
+import { KANBAN_VIEW_TYPES, WORK_DEPARTMENTS } from "@dms/shared";
 import React from "react";
 import { useDrag } from "react-dnd";
 import {
   Box,
   Button,
-  Card,
   CardContent,
   Chip,
   Divider,
-  Grid,
   IconButton,
   Menu,
   MenuItem,
-  Stack,
   Tooltip,
   Typography,
   Checkbox,
@@ -27,25 +20,17 @@ import {
   AiOutlineEllipsis as MoreVertIcon,
   AiOutlineEye as PreviewIcon,
   AiOutlineFileText as NoteIcon,
-  AiOutlinePhone as PhoneIcon,
   AiOutlinePlus as AddIcon,
   AiOutlineSwap as ChangeStatusIcon,
   AiOutlineUser as UserIcon,
 } from "react-icons/ai";
-
-import { styled } from "@mui/material/styles";
-import dayjs from "dayjs";
 import { CONTRACT_LEVELS, statusColors } from "@/app/helpers/constants";
 import PreviewDialog from "@/features/leads/PreviewLeadDialog.jsx";
 import { NewNoteDialog } from "@/features/leads/dialogs/NoteDialog";
 import {
-  CallResultDialog,
   NewCallDialog,
 } from "@/features/leads/dialogs/CallsDialog.jsx";
-import { hideMoreData } from "@/app/helpers/functions/utility.jsx";
 import { FaEye } from "react-icons/fa";
-import { InProgressCall } from "@/features/leads/widgets/InProgressCall.jsx";
-import { useAuth } from "@/app/providers/AuthProvider";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import PreviewWorkStage from "@/features/work-stages/PreviewWorkStage";
@@ -55,7 +40,19 @@ import { KanbanUpdateSection } from "@/features/leads/leadUpdates/KanbanUpdateSe
 import ClientImageSessionManager from "@/features/image-session/users/ClientSessionImageManager";
 import { contractLevelColors } from "@/app/helpers/colors";
 import { IoMdContract } from "react-icons/io";
-import { CallInfoBox, StyledCard } from "@/features/Kanban/leads/kanbanLeadCardStyles.js";
+import { StyledCard } from "@/features/Kanban/leads/kanbanLeadCardStyles.js";
+import {
+  ContractWorkSummary,
+  DealNextActionLine,
+  formatAed,
+  LatestActivityLine,
+} from "@/features/Kanban/leads/LeadCardSignals.jsx";
+import {
+  getCurrentContractStage,
+  getLatestLeadActivity,
+  getLeadAgeDays,
+  getLeadNextAction,
+} from "@/features/Kanban/leads/lead-card-signals.js";
 
 const ItemTypes = {
   CARD: "card",
@@ -84,7 +81,6 @@ const LeadCard = ({
       ...lead,
     },
   });
-  const { user } = useAuth();
   const { hasPermission } = usePermission();
   // lead.assign.other is granted to exactly ADMIN/SUPER_ADMIN + isSuperSales
   // (see permission-profiles-phase3-leads plan) — equivalent to checkIfAdminOrSuperSales
@@ -92,6 +88,7 @@ const LeadCard = ({
   const admin = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
+  const [previewSection, setPreviewSection] = React.useState("details");
   const [hovered, setHovered] = React.useState(false);
 
   const isSelected = selectedLeads.includes(lead.id);
@@ -116,34 +113,22 @@ const LeadCard = ({
     if (type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) return;
     await movelead(lead, newStatus);
   };
-
-  const getCallInfo = React.useCallback((callReminders) => {
-    if (!callReminders || callReminders.length === 0) {
-      return [];
-    }
-
-    const sortedCalls = [...callReminders].sort(
-      (a, b) => new Date(b.time) - new Date(a.time)
-    );
-    return sortedCalls;
-  }, []);
-
-  const getDateRange = () => {
-    if (lead.projects && lead.projects[0]) {
-      const project = lead.projects[0];
-      if (project.startedAt && project.endedAt) {
-        return `${dayjs(project.startedAt).format("MMM D")} - ${dayjs(
-          project.endedAt
-        ).format("MMM D, YYYY")}`;
-      }
-    }
-    return null;
+  const openPreview = (section = "details") => {
+    setPreviewSection(section);
+    setPreviewDialogOpen(true);
   };
-
-  const latestCalls = getCallInfo(lead.callReminders);
-  const dateRange = getDateRange();
   const currentContract =
     lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
+  const projectBoard = type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS;
+  const nextAction = getLeadNextAction(lead.callReminders);
+  const latestActivity = getLatestLeadActivity(lead);
+  const leadAgeDays = getLeadAgeDays(lead.createdAt);
+  const currentContractStage = getCurrentContractStage(currentContract);
+  const value =
+    currentContract?.totalAmount ??
+    currentContract?.amount ??
+    lead.averagePrice ??
+    lead.price;
   const levelColor = currentContract
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";
@@ -260,13 +245,11 @@ const LeadCard = ({
               }}
             >
               <ClientImageSessionManager clientLeadId={lead.id} compact />
-              <Tooltip title="Preview">
+              <Tooltip title="View details">
                 <IconButton
-                  aria-label="Preview deal"
+                  aria-label="View details"
                   size="small"
-                  onClick={() => {
-                    setPreviewDialogOpen(true);
-                  }}
+                  onClick={() => openPreview("details")}
                   sx={{
                     mt: -0.5,
                     mr: -0.5,
@@ -302,7 +285,7 @@ const LeadCard = ({
             <Chip
               size="small"
               icon={<MoneyIcon />}
-              label={lead.price}
+              label={formatAed(value)}
               sx={{
                 fontWeight: 700,
                 color: "success.dark",
@@ -338,132 +321,17 @@ const LeadCard = ({
             </Box>
           )}
 
-          {![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) && lead.projects && lead.projects[0] && (
-            <Box
-              sx={{
-                mt: 1,
-                mb: 2,
-                p: 1.5,
-                borderRadius: "10px",
-                bgcolor: "#faf7f3",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Grid container spacing={1.25}>
-                <Grid size={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Status
-                  </Typography>
-                  <Typography variant="body2">
-                    {lead.projects[0].status || "To Do"}
-                  </Typography>
-                </Grid>
-                <Grid size={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Priority
-                  </Typography>
-                  <Typography variant="body2">
-                    {lead.projects[0].priority || "MEDIUM"}
-                  </Typography>
-                </Grid>
-                <Grid size={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Delivery Time
-                  </Typography>
-                  <Typography variant="body2">
-                    {lead.projects[0].deliveryTime
-                      ? dayjs(lead.projects[0].deliveryTime).format(
-                          "MMM D, YYYY"
-                        )
-                      : "Not set"}
-                  </Typography>
-                </Grid>
-                <Grid size={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Area
-                  </Typography>
-                  <Typography variant="body2">
-                    {lead.projects[0].area
-                      ? `${lead.projects[0].area} m²`
-                      : "Not set"}
-                  </Typography>
-                </Grid>
-                <Grid>
-                  <Typography variant="caption" color="text.secondary">
-                    Timeline
-                  </Typography>
-                  <Typography variant="body2">
-                    {dateRange
-                      ? dateRange
-                      : lead.projects[0].startedAt
-                      ? `Started: ${dayjs(lead.projects[0].startedAt).format(
-                          "MMM D, YYYY"
-                        )}`
-                      : lead.projects[0].endedAt
-                      ? `End: ${dayjs(lead.projects[0].endedAt).format(
-                          "MMM D, YYYY"
-                        )}`
-                      : "Not started / In progress"}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
+          {projectBoard ? (
+            <ContractWorkSummary stage={currentContractStage} />
+          ) : (
+            <DealNextActionLine
+              action={nextAction}
+              onOpenCalls={() => openPreview("calls")}
+            />
           )}
 
-          <Stack spacing={2}>
-            {latestCalls?.map((call, index) => {
-              if (
-                user.profile !== PROFILES.ADMIN &&
-                user.profile !== PROFILES.SUPER_ADMIN &&
-                ![PROFILES.NORMAL_SALES, PROFILES.PRIMARY_SALES, PROFILES.SUPER_SALES].includes(user.profile) &&
-                call.userId !== user.id
-              ) {
-                return;
-              }
-              return (
-                <CallInfoBox
-                  key={index}
-                  variant={call.status === LEAD_STATUSES.IN_PROGRESS && "next"}
-                >
-                  {call.status === LEAD_STATUSES.IN_PROGRESS ? (
-                    <InProgressCall call={call} simple={true} />
-                  ) : (
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <PhoneIcon fontSize="small" sx={{ mr: 1 }} />
-                      <Typography variant="subtitle2">Last Call</Typography>
-                    </Box>
-                  )}
-                  <Box pl={3}>
-                    {call.status === LEAD_STATUSES.IN_PROGRESS ? (
-                      ""
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        {dayjs(call.time).format("MMM D, YYYY HH:mm")}
-                      </Typography>
-                    )}
-                    <Typography variant="body2">
-                      Reason: {hideMoreData(call.reminderReason) || "N/A"}
-                    </Typography>
-                    {call.result && (
-                      <Typography variant="body2">
-                        Result: {hideMoreData(call.callResult) || "N/A"}
-                      </Typography>
-                    )}
-                    {call.status === LEAD_STATUSES.IN_PROGRESS && (
-                      <CallResultDialog
-                        setleads={setleads}
-                        lead={lead}
-                        call={call}
-                        type={"button"}
-                        text={"Update call"}
-                      ></CallResultDialog>
-                    )}
-                  </Box>
-                </CallInfoBox>
-              );
-            })}
-          </Stack>
+          <LatestActivityLine activity={latestActivity} ageDays={leadAgeDays} />
+
           <KanbanUpdateSection
             lead={lead}
             setleads={setleads}
@@ -501,7 +369,7 @@ const LeadCard = ({
           </MenuItem>
           <MenuItem
             onClick={() => {
-              setPreviewDialogOpen(true);
+              openPreview("details");
             }}
           >
             <Button
@@ -517,27 +385,30 @@ const LeadCard = ({
               Preview Details
             </Button>
           </MenuItem>
-          <Divider />
-          <Box sx={{ px: 2, py: 1, bgcolor: "grey.50" }}>
-            <Typography variant="caption" color="text.secondary">
-              Change Status
-            </Typography>
-          </Box>
-          {statusArray.map((status) => (
-            <MenuItem
-              key={status}
-              onClick={() => handleStatusChange(status)}
-              sx={{
-                color: statusColors[status],
-                "&:hover": {
-                  backgroundColor: statusColors[status] + "20",
-                },
-              }}
-            >
-              <ChangeStatusIcon fontSize="small" sx={{ mr: 1 }} />
-              {status.replace(/_/g, " ")}
-            </MenuItem>
-          ))}
+          {!projectBoard && <Divider />}
+          {!projectBoard && (
+            <Box sx={{ px: 2, py: 1, bgcolor: "grey.50" }}>
+              <Typography variant="caption" color="text.secondary">
+                Change Status
+              </Typography>
+            </Box>
+          )}
+          {!projectBoard &&
+            statusArray.map((status) => (
+              <MenuItem
+                key={status}
+                onClick={() => handleStatusChange(status)}
+                sx={{
+                  color: statusColors[status],
+                  "&:hover": {
+                    backgroundColor: statusColors[status] + "20",
+                  },
+                }}
+              >
+                <ChangeStatusIcon fontSize="small" sx={{ mr: 1 }} />
+                {status.replace(/_/g, " ")}
+              </MenuItem>
+            ))}
         </Menu>
       )}
 
@@ -550,6 +421,7 @@ const LeadCard = ({
           id={lead.id}
           setRerenderColumns={setRerenderColumns}
           admin={admin}
+          initialSection={previewSection}
         />
       ) : (
         <PreviewWorkStage

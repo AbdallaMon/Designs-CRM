@@ -268,9 +268,11 @@ const PreviewDialog = ({
   setleads,
   page = false,
   setRerenderColumns,
+  initialSection = "details",
 }) => {
   return (
     <PreviewLead
+      key={`${id}-${initialSection}-${open ? "open" : "closed"}`}
       leadContent={LeadContent}
       id={id}
       open={open}
@@ -278,6 +280,7 @@ const PreviewDialog = ({
       setleads={setleads}
       setRerenderColumns={setRerenderColumns}
       page={page}
+      initialSection={initialSection}
       url={`leads/${id}`}
     />
   );

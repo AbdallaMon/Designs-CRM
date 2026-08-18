@@ -69,6 +69,7 @@ export const StatusChip = styled(Chip, {
 
 const KanbanColumn = ({
   status,
+  columnIndex,
   isAdminOrSuperSales,
   type,
   statusArray,
@@ -262,6 +263,8 @@ const KanbanColumn = ({
       <Grid
         size={2}
         ref={drop}
+        data-kanban-index={columnIndex}
+        data-kanban-status={status}
         elevation={0}
         sx={{
           bgcolor: "rgba(255,255,255,0.55)",
@@ -277,6 +280,7 @@ const KanbanColumn = ({
           flexDirection: "column",
           position: "relative",
           overflow: "hidden",
+          scrollSnapAlign: "center",
         }}
       >
         {loading && (
@@ -429,7 +433,7 @@ const KanbanColumn = ({
             >
               <BsInbox size={28} style={{ color: statusColor, opacity: 0.6 }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                No items
+                No items in {status.replace(/_/g, " ")}
               </Typography>
             </Box>
           )}

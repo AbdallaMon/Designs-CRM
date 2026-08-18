@@ -62,6 +62,7 @@ import {
   MdAssignmentInd,
   MdGroup,
   MdOpenInNew,
+  MdArchitecture,
 } from "react-icons/md";
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -93,6 +94,7 @@ import {
   ProjectProgressTracker,
   labelForStatus,
 } from "@/features/work-stages/projects/ProjectProgressTracker.jsx";
+import { getProjectTypeLabel } from "@/features/work-stages/projects/projectTypePresentation.js";
 
 // Re-exported so existing external importers keep resolving these from here.
 export { StyledCard, StyledDesignerCard };
@@ -118,6 +120,7 @@ export const ProjectDetails = ({
   showOpenPage = true,
 }) => {
   const theme = useTheme();
+  const projectTypeLabel = getProjectTypeLabel(project.type);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
@@ -575,6 +578,51 @@ export const ProjectDetails = ({
 
   return (
     <>
+      <Paper
+        component="header"
+        variant="outlined"
+        sx={{
+          mb: 2,
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 3,
+          borderColor: alpha(theme.palette.primary.main, 0.22),
+          background: `linear-gradient(135deg, ${alpha(
+            theme.palette.primary.main,
+            0.08
+          )}, ${alpha(theme.palette.background.paper, 0.98)})`,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <Avatar
+          sx={{
+            width: 48,
+            height: 48,
+            bgcolor: alpha(theme.palette.primary.main, 0.14),
+            color: "primary.main",
+          }}
+        >
+          <MdArchitecture size={25} aria-hidden="true" />
+        </Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            sx={{ fontWeight: 700, lineHeight: 1.2, letterSpacing: "0.08em" }}
+          >
+            Project type
+          </Typography>
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 800 }}>
+            {projectTypeLabel}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Project #{project.id}
+            {project.groupTitle ? ` · ${project.groupTitle}` : ""}
+          </Typography>
+        </Box>
+      </Paper>
+
       <ProjectProgressTracker project={project} />
 
       {isEditing ? (
@@ -608,6 +656,13 @@ export const ProjectDetails = ({
                     fontWeight: 600,
                     height: 34,
                   }}
+                />
+                <Chip
+                  icon={<MdArchitecture />}
+                  label={`Type: ${projectTypeLabel}`}
+                  color="primary"
+                  variant="outlined"
+                  sx={{ borderRadius: 2, fontWeight: 700, height: 34 }}
                 />
                 <StyledButton
                   variant="contained"

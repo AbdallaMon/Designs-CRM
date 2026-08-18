@@ -50,6 +50,7 @@ export const PreviewLead = ({
   leadContent,
   dontCheckIfNotUser,
   setRerenderColumns,
+  initialSection = "details",
 }) => {
   // In full-page mode the active section is persisted in the URL (`?tab=<key>`) so it
   // survives other searchParam pushes and is restored on reload. In modal/kanban-card
@@ -58,7 +59,7 @@ export const PreviewLead = ({
   const router = useRouter();
   const pathname = usePathname();
   const initialTab = page ? searchParams.get("tab") || "" : "";
-  const [activeTab, setActiveTabState] = useState(initialTab || "details");
+  const [activeTab, setActiveTabState] = useState(initialTab || initialSection);
   const setActiveTab = (val) => {
     setActiveTabState((prev) => {
       const next = typeof val === "function" ? val(prev) : val;

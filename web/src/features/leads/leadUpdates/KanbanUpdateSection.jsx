@@ -1,121 +1,79 @@
 import { Box, Typography } from "@mui/material";
-import { LEAD_STATUSES, KANBAN_VIEW_TYPES, WORK_DEPARTMENTS } from "@dms/shared";
+import { LEAD_STATUSES, WORK_DEPARTMENTS } from "@dms/shared";
 import { CreateUpdateModal } from "@/features/leads/leadUpdates/CreateUpdate.jsx";
 import LeadListModal from "@/features/leads/leadUpdates/LeadListModal.jsx";
-import { UpdateCard } from "@/features/leads/leadUpdates/UpdateCard.jsx";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export function KanbanUpdateSection({
   lead,
   currentUserDepartment = WORK_DEPARTMENTS.STAFF,
   setleads,
-  setRerenderColumns,
-  reRenderColumns,
-  type,
 }) {
-  function onUpdate(newUpdate) {
-    if (setRerenderColumns) {
-      if (type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS) {
-        const currentLevel = lead.contracts?.find(
-          (c) => c.status === LEAD_STATUSES.IN_PROGRESS
-        )?.contractLevel;
-        console.log(currentLevel, "currentLevel");
-        if (currentLevel) {
-          setRerenderColumns((prev) => ({
-            ...prev,
-            [currentLevel]: !prev[currentLevel],
-          }));
-        } else {
-          window.location.reload();
-        }
-      } else if (currentUserDepartment === WORK_DEPARTMENTS.STAFF) {
-        setRerenderColumns((prev) => ({
-          ...prev,
-          [lead.status]: !prev[lead.status],
-        }));
-      } else {
-        setRerenderColumns((prev) => {
-          return {
-            ...prev,
-            [lead.projects[0].status]:
-              !reRenderColumns[lead.projects[0].status],
-          };
-        });
-      }
-      return;
-    }
-    if (setleads) {
-      setleads((oldleads) =>
-        oldleads.map((l) => {
-          if (l.id === lead.id) {
-            return {
-              ...l,
-              updates: l.updates.map((up) => {
-                if (up.id === newUpdate.id) {
-                  return newUpdate;
-                }
-                return up;
-              }),
-            };
-          }
-          return l;
-        })
-      );
-    }
-  }
   if (lead.status !== LEAD_STATUSES.FINALIZED) return null;
+  const latestUpdate = lead.updates?.[0] ?? null;
 
   return (
-    <Box>
-      <Box mb={0.5}>
-        <Typography variant="h6" component="h1" fontWeight="bold">
-          Latest 5 Updates
-        </Typography>
-      </Box>
+    <Box
+      sx={{
+        mt: 0.5,
+        pt: 1,
+        borderTop: "1px solid",
+        borderColor: "divider",
+      }}
+    >
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        mb={0.5}
-        py={1}
+        gap={1}
+        mb={0.75}
       >
-        <CreateUpdateModal
-          simpleButton={true}
-          onCreate={(newUpdate) => {
-            if (setleads) {
-              setleads((oldleads) =>
-                oldleads.map((l) => {
-                  if (l.id === lead.id) {
-                    return {
-                      ...l,
-                      updates: [newUpdate, ...l.updates],
-                    };
-                  }
-                  return l;
-                })
-              );
-            }
-          }}
-          clientLeadId={lead.id}
-          currentUserDepartment={currentUserDepartment}
-        />
-        <>
-          <LeadListModal
+        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+          Latest project update
+        </Typography>
+        <Box display="flex" alignItems="center" gap={0.5} flexShrink={0}>
+          <CreateUpdateModal
+            simpleButton={true}
+            onCreate={(newUpdate) => {
+              if (setleads) {
+                setleads((oldleads) =>
+                  oldleads.map((l) => {
+                    if (l.id === lead.id) {
+                      return {
+                        ...l,
+                        updates: [newUpdate, ...l.updates],
+                      };
+                    }
+                    return l;
+                  })
+                );
+              }
+            }}
             clientLeadId={lead.id}
             currentUserDepartment={currentUserDepartment}
           />
-        </>
+          <LeadListModal
+            clientLeadId={lead.id}
+            currentUserDepartment={currentUserDepartment}
+            triggerLabel="History"
+            triggerVariant="text"
+            triggerSx={{ minWidth: 0, px: 0.75 }}
+          />
+        </Box>
       </Box>
-      {lead.updates?.map((update) => (
-        <UpdateCard
-          key={update.id}
-          update={update}
-          currentUserDepartment={currentUserDepartment}
-          isSimple={true}
-          //todo handleDepartmentToggle onUpdate
-          onToggleArchive={onUpdate}
-          onUpdate={onUpdate}
-        />
-      ))}
+      <Box sx={{ minWidth: 0, px: 1, py: 0.75, borderRadius: "8px", bgcolor: "action.hover" }}>
+        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+          {latestUpdate?.title || "No project updates yet"}
+        </Typography>
+        {latestUpdate?.updatedAt && (
+          <Typography variant="caption" color="text.secondary">
+            {dayjs(latestUpdate.updatedAt).fromNow()}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 }

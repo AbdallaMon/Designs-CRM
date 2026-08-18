@@ -1,6 +1,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { KANBAN_VIEW_TYPES } from "@dms/shared";
 
 vi.mock("react-dnd", () => ({
   useDrag: () => [{}, () => {}],
@@ -42,6 +43,7 @@ import KanbanLeadCard from "../KanbanLeadCard.jsx";
 
 const lead = {
   id: 11,
+  createdAt: "2026-08-10T10:00:00.000Z",
   status: "IN_PROGRESS",
   client: { name: "Test Client" },
   price: "AED 25,000",
@@ -57,7 +59,7 @@ describe("KanbanLeadCard header actions", () => {
         lead,
         movelead: vi.fn(),
         setleads: vi.fn(),
-        type: "staff",
+        type: KANBAN_VIEW_TYPES.STAFF,
         statusArray: [],
         setRerenderColumns: vi.fn(),
         reRenderColumns: 0,
@@ -65,6 +67,35 @@ describe("KanbanLeadCard header actions", () => {
     );
 
     expect(html).toContain('data-compact="true"');
-    expect(html).toContain('aria-label="Preview deal"');
+    expect(html).toContain('aria-label="View details"');
+    expect(html).toContain("Next: Schedule follow-up");
+  });
+
+  it("promotes current contract work on the All Projects board", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(KanbanLeadCard, {
+        lead: {
+          ...lead,
+          contracts: [
+            {
+              contractLevel: "LEVEL_1",
+              totalAmount: 35000,
+              stage: { title: "3D Design" },
+              stages: [{ title: "3D Design", stageStatus: "IN_PROGRESS" }],
+            },
+          ],
+        },
+        movelead: vi.fn(),
+        setleads: vi.fn(),
+        type: KANBAN_VIEW_TYPES.CONTRACT_LEVELS,
+        statusArray: [],
+        setRerenderColumns: vi.fn(),
+        reRenderColumns: 0,
+      }),
+    );
+
+    expect(html).toContain("Current work");
+    expect(html).toContain("3D Design");
+    expect(html).not.toContain("Next: Schedule follow-up");
   });
 });

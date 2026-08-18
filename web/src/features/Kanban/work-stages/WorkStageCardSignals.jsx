@@ -13,22 +13,28 @@ dayjs.extend(relativeTime);
 export function NextActionLine({ cardMeta }) {
   if (!cardMeta) return null;
   const { nextAction, overdue } = cardMeta;
-  if (!nextAction && !overdue) return null;
+  const missing = !nextAction && !overdue;
   const isOverdue = overdue || (nextAction?.dueAt && dayjs(nextAction.dueAt).isBefore(dayjs()));
   return (
     <Box
       sx={{
         display: "flex", alignItems: "center", gap: 0.75, px: 1, py: 0.5, mb: 1,
         borderRadius: 1.5,
-        bgcolor: (t) => alpha(isOverdue ? t.palette.error.main : t.palette.primary.main, 0.08),
-        border: (t) => `1px solid ${alpha(isOverdue ? t.palette.error.main : t.palette.primary.main, 0.25)}`,
+        bgcolor: (t) =>
+          missing
+            ? t.palette.action.hover
+            : alpha(isOverdue ? t.palette.error.main : t.palette.primary.main, 0.08),
+        border: (t) =>
+          `1px solid ${missing ? t.palette.divider : alpha(isOverdue ? t.palette.error.main : t.palette.primary.main, 0.25)}`,
       }}
     >
       {isOverdue ? <MdWarningAmber color="#d32f2f" /> : <MdOutlineFlag />}
       <Typography variant="caption" sx={{ fontWeight: 600 }} noWrap>
-        {overdue && !nextAction
-          ? "Delivery overdue"
-          : `${nextAction.kind === "DELIVERY" ? "Delivery" : nextAction.title}${
+        {missing
+          ? "Next: No task or delivery scheduled"
+          : overdue && !nextAction
+            ? "Next: Delivery overdue"
+            : `Next: ${nextAction.kind === "DELIVERY" ? "Delivery" : nextAction.title}${
               nextAction.dueAt ? ` · ${dayjs(nextAction.dueAt).fromNow()}` : ""
             }`}
         {overdue && nextAction ? " · OVERDUE" : ""}

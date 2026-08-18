@@ -19,6 +19,7 @@ import { FaEllipsisV } from "react-icons/fa";
 import BulkConvertLeadsModal from "@/features/Kanban/shared/BulkConvertLeadsModal.jsx";
 import KanbanFilterBar from "@/features/Kanban/shared/KanbanFilterBar.jsx";
 import { getVisibleKanbanStatuses } from "@/features/Kanban/shared/kanban-board-filters.js";
+import KanbanStatusNavigator from "@/features/Kanban/shared/KanbanStatusNavigator.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -42,6 +43,8 @@ const KanbanBoard = ({
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [bulkConvertOpen, setBulkConvertOpen] = useState(false);
+  const [activeColumnIndex, setActiveColumnIndex] = useState(0);
+  const boardRef = React.useRef(null);
   const visibleStatusArray = getVisibleKanbanStatuses({
     statusArray,
     selectedStatus:
@@ -49,6 +52,39 @@ const KanbanBoard = ({
         ? filters?.contractLevel
         : null,
   });
+  const normalizedActiveColumnIndex = Math.min(
+    activeColumnIndex,
+    Math.max(visibleStatusArray.length - 1, 0)
+  );
+
+  const scrollToColumn = React.useCallback(
+    (requestedIndex) => {
+      const board = boardRef.current;
+      if (!board || !visibleStatusArray.length) return;
+      const index = Math.min(Math.max(requestedIndex, 0), visibleStatusArray.length - 1);
+      const target = board.querySelector(`[data-kanban-index="${index}"]`);
+      if (!target) return;
+      const left = target.offsetLeft - (board.clientWidth - target.clientWidth) / 2;
+      board.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+      setActiveColumnIndex(index);
+    },
+    [visibleStatusArray.length],
+  );
+
+  const handleBoardScroll = React.useCallback(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const center = board.scrollLeft + board.clientWidth / 2;
+    const columns = Array.from(board.querySelectorAll("[data-kanban-index]"));
+    if (!columns.length) return;
+    const closest = columns.reduce((best, column) => {
+      const distance = Math.abs(column.offsetLeft + column.clientWidth / 2 - center);
+      return distance < best.distance
+        ? { index: Number(column.dataset.kanbanIndex), distance }
+        : best;
+    }, { index: 0, distance: Number.POSITIVE_INFINITY });
+    setActiveColumnIndex((current) => (current === closest.index ? current : closest.index));
+  }, []);
   return (
     <>
       <DndProvider backend={HTML5Backend}>
@@ -207,7 +243,16 @@ const KanbanBoard = ({
             }
           />
         </Box>
+        <KanbanStatusNavigator
+          statuses={visibleStatusArray}
+          activeIndex={normalizedActiveColumnIndex}
+          onSelect={scrollToColumn}
+          onPrevious={() => scrollToColumn(normalizedActiveColumnIndex - 1)}
+          onNext={() => scrollToColumn(normalizedActiveColumnIndex + 1)}
+        />
         <Grid
+          ref={boardRef}
+          onScroll={handleBoardScroll}
           container
           spacing={2}
           sx={{
@@ -220,6 +265,8 @@ const KanbanBoard = ({
             flexWrap: "nowrap",
             alignItems: "flex-start",
             overflowX: "auto",
+            scrollSnapType: "x proximity",
+            scrollBehavior: "smooth",
             "::-webkit-scrollbar": {
               height: "8px",
             },
@@ -235,10 +282,11 @@ const KanbanBoard = ({
             },
           }}
         >
-          {visibleStatusArray.map((status) => (
+          {visibleStatusArray.map((status, columnIndex) => (
             <KanbanColumn
               key={status}
               status={status}
+              columnIndex={columnIndex}
               statusArray={statusArray}
               reRenderColumns={reRenderColumns}
               setRerenderColumns={setReRenderColumns}

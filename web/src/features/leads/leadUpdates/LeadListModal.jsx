@@ -8,7 +8,7 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 800,
+  width: "min(800px, calc(100vw - 32px))",
   bgcolor: "background.paper",
   maxHeight: "90vh",
   overflow: "auto",
@@ -17,7 +17,13 @@ const style = {
   borderRadius: 2,
 };
 
-export default function LeadListModal({ clientLeadId, currentUserDepartment }) {
+export default function LeadListModal({
+  clientLeadId,
+  currentUserDepartment,
+  triggerLabel = "View all",
+  triggerVariant = "contained",
+  triggerSx,
+}) {
   const [open, setOpen] = useState(false);
   const handleOpen = () => {
     setOpen(true);
@@ -30,12 +36,13 @@ export default function LeadListModal({ clientLeadId, currentUserDepartment }) {
   return (
     <div>
       <Button
-        variant="contained"
+        variant={triggerVariant}
         color="primary"
         onClick={handleOpen}
         size="small"
+        sx={triggerSx}
       >
-        View all
+        {triggerLabel}
       </Button>
 
       <Modal
@@ -51,7 +58,10 @@ export default function LeadListModal({ clientLeadId, currentUserDepartment }) {
             alignItems="center"
             mb={2}
           >
-            <IconButton onClick={handleClose} size="small">
+            <Typography id="modal-title" variant="h6" sx={{ fontWeight: 700 }}>
+              Project update history
+            </Typography>
+            <IconButton aria-label="Close update history" onClick={handleClose} size="small">
               <MdClose />
             </IconButton>
           </Box>
@@ -64,7 +74,7 @@ export default function LeadListModal({ clientLeadId, currentUserDepartment }) {
 
           <Box display="flex" gap={2} justifyContent="flex-end">
             <Button variant="outlined" onClick={handleClose}>
-              Cancel
+              Close
             </Button>
           </Box>
         </Box>
