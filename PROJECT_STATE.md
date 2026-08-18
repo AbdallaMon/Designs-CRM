@@ -5,6 +5,14 @@
 >
 > Last updated: **2026-08-18** · Branch: `feat/workstage-flow-redesign`
 >
+> **LATEST (2026-08-18) — legacy notification dashboard-link backfill added ✅.**
+> `npm run notifications:normalize` now scans `Notification.content` and `Notification.link`
+> in bounded batches and rewrites only legacy `dreamstudiio.com/dashboard/...` URLs to an explicit
+> `--to-origin` (or `DASHBOARD_ORIGIN`). It is dry-run by default, writes a mode-0600 JSON audit
+> report, and requires both `--apply` and `--backup-confirmed` before changing rows. Public-site URLs
+> outside `/dashboard` and already-migrated links remain untouched. Verification: **7/7 focused
+> notification/upload normalization tests**, script syntax check, and `git diff --check` passed.
+>
 > **LATEST (2026-08-18) — persisted lead uploads no longer fail on optional integrations; Courses origin/build verified ✅.**
 > Lead file and note creation now return their saved record even if Telegram queueing or the related
 > notification fails; those failures are logged as one concise error line and no synchronous Telegram

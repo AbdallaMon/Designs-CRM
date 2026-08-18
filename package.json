@@ -50,6 +50,7 @@
     "uploads:normalize": "node --env-file=server/.env.production scripts/normalize-upload-references.mjs",
     "uploads:normalize:local": "node --env-file=server/.env scripts/normalize-upload-references.mjs",
     "uploads:copy": "node --env-file=server/.env.production scripts/copy-upload-storage.mjs",
+    "notifications:normalize": "node --env-file=server/.env.production scripts/normalize-notification-links.mjs",
     "lint:web": "npm run lint -w web",
     "lint:courses": "npm run lint -w courses-web",
     "lint": "npm run lint:web && npm run lint:courses",
