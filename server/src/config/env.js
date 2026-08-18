@@ -108,7 +108,7 @@ export const env = {
   RUN_WORKERS: process.env.RUN_WORKERS !== "false",
   RUN_CRON: process.env.RUN_CRON !== "false",
 };
-// Per-frontend CORS origins (fallback when ALLOW_ORIGIN is unset). One per site.
+// Per-frontend CORS origins are always merged with the optional ALLOW_ORIGIN CSV.
 export const allowedOrigins = [
   env.DASHBOARD_ORIGIN,
   env.COURSES_ORIGIN,

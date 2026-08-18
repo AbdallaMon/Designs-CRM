@@ -8,11 +8,7 @@ export const telegramCronWorker = new Worker(
   "telegram-cron-queue",
   async (job) => {
     const { clientLeadId } = job.data;
-    console.log(
-      `🚀 Processing Telegram cron data for Lead ID: ${clientLeadId}`,
-    );
     await getMeagsses({ clientLeadId });
-    console.log(`✅ Done in cron worker Lead ID: ${clientLeadId}`);
   },
   { ...bullmqConnection, concurrency: 1 },
 );
@@ -20,7 +16,6 @@ export const telegramCronWorker = new Worker(
 telegramCronWorker.on("failed", async (job, err) => {
   if (err.message.includes(INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED)) {
     await coonnectToTelegramV2();
-    console.log("Reconnected to Telegram successfully!");
   }
   console.error("❌ Failed in Telegram cron worker:", err.message);
 });

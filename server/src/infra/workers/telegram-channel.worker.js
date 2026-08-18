@@ -8,9 +8,7 @@ export const telegramChannelWorker = new Worker(
   "telegram-channel-queue",
   async (job) => {
     const { clientLeadId } = job.data;
-    console.log(`📦 Creating channel for lead: ${clientLeadId}`);
     await createChannelAndAddUsers({ clientLeadId });
-    console.log(`✅ Channel created for lead: ${clientLeadId}`);
   },
   { ...bullmqConnection, concurrency: 1 },
 );
@@ -18,7 +16,6 @@ export const telegramChannelWorker = new Worker(
 telegramChannelWorker.on("failed", async (job, err) => {
   if (err.message.includes(INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED)) {
     await coonnectToTelegramV2();
-    console.log("Reconnected to Telegram successfully!");
   }
   console.error(`❌ Failed to create Telegram channel:`, err.message);
 });

@@ -33,7 +33,6 @@ export const telegramMessageWorker = new Worker(
 telegramMessageWorker.on("failed", async (job, err) => {
   if (err.message.includes(INTEGRATION_ERROR_CODES.AUTH_KEY_UNREGISTERED)) {
     await coonnectToTelegramV2();
-    console.log("Reconnected to Telegram successfully!");
   }
   console.error("❌ Failed in Telegram Message worker:", err.message);
 });

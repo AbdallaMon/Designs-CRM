@@ -5,6 +5,39 @@
 >
 > Last updated: **2026-08-18** · Branch: `feat/workstage-flow-redesign`
 >
+> **LATEST (2026-08-18) — persisted lead uploads no longer fail on optional integrations; Courses origin/build verified ✅.**
+> Lead file and note creation now return their saved record even if Telegram queueing or the related
+> notification fails; those failures are logged as one concise error line and no synchronous Telegram
+> channel lookup can turn an already-saved upload into an HTTP error. Routine Telegram cron/worker
+> progress and full BullMQ job-object logs were removed, while failure logs remain. CORS now merges the
+> explicit per-frontend origins (including `COURSES_ORIGIN`) with `ALLOW_ORIGIN` instead of letting the
+> CSV replace them. The current Courses source/build uses `/v2/auth/me` and embeds the configured
+> `NEXT_PUBLIC_API`; a browser call to the legacy `/auth/status` proves that the server is serving a stale
+> pre-port `.next` bundle and requires a production rebuild before its PM2 restart. Verification:
+> **33/33 focused tests**, server syntax checks, Courses production build, generated-bundle URL inspection,
+> and `git diff --check` passed. No schema, migration, database, permission, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — logout recovers from stale CSRF state without a 403 ✅.**
+> Both the CRM and Courses API clients now fetch a fresh CSRF token before `POST /auth/logout`,
+> so logout clears the server session on its first attempt instead of sending a stale cached token.
+> Any other authenticated mutation that receives the precise `FORBIDDEN / csrf token mismatch`
+> response refreshes the token and retries exactly once; origin denials are never retried or hidden.
+> The backend CSRF policy and logout permission/session revocation remain unchanged. Verification:
+> **20/20 focused client + server CSRF tests**, targeted lint in both web workspaces, both production
+> builds, and scoped `git diff --check` passed. No permission, endpoint, backend, schema, migration,
+> database, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — Kanban infinite-scroll loading and recovery states fixed ✅.**
+> Kanban columns no longer show `Loading more...` while idle or assume that an exact
+> 20-item page has another page. The API-reported total now determines pagination, scroll-bottom
+> detection tolerates fractional browser dimensions, and duplicate scroll triggers are guarded.
+> When more data exists, the column exposes a manual `Load more` fallback; an unsuccessful next-page
+> request keeps the existing cards visible and shows `Retry loading more`, while first-load failures
+> retain their full-column retry state. Verification: **25/25 Kanban tests**, targeted lint, the main
+> web production build, and scoped `git diff --check` passed. Authenticated browser QA remains manual
+> because no signed-in browser session is available. No endpoint, backend, permission, schema,
+> migration, database, or PDF behavior changed.
+>
 > **LATEST (2026-08-18) — Kanban triage and project-type clarity redesign ✅.**
 > Deals, All Projects, and every Work Stage board now have a compact status navigator with visible
 > Previous/Next controls, clickable status pills, smooth column centering, and contextual empty states.

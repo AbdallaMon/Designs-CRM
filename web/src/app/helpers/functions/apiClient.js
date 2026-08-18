@@ -21,7 +21,10 @@ export const API_BASE = API_ORIGIN.endsWith("/v2")
   : `${API_ORIGIN}/v2`;
 
 const CSRF_COOKIE_NAME = "csrf_token";
+const CSRF_FAILURE_CODE = "FORBIDDEN";
+const CSRF_MISMATCH_REASON = "csrf token mismatch";
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const FORCE_FRESH_CSRF_PATHS = new Set(["auth/logout"]);
 const COOKIE_INDEPENDENT_AUTH_PATHS = new Set([
   "auth/login",
   "auth/request-password-reset",
@@ -85,13 +88,17 @@ function browserCookie(name) {
   return item ? decodeURIComponent(item.slice(prefix.length)) : null;
 }
 
-async function csrfToken() {
-  const cookieToken = browserCookie(CSRF_COOKIE_NAME);
-  if (cookieToken) {
-    _csrfToken = cookieToken;
-    return cookieToken;
+async function csrfToken({ forceRefresh = false } = {}) {
+  if (!forceRefresh) {
+    const cookieToken = browserCookie(CSRF_COOKIE_NAME);
+    if (cookieToken) {
+      _csrfToken = cookieToken;
+      return cookieToken;
+    }
+    if (_csrfToken) return _csrfToken;
+  } else {
+    _csrfToken = null;
   }
-  if (_csrfToken) return _csrfToken;
   if (_csrfPromise) return _csrfPromise;
 
   _csrfPromise = fetch(`${API_BASE}/auth/csrf`, {
@@ -112,7 +119,7 @@ async function csrfToken() {
 }
 
 async function securedFetchOptions(canonicalPath, opts) {
-  const { _skipRefresh, ...rawFetchOptions } = opts;
+  const { _skipRefresh, _skipCsrfRetry, ...rawFetchOptions } = opts;
   const fetchOptions = canonicalizeJsonBody(rawFetchOptions);
   const method = String(fetchOptions.method || "GET").toUpperCase();
   if (
@@ -122,11 +129,22 @@ async function securedFetchOptions(canonicalPath, opts) {
     return fetchOptions;
   }
 
-  const token = await csrfToken();
+  const token = await csrfToken({
+    forceRefresh: FORCE_FRESH_CSRF_PATHS.has(canonicalPath),
+  });
   if (!token) return fetchOptions;
   const headers = new Headers(fetchOptions.headers || {});
   headers.set("x-csrf-token", token);
   return { ...fetchOptions, headers };
+}
+
+async function isCsrfTokenMismatch(response) {
+  if (response.status !== 403) return false;
+  const body = await response.clone().json().catch(() => null);
+  return (
+    (body?.code === CSRF_FAILURE_CODE || body?.message === CSRF_FAILURE_CODE) &&
+    body?.reason === CSRF_MISMATCH_REASON
+  );
 }
 
 async function refreshAccessToken() {
@@ -157,6 +175,12 @@ export async function apiRequest(path, opts = {}, _retry = true) {
     credentials: "include",
     ...fetchOptions,
   });
+  if (!opts._skipCsrfRetry && (await isCsrfTokenMismatch(response))) {
+    const token = await csrfToken({ forceRefresh: true });
+    if (token) {
+      return apiRequest(path, { ...opts, _skipCsrfRetry: true }, _retry);
+    }
+  }
   if (response.status === 401 && _retry && !opts._skipRefresh) {
     const ok = await refreshAccessToken();
     if (ok) return apiRequest(path, { ...opts, _skipRefresh: true }, false);

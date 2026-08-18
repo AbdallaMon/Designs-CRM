@@ -26,10 +26,15 @@ import colors from "@/app/helpers/colors";
 import { useDrop } from "react-dnd";
 import WorkStageKanbanCard from "@/features/Kanban/work-stages/WorkStageKanbanCard.jsx";
 import { FinalizeModal } from "@/features/leads/widgets/FinalizeModal.jsx";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
+import {
+  hasMoreColumnItems,
+  isNearKanbanColumnBottom,
+} from "@/features/Kanban/staff/kanban-column-pagination.js";
+import KanbanColumnLoadMoreFooter from "@/features/Kanban/staff/KanbanColumnLoadMoreFooter.jsx";
 
 const ItemTypes = {
   CARD: "card",
@@ -87,13 +92,15 @@ const KanbanColumn = ({
   // A drop onto a terminal status is parked here until the user confirms it.
   const [pendingMove, setPendingMove] = useState(null); // { item, newStatus }
   const [leads, setleads] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [totalValue, setTotalValue] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const [lead, setCurrentLead] = useState(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const loadMorePendingRef = useRef(false);
+  const latestRequestRef = useRef(0);
   const take = 20;
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
@@ -103,45 +110,71 @@ const KanbanColumn = ({
   });
 
   const statusColor = statusColors[status];
+  const columnRefresh = reRenderColumns[status];
   const { setLoading: setToastLoading } = useToastContext();
   function loadMore() {
+    if (loading || error || !hasMore || loadMorePendingRef.current) return;
+
+    loadMorePendingRef.current = true;
     setPage((prev) => prev + 1);
   }
-  const fetchLeads = async () => {
+
+  const fetchLeads = useCallback(async (requestedPage) => {
+    const requestId = latestRequestRef.current + 1;
+    latestRequestRef.current = requestId;
     setError(false);
+    setLoading(true);
     const request = await getData({
       url: isNotStaff
         ? `projects/designers/columns?skip=${
-            page * take
+            requestedPage * take
           }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
         : `leads/columns?status=${status}&skip=${
-            page * take
+            requestedPage * take
           }&take=${take}&staffId=${staffId}&type=${type}&`,
       filters,
-      setData: setleads,
-      setLoading,
+      setLoading: () => {},
     });
-    if (request.status === 200) {
-      if (page === 0) {
-        setleads(request.data.data);
+
+    if (requestId !== latestRequestRef.current) return;
+
+    const items = request?.data?.data;
+    if (request?.status === 200 && Array.isArray(items)) {
+      if (requestedPage === 0) {
+        setleads(items);
       } else {
-        setleads((prev) => [...prev, ...request.data.data]); // append
+        setleads((prev) => [...prev, ...items]);
       }
       setTotalValue(request.data.totalValue || 0);
       setTotalLeads(request.data.totalLeads || 0);
-      if (request.data.data?.length < take) setHasMore(false);
+      setHasMore(
+        hasMoreColumnItems({
+          page: requestedPage,
+          pageSize: take,
+          totalItems: request.data.totalLeads,
+          receivedItems: items.length,
+        }),
+      );
     } else {
       setError(true);
     }
-  };
-  useEffect(() => {
-    fetchLeads();
-  }, [page, filters, status, staffId, reRenderColumns[status]]);
-  const handleScroll = (e) => {
-    const bottom =
-      e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+    setLoading(false);
+    loadMorePendingRef.current = false;
+  }, [filters, isNotStaff, staffId, status, type]);
 
-    if (bottom && hasMore) {
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchLeads(page);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [columnRefresh, fetchLeads, page]);
+
+  const handleScroll = (e) => {
+    if (isNearKanbanColumnBottom(e.currentTarget)) {
       loadMore();
     }
   };
@@ -382,7 +415,7 @@ const KanbanColumn = ({
             },
           }}
         >
-          {!loading && error && (
+          {!loading && error && leads.length === 0 && (
             <Box
               sx={{
                 display: "flex",
@@ -404,7 +437,7 @@ const KanbanColumn = ({
                 An error occurred while loading. Please try again.
               </Typography>
               <Button
-                onClick={fetchLeads}
+                onClick={() => fetchLeads(page)}
                 variant="outlined"
                 size="small"
                 sx={{
@@ -474,51 +507,15 @@ const KanbanColumn = ({
                 );
               }
             })}
-            {!hasMore && totalLeads > (leads?.length || 0) && (
-              <Button
-                onClick={loadMore}
-                variant="outlined"
-                fullWidth
-                sx={{
-                  mb: 2,
-                  borderRadius: "10px",
-                  textTransform: "none",
-                  borderColor: `${statusColor}55`,
-                  color: statusColor,
-                  "&:hover": {
-                    borderColor: statusColor,
-                    bgcolor: `${statusColor}12`,
-                  },
-                }}
-              >
-                Load more
-              </Button>
-            )}
-            {loading && leads?.length > 0 && (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  color: "text.secondary",
-                  padding: 1.5,
-                  fontSize: "0.8rem",
-                }}
-              >
-                Loading...
-              </Box>
-            )}
-
-            {!loading && hasMore && leads?.length > 0 && (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  color: "text.disabled",
-                  padding: 1.5,
-                  fontSize: "0.8rem",
-                }}
-              >
-                Loading more...
-              </Box>
-            )}
+            <KanbanColumnLoadMoreFooter
+              loading={loading}
+              error={error}
+              hasMore={hasMore}
+              hasItems={leads?.length > 0}
+              onLoadMore={loadMore}
+              onRetry={() => fetchLeads(page)}
+              statusColor={statusColor}
+            />
           </Stack>
         </Box>
       </Grid>

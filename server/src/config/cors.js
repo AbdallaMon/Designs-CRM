@@ -8,14 +8,13 @@ function normalizeOrigin(value) {
   }
 }
 
-const allowedOrigins = env.ALLOW_ORIGIN
-  ? env.ALLOW_ORIGIN.split(",")
-      .map(normalizeOrigin)
-      .filter(Boolean)
-  : allowedOriginsTemplate
-      .filter(Boolean)
-      .map(normalizeOrigin)
-      .filter(Boolean);
+const allowedOrigins = [
+  ...(env.ALLOW_ORIGIN || "").split(","),
+  ...allowedOriginsTemplate,
+]
+  .filter(Boolean)
+  .map(normalizeOrigin)
+  .filter(Boolean);
 
 // Optional: bare base domains (CSV) whose any subdomain is allowed, e.g. "domain.com,domain2.com".
 // No-op when unset — the exact-match allowedOrigins list above stays the sole gate.

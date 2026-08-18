@@ -28,7 +28,6 @@ export function startTelegramCron() {
       for (const lead of shuffledLeads) {
         try {
           const existingJob = await telegramCronQueue.getJob(`cron-${lead.id}`);
-          console.log(existingJob, "existingJob");
           if (!existingJob) {
             await telegramCronQueue.add(
               "cron",
@@ -59,6 +58,5 @@ export function startTelegramCron() {
     }
   });
 
-  console.log("✅ Telegram cron scheduled (every 10 minutes)");
   return task;
 }

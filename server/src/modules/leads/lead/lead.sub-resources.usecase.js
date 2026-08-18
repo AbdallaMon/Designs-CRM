@@ -10,7 +10,6 @@ import timezone from "dayjs/plugin/timezone.js";
 import { v4 as uuidv4 } from "uuid";
 import { leadRepository } from "./lead.repo.js";
 import {
-  getChannelEntitiyByTeleRecordAndLeadId,
   uploadAnAttachment,
   uploadANote,
 } from "../../../infra/telegram/telegram-functions.js";
@@ -34,6 +33,14 @@ import {
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+async function runOptionalSideEffect(label, effect) {
+  try {
+    await effect();
+  } catch (error) {
+    console.error(`Optional ${label} failed:`, error?.message || String(error));
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 //  STAFF sub-resource orchestration (ported 1:1 from the former legacy/staff-services.js).
 //  Prisma I/O is delegated to leadRepository; the interleaved SIDE EFFECTS (notifications,
@@ -51,17 +58,16 @@ export async function createNote({ clientLeadId, userId, content }) {
     userId,
   });
   if (clientLeadId) {
-    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
-      clientLeadId: Number(clientLeadId),
+    await runOptionalSideEffect("Telegram note", async () => {
+      const note = await leadRepository.findNoteWithUser({ id: newNote.id });
+      await uploadANote(note);
     });
-    const note = await leadRepository.findNoteWithUser({ id: newNote.id });
-    if (teleChannel) {
-      await uploadANote(note, teleChannel);
-    }
   }
   await leadRepository.touchLead({ id: clientLeadId });
   newNote.content = content;
-  await newNoteNotification(clientLeadId, content, newNote.user.id);
+  await runOptionalSideEffect("note notification", () =>
+    newNoteNotification(clientLeadId, content, newNote.user.id),
+  );
   return newNote;
 }
 
@@ -247,15 +253,14 @@ export async function createFile({
   }
   const file = await leadRepository.createFileRecord({ data });
   if (file.clientLeadId) {
-    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
-      clientLeadId: Number(file.clientLeadId),
-    });
-    if (teleChannel) {
-      await uploadAnAttachment(file, teleChannel);
-    }
+    await runOptionalSideEffect("Telegram attachment", () =>
+      uploadAnAttachment(file),
+    );
   }
   if (userId !== null) {
-    await newFileUploaded(clientLeadId, data, userId);
+    await runOptionalSideEffect("file notification", () =>
+      newFileUploaded(clientLeadId, data, userId),
+    );
   }
   await leadRepository.touchLead({ id: clientLeadId });
   return { ...file, name, url, description, isUserFile: userId !== null };
