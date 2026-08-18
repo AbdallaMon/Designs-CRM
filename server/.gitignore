@@ -6,4 +6,6 @@ node_modules
 .github
 .gitignore
 .github/
+.env.test 
+.env.*
 README.md
