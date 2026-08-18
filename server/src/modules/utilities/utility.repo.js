@@ -120,10 +120,13 @@ class UtilityRepository {
     if (/^\d+$/.test(query)) search.push({ id: Number(query) });
     return prisma.clientLead.findMany({
       where: { AND: [leadScope, { OR: search }] },
+      distinct: ["id"],
       take: 20,
+      orderBy: { id: "desc" },
       select: {
         id: true,
         code: true,
+        status: true,
         client: {
           select: { name: true, email: true, phone: true },
         },

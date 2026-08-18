@@ -19,6 +19,8 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { WORK_DEPARTMENTS } from "@dms/shared";
 import { useState, useEffect } from "react";
@@ -38,7 +40,7 @@ const getDepartmentConfig = (dept) =>
  * DepartmentManagementModal Component
  * Allows authorized users to manage which departments can see an update
  */
-export function DepartmentManagementModal({ update, onUpdate }) {
+export function DepartmentManagementModal({ update, onUpdate, compact = false }) {
   const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false);
   const [sharedSettings, setSharedSettings] = useState([]);
   const [loadingData, setLoadingData] = useState();
@@ -172,22 +174,44 @@ export function DepartmentManagementModal({ update, onUpdate }) {
 
   return (
     <>
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<MdSettings />}
-        onClick={() => setIsDepartmentModalOpen(true)}
-        sx={{
-          fontSize: "0.75rem",
-          py: 0.5,
-          px: 1.5,
-          borderRadius: 2,
-          textTransform: "none",
-          fontWeight: 500,
-        }}
-      >
-        Manage Access
-      </Button>
+      {compact ? (
+        <Tooltip title="Manage department access">
+          <IconButton
+            onClick={() => setIsDepartmentModalOpen(true)}
+            size="small"
+            aria-label="Manage department access"
+            sx={{
+              color: "primary.dark",
+              backgroundColor: "action.hover",
+              border: "1px solid",
+              borderColor: "divider",
+              "&:hover": {
+                backgroundColor: "primary.light",
+                borderColor: "primary.main",
+              },
+            }}
+          >
+            <MdSettings />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<MdSettings />}
+          onClick={() => setIsDepartmentModalOpen(true)}
+          sx={{
+            fontSize: "0.75rem",
+            py: 0.5,
+            px: 1.5,
+            borderRadius: 2,
+            textTransform: "none",
+            fontWeight: 500,
+          }}
+        >
+          Manage Access
+        </Button>
+      )}
 
       {/* Confirmation Dialog */}
       <Dialog

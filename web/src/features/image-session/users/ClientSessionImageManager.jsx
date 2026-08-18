@@ -65,7 +65,7 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import NoteCard from "@/shared/components/common/NoteCard.jsx";
 import ClientImageSessionName from "@/features/image-session/users/ClientImageSessionName.jsx";
 
-const ClientImageSessionManager = ({ clientLeadId }) => {
+const ClientImageSessionManager = ({ clientLeadId, compact = false }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
   const [sessionsDialogOpen, setSessionsDialogOpen] = useState(false);
@@ -74,6 +74,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const [sessions, setSessions] = useState([]);
   const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState("");
   const { setAlertError } = useAlertContext();
   const { setLoading: setToastLoading } = useToastContext();
   const [copiedToken, setCopiedToken] = useState(null);
@@ -191,11 +192,14 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   async function fetchData() {
-    await getDataAndSet({
+    setSessionsError("");
+    const sessionsRequest = await getDataAndSet({
       url: `image-session/${clientLeadId}/sessions?`,
       setLoading,
       setData: setSessions,
+      setError: setSessionsError,
     });
+    if (!sessionsRequest || sessionsRequest.status !== 200) return;
     await getDataAndSet({
       url: `image-session/ids?where=${JSON.stringify({
         isArchived: false,
@@ -401,15 +405,28 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
 
   return (
     <Box>
-      <Stack direction="row" spacing={2}>
-        <Button
-          variant="contained"
-          startIcon={<FaFileImage />}
-          onClick={() => setSessionsDialogOpen(true)}
-        >
-          View Sessions
-        </Button>
-      </Stack>
+      {compact ? (
+        <Tooltip title="View image sessions">
+          <IconButton
+            size="small"
+            color="primary"
+            aria-label="View image sessions"
+            onClick={() => setSessionsDialogOpen(true)}
+          >
+            <FaFileImage />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            startIcon={<FaFileImage />}
+            onClick={() => setSessionsDialogOpen(true)}
+          >
+            View Sessions
+          </Button>
+        </Stack>
+      )}
 
       <Dialog
         open={sessionsDialogOpen}
@@ -436,7 +453,9 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
 
         <DialogContent>
           {loading && <FullScreenLoader />}
-          {sessions.length === 0 ? (
+          {sessionsError ? (
+            <Alert severity="error">{sessionsError}</Alert>
+          ) : sessions.length === 0 ? (
             <Alert severity="info">No sessions found</Alert>
           ) : (
             <Grid container spacing={3}>

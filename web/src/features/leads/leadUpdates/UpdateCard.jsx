@@ -186,6 +186,13 @@ export const UpdateCard = ({
                   }}
                 >
                   {canManageDepartments && (
+                    <DepartmentManagementModal
+                      onUpdate={onUpdate}
+                      update={update}
+                      compact={true}
+                    />
+                  )}
+                  {canManageDepartments && (
                     <DeleteModelButton
                       item={update}
                       model={"ClientLeadUpdate"}
@@ -269,12 +276,6 @@ export const UpdateCard = ({
                     Shared Access ({getAuthorizedCount()}/
                     {DEPARTMENTS.length - 1} departments)
                   </Typography>
-                  {canManageDepartments && (
-                    <DepartmentManagementModal
-                      onUpdate={onUpdate}
-                      update={update}
-                    />
-                  )}
                 </Box>
                 {!isSimple && (
                   <>

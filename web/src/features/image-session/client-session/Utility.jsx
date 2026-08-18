@@ -69,7 +69,7 @@ export function StepNav({
       gap={2}
       alignItems="center"
       justifyContent="space-between"
-      flexDirection={isRTL ? "row-reverse" : "row"}
+      flexDirection="row"
     >
       {onBack ? (
         <ActionButton

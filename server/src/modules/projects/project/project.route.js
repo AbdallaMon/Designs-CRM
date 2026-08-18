@@ -26,7 +26,10 @@ router.get("/designers/columns", AuthMiddleware.requirePermissions([P.LIST]), as
 //    before /designers/:id so the literal `actions` segment is unambiguous. ──
 router.post(
   "/designers/:leadId/actions/change-status",
-  AuthMiddleware.requirePermissions([P.MANAGE]),
+  // `master` allowed an assigned 2D/3D designer to move their own project between
+  // work-stage columns. P.EDIT + the project-mutation scope preserves that behavior;
+  // P.MANAGE remains reserved for assigning/removing designers.
+  AuthMiddleware.requirePermissions([P.EDIT]),
   validate(ProjectValidation.leadIdParams, "params"),
   validate(ProjectValidation.changeStatus),
   AuthMiddleware.requireSpecialChecker(projectController.checkIfUserCanMutateProjectFromBody),

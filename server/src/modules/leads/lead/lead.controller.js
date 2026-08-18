@@ -31,10 +31,22 @@ class LeadController {
     return leadUsecase.checkIfUserCanMutateLead({ id: req.params.id ?? req.params.clientLeadId, authUser: req.auth });
   }
 
+  checkIfUserCanMutateLeadActivity(req) {
+    return leadUsecase.checkIfUserCanMutateLeadActivity({
+      id: req.params.id ?? req.params.clientLeadId,
+      authUser: req.auth,
+    });
+  }
+
   // Sub-resource mutate checks: resolve the parent lead, then enforce lead-mutate scope.
   async checkIfUserCanMutateCallReminder(req) {
     const { clientLeadId } = await leadUsecase.resolveCallReminderLead({ reminderId: req.params.id });
     return leadUsecase.checkIfUserCanMutateLead({ id: clientLeadId, authUser: req.auth });
+  }
+
+  async checkIfUserCanMutateDesignerCallReminder(req) {
+    const { clientLeadId } = await leadUsecase.resolveCallReminderLead({ reminderId: req.params.id });
+    return leadUsecase.checkIfUserCanMutateLeadActivity({ id: clientLeadId, authUser: req.auth });
   }
 
   async checkIfUserCanMutateMeetingReminder(req) {

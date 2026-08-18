@@ -16,7 +16,7 @@
 //   - drawings: url, fileName
 //   - special items: labelAr, labelEn
 import { z } from "zod";
-import { validationMessagesCodes as V } from "@dms/shared";
+import { validationMessagesCodes as V, WORK_STAGE_STATUSES } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -127,6 +127,14 @@ export class ContractValidation {
     .object({
       deliveryDays: z.coerce.number().int().nonnegative().optional(),
       deptDeliveryDays: z.union([z.null(), z.coerce.number().int().nonnegative()]).optional(),
+    })
+    .strict();
+
+  // Dedicated admin data-repair action. Status is intentionally absent from updateStage.
+  static overrideStageStatus = z
+    .object({
+      status: z.enum(Object.values(WORK_STAGE_STATUSES)),
+      reason: z.string().trim().min(5).max(500),
     })
     .strict();
 

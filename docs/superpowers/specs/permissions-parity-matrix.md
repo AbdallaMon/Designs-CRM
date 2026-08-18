@@ -110,8 +110,10 @@ on ADMIN/SUPER_ADMIN base + isSuperSales. **MATCH.** Public booking/new-lead
 ### 5. Projects / tasks / updates / delivery (`/v2/projects` etc.)
 
 Codes `PROJECT_AUTHED` (PROJECT/TASK/UPDATE/DELIVERY reads+writes) to **every** role;
-admin-tier `PROJECT.MANAGE` (assign-designer, designer-board status) to isAdmin union
-only. Object-scope (`checkIfUserCanAccessProject`/`MutateProject`): full-READ =
+admin-tier `PROJECT.MANAGE` (assign/remove designer) to the isAdmin union only. Work-stage
+status movement uses `PROJECT.EDIT`: `master` exposed it to an assigned 2D/3D designer,
+so it remains assignment-scoped and retains the non-admin terminal-status lock.
+Object-scope (`checkIfUserCanAccessProject`/`MutateProject`): full-READ =
 ADMIN/SUPER_ADMIN/ACCOUNTANT/isSuperSales; full-WRITE = ADMIN/SUPER_ADMIN/isSuperSales
 (ACCOUNTANT read-only carve-out); everyone else = assigned-only.
 
@@ -122,6 +124,12 @@ ADMIN/SUPER_ADMIN/ACCOUNTANT/isSuperSales; full-WRITE = ADMIN/SUPER_ADMIN/isSupe
 | ACCOUNTANT | yes, designer detail READ | PROJECT_AUTHED; no MANAGE | full READ; assigned-only WRITE | MATCH |
 | STAFF / THREE_D / TWO_D / TWO_D_EXECUTOR | yes, ASSIGNED only | PROJECT_AUTHED; no MANAGE | assigned-only read + write | MATCH |
 | CONTACT_INITIATOR | yes (authed surface) | PROJECT_AUTHED; no MANAGE | assigned-only (no assignments → sees none) | MATCH |
+
+**2026-08-18 designer activity addendum.** The designer work-stage detail remains scoped
+by project assignment. On that already-scoped lead only, active `DESIGNER_3D` and
+`DESIGNER_2D` profiles may add notes, schedule/update calls, and upload files, matching the
+`master` UI and routes. This narrow activity fallback is not ordinary lead mutation scope;
+lead fields/status/offers/payments/contracts still require the existing lead checker.
 
 ### 6. Accounting (`/v2/accounting`) — `accounting.routes.js` + sub-routers
 
@@ -372,3 +380,15 @@ Spec: `docs/superpowers/specs/2026-07-15-my-day-preview-productivity-pass-design
 4. **Display truth fix:** the preview's payment chip no longer renders the inert `ClientLead.paymentStatus` (never updated by app code — study G2); it renders the `ContractPayment`-derived `health.payment` (and is hidden pre-contract). The dead `PAYMENT_OVERDUE` engine predicate was replaced by a real date-based rule (`ContractPayment.dueDate`). `health.paymentStatus` stays in the payload for back-compat.
 
 Verification: full suite **988/988** green (incl. updated nav-parity fixtures documenting the two nav rows) + `next build` compiled OK.
+
+---
+
+## Addendum 2026-08-18 — audited contract-stage repair (additive; no parity impact)
+
+`contract.stage.override_status` was added for the new dedicated
+`POST /v2/contracts/:contractId/stages/:stageId/actions/override-status` data-repair action.
+It is present only in the `ADMIN` and `SUPER_ADMIN` profiles through `ALL_PERMISSIONS`; it is
+absent from `SHARED_AUTHED` and `SUPER_SALES_EXTRA_PERMISSIONS`, so no existing shared-contract
+role gains the action. The endpoint also retains lead mutate-scope and stage-to-contract ownership
+checks, requires a repair reason, and writes `CONTRACT_STAGE_STATUS_OVERRIDDEN` to the action audit
+trail. The normal stage edit remains limited to delivery-day fields.

@@ -7,7 +7,7 @@
 //
 // OBJECT SCOPE — the IDOR fix the legacy `/shared/image-session/*` routes were MISSING (no
 // object scope at all). ClientImageSession rows are LEAD-SCOPED. Two resolution paths:
-//   - `:clientLeadId` routes → check the lead DIRECTLY (access for reads, mutate for writes).
+//   - `:clientLeadId` routes → check lead scope, with the assigned-project designer fallback.
 //   - `:sessionId` routes    → resolve the session's parent clientLeadId in the repo FIRST,
 //     then run the lead checker before touching the legacy service. A forged/missing id →
 //     IMAGE_SESSION_NOT_FOUND (404). The acting user is derived from authUser (req.auth).
@@ -36,10 +36,18 @@ import {
 class ImageSessionUsecase {
   // ── scope helpers ─────────────────────────────────────────────────────────────────
   assertLeadAccess({ clientLeadId, authUser }) {
-    return leadUsecase.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanAccessLeadOrAssignedProject({
+      id: clientLeadId,
+      authUser,
+      mode: "view",
+    });
   }
   assertLeadMutate({ clientLeadId, authUser }) {
-    return leadUsecase.checkIfUserCanMutateLead({ id: clientLeadId, authUser });
+    return leadUsecase.checkIfUserCanAccessLeadOrAssignedProject({
+      id: clientLeadId,
+      authUser,
+      mode: "mutate",
+    });
   }
 
   // Resolve a `:sessionId` → its parent clientLeadId, then run the lead checker. A
@@ -53,7 +61,7 @@ class ImageSessionUsecase {
     return row;
   }
 
-  // GET /:clientLeadId/sessions — lead-scoped list (READ scope on the lead directly).
+  // GET /:clientLeadId/sessions — lead/assigned-project-scoped list.
   async listForLead({ clientLeadId, authUser }) {
     await this.assertLeadAccess({ clientLeadId, authUser });
     return getClientImageSessions(Number(clientLeadId));

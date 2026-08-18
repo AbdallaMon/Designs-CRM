@@ -21,6 +21,7 @@ export const contractsMessages = {
   // ── authed writes (stages) ─────────────────────────────────────────────────────────
   CONTRACT_STAGE_CREATED: "Stage added",
   CONTRACT_STAGE_UPDATED: "Stage updated",
+  CONTRACT_STAGE_STATUS_OVERRIDDEN: "Stage workflow repaired",
   CONTRACT_STAGE_DELETED: "Stage deleted",
 
   // ── authed writes (payments) ───────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export const contractsMessages = {
   CONTRACT_STAGES_REQUIRED: "Add at least one contract stage",
   CONTRACT_STAGE_DAYS_INVALID: "Enter client and department delivery days for every stage",
   CONTRACT_STAGE_COMPLETED: "A completed stage cannot be deleted",
+  CONTRACT_STAGE_OVERRIDE_CANCELLED: "A cancelled contract cannot have its stages overridden",
   CONTRACT_PAYMENT_NOT_DUE: "This payment is not due yet",
   CONTRACT_SIGNATURE_PAYMENT_REQUIRED: "The signature payment cannot be deleted",
   CONTRACT_PAYMENT_NOT_FOUND: "Contract payment not found",

@@ -130,7 +130,19 @@ class GenericDeleteUsecase {
       mode: "mutate",
     });
     const lead = await leadRepository.findScopedLead({ where });
-    if (!lead) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+    if (!lead) {
+      const isDesigner = [PROFILES.DESIGNER_3D, PROFILES.DESIGNER_2D].includes(
+        authUser?.currentProfileKey,
+      );
+      const assigned =
+        definition.allowDesignerProjectAssignment &&
+        isDesigner &&
+        (await projectRepository.clientLeadHasAssignedProject({
+          clientLeadId: Number(target.clientLeadId),
+          userId: Number(authUser.id),
+        }));
+      if (!assigned) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+    }
     return target;
   }
 

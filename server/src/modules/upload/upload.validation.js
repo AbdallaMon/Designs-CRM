@@ -13,6 +13,13 @@ const booleanFromMultipart = z.preprocess((value) => {
 }, z.boolean().optional().default(true));
 
 class UploadSchemas {
+  attachmentParams = z
+    .object({
+      type: z.enum(["note", "lead-file"]),
+      id: z.coerce.number().int().positive(),
+    })
+    .strict();
+
   contentAccessQuery = z
     .object({
       expires: z.coerce.number().int().positive(),

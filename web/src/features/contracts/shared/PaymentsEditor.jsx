@@ -17,7 +17,12 @@ import { sum } from "@/features/contracts/shared/contractHelpers.js";
 import SelectPaymentCondition from "@/features/contracts/payments/SelectPaymentCondition.jsx";
 import { SectionHeader, EditorCard, EmptyState, AddButton } from "@/features/contracts/shared/formKit.jsx";
 
-export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
+export default function PaymentsEditor({
+  payments,
+  setPayments,
+  taxRate = 5,
+  clientLeadId,
+}) {
   const theme = useTheme();
   const total = useMemo(
     () => sum(payments.map((p) => Number(p.amount || 0))),
@@ -184,6 +189,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
                   ) : (
                     <SelectPaymentCondition
                       initialCondition={p.conditionItem}
+                      clientLeadId={clientLeadId}
                       onConditionChange={(value) => {
                         updatePaymentFields(idx, {
                           condition: value.condition,

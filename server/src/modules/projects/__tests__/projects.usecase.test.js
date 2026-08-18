@@ -31,6 +31,12 @@ vi.mock("../project/project.repo.js", () => ({
   },
 }));
 
+vi.mock("../../leads/lead/lead.usecase.js", () => ({
+  leadUsecase: {
+    checkIfUserCanAccessLead: vi.fn(),
+  },
+}));
+
 // Project flow bag — every legacy flow becomes a vi.fn(); the re-exported names
 // (createGroupProjects / assignProjectToUser) must exist so the usecase's static
 // `export { ... } from "./project.flows.js"` resolves.
@@ -71,12 +77,25 @@ import { DeliveryUsecase, deliveryOperations } from "../delivery/delivery.usecas
 import { projectRepository } from "../project/project.repo.js";
 import { projectOperations } from "../project/project.flows.js";
 import { projectUsecase as projectScope } from "../shared/project-scope.js";
+import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 
 // ── auth-user fixtures (shape carried on req.auth) ───────────────────────────────
 const admin = { id: 1, currentProfileKey: "ADMIN", isAdminTier: true, permissions: [] };
 const superSales = { id: 2, currentProfileKey: "SUPER_SALES", permissions: [] };
 const accountant = { id: 3, currentProfileKey: "ACCOUNTANT", permissions: [] };
 const designer = { id: 4, currentProfileKey: "DESIGNER_3D", permissions: [] };
+const primarySales = {
+  id: 5,
+  currentProfileKey: "PRIMARY_SALES",
+  profileFamily: "SALES",
+  permissions: [],
+};
+const contactInitiator = {
+  id: 6,
+  currentProfileKey: "CONTACT_INITIATOR",
+  profileFamily: "SALES",
+  permissions: [],
+};
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -189,6 +208,47 @@ describe("ProjectUsecase.checkIfUserCanAccessLeadProjects", () => {
     await expect(
       usecase.checkIfUserCanAccessLeadProjects({ clientLeadId: 5, authUser: designer }),
     ).rejects.toMatchObject({ statusCode: 403, message: projectsMessagesCodes.PROJECT_ACCESS_DENIED });
+  });
+
+  it("primary sales reads all project groups for an accessible lead without a project assignment", async () => {
+    leadUsecase.checkIfUserCanAccessLead.mockResolvedValue({ id: 5, userId: primarySales.id });
+    const usecase = new ProjectUsecase();
+
+    await expect(
+      usecase.checkIfUserCanAccessLeadProjects({ clientLeadId: 5, authUser: primarySales }),
+    ).resolves.toEqual({ clientLeadId: 5 });
+    expect(leadUsecase.checkIfUserCanAccessLead).toHaveBeenCalledWith({
+      id: 5,
+      authUser: primarySales,
+    });
+    expect(projectRepository.clientLeadHasAssignedProject).not.toHaveBeenCalled();
+  });
+
+  it("primary sales is denied project groups when the parent lead is outside their scope", async () => {
+    leadUsecase.checkIfUserCanAccessLead.mockRejectedValue(
+      Object.assign(new Error("LEAD_ACCESS_DENIED"), { statusCode: 403 }),
+    );
+    const usecase = new ProjectUsecase();
+
+    await expect(
+      usecase.checkIfUserCanAccessLeadProjects({ clientLeadId: 99, authUser: primarySales }),
+    ).rejects.toMatchObject({ statusCode: 403, message: "LEAD_ACCESS_DENIED" });
+  });
+
+  it("does not widen project-group access to other profiles in the sales family", async () => {
+    projectRepository.clientLeadHasAssignedProject.mockResolvedValue(false);
+    const usecase = new ProjectUsecase();
+
+    await expect(
+      usecase.checkIfUserCanAccessLeadProjects({
+        clientLeadId: 5,
+        authUser: contactInitiator,
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message: projectsMessagesCodes.PROJECT_ACCESS_DENIED,
+    });
+    expect(leadUsecase.checkIfUserCanAccessLead).not.toHaveBeenCalled();
   });
 });
 

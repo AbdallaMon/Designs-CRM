@@ -3,7 +3,7 @@ import React from "react";
 import { Tab, Tabs, Box, Typography, Button } from "@mui/material";
 import Link from "next/link";
 
-export default function TabsWithLinks({ links }) {
+export default function TabsWithLinks({ links, sx, compact = false }) {
   const [selectedTab, setSelectedTab] = React.useState(0);
 
   const handleChange = (event, newValue) => {
@@ -13,12 +13,15 @@ export default function TabsWithLinks({ links }) {
   if (links.length === 1) {
     return (
       <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          padding: "10px",
-        }}
+        sx={[
+          {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            padding: compact ? 0 : "10px",
+          },
+          sx,
+        ]}
       >
         <Button
           variant="outlined"
@@ -26,9 +29,12 @@ export default function TabsWithLinks({ links }) {
           startIcon={links[0].icon}
           component={Link}
           href={links[0].href}
+          size={compact ? "small" : "medium"}
           sx={{
             textTransform: "none",
             fontWeight: "bold",
+            minHeight: compact ? 32 : undefined,
+            fontSize: compact ? "0.75rem" : undefined,
           }}
         >
           {links[0].title}
@@ -39,14 +45,17 @@ export default function TabsWithLinks({ links }) {
 
   return (
     <Box
-      sx={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "flex-start",
-        justifyContent: "flex-start",
-        padding: "10px",
-        gap: "16px",
-      }}
+      sx={[
+        {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "flex-start",
+          padding: compact ? 0 : "10px",
+          gap: compact ? 1 : "16px",
+        },
+        sx,
+      ]}
     >
       <Tabs
         value={selectedTab}
@@ -81,6 +90,7 @@ export default function TabsWithLinks({ links }) {
             component={Link}
             href={link.href}
             disableRipple
+            sx={compact ? { minHeight: 32, py: 0.5, fontSize: "0.75rem" } : undefined}
           />
         ))}
       </Tabs>

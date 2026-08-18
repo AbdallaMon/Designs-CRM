@@ -402,6 +402,120 @@ describe("ClientCalendarUsecase (public, token-based)", () => {
     clientLead: { client: { email: "c@x.com", name: "Client" } },
   };
 
+  it("lists only unbooked future slots inside the client's selected timezone day", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-18T08:00:00.000Z")); // 12:00 in Dubai
+    try {
+      clientCalendarRepository.findReminderByToken.mockResolvedValue({
+        id: 10,
+        userId: 40,
+        clientLeadId: 20,
+        adminId: 30,
+      });
+      availabilityRepository.findSlots.mockResolvedValue([]);
+
+      await clientCalendarUsecase.getSlots({
+        token: "tok",
+        date: "2026-08-18",
+        timezone: "Asia/Dubai",
+      });
+
+      expect(availabilityRepository.findSlots).toHaveBeenCalledWith({
+        isBooked: false,
+        meetingReminderId: null,
+        startTime: {
+          gte: new Date("2026-08-17T20:00:00.000Z"),
+          lt: new Date("2026-08-18T20:00:00.000Z"),
+          gt: new Date("2026-08-18T08:00:00.000Z"),
+        },
+        availableDay: { userId: 30 },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("uses timezone midnights across DST instead of assuming every local day is 24 hours", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-31T12:00:00.000Z"));
+    try {
+      clientCalendarRepository.findReminderByToken.mockResolvedValue({
+        id: 10,
+        userId: 40,
+        clientLeadId: 20,
+        adminId: 30,
+      });
+      availabilityRepository.findSlots.mockResolvedValue([]);
+
+      await clientCalendarUsecase.getSlots({
+        token: "tok",
+        date: "2026-11-01",
+        timezone: "America/New_York",
+      });
+
+      expect(availabilityRepository.findSlots).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startTime: expect.objectContaining({
+            gte: new Date("2026-11-01T04:00:00.000Z"),
+            lt: new Date("2026-11-02T05:00:00.000Z"),
+          }),
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects an invalid client timezone with a coded 400", async () => {
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+
+    await expect(
+      clientCalendarUsecase.getSlots({
+        token: "tok",
+        date: "2026-08-18",
+        timezone: "Invalid/Timezone",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: calendarMessagesCodes.INVALID_TIMEZONE,
+    });
+    expect(availabilityRepository.findSlots).not.toHaveBeenCalled();
+  });
+
+  it("does not expose a past slot through the slot-details endpoint", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-18T08:00:00.000Z"));
+    try {
+      clientCalendarRepository.findReminderByToken.mockResolvedValue({
+        id: 10,
+        userId: 40,
+        clientLeadId: 20,
+        adminId: 30,
+      });
+      clientCalendarRepository.findSlotById.mockResolvedValue({
+        id: 5,
+        isBooked: false,
+        meetingReminderId: null,
+        startTime: new Date("2026-08-18T07:45:00.000Z"),
+        availableDay: { userId: 30 },
+      });
+
+      await expect(
+        clientCalendarUsecase.getSlotDetails({ token: "tok", slotId: 5 }),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        message: calendarMessagesCodes.SLOT_NOT_FOUND,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("book ALWAYS derives reminder/lead from the verified token (body cannot override)", async () => {
     // The verified token (via the real dto shaping of this repo row) yields reminderId 10 /
     // clientLeadId 20 — NOT the malicious body's 999 / 888.
@@ -430,7 +544,37 @@ describe("ClientCalendarUsecase (public, token-based)", () => {
     const reservation = clientCalendarRepository.reserveSlotAndUpdateReminder.mock.calls[0][0];
     expect(reservation.meetingReminderId).toBe(10);
     expect(reservation.expectedOwnerId).toBe(30);
+    expect(reservation.bookingNotBefore).toBeInstanceOf(Date);
     expect(newMeetingNotification).toHaveBeenCalledWith(20, expect.anything());
+  });
+
+  it("books against the client's local calendar day across timezone and DST boundaries", async () => {
+    clientCalendarRepository.findReminderByToken.mockResolvedValue({
+      id: 10,
+      userId: 40,
+      clientLeadId: 20,
+      adminId: 30,
+    });
+    clientCalendarRepository.reserveSlotAndUpdateReminder.mockResolvedValue({
+      outcome: "booked",
+      reminder: bookedReminder,
+    });
+
+    await clientCalendarUsecase.bookMeeting({
+      token: "tok",
+      body: {
+        selectedSlot: { id: 5 },
+        selectedDate: "2026-11-01",
+        selectedTimezone: "America/New_York",
+      },
+    });
+
+    expect(clientCalendarRepository.reserveSlotAndUpdateReminder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedDateStart: new Date("2026-11-01T04:00:00.000Z"),
+        requestedDateEnd: new Date("2026-11-02T05:00:00.000Z"),
+      }),
+    );
   });
 
   it("invalid or expired tokens return a coded 404 instead of a null TypeError", async () => {

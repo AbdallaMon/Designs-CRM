@@ -25,26 +25,25 @@ import {
   calendarMessagesCodes,
   leadsMessagesCodes,
 } from "@dms/shared";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
 import {
   getAvailableDaysImpl,
   getAvailableSlotsForDayImpl,
 } from "../availability/availability.usecase.js";
+import {
+  calendarDayUtcRange,
+  DEFAULT_CALENDAR_TIMEZONE,
+} from "../calendar-timezone.js";
 
-const DEFAULT_TZ = "Asia/Dubai";
-dayjs.extend(utc);
-dayjs.extend(timezone);
+const DEFAULT_TZ = DEFAULT_CALENDAR_TIMEZONE;
 
 function bookingDateRange(selectedDate, selectedTimezone) {
-  const requestedDate = dayjs(selectedDate).tz(selectedTimezone || DEFAULT_TZ);
-  if (!requestedDate.isValid()) {
-    throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
-  }
+  const { startDate, endDate } = calendarDayUtcRange(
+    selectedDate,
+    selectedTimezone || DEFAULT_TZ,
+  );
   return {
-    requestedDateStart: requestedDate.startOf("day").utc().toDate(),
-    requestedDateEnd: requestedDate.add(1, "day").startOf("day").utc().toDate(),
+    requestedDateStart: startDate,
+    requestedDateEnd: endDate,
   };
 }
 
@@ -101,6 +100,7 @@ export async function bookAMeeting({
     meetingReminderId: reminderId,
     expectedOwnerId: ownerId,
     ...dateRange,
+    bookingNotBefore: new Date(),
     userTimezone: selectedTimezone,
   });
 
@@ -120,8 +120,15 @@ export async function verifySlotIsAvailableAndNotBooked({ slotId }) {
   if (!slotData) {
     throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
   }
-  if (slotData.isBooked) {
+  if (
+    slotData.isBooked ||
+    (slotData.meetingReminderId !== null &&
+      slotData.meetingReminderId !== undefined)
+  ) {
     throw new AppError({ code: calendarMessagesCodes.SLOT_ALREADY_BOOKED, statusCode: 409 });
+  }
+  if (!slotData.startTime || new Date(slotData.startTime).getTime() <= Date.now()) {
+    throw new AppError({ code: calendarMessagesCodes.SLOT_NOT_FOUND, statusCode: 404 });
   }
   return slotData;
 }

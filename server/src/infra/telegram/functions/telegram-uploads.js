@@ -2,13 +2,23 @@ import { getTeleClient } from "../connect-to-telegram.js";
 import prisma from "../../prisma/prisma.js";
 import { telegramMessageQueue } from "../../queues/telegram-message.queue.js";
 import { getChannelEntitiyByTeleRecordAndLeadId } from "./telegram-channels.js";
-import { buildAssetAccessUrl } from "../../upload/asset-access.js";
+import {
+  buildAssetAccessUrl,
+  buildAuthenticatedAttachmentUrl,
+} from "../../upload/asset-access.js";
+import { normalizeUploadReference } from "../../upload/upload-reference.js";
 import { env } from "../../../config/env.js";
 
 function telegramAssetUrl(reference) {
   return buildAssetAccessUrl(reference, {
     ttlSeconds: env.ASSET_EMAIL_URL_TTL_SECONDS,
   });
+}
+
+function telegramAttachmentUrl({ type, id, reference }) {
+  return normalizeUploadReference(reference)
+    ? buildAuthenticatedAttachmentUrl({ type, id })
+    : telegramAssetUrl(reference);
 }
 
 export async function uploadItemsToTele({ clientLeadId }) {
@@ -130,7 +140,11 @@ export async function uploadAQueueNote(note, channel) {
   }
 
   if (note.attachment) {
-    message += `\n\n📎 [Attachment Link](${telegramAssetUrl(note.attachment)})`;
+    message += `\n\n📎 Attachment: ${telegramAttachmentUrl({
+      type: "note",
+      id: note.id,
+      reference: note.attachment,
+    })}`;
   }
 
   const sent = await getTeleClient().sendMessage(channel, {
@@ -172,7 +186,11 @@ export async function uploadAQueueAttachment(file, channel) {
     message += `\n\n📝 ${file.description}`;
   }
 
-  message += `\n\n🔗 [Open File](${telegramAssetUrl(file.url)})`;
+  message += `\n\n🔗 [Open File](${telegramAttachmentUrl({
+    type: "lead-file",
+    id: file.id,
+    reference: file.url,
+  })})`;
 
   await getTeleClient().sendMessage(channel, {
     message,

@@ -6,12 +6,18 @@ import { JwtService } from "./jwt.js";
 
 const PREFIX = "auth";
 const DEFAULT_REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
+// Several protected requests can reach silent refresh with the same cookie before
+// the browser receives the first Set-Cookie response. Accept only that short race;
+// reuse after the window remains a replay and revokes the entire token family.
+const REFRESH_REUSE_GRACE_SECONDS = 30;
 const DEFAULT_RESET_TTL_SECONDS = 60 * 60;
 
 const refreshVersionKey = (userId) => `${PREFIX}:refresh-version:${userId}`;
 const refreshFamilyKey = (familyId) => `${PREFIX}:refresh-family-revoked:${familyId}`;
 const refreshTokenKey = (familyId, tokenId) =>
   `${PREFIX}:refresh-token:${familyId}:${tokenId}`;
+const refreshReuseGraceKey = (familyId, tokenId) =>
+  `${PREFIX}:refresh-reuse-grace:${familyId}:${tokenId}`;
 const legacyRefreshUsedKey = (tokenId) =>
   `${PREFIX}:refresh-legacy-used:${tokenId}`;
 const resetTokenKey = (tokenId) => `${PREFIX}:password-reset:${tokenId}`;
@@ -23,11 +29,24 @@ local version = redis.call("GET", KEYS[1])
 if not version then version = "0" end
 if version ~= ARGV[1] then return -2 end
 if redis.call("EXISTS", KEYS[2]) == 1 then return -1 end
-if redis.call("DEL", KEYS[3]) ~= 1 then
-  redis.call("SET", KEYS[2], "1", "EX", ARGV[2])
-  return 0
+if redis.call("DEL", KEYS[3]) == 1 then
+  redis.call("SET", KEYS[4], "1", "EX", ARGV[3])
+  return 1
 end
-return 1
+if redis.call("EXISTS", KEYS[4]) == 1 then return 2 end
+redis.call("SET", KEYS[2], "1", "EX", ARGV[2])
+return 0
+`;
+
+const CONSUME_LEGACY_REFRESH_SCRIPT = `
+if redis.call("EXISTS", KEYS[2]) == 1 then return -1 end
+if redis.call("SET", KEYS[1], "1", "EX", ARGV[1], "NX") then
+  redis.call("SET", KEYS[3], "1", "EX", ARGV[2])
+  return 1
+end
+if redis.call("EXISTS", KEYS[3]) == 1 then return 2 end
+redis.call("SET", KEYS[2], "1", "EX", ARGV[1])
+return 0
 `;
 
 const CONSUME_RESET_SCRIPT = `
@@ -51,6 +70,18 @@ function tokenTtlSeconds(payload, fallback) {
 
 function tokenDigest(token) {
   return createHash("sha256").update(String(token)).digest("hex");
+}
+
+function refreshFamilyTtlSeconds(tokenTtlSeconds) {
+  const configuredTtlSeconds = Math.ceil(
+    Number(JwtService.cookies.refresh.maxAge) / 1000,
+  );
+  return Math.max(
+    tokenTtlSeconds,
+    Number.isFinite(configuredTtlSeconds) && configuredTtlSeconds > 0
+      ? configuredTtlSeconds
+      : DEFAULT_REFRESH_TTL_SECONDS,
+  );
 }
 
 function verifiedRefresh(token) {
@@ -125,17 +156,19 @@ export class AuthSessionService {
     if (currentVersion !== session.sessionVersion) throw invalidToken();
 
     if (session.isLegacy) {
-      const firstUse = await redisClient.set(
-        legacyRefreshUsedKey(session.tokenId),
-        "1",
-        { EX: session.ttlSeconds, NX: true },
+      const result = Number(
+        await redisClient.sendCommand([
+          "EVAL",
+          CONSUME_LEGACY_REFRESH_SCRIPT,
+          "3",
+          legacyRefreshUsedKey(session.tokenId),
+          refreshFamilyKey(session.familyId),
+          refreshReuseGraceKey(session.familyId, session.tokenId),
+          String(refreshFamilyTtlSeconds(session.ttlSeconds)),
+          String(REFRESH_REUSE_GRACE_SECONDS),
+        ]),
       );
-      if (!firstUse) {
-        await redisClient.set(refreshFamilyKey(session.familyId), "1", {
-          EX: session.ttlSeconds,
-        });
-        throw invalidToken();
-      }
+      if (result !== 1 && result !== 2) throw invalidToken();
       return session;
     }
 
@@ -143,15 +176,17 @@ export class AuthSessionService {
       await redisClient.sendCommand([
         "EVAL",
         CONSUME_REFRESH_SCRIPT,
-        "3",
+        "4",
         refreshVersionKey(session.payload.id),
         refreshFamilyKey(session.familyId),
         refreshTokenKey(session.familyId, session.tokenId),
+        refreshReuseGraceKey(session.familyId, session.tokenId),
         String(session.sessionVersion),
-        String(session.ttlSeconds),
+        String(refreshFamilyTtlSeconds(session.ttlSeconds)),
+        String(REFRESH_REUSE_GRACE_SECONDS),
       ]),
     );
-    if (result !== 1) throw invalidToken();
+    if (result !== 1 && result !== 2) throw invalidToken();
     return session;
   }
 
@@ -166,7 +201,7 @@ export class AuthSessionService {
     }
 
     await redisClient.set(refreshFamilyKey(session.familyId), "1", {
-      EX: session.ttlSeconds,
+      EX: refreshFamilyTtlSeconds(session.ttlSeconds),
     });
     await redisClient.del(refreshTokenKey(session.familyId, session.tokenId));
     return true;

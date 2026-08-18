@@ -1,7 +1,7 @@
 "use client";
 import {
+  calendarMessagesCodes,
   CALENDAR_VIEW_TYPES,
-  USER_FEEDBACK_MESSAGES as FEEDBACK,
 } from "@dms/shared";
 import {
   Box,
@@ -53,6 +53,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useSearchParams } from "next/navigation";
+import { getSlotSelectionErrorMessage } from "./clientBookingHelpers.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -83,7 +84,6 @@ const ClientBooking = () => {
     dayId: null,
     token,
   });
-  console.log(sessionData, "sessionData");
   const [loadingSlotSelect, setLoadingSlotSelect] = useState(false);
 
   // 🔁 Get slots for selected date (same structure as admin/staff)
@@ -169,25 +169,20 @@ const ClientBooking = () => {
       url: `client/calendar/slots/details?slotId=${slot.id}&token=${token}&timezone=${sessionData.selectedTimezone}&`,
       setLoading: setLoadingSlotSelect,
     });
-    handleNext();
     if (req.status === 200) {
       setSessionData((prev) => ({
         ...prev,
         selectedSlot: req.data,
       }));
-      // handleNext();
+      setActiveStep(2);
     } else {
-      setAlertError(
-        req?.error ||
-          req?.message ||
-          FEEDBACK.SLOT_DETAILS_LOAD_FAILED
-      );
+      setAlertError(getSlotSelectionErrorMessage(req));
       setSessionData((prev) => ({
         ...prev,
         selectedSlot: null,
-        selectedDate: null,
       }));
-      setActiveStep(0);
+      await getSlotsData();
+      setActiveStep(1);
     }
   };
 
@@ -202,6 +197,14 @@ const ClientBooking = () => {
       );
       if (bookingReq.status === 200) {
         setActiveStep((prevActiveStep) => prevActiveStep + 1);
+      } else if (
+        bookingReq.status === 409 &&
+        bookingReq.message === calendarMessagesCodes.SLOT_ALREADY_BOOKED
+      ) {
+        setAlertError(getSlotSelectionErrorMessage(bookingReq));
+        setSessionData((prev) => ({ ...prev, selectedSlot: null }));
+        await getSlotsData();
+        setActiveStep(1);
       }
     }
   };

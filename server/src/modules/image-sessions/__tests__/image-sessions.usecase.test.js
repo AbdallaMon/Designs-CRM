@@ -18,7 +18,11 @@ vi.mock("../session/image-session.repo.js", () => ({
   releasePdfGenerationClaim: vi.fn(),
 }));
 vi.mock("../../leads/lead/lead.usecase.js", () => ({
-  leadUsecase: { checkIfUserCanAccessLead: vi.fn(), checkIfUserCanMutateLead: vi.fn() },
+  leadUsecase: {
+    checkIfUserCanAccessLead: vi.fn(),
+    checkIfUserCanMutateLead: vi.fn(),
+    checkIfUserCanAccessLeadOrAssignedProject: vi.fn(),
+  },
 }));
 vi.mock("../admin/page-info.repo.js", () => ({ getPageInfo: vi.fn() }));
 vi.mock("../admin/pros-cons.repo.js", () => ({ getConsAndPros: vi.fn() }));
@@ -147,6 +151,12 @@ beforeEach(() => {
     if (Number(id) === 100) return { id: 100 };
     throw new AppError({ code: "LEAD_MUTATE_DENIED", statusCode: 403 });
   });
+  leadUsecase.checkIfUserCanAccessLeadOrAssignedProject.mockImplementation(
+    async ({ id, authUser, mode }) =>
+      mode === "mutate"
+        ? leadUsecase.checkIfUserCanMutateLead({ id, authUser })
+        : leadUsecase.checkIfUserCanAccessLead({ id, authUser }),
+  );
   imageSessionRepository.getSessionClientLeadId.mockImplementation(async ({ sessionId }) =>
     Number(sessionId) === 999 ? null : { id: Number(sessionId), clientLeadId: 100 },
   );
@@ -236,6 +246,11 @@ describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
     getClientImageSessions.mockResolvedValue([{ id: 1 }]);
     const out = await imageSessionUsecase.listForLead({ clientLeadId: 100, authUser: AUTH });
     expect(out).toEqual([{ id: 1 }]);
+    expect(leadUsecase.checkIfUserCanAccessLeadOrAssignedProject).toHaveBeenCalledWith({
+      id: 100,
+      authUser: AUTH,
+      mode: "view",
+    });
     expect(leadUsecase.checkIfUserCanAccessLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
     expect(leadUsecase.checkIfUserCanMutateLead).not.toHaveBeenCalled();
   });
@@ -250,6 +265,11 @@ describe("ImageSessionUsecase object scope (the IDOR fix)", () => {
   it("createForLead: WRITE uses mutate-scope; userId comes from req.auth, not the body", async () => {
     createClientImageSession.mockResolvedValue({ id: 7 });
     await imageSessionUsecase.createForLead({ clientLeadId: 100, spaces: [1, 2], authUser: { id: 42, role: "STAFF" } });
+    expect(leadUsecase.checkIfUserCanAccessLeadOrAssignedProject).toHaveBeenCalledWith({
+      id: 100,
+      authUser: { id: 42, role: "STAFF" },
+      mode: "mutate",
+    });
     expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: { id: 42, role: "STAFF" } });
     expect(createClientImageSession).toHaveBeenCalledWith({
       clientLeadId: 100,

@@ -69,7 +69,7 @@ router.put(
   "/call-reminders/:id",
   AuthMiddleware.requirePermissions([P.CALL_MANAGE]),
   validate(LeadValidation.reminderIdParams, "params"),
-  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateCallReminder),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateDesignerCallReminder),
   validate(LeadValidation.updateCall),
   asyncHandler(leadController.updateCall),
 );
@@ -208,7 +208,7 @@ router.post(
   "/:id/call-reminders",
   AuthMiddleware.requirePermissions([P.CALL_MANAGE]),
   validate(LeadValidation.idParams, "params"),
-  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLead),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLeadActivity),
   validate(LeadValidation.createCall),
   asyncHandler(leadController.createCall),
 );
@@ -234,7 +234,7 @@ router.post(
   "/:id/files",
   AuthMiddleware.requirePermissions([P.FILE_MANAGE]),
   validate(LeadValidation.idParams, "params"),
-  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLead),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLeadActivity),
   validate(LeadValidation.createFile),
   asyncHandler(leadController.createFile),
 );
@@ -242,7 +242,7 @@ router.post(
   "/:id/notes",
   AuthMiddleware.requirePermissions([P.NOTE_MANAGE]),
   validate(LeadValidation.idParams, "params"),
-  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLead),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanMutateLeadActivity),
   validate(LeadValidation.createNote),
   asyncHandler(leadController.createNote),
 );

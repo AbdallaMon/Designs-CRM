@@ -5,7 +5,12 @@
 // :contractId/child routes — and runs the leads-module checker before any read/write).
 // Path ids are authoritative over body ids.
 import { ok, created } from "../../../shared/http/response.js";
-import { CONTRACT_PAYMENT_STATUSES, contractsMessagesCodes, messagesNames } from "@dms/shared";
+import {
+  CONTRACT_PAYMENT_STATUSES,
+  contractsMessagesCodes,
+  messagesNames,
+  siteUtilityMessagesCodes,
+} from "@dms/shared";
 import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { contractUsecase } from "./contract.usecase.js";
 
@@ -13,6 +18,19 @@ const TK = messagesNames.contractsMessages;
 
 class ContractController {
   // ── contract-level ────────────────────────────────────────────────────────────────
+  async listPaymentConditionsForLead(req, res) {
+    const data = await contractUsecase.listPaymentConditionsForLead({
+      leadId: req.params.leadId,
+      authUser: req.auth,
+    });
+    return ok(
+      res,
+      data,
+      siteUtilityMessagesCodes.PAYMENT_CONDITIONS_FETCHED,
+      messagesNames.siteUtilityMessages,
+    );
+  }
+
   async listLeadContracts(req, res) {
     const data = await contractUsecase.listLeadContracts({ leadId: req.params.leadId, authUser: req.auth });
     return ok(res, data, contractsMessagesCodes.CONTRACTS_FETCHED, TK);
@@ -76,6 +94,18 @@ class ContractController {
       authUser: req.auth,
     });
     return ok(res, data, contractsMessagesCodes.CONTRACT_STAGE_UPDATED, TK);
+  }
+
+  async overrideStageStatus(req, res) {
+    const data = await contractUsecase.overrideStageStatus({
+      contractId: req.params.contractId,
+      stageId: req.params.stageId,
+      status: req.body.status,
+      reason: req.body.reason,
+      authUser: req.auth,
+      auditCtx: auditCtxFromReq(req),
+    });
+    return ok(res, data, contractsMessagesCodes.CONTRACT_STAGE_STATUS_OVERRIDDEN, TK);
   }
 
   async deleteStage(req, res) {

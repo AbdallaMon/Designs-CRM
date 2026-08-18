@@ -5,7 +5,6 @@ import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay.
 import {
   Box,
   Button,
-  Link,
   List,
   ListItemText,
   Modal,
@@ -22,7 +21,6 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { USER_FEEDBACK_MESSAGES as FEEDBACK } from "@dms/shared";
 import {
   MdNoteAdd,
-  MdAttachFile,
   MdStickyNote2,
   MdClose,
   MdAdd,
@@ -35,6 +33,7 @@ import {
   buildNoteUploadOptions,
   resolveNoteAttachmentReference,
 } from "./noteUpload.js";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 
 export function NotesComponent({
   idKey,
@@ -319,19 +318,10 @@ export function NotesComponent({
                           </Typography>
                         )}
 
-                        {note.attachment && (
-                          <Button
-                            component={Link}
-                            href={note.attachment}
-                            target="_blank"
-                            startIcon={<MdAttachFile size={18} />}
-                            size="small"
-                            variant="outlined"
-                          >
-                            View Attachment
-                          </Button>
-                        )}
                       </Box>
+                      {note.attachment && (
+                        <FilePreview file={{ url: note.attachment }} />
+                      )}
                     </Paper>
                   </Fragment>
                 ))}

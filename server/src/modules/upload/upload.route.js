@@ -11,8 +11,20 @@ import {
   publicUploadCapabilityLimiter,
   publicUploadLimiter,
 } from "./upload.rate-limiter.js";
+import { attachmentErrorRedirect } from "./attachment-error-redirect.middleware.js";
 
 const uploadRouter = Router();
+
+uploadRouter.get(
+  "/attachments/:type/:id",
+  assetContentLimiter,
+  AuthMiddleware.requireAuth,
+  AuthMiddleware.requirePermissions([PERMISSIONS.LEAD.VIEW]),
+  validate(uploadSchemas.attachmentParams, "params"),
+  AuthMiddleware.requireSpecialChecker(uploadController.authorizeAttachment),
+  uploadController.redirectAttachment,
+  attachmentErrorRedirect,
+);
 
 uploadRouter.get(
   "/content/*",

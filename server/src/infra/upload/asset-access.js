@@ -34,6 +34,20 @@ function encodedStorageKey(storageKey) {
   return storageKey.split("/").map(encodeURIComponent).join("/");
 }
 
+function deliveryOrigin() {
+  return String(env.ASSET_DELIVERY_ORIGIN || env.SERVER_URL || "").replace(/\/+$/, "");
+}
+
+function serverOrigin() {
+  return String(env.SERVER_URL || "").replace(/\/+$/, "");
+}
+
+export function buildAuthenticatedAttachmentUrl({ type, id }) {
+  const safeType = encodeURIComponent(String(type || ""));
+  const safeId = encodeURIComponent(String(id || ""));
+  return `${serverOrigin()}/v2/files/attachments/${safeType}/${safeId}`;
+}
+
 export function buildAssetAccessUrl(reference, { ttlSeconds } = {}) {
   const storageKey = storageKeyFromUploadReference(reference);
   if (!storageKey) return reference;
@@ -45,8 +59,7 @@ export function buildAssetAccessUrl(reference, { ttlSeconds } = {}) {
   const ttl = Math.min(requestedTtl, env.ASSET_URL_MAX_TTL_SECONDS);
   const expires = Math.floor(Date.now() / 1000) + ttl;
   const signature = signatureFor(storageKey, expires);
-  const origin = String(env.ASSET_DELIVERY_ORIGIN || env.SERVER_URL || "")
-    .replace(/\/+$/, "");
+  const origin = deliveryOrigin();
   const pathname = `/v2/files/content/${encodedStorageKey(storageKey)}`;
   return `${origin}${pathname}?expires=${expires}&signature=${encodeURIComponent(signature)}`;
 }

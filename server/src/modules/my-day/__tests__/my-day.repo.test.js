@@ -82,7 +82,10 @@ describe("team aggregates — cutoffs from the shared thresholds", () => {
     const args = deliveryFindMany.mock.calls[0][0];
     expect(args.where).toEqual({
       deliveryAt: { lt: new Date(NOW.getTime() + DELIVERY_SOON_HOURS * 3600_000) },
-      stage: { stageStatus: { not: "COMPLETED" } },
+      stage: {
+        stageStatus: { not: "COMPLETED" },
+        contract: { status: { not: "CANCELLED" } },
+      },
     });
     expect(args.orderBy).toEqual({ deliveryAt: "asc" });
   });

@@ -14,6 +14,8 @@ const DateRangeFilter = ({
   endLabel,
   withDeleteRange,
   noDefaultValues,
+  size,
+  compact = false,
 }) => {
   const [range, setRange] = useState(() =>
     noDefaultValues
@@ -57,13 +59,30 @@ const DateRangeFilter = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box mb={noMargin ? 0 : 2}>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+      <Box mb={noMargin ? 0 : 2} sx={{ width: compact ? "100%" : "auto" }}>
+        <Box
+          sx={
+            compact
+              ? {
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(auto-fit, minmax(145px, 1fr))",
+                    sm: withDeleteRange
+                      ? "repeat(2, minmax(140px, 1fr)) auto"
+                      : "repeat(2, minmax(140px, 1fr))",
+                  },
+                  gap: 1,
+                  alignItems: "center",
+                  width: "100%",
+                }
+              : { display: "flex", gap: 2, alignItems: "center" }
+          }
+        >
           <DatePicker
             label={startLabel || "Start Date"}
             value={range.start}
             onChange={(newValue) => setRange({ ...range, start: newValue })}
-            slotProps={{ textField: { fullWidth: true } }}
+            slotProps={{ textField: { fullWidth: true, size } }}
             format="DD/MM/YYYY"
           />
 
@@ -71,7 +90,7 @@ const DateRangeFilter = ({
             label={endLabel || "End Date"}
             value={range.end}
             onChange={(newValue) => setRange({ ...range, end: newValue })}
-            slotProps={{ textField: { fullWidth: true } }}
+            slotProps={{ textField: { fullWidth: true, size } }}
             format="DD/MM/YYYY"
           />
 
@@ -79,7 +98,16 @@ const DateRangeFilter = ({
             <IconButton
               onClick={handleClearRange}
               color="error"
-              variant="outlined"
+              size={size}
+              aria-label={`Clear ${dateKey} date range`}
+              sx={
+                compact
+                  ? {
+                      justifySelf: "end",
+                      gridColumn: { xs: "1 / -1", sm: "auto" },
+                    }
+                  : undefined
+              }
             >
               <MdClose />
             </IconButton>

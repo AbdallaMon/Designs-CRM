@@ -40,8 +40,9 @@ export function KeyValue({ label, value, isRtlValue }) {
     <Stack
       direction="row"
       spacing={1}
-      alignItems="center"
-      justifyContent="space-between"
+      alignItems="baseline"
+      justifyContent="flex-start"
+      flexWrap="wrap"
       sx={{ width: "100%" }}
     >
       <Typography
@@ -49,7 +50,7 @@ export function KeyValue({ label, value, isRtlValue }) {
         color="text.secondary"
         sx={{ fontWeight: 600 }}
       >
-        {label}
+        {label}:
       </Typography>
       <Typography
         variant="body1"

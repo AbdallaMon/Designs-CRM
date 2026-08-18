@@ -2,8 +2,8 @@ import { PERMISSIONS } from "@dms/shared";
 
 const P = PERMISSIONS;
 
-function definition({ delegate, permission, scope, action = "delete" }) {
-  return Object.freeze({ delegate, permission, scope, action });
+function definition({ delegate, permission, scope, action = "delete", allowDesignerProjectAssignment = false }) {
+  return Object.freeze({ delegate, permission, scope, action, allowDesignerProjectAssignment });
 }
 
 const note = definition({
@@ -15,6 +15,7 @@ const file = definition({
   delegate: "file",
   permission: P.LEAD.FILE_MANAGE,
   scope: "lead",
+  allowDesignerProjectAssignment: true,
 });
 const priceOffer = definition({
   delegate: "priceOffers",
@@ -36,6 +37,7 @@ const callReminder = definition({
   delegate: "callReminder",
   permission: P.LEAD.CALL_MANAGE,
   scope: "lead",
+  allowDesignerProjectAssignment: true,
 });
 const clientLeadUpdate = definition({
   delegate: "clientLeadUpdate",

@@ -74,6 +74,13 @@ function makeReq(persona, id = 1, superSales = false) {
     auth: {
       id,
       currentProfileKey,
+      profileFamily: ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"].includes(
+        currentProfileKey,
+      )
+        ? "SALES"
+        : ["DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"].includes(currentProfileKey)
+          ? "DESIGN"
+          : null,
       isAdminTier: ["ADMIN", "SUPER_ADMIN"].includes(currentProfileKey),
       permissions,
       permissionsByModule,
@@ -293,6 +300,36 @@ describe("UtilityUsecase generic-model allow-list + fixed projection (hardening)
     expect(utilityRepository.searchUsers).toHaveBeenCalledWith({
       query: "a",
       profileKey: undefined,
+    });
+  });
+
+  it("search scopes normal sales lead results to the authenticated owner's leads", async () => {
+    utilityRepository.searchLeads.mockResolvedValue([{ id: 7, code: "L-7" }]);
+    const authUser = makeReq(USER_ROLES.STAFF, 3).auth;
+
+    await utilityUsecase.search({
+      query: { resource: "leads", query: "client" },
+      authUser,
+    });
+
+    expect(utilityRepository.searchLeads).toHaveBeenCalledWith({
+      query: "client",
+      leadScope: { userId: 3 },
+    });
+  });
+
+  it("search keeps SUPER_SALES full lead scope", async () => {
+    utilityRepository.searchLeads.mockResolvedValue([]);
+    const authUser = makeReq(USER_ROLES.SUPER_SALES, 9).auth;
+
+    await utilityUsecase.search({
+      query: { resource: "leads", query: "client" },
+      authUser,
+    });
+
+    expect(utilityRepository.searchLeads).toHaveBeenCalledWith({
+      query: "client",
+      leadScope: {},
     });
   });
 });

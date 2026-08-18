@@ -1,8 +1,9 @@
 // contracts/contract routes — the authed staff/admin contract CRUD surface (legacy
 // `routes/contract/contracts.js`, mounted `/shared/contracts` behind the SHARED gate = all
 // 9 authed roles). Mounted here under `/v2/contracts`. Authentication is mounted ONCE;
-// every route declares its CONTRACT.* code (granted to every authed role via SHARED_AUTHED
-// — reproducing the legacy SHARED gate exactly).
+// every parity route declares its CONTRACT.* code (granted to every authed role via
+// SHARED_AUTHED — reproducing the legacy SHARED gate exactly). The additive audited
+// stage-override repair action is the sole ADMIN/SUPER_ADMIN-only exception.
 //
 // OBJECT SCOPE (the IDOR fix the legacy routes were MISSING): Contract rows are
 // lead-scoped. No route-level requireSpecialChecker — the check is in the usecase, which
@@ -15,6 +16,7 @@
 //
 // Endpoint map (legacy → v2). RENAMES flagged [R] (FE must repoint):
 //   GET    /client-lead/:leadId                          → same
+//   GET    /client-lead/:leadId/payment-conditions       → contract-create lookup [NEW]
 //   POST   /                                             → same
 //   GET    /payments/all                                 → same
 //   POST   /payments/:paymentId/status                   → POST /payments/:paymentId/actions/change-status   [R]
@@ -26,6 +28,7 @@
 //   POST   /:contractId/stages                           → same
 //   PUT    /:contractId/stages/:stageId                  → same
 //   DELETE /:contractId/stages/:stageId                  → same
+//   POST   /:contractId/stages/:stageId/actions/override-status [NEW, ADMIN/SUPER_ADMIN]
 //   POST   /:contractId/payments/:paymentId/status       → POST /:contractId/payments/:paymentId/actions/change-status [R]
 //   POST   /:contractId/payments                         → same
 //   PUT    /:contractId/payments/:paymentId              → same
@@ -50,6 +53,13 @@ const router = Router();
 router.use(AuthMiddleware.requireAuth);
 
 // ── lead-scoped list + create ─────────────────────────────────────────────────────────
+router.get(
+  "/client-lead/:leadId/payment-conditions",
+  AuthMiddleware.requirePermissions([P.CREATE]),
+  validate(ContractValidation.leadIdParam, "params"),
+  asyncHandler(contractController.listPaymentConditionsForLead),
+);
+
 router.get(
   "/client-lead/:leadId",
   AuthMiddleware.requirePermissions([P.LIST]),
@@ -134,6 +144,14 @@ router.put(
   validate(ContractValidation.contractStageParams, "params"),
   validate(ContractValidation.updateStage),
   asyncHandler(contractController.updateStage),
+);
+
+router.post(
+  "/:contractId/stages/:stageId/actions/override-status",
+  AuthMiddleware.requirePermissions([P.STAGE_OVERRIDE_STATUS]),
+  validate(ContractValidation.contractStageParams, "params"),
+  validate(ContractValidation.overrideStageStatus),
+  asyncHandler(contractController.overrideStageStatus),
 );
 
 router.delete(

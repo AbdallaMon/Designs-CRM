@@ -64,4 +64,23 @@ describe("routeAccess.isAllowed", () => {
     expect(isAllowed("/dashboard/on-hold-deals", dealsTabs)).toBe(true); // subLink segment
     expect(isAllowed("/dashboard/deals/9", dealsTabs)).toBe(true); // detail
   });
+
+  it.each(["DESIGNER_3D", "DESIGNER_2D"])(
+    "allows an assigned-workflow lead detail URL for %s without exposing the deals list",
+    (profile) => {
+      const designerTabs = [
+        { key: "dashboard", label: "Dashboard", href: "/dashboard" },
+        {
+          key: "work-stages",
+          label: "Work stages",
+          href: "/dashboard/work-stages",
+          subLinks: [{ label: "Archived", href: "/dashboard/projects/archived" }],
+        },
+      ];
+
+      expect(isAllowed("/dashboard/deals/42", designerTabs, profile)).toBe(true);
+      expect(isAllowed("/dashboard/deals", designerTabs, profile)).toBe(false);
+      expect(isAllowed("/dashboard/deals/42/edit", designerTabs, profile)).toBe(false);
+    },
+  );
 });

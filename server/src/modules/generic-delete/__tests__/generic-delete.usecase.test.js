@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   projectRepository: {
     buildAuthUserProjectWhere: vi.fn(),
     findScopedProject: vi.fn(),
+    clientLeadHasAssignedProject: vi.fn(),
   },
   checkNoteDeletionAccess: vi.fn(),
   deleteCalendarEvent: vi.fn(),
@@ -99,6 +100,34 @@ describe("generic delete authorization and scope", () => {
       expect.objectContaining({ mode: "mutate", where: { id: 44 } }),
     );
   });
+
+  it.each(["File", "CallReminder"])(
+    "allows an assigned designer to delete a recent visible %s from their work-stage lead",
+    async (model) => {
+      mocks.repository.resolveTarget.mockResolvedValue({ kind: "lead", clientLeadId: 44 });
+      mocks.leadRepository.findScopedLead.mockResolvedValue(null);
+      mocks.projectRepository.clientLeadHasAssignedProject.mockResolvedValue(true);
+      const permission =
+        model === "File" ? PERMISSIONS.LEAD.FILE_MANAGE : PERMISSIONS.LEAD.CALL_MANAGE;
+      const designer = {
+        ...authUser([permission]),
+        currentProfileKey: "DESIGNER_2D",
+      };
+
+      await expect(
+        genericDeleteUsecase.checkIfUserCanDeleteModel({
+          id: 1,
+          body: { model },
+          authUser: designer,
+        }),
+      ).resolves.toMatchObject({ clientLeadId: 44 });
+
+      expect(mocks.projectRepository.clientLeadHasAssignedProject).toHaveBeenCalledWith({
+        clientLeadId: 44,
+        userId: 8,
+      });
+    },
+  );
 
   it("returns NOT_FOUND when the allowed target does not exist", async () => {
     mocks.repository.resolveTarget.mockResolvedValue(null);

@@ -38,6 +38,20 @@ class UploadRepository {
       select: { id: true },
     });
   }
+
+  findLeadFileAttachment({ id }) {
+    return prisma.file.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, clientLeadId: true, name: true, url: true },
+    });
+  }
+
+  findLeadNoteAttachment({ id }) {
+    return prisma.note.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, clientLeadId: true, attachment: true },
+    });
+  }
 }
 
 export const uploadRepository = new UploadRepository();

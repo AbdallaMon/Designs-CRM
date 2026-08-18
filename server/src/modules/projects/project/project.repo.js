@@ -1,4 +1,10 @@
-import { TASK_STATUSES, PROJECT_STATUSES, PROFILES } from "@dms/shared";
+import {
+  TASK_STATUSES,
+  PROJECT_STATUSES,
+  PROFILES,
+  CONTRACT_STATUSES,
+  WORK_STAGE_STATUSES,
+} from "@dms/shared";
 // projects/project repository — Prisma I/O ONLY (no business rules, no AppError).
 // Read queries + the scope `where` builders are the keystone of the PROJECTS domain.
 //
@@ -22,6 +28,20 @@ import timezone from "dayjs/plugin/timezone.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+const visibleDeliveryScheduleOwnerWhere = {
+  OR: [
+    { stageId: null },
+    {
+      stage: {
+        is: {
+          stageStatus: { not: WORK_STAGE_STATUSES.NOT_STARTED },
+          contract: { is: { status: { not: CONTRACT_STATUSES.CANCELLED } } },
+        },
+      },
+    },
+  ],
+};
 
 // Pure date-window helper (moved verbatim from legacy project-services.js). Used only to
 // build the deliverySchedule `deliveryAt` filter in the project reads below.
@@ -182,7 +202,7 @@ class ProjectRepository {
       include: {
         deliverySchedules: {
           where: {
-            ...meetingOrNot,
+            AND: [meetingOrNot, visibleDeliveryScheduleOwnerWhere],
             deliveryAt: { gte: now },
           },
           orderBy: { deliveryAt: "asc" },
@@ -599,7 +619,7 @@ class ProjectRepository {
             createdAt: true,
             deliverySchedules: {
               where: {
-                ...meetingOrNot,
+                AND: [meetingOrNot, visibleDeliveryScheduleOwnerWhere],
                 deliveryAt: { gte: now },
               },
               orderBy: { deliveryAt: "asc" },

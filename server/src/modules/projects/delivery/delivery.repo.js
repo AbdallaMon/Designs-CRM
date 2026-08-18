@@ -2,6 +2,7 @@
 // verbatim from legacy deliveryServices; the telegram-note side effect on create stays in
 // the usecase (orchestration).
 import prisma from "../../../infra/prisma/prisma.js";
+import { CONTRACT_STATUSES, WORK_STAGE_STATUSES } from "@dms/shared";
 
 class DeliveryRepository {
   model = prisma.deliverySchedule;
@@ -9,7 +10,20 @@ class DeliveryRepository {
   // GET /:projectId/schedules — legacy getDeliveryScheduleByProjectId.
   findByProject({ projectId }) {
     return prisma.deliverySchedule.findMany({
-      where: { projectId: Number(projectId) },
+      where: {
+        projectId: Number(projectId),
+        OR: [
+          { stageId: null },
+          {
+            stage: {
+              is: {
+                stageStatus: { not: WORK_STAGE_STATUSES.NOT_STARTED },
+                contract: { is: { status: { not: CONTRACT_STATUSES.CANCELLED } } },
+              },
+            },
+          },
+        ],
+      },
       include: { meeting: true, createdBy: true },
       orderBy: { deliveryAt: "asc" },
     });

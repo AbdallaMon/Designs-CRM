@@ -20,6 +20,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import ConfirmDialog from "@/features/contracts/view/ConfirmDialog.jsx";
 import { diffPayload } from "@/features/contracts/view/viewContractHelpers.js";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 
 export default function DrawingRow({ row, contractId, onReload }) {
   const theme = useTheme();
@@ -98,7 +99,6 @@ export default function DrawingRow({ row, contractId, onReload }) {
       >
         <CardHeader
           title={row.fileName || "Drawing"}
-          subheader={row.url}
           titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
           action={
             <Stack direction="row" spacing={0.5}>
@@ -133,33 +133,39 @@ export default function DrawingRow({ row, contractId, onReload }) {
         <Divider />
         <CardContent>
           <Stack spacing={2}>
-            <TextField
-              label="URL"
-              value={form.url}
-              onChange={(e) => setForm((o) => ({ ...o, url: e.target.value }))}
-              disabled={!edit}
-              fullWidth
-              size="small"
+            <FilePreview
+              file={{
+                url: form.url,
+                name: form.fileName || row.fileName || "Drawing",
+              }}
             />
             {edit && (
-              <SimpleFileInput
-                label="Replace File"
-                id={`file-${row.id}`}
-                variant="outlined"
-                handleUpload={uploadReplace}
-                input={{ accept: "image/*" }}
-              />
+              <>
+                <TextField
+                  label="URL"
+                  value={form.url}
+                  onChange={(e) => setForm((o) => ({ ...o, url: e.target.value }))}
+                  fullWidth
+                  size="small"
+                />
+                <SimpleFileInput
+                  label="Replace File"
+                  id={`file-${row.id}`}
+                  variant="outlined"
+                  handleUpload={uploadReplace}
+                  input={{ accept: "image/*,application/pdf" }}
+                />
+                <TextField
+                  label="File Name (Optional)"
+                  value={form.fileName}
+                  onChange={(e) =>
+                    setForm((o) => ({ ...o, fileName: e.target.value }))
+                  }
+                  fullWidth
+                  size="small"
+                />
+              </>
             )}
-            <TextField
-              label="File Name (Optional)"
-              value={form.fileName}
-              onChange={(e) =>
-                setForm((o) => ({ ...o, fileName: e.target.value }))
-              }
-              disabled={!edit}
-              fullWidth
-              size="small"
-            />
           </Stack>
         </CardContent>
       </Card>

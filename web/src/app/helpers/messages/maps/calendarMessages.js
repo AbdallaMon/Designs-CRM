@@ -42,6 +42,7 @@ export const calendarMessages = {
   SLOT_FIELDS_REQUIRED: "Start time, end time, and day are required",
   SLOT_CONFLICT: "This time conflicts with an existing slot",
   BOOKING_TOKEN_REQUIRED: "A valid booking token is required",
+  INVALID_TIMEZONE: "The selected timezone is invalid",
   CALENDAR_FETCH_FAILED: "Calendar data could not be loaded",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────

@@ -11,6 +11,7 @@ const findProjectWithAssignments = vi.fn(async () => ({
 const setProjectStarted = vi.fn(async () => ({}));
 const setProjectEnded = vi.fn(async () => ({}));
 const updateManyModification = vi.fn(async () => ({}));
+const checkIfProjectHasStagesAndUpdateNextAndPrevious = vi.fn();
 
 vi.mock("../project/project.repo.js", () => ({
   projectRepository: {
@@ -28,7 +29,7 @@ vi.mock("../../chat/system-rooms.js", () => ({
   addADesginerToAllRelatedProjectsRooms: vi.fn(),
 }));
 vi.mock("../../contracts/contract/contract.workflow.repo.js", () => ({
-  checkIfProjectHasStagesAndUpdateNextAndPrevious: vi.fn(),
+  checkIfProjectHasStagesAndUpdateNextAndPrevious,
   checkIfProjectHasPaymentAndUpdate: vi.fn(),
 }));
 vi.mock("../../../infra/telegram/telegram-functions.js", () => ({
@@ -69,5 +70,52 @@ describe("updateProject statusChangedAt stamp", () => {
       isAdmin: true,
     });
     expect(updateProjectById.mock.calls[0][0].data.statusChangedAt).toBeUndefined();
+  });
+
+  it("advances the contract chain only on a real transition into Completed", async () => {
+    findProjectDeliveryStatus.mockResolvedValueOnce({ deliveryTime: null, status: "3D" });
+    findProjectWithAssignments.mockResolvedValueOnce({
+      id: 10,
+      status: "Completed",
+      type: "3D_Designer",
+      clientLeadId: 5,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      assignments: [],
+      groupId: 1,
+      groupTitle: "Villa",
+    });
+
+    await projectOperations.updateProject({
+      data: { id: 10, status: "Completed", oldStatus: "3D", isAdmin: true },
+      isAdmin: true,
+    });
+
+    expect(checkIfProjectHasStagesAndUpdateNextAndPrevious).toHaveBeenCalledWith({
+      status: "Completed",
+      clientLeadId: 5,
+      groupId: 1,
+      groupTitle: "Villa",
+      projectType: "3D_Designer",
+    });
+
+    checkIfProjectHasStagesAndUpdateNextAndPrevious.mockClear();
+    findProjectDeliveryStatus.mockResolvedValueOnce({ deliveryTime: null, status: "Completed" });
+    findProjectWithAssignments.mockResolvedValueOnce({
+      id: 10,
+      status: "Completed",
+      type: "3D_Designer",
+      clientLeadId: 5,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      assignments: [],
+      groupId: 1,
+    });
+
+    await projectOperations.updateProject({
+      data: { id: 10, status: "Completed", oldStatus: "Completed", isAdmin: true },
+      isAdmin: true,
+    });
+    expect(checkIfProjectHasStagesAndUpdateNextAndPrevious).not.toHaveBeenCalled();
   });
 });

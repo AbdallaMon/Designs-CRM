@@ -6,12 +6,12 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { isAllowed } from "@/shared/components/utility/routeAccess.js";
 
 export default function RouteGuard({ children }) {
-  const { navigationTabs = [], validatingAuth, isLoggedIn } = useAuth();
+  const { user, navigationTabs = [], validatingAuth, isLoggedIn } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const landing = navigationTabs[0]?.href || "/dashboard";
   const blocked =
-    isLoggedIn && !validatingAuth && !isAllowed(pathname, navigationTabs);
+    isLoggedIn && !validatingAuth && !isAllowed(pathname, navigationTabs, user?.profile);
 
   useEffect(() => {
     if (!blocked) return;

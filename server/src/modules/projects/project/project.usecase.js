@@ -17,6 +17,7 @@
 // projectOperations interface. Public flow exports remain available to domain callers.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { PROFILES, projectsMessagesCodes } from "@dms/shared";
+import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import { workStageActionsForLead } from "../../leads/lead/lead.workstage-cockpit.js";
 import { projectRepository } from "./project.repo.js";
 import { groupProjects } from "./project.dto.js";
@@ -81,11 +82,20 @@ class ProjectUsecase {
     throw new AppError({ code: projectsMessagesCodes.PROJECT_ACCESS_DENIED, statusCode: 403 });
   }
 
-  // clientLead-keyed READ scope (for project-list-by-lead, groups, updates, archived).
-  // Full-read roles pass; a non-privileged user must have at least one project on this
-  // lead assigned to them (mirrors the legacy `assignments.some.userId` narrowing).
+  // clientLead-keyed READ scope (project-list-by-lead and contract group picker).
+  // `master` exposed the complete project collection for a lead to the primary-sales
+  // Projects tab and exposed its groups to contract create/edit. Sales are therefore
+  // scoped by their LEAD access; designers/executors remain scoped by PROJECT
+  // assignment. Project-id mutations keep the stricter project checker below.
   async checkIfUserCanAccessLeadProjects({ clientLeadId, authUser }) {
     if (projectRepository.hasFullScope(authUser, "view")) return { clientLeadId: Number(clientLeadId) };
+    if (
+      authUser?.currentProfileKey === PROFILES.NORMAL_SALES ||
+      authUser?.currentProfileKey === PROFILES.PRIMARY_SALES
+    ) {
+      await leadUsecase.checkIfUserCanAccessLead({ id: clientLeadId, authUser });
+      return { clientLeadId: Number(clientLeadId) };
+    }
     const allowed = await projectRepository.clientLeadHasAssignedProject({
       clientLeadId,
       userId: authUser.id,

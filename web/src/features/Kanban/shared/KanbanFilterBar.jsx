@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box, Typography, Divider } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { FiFilter } from "react-icons/fi";
 import colors from "@/app/helpers/colors";
 
@@ -26,55 +26,55 @@ const KanbanFilterBar = ({
   links,
   bulkActions,
 }) => {
-  const hasFilters = Boolean(staffSearch) || Boolean(filters);
-
   return (
     <Box
+      component="section"
+      aria-label="Board filters"
+      data-testid="kanban-filter-bar"
       sx={{
-        mb: 2,
-        p: { xs: 1.5, md: 2 },
+        mb: 1.5,
+        p: { xs: 1, sm: 1.25 },
         backgroundColor: colors.paperBg,
         border: `1px solid ${colors.borderLight}`,
-        borderRadius: "16px",
+        borderRadius: "14px",
         boxShadow: `0 1px 3px ${colors.shadow}`,
       }}
     >
-      {/* Title row + links */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          gap: 1.5,
-          mb: hasFilters ? 1.5 : 0,
+          gap: 1,
+          mb: 1,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: "8px",
+              width: 28,
+              height: 28,
+              borderRadius: "7px",
               backgroundColor: colors.primaryAlt,
               color: colors.primaryDark,
-              fontSize: 16,
+              fontSize: 14,
             }}
           >
-            <FiFilter />
+            <FiFilter aria-hidden="true" />
           </Box>
           <Typography
             variant="subtitle2"
             sx={{
-              fontWeight: 600,
+              fontWeight: 700,
               color: colors.heading,
-              letterSpacing: 0.2,
+              fontSize: "0.8125rem",
             }}
           >
-            Filters
+            Find & filter
           </Typography>
         </Box>
 
@@ -83,7 +83,8 @@ const KanbanFilterBar = ({
             sx={{
               display: "flex",
               justifyContent: { xs: "flex-start", md: "flex-end" },
-              flex: { xs: "1 1 100%", md: "0 0 auto" },
+              flex: "0 0 auto",
+              "& > .MuiBox-root": { p: 0 },
             }}
           >
             {links}
@@ -91,97 +92,67 @@ const KanbanFilterBar = ({
         )}
       </Box>
 
-      {hasFilters && (
-        <Divider sx={{ borderColor: colors.borderLight, mb: 1.5 }} />
-      )}
-
-      {/* Controls row: search group | filters group */}
       <Box
+        data-testid="kanban-filter-searches"
         sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "flex-end",
-          gap: { xs: 1.5, md: 2 },
-          // Normalize the shared inputs so they line up on one baseline.
-          // FilterSelect ships an internal `margin="normal"` + `mb: 2`; the
-          // DatePicker/Autocomplete inputs use the default outlined height.
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            md: staffSearch
+              ? "minmax(280px, 1.25fr) minmax(240px, 1fr)"
+              : "minmax(280px, 560px)",
+          },
+          gap: 1,
+          alignItems: "center",
           "& .MuiFormControl-root": { m: 0 },
           "& .MuiFormControl-marginNormal": { mt: 0, mb: 0 },
+          "& .MuiAutocomplete-root": { minWidth: "0 !important" },
+          "& .MuiInputBase-root": { backgroundColor: colors.paperBg },
         }}
       >
-        {/* Search group */}
+        {leadSearch && <ControlSlot>{leadSearch}</ControlSlot>}
+        {staffSearch && <ControlSlot>{staffSearch}</ControlSlot>}
+      </Box>
+
+      {filters && (
         <Box
+          data-testid="kanban-filter-controls"
           sx={{
             display: "flex",
             flexWrap: "wrap",
-            alignItems: "flex-end",
-            gap: { xs: 1.5, md: 2 },
-            flex: "1 1 auto",
+            alignItems: "center",
+            gap: 1,
             minWidth: 0,
+            mt: 1,
+            p: 1,
+            border: `1px solid ${colors.borderLight}`,
+            borderRadius: "10px",
+            backgroundColor: colors.bgSecondary,
+            "& .MuiFormControl-root": { m: 0 },
+            "& .MuiFormControl-marginNormal": { mt: 0, mb: 0 },
+            "& .MuiInputBase-root": {
+              backgroundColor: colors.paperBg,
+              fontSize: "0.8125rem",
+            },
+            "& .MuiInputLabel-root": { fontSize: "0.8125rem" },
           }}
         >
-          {leadSearch && (
-            <FieldGroup label="Lead">{leadSearch}</FieldGroup>
-          )}
-          {staffSearch && (
-            <FieldGroup label="Staff">{staffSearch}</FieldGroup>
-          )}
+          {filters}
         </Box>
+      )}
 
-        {/* Filters group — full-width wrapping row so the wide date-range pickers
-            never overflow the card (they wrap onto the next line instead). */}
-        {filters && (
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "flex-end",
-              gap: { xs: 1.5, md: 2 },
-              flex: "1 1 100%",
-              minWidth: 0,
-            }}
-          >
-            {filters}
-          </Box>
-        )}
-      </Box>
-
-      {/* Bulk actions are rendered (and floated) by the parent; we just give
-          a hook so the slot stays adjacent in the JSX tree. */}
       {bulkActions}
     </Box>
   );
 };
 
-/**
- * Small captioned wrapper so each search/field reads as a labelled control
- * with consistent spacing and a shared baseline.
- */
-const FieldGroup = ({ label, children }) => (
+const ControlSlot = ({ children }) => (
   <Box
     sx={{
-      display: "flex",
-      flexDirection: "column",
-      gap: 0.5,
-      width: { xs: "100%", sm: 300 },
-      flexShrink: 0,
+      width: "100%",
+      minWidth: 0,
     }}
   >
-    {label && (
-      <Typography
-        variant="caption"
-        sx={{
-          fontWeight: 600,
-          color: colors.textTertiary,
-          textTransform: "uppercase",
-          letterSpacing: 0.6,
-          fontSize: 10,
-          lineHeight: 1,
-        }}
-      >
-        {label}
-      </Typography>
-    )}
     {children}
   </Box>
 );

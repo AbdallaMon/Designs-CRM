@@ -8,6 +8,15 @@ vi.mock("../upload.repo.js", () => ({
     findImageSessionByToken: vi.fn(),
     findChatRoomByToken: vi.fn(),
     findCalendarSessionByToken: vi.fn(),
+    findLeadFileAttachment: vi.fn(),
+    findLeadNoteAttachment: vi.fn(),
+  },
+}));
+
+vi.mock("../../leads/lead/lead.usecase.js", () => ({
+  leadUsecase: {
+    checkIfUserCanAccessLead: vi.fn(),
+    checkIfUserCanAccessLeadOrAssignedProject: vi.fn(),
   },
 }));
 
@@ -27,8 +36,11 @@ import {
   PUBLIC_FUNNEL_PURPOSES,
 } from "../../../infra/upload/public-funnel-capability.js";
 import { env } from "../../../config/env.js";
+import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 
 env.JWT_UPLOAD_SECRET = "upload-capability-test-secret";
+env.ASSET_URL_SIGNING_SECRET = "upload-attachment-test-signing-secret-123456";
+env.ASSET_DELIVERY_ORIGIN = "https://api.example.test";
 
 describe("public upload capability exchange", () => {
   const usecase = new UploadUsecase();
@@ -171,5 +183,86 @@ describe("public upload content policy", () => {
         totalChunks: 1025,
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("authenticated durable attachments", () => {
+  const authUser = { id: 7, currentProfileKey: "NORMAL_SALES" };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    leadUsecase.checkIfUserCanAccessLeadOrAssignedProject.mockResolvedValue({ id: 44 });
+  });
+
+  it("resolves a lead file after checking lead or assigned-project access", async () => {
+    uploadRepository.findLeadFileAttachment.mockResolvedValue({
+      id: 8,
+      clientLeadId: 44,
+      name: "drawing.jpg",
+      url: "/uploads/leads/drawing.jpg",
+    });
+
+    const result = await new UploadUsecase().authorizeAttachment({
+      type: "lead-file",
+      id: 8,
+      authUser,
+    });
+
+    expect(leadUsecase.checkIfUserCanAccessLeadOrAssignedProject).toHaveBeenCalledWith({
+      id: 44,
+      authUser,
+      mode: "view",
+    });
+    expect(result.filename).toBe("drawing.jpg");
+    expect(result.url).toMatch(
+      /^https:\/\/api\.example\.test\/v2\/files\/content\/leads\/drawing\.jpg\?expires=\d+&signature=/,
+    );
+  });
+
+  it("propagates lead-scope denial and never returns a signed URL", async () => {
+    uploadRepository.findLeadNoteAttachment.mockResolvedValue({
+      id: 9,
+      clientLeadId: 99,
+      attachment: "/uploads/notes/private.pdf",
+    });
+    leadUsecase.checkIfUserCanAccessLeadOrAssignedProject.mockRejectedValue(
+      Object.assign(new Error("LEAD_ACCESS_DENIED"), { statusCode: 403 }),
+    );
+
+    await expect(
+      new UploadUsecase().authorizeAttachment({ type: "note", id: 9, authUser }),
+    ).rejects.toMatchObject({ statusCode: 403, message: "LEAD_ACCESS_DENIED" });
+  });
+
+  it("rejects a missing or non-canonical attachment record", async () => {
+    uploadRepository.findLeadFileAttachment.mockResolvedValue({
+      id: 10,
+      clientLeadId: 44,
+      name: "external",
+      url: "https://untrusted.example/file.jpg",
+    });
+
+    await expect(
+      new UploadUsecase().authorizeAttachment({ type: "lead-file", id: 10, authUser }),
+    ).rejects.toMatchObject({ statusCode: 404, message: "NOT_FOUND" });
+    expect(leadUsecase.checkIfUserCanAccessLeadOrAssignedProject).not.toHaveBeenCalled();
+  });
+
+  it("redirects an authorized record to its freshly generated signed URL", () => {
+    const response = { redirect: vi.fn() };
+    uploadController.redirectAttachment(
+      { scoped: { url: "https://api.example.test/v2/files/content/a.jpg?signed=1" } },
+      response,
+    );
+    expect(response.redirect).toHaveBeenCalledWith(
+      302,
+      "https://api.example.test/v2/files/content/a.jpg?signed=1",
+    );
+  });
+
+  it("validates only supported attachment record kinds and positive ids", () => {
+    expect(uploadSchemas.attachmentParams.safeParse({ type: "note", id: "12" }).success).toBe(true);
+    expect(uploadSchemas.attachmentParams.safeParse({ type: "contract", id: "12" }).success).toBe(false);
+    expect(uploadSchemas.attachmentParams.safeParse({ type: "lead-file", id: "0" }).success).toBe(false);
   });
 });

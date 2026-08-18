@@ -382,6 +382,7 @@ export default function CreateContractDialog({
                     payments={payments}
                     setPayments={setPayments}
                     taxRate={taxRate}
+                    clientLeadId={clientLeadId}
                   />
                 </Box>
               </Stack>

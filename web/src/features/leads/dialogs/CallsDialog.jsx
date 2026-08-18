@@ -32,6 +32,7 @@ import dayjs from "dayjs";
 
 import utc from "dayjs/plugin/utc";
 import { OpenButton } from "@/features/leads/dialogs/OpenButton.jsx";
+import { replaceLeadReminder } from "@/features/leads/dialogs/reminder-state.js";
 
 dayjs.extend(utc);
 export const CallResultDialog = ({
@@ -130,26 +131,11 @@ export const CallResultDialog = ({
 
       if (setleads) {
         setleads((oldLeads) =>
-          oldLeads.map((l) => {
-            if (l.id === lead.id) {
-      if (reminderType === REMINDER_TYPES.MEETING) {
-                l.meetingReminders = [
-                  request.data,
-                  ...l.meetingReminders?.filter(
-                    (meeting) => meeting.id !== request.data.id
-                  ),
-                ];
-              } else {
-                l.callReminders = [
-                  request.data,
-                  ...l.callReminders?.filter(
-                    (call) => call.id !== request.data.id
-                  ),
-                ];
-              }
-            }
-            return l;
-          })
+          replaceLeadReminder(oldLeads, {
+            leadId: lead.id,
+            reminder: request.data,
+            reminderType,
+          }),
         );
       }
       setOpen(false);

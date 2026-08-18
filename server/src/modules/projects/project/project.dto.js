@@ -77,9 +77,31 @@ export function computeProjectCapabilities(record, authUser) {
         mutable &&
         (admin || !LOCKED_FROM_STATUSES_FOR_NON_ADMIN.includes(record?.status)),
       canAssignDesigner: () => hasPermission(permissions, P.PROJECT.MANAGE),
-      canChangeStatus: () => hasPermission(permissions, P.PROJECT.MANAGE),
+      // Work-stage movement was available to the assigned designer in `master`.
+      // Keep the terminal-status lock aligned with the plain project edit endpoint.
+      canChangeStatus: () =>
+        hasPermission(permissions, P.PROJECT.EDIT) &&
+        mutable &&
+        (admin || !LOCKED_FROM_STATUSES_FOR_NON_ADMIN.includes(record?.status)),
       canAddTask: () => hasPermission(permissions, P.TASK.CREATE) && mutable,
       canAddDelivery: () => hasPermission(permissions, P.DELIVERY.CREATE) && mutable,
+    },
+    {},
+  );
+}
+
+/** Capabilities on the lead wrapper returned by the designer work-stage detail. */
+export function computeDesignerLeadCapabilities(record, authUser) {
+  const permissions = authUser?.permissions ?? [];
+  const assigned =
+    isFullScope(authUser) ||
+    (record?.projects ?? []).some((project) => canMutateProject({ record: project, authUser }));
+
+  return computeCapabilities(
+    {
+      canAddNote: () => assigned && hasPermission(permissions, P.LEAD.NOTE_MANAGE),
+      canAddCall: () => assigned && hasPermission(permissions, P.LEAD.CALL_MANAGE),
+      canAddFile: () => assigned && hasPermission(permissions, P.LEAD.FILE_MANAGE),
     },
     {},
   );
@@ -160,7 +182,7 @@ export function withProjectDetailCapabilities(record, authUser) {
   if (!record) return record;
   return {
     ...record,
-    capabilities: computeProjectCapabilities(record, authUser),
+    capabilities: computeDesignerLeadCapabilities(record, authUser),
     ...(Array.isArray(record?.projects)
       ? { projects: record.projects.map((p) => decorateProject(p, authUser)) }
       : {}),

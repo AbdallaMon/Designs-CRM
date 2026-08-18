@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "../../../config/env.js";
 import {
+  buildAuthenticatedAttachmentUrl,
   buildAssetAccessUrl,
   exposeAssetReferences,
   verifyAssetAccess,
@@ -14,6 +15,7 @@ import {
 const ORIGINAL_ENV = {
   ASSET_URL_SIGNING_SECRET: env.ASSET_URL_SIGNING_SECRET,
   ASSET_DELIVERY_ORIGIN: env.ASSET_DELIVERY_ORIGIN,
+  SERVER_URL: env.SERVER_URL,
   ASSET_URL_TTL_SECONDS: env.ASSET_URL_TTL_SECONDS,
   ASSET_URL_MAX_TTL_SECONDS: env.ASSET_URL_MAX_TTL_SECONDS,
   UPLOAD_LEGACY_ORIGINS: env.UPLOAD_LEGACY_ORIGINS,
@@ -25,6 +27,7 @@ describe("private asset access", () => {
     vi.setSystemTime(new Date("2026-08-17T10:00:00.000Z"));
     env.ASSET_URL_SIGNING_SECRET = "test-only-independent-asset-signing-secret";
     env.ASSET_DELIVERY_ORIGIN = "https://api.example.test";
+    env.SERVER_URL = "https://server.example.test";
     env.ASSET_URL_TTL_SECONDS = 60;
     env.ASSET_URL_MAX_TTL_SECONDS = 3600;
     env.UPLOAD_LEGACY_ORIGINS = "https://dreamstudiio.com";
@@ -60,6 +63,15 @@ describe("private asset access", () => {
         signature,
       }),
     ).toBeNull();
+  });
+
+  it("builds durable authenticated links on the API server without expiry", () => {
+    const url = buildAuthenticatedAttachmentUrl({ type: "lead-file", id: 21 });
+    expect(url).toBe(
+      "https://server.example.test/v2/files/attachments/lead-file/21",
+    );
+    expect(url).not.toContain("expires=");
+    expect(url).not.toContain("signature=");
   });
 
   it("normalizes only valid upload references and rejects traversal", () => {

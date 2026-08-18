@@ -251,19 +251,18 @@ const LeadCard = ({
             >
               {lead.client.name}
             </Typography>
-            {!admin ? (
-              <Tooltip title="Actions">
-                <IconButton
-                  size="small"
-                  onClick={handleMenuClick}
-                  sx={{ mt: -0.5, mr: -0.5, flexShrink: 0 }}
-                >
-                  <MoreVertIcon />
-                </IconButton>
-              </Tooltip>
-            ) : (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                flexShrink: 0,
+              }}
+            >
+              <ClientImageSessionManager clientLeadId={lead.id} compact />
               <Tooltip title="Preview">
                 <IconButton
+                  aria-label="Preview deal"
                   size="small"
                   onClick={() => {
                     setPreviewDialogOpen(true);
@@ -278,11 +277,19 @@ const LeadCard = ({
                   <FaEye />
                 </IconButton>
               </Tooltip>
-            )}
-          </Box>
-
-          <Box mt={0.5} mb={1}>
-            <ClientImageSessionManager clientLeadId={lead.id} />
+              {!admin && (
+                <Tooltip title="Actions">
+                  <IconButton
+                    aria-label="Deal actions"
+                    size="small"
+                    onClick={handleMenuClick}
+                    sx={{ mt: -0.5, mr: -0.5 }}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           </Box>
 
           <Box

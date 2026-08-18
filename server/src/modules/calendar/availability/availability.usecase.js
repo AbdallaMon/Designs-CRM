@@ -19,6 +19,10 @@ import timezone from "dayjs/plugin/timezone.js";
 
 import { availabilityRepository } from "./availability.repo.js";
 import { getCalendarDataForMonth } from "./month-view.usecase.js";
+import {
+  calendarDayUtcRange,
+  DEFAULT_CALENDAR_TIMEZONE,
+} from "../calendar-timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import {
   CALENDAR_VIEW_TYPES,
@@ -29,7 +33,7 @@ import {
 dayjs.extend(timezone);
 dayjs.extend(utc);
 
-const DEFAULT_TZ = "Asia/Dubai";
+const DEFAULT_TZ = DEFAULT_CALENDAR_TIMEZONE;
 
 // ════════════════════════════════════════════════════════════════════════════
 //  Relocated availability/slot logic (formerly legacy/calendar-services.js).
@@ -229,7 +233,7 @@ export async function getAvailableSlotsForDayImpl({
   adminId,
   dayId,
   userId,
-  timezone = "Asia/Dubai",
+  timezone = DEFAULT_TZ,
   type,
 }) {
   if (!adminId) {
@@ -239,43 +243,41 @@ export async function getAvailableSlotsForDayImpl({
     }
   }
 
-  const start = dayjs.utc(date);
-  const startDate = start.toDate();
-
-  const endDate = start.add(24, "hour").toDate();
-
-  const day = !date
-    ? await availabilityRepository.findDayById(dayId)
-    : await availabilityRepository.findFirstDayByDateRange({
-        startDate,
-        endDate,
-        adminId,
-      });
-
-  const now = dayjs().toDate();
-  let slotWhere = {};
-  if (type === CALENDAR_VIEW_TYPES.CLIENT) {
-    slotWhere.startTime = {
-      gt: now,
-    };
-  }
   if (date) {
-    slotWhere = {
+    const { startDate, endDate } = calendarDayUtcRange(date, timezone);
+    const clientOnly = type === CALENDAR_VIEW_TYPES.CLIENT;
+    const slotWhere = {
+      ...(clientOnly
+        ? { isBooked: false, meetingReminderId: null }
+        : {}),
       startTime: {
         gte: startDate,
-        lte: endDate,
+        lt: endDate,
+        ...(clientOnly ? { gt: new Date() } : {}),
       },
       availableDay: {
         userId: Number(adminId),
       },
     };
+    return availabilityRepository.findSlots(slotWhere);
   }
-  return date
-    ? await availabilityRepository.findSlots(slotWhere)
-    : await availabilityRepository.findSlotsForDayOrdered({
-        availableDayId: day.id,
-        slotWhere,
-      });
+
+  const day = await availabilityRepository.findDayById(dayId);
+  if (!day) return [];
+
+  const slotWhere =
+    type === CALENDAR_VIEW_TYPES.CLIENT
+      ? {
+          isBooked: false,
+          meetingReminderId: null,
+          startTime: { gt: new Date() },
+        }
+      : {};
+
+  return availabilityRepository.findSlotsForDayOrdered({
+    availableDayId: day.id,
+    slotWhere,
+  });
 }
 
 export async function deleteASlotImpl({ slotId }) {

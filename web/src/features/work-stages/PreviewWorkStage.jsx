@@ -1,8 +1,5 @@
 "use client";
-import { PROFILES } from "@dms/shared";
-import { useEffect } from "react";
-
-import { checkIfADesigner, checkIfAdmin } from "@/app/helpers/functions/utility.jsx";
+import { checkIfAdmin } from "@/app/helpers/functions/utility.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { PROJECT_CODES } from "@/app/helpers/permissionCodes";
@@ -27,7 +24,6 @@ const LeadContent = ({
   isPage,
   type,
   dontCheckIfNotUser,
-  initialTabExplicit,
 }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
@@ -49,8 +45,6 @@ const LeadContent = ({
     type === "3D_Modification" ||
     (type === "3D_Designer" && lead.projects?.[0]?.status === "Modification");
 
-  const isDesignerView = checkIfADesigner(user) || user.profile === PROFILES.EXECUTOR_2D;
-
   const workStageCtx = {
     lead,
     user,
@@ -62,15 +56,6 @@ const LeadContent = ({
     setleads,
   };
   const visibleSections = getVisibleWorkStageSections(workStageCtx);
-
-  // Per-role opening section: designers/executors land on their WORK (or the managers'
-  // PROJECTS), everyone else on Details. Only when opened without an explicit ?tab=.
-  useEffect(() => {
-    if (isDesignerView && activeTab === "details" && !initialTabExplicit) {
-      setActiveTab(canManageProjects ? "projects" : "work");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <>

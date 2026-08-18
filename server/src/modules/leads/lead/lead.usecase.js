@@ -25,6 +25,7 @@ import {
 } from "@dms/shared";
 import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadRepository } from "./lead.repo.js";
+import { projectRepository } from "../../projects/project/project.repo.js";
 import { adminLeadsRepository } from "../../admin-residual/admin-leads/admin-leads.repo.js";
 import { computeLeadCapabilities } from "./lead.dto.js";
 // Payment functions migrated to the leads/payment sub-entity (Stripe + email side effects).
@@ -141,6 +142,46 @@ class LeadUsecase {
       throw new AppError({ code: leadsMessagesCodes.LEAD_MUTATE_DENIED, statusCode: 403 });
     }
     return lead;
+  }
+
+  // Related project-owned resources may be used by an assigned designer even though the
+  // sales lead itself is owned by Sales. Permission codes remain mandatory on each caller;
+  // this checker supplies only the row scope and never grants ordinary lead mutation.
+  async checkIfUserCanAccessLeadOrAssignedProject({ id, authUser, mode = "view" }) {
+    const checkLead = mode === "mutate"
+      ? this.checkIfUserCanMutateLead.bind(this)
+      : this.checkIfUserCanAccessLead.bind(this);
+
+    try {
+      return await checkLead({ id, authUser });
+    } catch (error) {
+      const expectedCode = mode === "mutate"
+        ? leadsMessagesCodes.LEAD_MUTATE_DENIED
+        : leadsMessagesCodes.LEAD_ACCESS_DENIED;
+      if (error?.code !== expectedCode) throw error;
+
+      const isDesigner = [PROFILES.DESIGNER_3D, PROFILES.DESIGNER_2D].includes(
+        authUser?.currentProfileKey,
+      );
+      if (
+        isDesigner &&
+        (await projectRepository.clientLeadHasAssignedProject({
+          clientLeadId: Number(id),
+          userId: Number(authUser.id),
+        }))
+      ) {
+        return { clientLeadId: Number(id), assignedProject: true };
+      }
+
+      throw error;
+    }
+  }
+
+  // Designer work-stage activity scope. `master` allowed assigned 2D/3D designers to
+  // add notes, calls, and files to the lead backing their project. Keep that allowance
+  // limited to these activity routes; ordinary lead edits still require lead ownership.
+  async checkIfUserCanMutateLeadActivity({ id, authUser }) {
+    return this.checkIfUserCanAccessLeadOrAssignedProject({ id, authUser, mode: "mutate" });
   }
 
   // ════════════════════════════════════════════════════════════════════════════

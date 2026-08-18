@@ -18,6 +18,7 @@ import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 import { FaEllipsisV } from "react-icons/fa";
 import BulkConvertLeadsModal from "@/features/Kanban/shared/BulkConvertLeadsModal.jsx";
 import KanbanFilterBar from "@/features/Kanban/shared/KanbanFilterBar.jsx";
+import { getVisibleKanbanStatuses } from "@/features/Kanban/shared/kanban-board-filters.js";
 
 dayjs.extend(relativeTime);
 
@@ -41,6 +42,13 @@ const KanbanBoard = ({
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [bulkConvertOpen, setBulkConvertOpen] = useState(false);
+  const visibleStatusArray = getVisibleKanbanStatuses({
+    statusArray,
+    selectedStatus:
+      type === KANBAN_VIEW_TYPES.CONTRACT_LEVELS
+        ? filters?.contractLevel
+        : null,
+  });
   return (
     <>
       <DndProvider backend={HTML5Backend}>
@@ -61,6 +69,7 @@ const KanbanBoard = ({
                 mainKey="id"
                 searchKey={"id"}
                 withParamsChange={true}
+                size="small"
               />
             }
             staffSearch={
@@ -73,6 +82,7 @@ const KanbanBoard = ({
                   mainKey="name"
                   searchKey={"staffId"}
                   withParamsChange={true}
+                  size="small"
                 />
               ) : null
             }
@@ -80,41 +90,46 @@ const KanbanBoard = ({
               !isNotStaff ? (
                 <>
                   {type !== KANBAN_VIEW_TYPES.CONTRACT_LEVELS && (
-                    <>
-                      <Box sx={{ width: { xs: "100%", md: "auto" }, flexShrink: 0 }}>
-                        <DateRangeFilter
-                          noMargin={true}
-                          setFilters={setFilters}
-                          lastThreeMonth={true}
-                        />
-                      </Box>
-                      <Box sx={{ width: { xs: "100%", sm: 220 }, flexShrink: 0 }}>
-                        <FilterSelect
-                          options={Object.entries(CONTRACT_LEVELS).map(
-                            ([key, value]) => {
-                              return {
-                                id: key,
-                                name: value,
-                              };
-                            }
-                          )}
-                          label={"Contract Level"}
-                          loading={false}
-                          param={"contractLevel"}
-                          setFilters={setFilters}
-                        />
-                      </Box>
-                    </>
+                    <Box sx={{ width: { xs: "100%", md: "auto" }, flexShrink: 0 }}>
+                      <DateRangeFilter
+                        noMargin={true}
+                        setFilters={setFilters}
+                        lastThreeMonth={true}
+                        startLabel="Created from"
+                        endLabel="Created to"
+                        size="small"
+                        compact={true}
+                      />
+                    </Box>
                   )}
+                  <Box sx={{ width: { xs: "100%", sm: 220 }, flexShrink: 0 }}>
+                    <FilterSelect
+                      options={Object.entries(CONTRACT_LEVELS).map(
+                        ([key, value]) => {
+                          return {
+                            id: key,
+                            name: value,
+                          };
+                        }
+                      )}
+                      label={"Contract Level"}
+                      loading={false}
+                      param={"contractLevel"}
+                      setFilters={setFilters}
+                      size="small"
+                    />
+                  </Box>
                   <Box sx={{ width: { xs: "100%", md: "auto" }, flexShrink: 0 }}>
                     <DateRangeFilter
                       noMargin={true}
                       setFilters={setFilters}
                       dateKey="finalizedRange"
-                      startLabel="Finalized Start Range Date"
-                      endLabel="Finalized End Range Date"
+                      startLabel="Finalized from"
+                      endLabel="Finalized to"
                       withDeleteRange={true}
                       noDefaultValues={true}
+                      size="small"
+                      compact={true}
                     />
                   </Box>
                 </>
@@ -132,6 +147,7 @@ const KanbanBoard = ({
                       },
                     },
                   }}
+                  compact={true}
                 />
               ) : null
             }
@@ -166,6 +182,8 @@ const KanbanBoard = ({
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}
                     onClose={() => setAnchorEl(null)}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    transformOrigin={{ vertical: "bottom", horizontal: "center" }}
                   >
                     <MenuItem
                       onClick={() => {
@@ -176,6 +194,14 @@ const KanbanBoard = ({
                       Convert Leads
                     </MenuItem>
                   </Menu>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="inherit"
+                    onClick={() => setSelectedLeads([])}
+                  >
+                    Clear
+                  </Button>
                 </Box>
               ) : null
             }
@@ -209,7 +235,7 @@ const KanbanBoard = ({
             },
           }}
         >
-          {statusArray.map((status) => (
+          {visibleStatusArray.map((status) => (
             <KanbanColumn
               key={status}
               status={status}

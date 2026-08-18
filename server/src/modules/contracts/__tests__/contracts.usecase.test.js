@@ -25,6 +25,12 @@ vi.mock("../../leads/lead/lead.usecase.js", () => ({
   },
 }));
 
+vi.mock("../../site-utility/site-utility.usecase.js", () => ({
+  siteUtilityUsecase: {
+    listPaymentConditions: vi.fn(),
+  },
+}));
+
 vi.mock("../contract/contract.workflow.repo.js", () => ({
   getLeadContractList: vi.fn(),
   createContract: vi.fn(),
@@ -33,6 +39,7 @@ vi.mock("../contract/contract.workflow.repo.js", () => ({
   generatePdfSessionToken: vi.fn(),
   createContractStage: vi.fn(),
   updateContractStage: vi.fn(),
+  overrideContractStageStatus: vi.fn(),
   deleteContractStage: vi.fn(),
   getContractPaymentsGroupedService: vi.fn(),
   updateContractPaymentStatus: vi.fn(),
@@ -82,6 +89,7 @@ import { clientContractUsecase } from "../client/client-contract.usecase.js";
 import { ClientContractValidation } from "../client/client-contract.validation.js";
 import { contractRepository } from "../contract/contract.repo.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
+import { siteUtilityUsecase } from "../../site-utility/site-utility.usecase.js";
 import * as contractServices from "../contract/contract.workflow.repo.js";
 import { markContractAsCancelled } from "../services/contract-pdf.service.js";
 import * as clientContractServices from "../client/client-contract.repo.js";
@@ -188,6 +196,21 @@ describe("contracts authed surface — role parity (legacy SHARED gate = all 9 r
     });
   }
 
+  for (const profile of ["PRIMARY_SALES", "SUPER_SALES"]) {
+    it(`${profile} can use the contract-create payment-condition lookup gate`, () => {
+      const { permissions } = getEffectivePermissions({ profile });
+      const next = vi.fn();
+
+      AuthMiddleware.requirePermissions([P.CREATE])(
+        { auth: { id: 1, permissions } },
+        {},
+        next,
+      );
+
+      expect(next).toHaveBeenCalledWith();
+    });
+  }
+
   it("a user with NO permissions is 403'd on a contract gate (sanity)", () => {
     const req = { auth: { id: 1, permissions: [] } };
     const next = vi.fn();
@@ -197,12 +220,60 @@ describe("contracts authed surface — role parity (legacy SHARED gate = all 9 r
     expect(err.statusCode).toBe(403);
     expect(err.message).toBe(authMessagesCodes.PERMISSION_DENIED);
   });
+
+  it("stage override is granted only to ADMIN and SUPER_ADMIN profiles", () => {
+    for (const role of [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]) {
+      const next = vi.fn();
+      AuthMiddleware.requirePermissions([P.STAGE_OVERRIDE_STATUS])(makeReq(role), {}, next);
+      expect(next, `${role} should hold ${P.STAGE_OVERRIDE_STATUS}`).toHaveBeenCalledWith();
+    }
+
+    for (const role of ALL_ROLES.filter(
+      (value) => ![USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN].includes(value),
+    )) {
+      const next = vi.fn();
+      AuthMiddleware.requirePermissions([P.STAGE_OVERRIDE_STATUS])(makeReq(role), {}, next);
+      expect(next.mock.calls[0][0], `${role} must not hold ${P.STAGE_OVERRIDE_STATUS}`).toMatchObject({
+        statusCode: 403,
+      });
+    }
+  });
 });
 
 // ════════════════════════════════════════════════════════════════════════════
 //  OBJECT SCOPE — the IDOR fix (reads access-scope, writes mutate-scope)
 // ════════════════════════════════════════════════════════════════════════════
 describe("ContractUsecase object scope (the IDOR fix)", () => {
+  it("payment-condition lookup requires contract-create lead mutate scope", async () => {
+    const conditions = { items: [{ id: 1 }], total: 1, page: 1, pageSize: 1 };
+    siteUtilityUsecase.listPaymentConditions.mockResolvedValue(conditions);
+
+    const out = await contractUsecase.listPaymentConditionsForLead({
+      leadId: 100,
+      authUser: AUTH,
+    });
+
+    expect(out).toBe(conditions);
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({
+      id: 100,
+      authUser: AUTH,
+    });
+    expect(siteUtilityUsecase.listPaymentConditions).toHaveBeenCalledWith({
+      authUser: AUTH,
+    });
+  });
+
+  it("payment-condition lookup denies a lead outside mutate scope before reading presets", async () => {
+    await expect(
+      contractUsecase.listPaymentConditionsForLead({
+        leadId: 200,
+        authUser: AUTH,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+
+    expect(siteUtilityUsecase.listPaymentConditions).not.toHaveBeenCalled();
+  });
+
   it("listForLead: READ path uses access-scope, allows an in-scope lead", async () => {
     contractServices.getLeadContractList.mockResolvedValue([{ id: 1 }]);
     const out = await contractUsecase.listLeadContracts({ leadId: 100, authUser: AUTH });
@@ -341,6 +412,64 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
       }),
     ).rejects.toMatchObject({ statusCode: 404 });
     expect(contractServices.updateContractStage).not.toHaveBeenCalled();
+  });
+
+  it("overrideStageStatus scopes the stage, preserves path ownership, and records the repair reason", async () => {
+    contractServices.overrideContractStageStatus.mockResolvedValue({
+      previousStatus: "NOT_STARTED",
+      stage: { id: 42, title: "LEVEL_3", stageStatus: "IN_PROGRESS" },
+      activeStage: { id: 42, title: "LEVEL_3", stageStatus: "IN_PROGRESS" },
+    });
+
+    const out = await contractUsecase.overrideStageStatus({
+      contractId: 7,
+      stageId: 42,
+      status: "IN_PROGRESS",
+      reason: "Repair missed 2D transition",
+      authUser: AUTH,
+      auditCtx: { actorUserId: 5 },
+    });
+
+    expect(out.stage.stageStatus).toBe("IN_PROGRESS");
+    expect(leadUsecase.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
+    expect(contractServices.overrideContractStageStatus).toHaveBeenCalledWith({
+      contractId: 7,
+      stageId: 42,
+      status: "IN_PROGRESS",
+    });
+    expect(recordAction).toHaveBeenCalledWith(
+      { actorUserId: 5 },
+      expect.objectContaining({
+        module: "contract",
+        action: "CONTRACT_STAGE_STATUS_OVERRIDDEN",
+        entityType: "ContractStage",
+        entityId: 42,
+        clientLeadId: 100,
+        detail: expect.objectContaining({
+          reason: "Repair missed 2D transition",
+          previousStatus: "NOT_STARTED",
+          requestedStatus: "IN_PROGRESS",
+        }),
+      }),
+    );
+  });
+
+  it("overrideStageStatus rejects a stage belonging to another path contract before mutation", async () => {
+    contractRepository.getStageClientLeadId.mockResolvedValue({ id: 42, contractId: 8, clientLeadId: 100 });
+
+    await expect(
+      contractUsecase.overrideStageStatus({
+        contractId: 7,
+        stageId: 42,
+        status: "COMPLETED",
+        reason: "Repair wrong terminal state",
+        authUser: AUTH,
+        auditCtx: {},
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(contractServices.overrideContractStageStatus).not.toHaveBeenCalled();
+    expect(recordAction).not.toHaveBeenCalled();
   });
 
   it("paymentsGrouped: passes req.auth as `user` (frozen-service role-scope preserved)", async () => {
@@ -575,6 +704,28 @@ describe("contracts validation — money + mass-assignment", () => {
   it("changePaymentStatus: rejects an unknown body field", () => {
     const r = ContractValidation.changePaymentStatus.safeParse({ status: "RECEIVED", paymentId: 9 });
     expect(r.success).toBe(false);
+  });
+
+  it("overrideStageStatus accepts only a known status plus a meaningful reason", () => {
+    const valid = ContractValidation.overrideStageStatus.safeParse({
+      status: "IN_PROGRESS",
+      reason: "Repair missed automatic transition",
+    });
+    expect(valid.success).toBe(true);
+
+    expect(
+      ContractValidation.overrideStageStatus.safeParse({ status: "CANCELLED", reason: "Repair state" }).success,
+    ).toBe(false);
+    expect(
+      ContractValidation.overrideStageStatus.safeParse({ status: "COMPLETED", reason: "no" }).success,
+    ).toBe(false);
+    expect(
+      ContractValidation.overrideStageStatus.safeParse({
+        status: "COMPLETED",
+        reason: "Repair state",
+        stageId: 99,
+      }).success,
+    ).toBe(false);
   });
 
   it("public changeStatus: rejects a client-supplied `id` (no session override)", () => {

@@ -39,18 +39,36 @@ vi.mock("../../redis/redis.client.js", () => {
         return value;
       }
 
-      const versionKey = command[3];
-      const revokedKey = command[4];
-      const activeKey = command[5];
-      const expectedVersion = command[6];
-      const currentVersion = redisState.values.get(versionKey) ?? "0";
-      if (currentVersion !== expectedVersion) return -2;
-      if (redisState.values.has(revokedKey)) return -1;
-      if (!redisState.values.delete(activeKey)) {
+      if (keyCount === 3) {
+        const usedKey = command[3];
+        const revokedKey = command[4];
+        const graceKey = command[5];
+        if (redisState.values.has(revokedKey)) return -1;
+        if (!redisState.values.has(usedKey)) {
+          redisState.values.set(usedKey, "1");
+          redisState.values.set(graceKey, "1");
+          return 1;
+        }
+        if (redisState.values.has(graceKey)) return 2;
         redisState.values.set(revokedKey, "1");
         return 0;
       }
-      return 1;
+
+      const versionKey = command[3];
+      const revokedKey = command[4];
+      const activeKey = command[5];
+      const graceKey = command[6];
+      const expectedVersion = command[7];
+      const currentVersion = redisState.values.get(versionKey) ?? "0";
+      if (currentVersion !== expectedVersion) return -2;
+      if (redisState.values.has(revokedKey)) return -1;
+      if (redisState.values.delete(activeKey)) {
+        redisState.values.set(graceKey, "1");
+        return 1;
+      }
+      if (redisState.values.has(graceKey)) return 2;
+      redisState.values.set(revokedKey, "1");
+      return 0;
     },
   };
   return { default: client };
@@ -78,7 +96,35 @@ describe("AuthSessionService", () => {
     );
   });
 
-  it("rejects replay of a rotated refresh token and revokes its family", async () => {
+  it("allows concurrent refresh rotation within the reuse grace window", async () => {
+    const firstToken = await AuthSessionService.issueRefreshToken({ id: 8 });
+    const [firstSession, concurrentSession] = await Promise.all([
+      AuthSessionService.consumeRefreshToken(firstToken),
+      AuthSessionService.consumeRefreshToken(firstToken),
+    ]);
+
+    const [firstRotatedToken, concurrentRotatedToken] = await Promise.all([
+      AuthSessionService.issueRefreshToken({
+        id: 8,
+        familyId: firstSession.familyId,
+        sessionVersion: firstSession.sessionVersion,
+      }),
+      AuthSessionService.issueRefreshToken({
+        id: 8,
+        familyId: concurrentSession.familyId,
+        sessionVersion: concurrentSession.sessionVersion,
+      }),
+    ]);
+
+    await expect(
+      AuthSessionService.consumeRefreshToken(firstRotatedToken),
+    ).resolves.toMatchObject({ payload: { id: 8 } });
+    await expect(
+      AuthSessionService.consumeRefreshToken(concurrentRotatedToken),
+    ).resolves.toMatchObject({ payload: { id: 8 } });
+  });
+
+  it("rejects replay after the grace window and revokes its family", async () => {
     const firstToken = await AuthSessionService.issueRefreshToken({ id: 9 });
     const firstSession =
       await AuthSessionService.consumeRefreshToken(firstToken);
@@ -88,12 +134,37 @@ describe("AuthSessionService", () => {
       sessionVersion: firstSession.sessionVersion,
     });
 
+    for (const key of redisState.values.keys()) {
+      if (key.includes(":refresh-reuse-grace:")) {
+        redisState.values.delete(key);
+      }
+    }
+
     await expect(
       AuthSessionService.consumeRefreshToken(firstToken),
     ).rejects.toMatchObject({ code: "INVALID_TOKEN", statusCode: 401 });
     await expect(
       AuthSessionService.consumeRefreshToken(rotatedToken),
     ).rejects.toMatchObject({ code: "INVALID_TOKEN", statusCode: 401 });
+  });
+
+  it("allows an outstanding legacy refresh token to rotate concurrently", async () => {
+    const legacyToken = jwt.sign(
+      { id: 10 },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    const [firstSession, concurrentSession] = await Promise.all([
+      AuthSessionService.consumeRefreshToken(legacyToken),
+      AuthSessionService.consumeRefreshToken(legacyToken),
+    ]);
+
+    expect(firstSession).toMatchObject({ payload: { id: 10 }, isLegacy: true });
+    expect(concurrentSession).toMatchObject({
+      payload: { id: 10 },
+      isLegacy: true,
+    });
   });
 
   it("consumes a password-reset token only once", async () => {

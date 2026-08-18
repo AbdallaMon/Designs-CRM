@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Box, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Typography } from "@mui/material";
 import { MdCheck, MdKeyboardArrowDown } from "react-icons/md";
 import { FaUserShield, FaUserTie, FaPalette, FaCalculator } from "react-icons/fa";
@@ -10,6 +11,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { activeProfileLabel } from "@/app/helpers/profiles";
 import colors from "@/app/helpers/colors";
+import { resolveProfileLanding } from "@/features/users/profile-switch-navigation.js";
 
 // Icon + color per profile FAMILY (from /auth/me profiles[].family). Caramel identity.
 const familyConfig = {
@@ -28,6 +30,7 @@ const fallbackConfig = { icon: <FaUserTie />, color: colors.textTertiary };
 export default function ProfileSwitcher() {
   const { profiles = [], currentProfileId, refetchMe } = useAuth();
   const { setLoading } = useToastContext();
+  const router = useRouter();
   const [anchorEl, setAnchorEl] = useState(null);
 
   const list = Array.isArray(profiles) ? profiles : [];
@@ -54,7 +57,13 @@ export default function ProfileSwitcher() {
       "POST",
     );
     if (res?.success === true || res?.status === 200) {
-      await refetchMe();
+      const selectedProfile = list.find((profile) => profile.id === profileId);
+      const nextUser = await refetchMe();
+      const destination = resolveProfileLanding({
+        profileKey: nextUser?.profile ?? selectedProfile?.key,
+        navigationTabs: nextUser?.navigationTabs ?? [],
+      });
+      router.replace(destination);
     }
   }
 

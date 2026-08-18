@@ -4,6 +4,7 @@ import {
   clientPortalMessagesCodes,
   hasPermission,
   PERMISSIONS,
+  PROFILES,
   projectsMessagesCodes,
 } from "@dms/shared";
 import { AppError } from "../../shared/errors/AppError.js";
@@ -53,7 +54,21 @@ async function assertLeadScope({ clientLeadId, authUser, mode }) {
     includeContactInitiator: true,
   });
   const lead = await leadRepository.findScopedLead({ where });
-  if (!lead) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+  if (!lead) {
+    // Work-stage parity: an assigned 2D/3D designer may read/write lead notes for the
+    // project they are working on, without gaining ordinary lead mutation scope.
+    const isDesigner = [PROFILES.DESIGNER_3D, PROFILES.DESIGNER_2D].includes(
+      authUser?.currentProfileKey,
+    );
+    const assigned =
+      isDesigner &&
+      (await projectRepository.clientLeadHasAssignedProject({
+        clientLeadId: Number(clientLeadId),
+        userId: Number(authUser.id),
+      }));
+    if (!assigned) throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
+    return { clientLeadId: Number(clientLeadId), assignedProject: true };
+  }
   return lead;
 }
 

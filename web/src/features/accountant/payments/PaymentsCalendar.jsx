@@ -41,6 +41,7 @@ import {
 } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
 import { columns } from "@/features/accountant/config/paymentsCalendarConfig.js";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 // const inputs = [
 //   {
 //     data: { id: "amount", label: "Amount to be paid", type: "number" },
@@ -341,17 +342,13 @@ export const PaymentHistoryModal = ({ payment }) => {
                           >
                             Invoice #{invoice.invoiceNumber}
                           </Typography>
-                          {invoice.notes?.length > 0 &&
-                            invoice.notes[0].attachment && (
-                              <Button
-                                component={Link}
-                                target="_blank"
-                                href={invoice.notes[0].attachment}
-                              >
-                                View attatchment
-                              </Button>
-                            )}
                         </Box>
+
+                        {invoice.notes?.[0]?.attachment && (
+                          <FilePreview
+                            file={{ url: invoice.notes[0].attachment }}
+                          />
+                        )}
 
                         <Box
                           sx={{

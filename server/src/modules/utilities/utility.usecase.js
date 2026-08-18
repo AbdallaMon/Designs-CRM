@@ -1,6 +1,6 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import {
-  LEAD_STATUSES, PROFILE_FAMILIES,
+  PROFILE_FAMILIES,
   PROFILES,
   authMessagesCodes,
   hasAnyPermission,
@@ -49,12 +49,11 @@ export class UtilityUsecase {
       };
     }
     if (authUser?.profileFamily === PROFILE_FAMILIES.SALES) {
-      return {
-        OR: [
-          { userId: Number(authUser.id) },
-          { userId: null, status: LEAD_STATUSES.NEW },
-        ],
-      };
+      // Search is a lookup inside the caller's deal set, not the claimable NEW
+      // pool. `master` passed the current staff id to the shared search from the
+      // deal/Kanban surfaces, so normal and primary sales only saw their own
+      // leads. SUPER_SALES was excluded from that narrowing above.
+      return { userId: Number(authUser.id) };
     }
     throw new AppError({ code: authMessagesCodes.ACCESS_DENIED, statusCode: 403 });
   }

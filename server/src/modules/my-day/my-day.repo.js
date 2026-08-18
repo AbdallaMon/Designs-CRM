@@ -1,4 +1,11 @@
-import { CONTRACT_SESSION_STATUSES, CALL_REMINDER_STATUSES, LEAD_STATUSES, MY_DAY_URGENCY, PROFILES } from "@dms/shared";
+import {
+  CONTRACT_SESSION_STATUSES,
+  CONTRACT_STATUSES,
+  CALL_REMINDER_STATUSES,
+  LEAD_STATUSES,
+  MY_DAY_URGENCY,
+  PROFILES,
+} from "@dms/shared";
 // my-day repository — Prisma I/O ONLY (no business rules, no AppError). Two surfaces:
 //   1. Personal-queue inputs: the caller's OWN designer assignments (the sales queue
 //      reuses leadRepository.findCockpitBundlesForUser — not duplicated here).
@@ -230,7 +237,10 @@ class MyDayRepository {
     return prisma.deliverySchedule.findMany({
       where: {
         deliveryAt: { lt: soonCutoff },
-        stage: { stageStatus: { not: MY_DAY_URGENCY.COMPLETED } },
+        stage: {
+          stageStatus: { not: MY_DAY_URGENCY.COMPLETED },
+          contract: { status: { not: CONTRACT_STATUSES.CANCELLED } },
+        },
       },
       select: {
         id: true,

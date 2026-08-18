@@ -138,7 +138,9 @@ export async function assignProjectToUser({
       throw new AppError({ code: projectsMessagesCodes.DESIGNER_ALREADY_ASSIGNED, statusCode: 409 });
     }
   };
-  await checkIfUserIsAlreadyAssigned();
+  if (!deleteDesigner) {
+    await checkIfUserIsAlreadyAssigned();
+  }
   let modificationProject;
   if (removeFromModification || addToModification) {
     const clientLead = await projectRepository.findClientLeadIdByProject({ projectId });
@@ -151,6 +153,9 @@ export async function assignProjectToUser({
   }
   if (deleteDesigner) {
     const oldAssignment = await projectRepository.findAssignmentById({ assignmentId });
+    if (!oldAssignment || Number(oldAssignment.projectId) !== Number(projectId)) {
+      throw new AppError({ code: projectsMessagesCodes.PROJECT_ACCESS_DENIED, statusCode: 403 });
+    }
     await projectRepository.deleteAssignmentById({ id: assignmentId });
     if (removeFromModification && modificationProject) {
       const assignmentToDelete = await projectRepository.findAssignmentByProjectUser({
@@ -312,13 +317,15 @@ async function updateProject({ data, isAdmin }) {
   } else if (isAdmin) {
     await updateProjectNotification(project.id, null, content + extra, isAdmin);
   }
-  await checkIfProjectHasStagesAndUpdateNextAndPrevious({
-    projectId: project.id,
-    status: project.status,
-    clientLeadId: project.clientLeadId,
-    groupId: project.groupId,
-    groupTitle: project.groupTitle,
-  });
+  if (project.status === "Completed" && oldProject.status !== "Completed") {
+    await checkIfProjectHasStagesAndUpdateNextAndPrevious({
+      status: project.status,
+      clientLeadId: project.clientLeadId,
+      groupId: project.groupId,
+      groupTitle: project.groupTitle,
+      projectType: project.type,
+    });
+  }
   await checkIfProjectHasPaymentAndUpdate({
     projectId: project.id,
     status: project.status,

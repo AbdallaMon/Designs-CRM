@@ -49,12 +49,16 @@ export async function generateImageSessionPdf({
   name,
 }) {
   try {
-    // Branding assets come from the SiteUtility singleton (shared with the contract
-    // PDF), each falling back to the shared default. Stored root-relative so
+    // Branding assets come from the SiteUtility singleton. The intro and signature
+    // stay shared with contract PDFs; the image-session frame falls back to the
+    // contract frame and then the shared default. Stored root-relative so
     // fetchImageBuffer resolves them against CRM_DOMAIN.
     const siteUtility = await prisma.siteUtility.findFirst();
     const introUrl = siteUtility?.introPage || PDF_ASSET_DEFAULTS.introPage;
-    const backgroundUrl = siteUtility?.pdfFrame || PDF_ASSET_DEFAULTS.pdfFrame;
+    const backgroundUrl =
+      siteUtility?.imageSessionPdfFrame ||
+      siteUtility?.pdfFrame ||
+      PDF_ASSET_DEFAULTS.pdfFrame;
     const signaturePartUrl =
       siteUtility?.pdfSignaturePart || PDF_ASSET_DEFAULTS.pdfSignaturePart;
 
@@ -87,6 +91,7 @@ export async function generateImageSessionPdf({
     const contentWidth = pageWidth - margin * 2;
     const headerHeight = 75;
     const footerHeight = 55;
+    const contentTopPadding = 30;
     let marginY = 20;
 
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -146,9 +151,7 @@ export async function generateImageSessionPdf({
     //   return containerStartX + containerWidth - textWidth;
     // };
 
-    // Full-page background (SiteUtility.pdfFrame) is drawn per page via the shared
-    // drawFullBackgroundImage(page, pdfDoc, backgroundUrl) — replacing the old
-    // per-page banner header. Drawn before content so it remains the only page frame.
+    // The resolved full-page frame is drawn before content on every non-intro page.
 
     // Draw fixed footerf
     const drawFixedFooter = (
@@ -687,7 +690,7 @@ export async function generateImageSessionPdf({
       if (availableSpace < requiredSpace) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-        y = pageHeight - headerHeight - marginY - 20;
+        y = pageHeight - headerHeight - marginY - 20 - contentTopPadding;
         return true;
       }
       return false;
@@ -873,7 +876,7 @@ export async function generateImageSessionPdf({
     // Create second page for content
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-    y = pageHeight - headerHeight - marginY - 20;
+    y = pageHeight - headerHeight - marginY - 20 - contentTopPadding;
 
     // Draw style
     if (sessionData.style) {
@@ -907,7 +910,7 @@ export async function generateImageSessionPdf({
 
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-    y = pageHeight - headerHeight - marginY - 20;
+    y = pageHeight - headerHeight - marginY - 20 - contentTopPadding;
 
     // Draw materials
     if (sessionData.materials && sessionData.materials.length > 0) {
@@ -975,7 +978,12 @@ export async function generateImageSessionPdf({
 
             const noteHeight = noteLines.length * lineSpacing + 10;
             const availableImageHeight =
-              pageH - headerHeight - footerHeight - marginY * 2 - noteHeight;
+              pageH -
+              headerHeight -
+              footerHeight -
+              marginY * 2 -
+              noteHeight -
+              contentTopPadding;
 
             // 🔻 Calculate image scaling
             const imgDims = img.scale(1);
@@ -1093,7 +1101,7 @@ export async function generateImageSessionPdf({
       // 🔹 Set up a new full page
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
-      y = pageHeight - headerHeight - marginY - 20;
+      y = pageHeight - headerHeight - marginY - 20 - contentTopPadding;
 
       const frameX = margin;
       const frameY = marginY + footerHeight;
@@ -1156,7 +1164,8 @@ export async function generateImageSessionPdf({
           headerHeight -
           footerHeight -
           marginY * 2 -
-          totalTextHeight;
+          totalTextHeight -
+          contentTopPadding;
 
         const frameAspectRatio = frameWidth / availableImageHeight;
 
@@ -1193,7 +1202,8 @@ export async function generateImageSessionPdf({
       const innerMargin = 20;
       const leftX = margin + innerMargin;
       const rightX = pageWidth - margin - columnWidth - innerMargin;
-      const topY = pageHeight - headerHeight - marginY - 30;
+      const topY =
+        pageHeight - headerHeight - marginY - 30 - contentTopPadding;
 
       const isArabic = lng === "ar";
       const firstPartyTitle = isArabic ? reText("الطرف الأول") : "First Party";

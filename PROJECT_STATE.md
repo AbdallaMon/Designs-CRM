@@ -3,7 +3,184 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-08-17** · Branch: `feat/workstage-flow-redesign`
+> Last updated: **2026-08-18** · Branch: `feat/workstage-flow-redesign`
+>
+> **LATEST (2026-08-18) — Lead Kanban cards use the compact Image Sessions action ✅.**
+> Deals and All Projects cards now place the existing accessible Image Sessions icon in the card-header
+> action group beside Preview, matching Work-stage cards and removing the full-width `View Sessions`
+> button from Kanban cards. Detail/dialog surfaces retain the full button. Verification: **6/6 focused
+> Kanban/Image Session tests** passed. No navigation, permission, backend, schema, migration, database,
+> or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — Deals and Work Stages filters compacted; department-access shortcut added ✅.**
+> The shared Kanban filter surface now uses small controls, a responsive search grid, and a contained
+> secondary-filter row, so Deals keeps every existing date/contract-level filter while all Work Stages
+> routes inherit the same cleaner layout. Mobile date pairs auto-fit side by side when space permits
+> without horizontal overflow. Update cards now expose an accessible quick settings icon that opens the
+> existing department authorization dialog for the same creators/admins who could already manage access.
+> Verification: **7/7 focused UI tests**, the main web production build, responsive visual QA at 1440px
+> and 390px, and scoped `git diff --check` passed. No filter/query behavior, permission, endpoint, backend,
+> schema, migration, database, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — Contract stage chain hardened + audited admin repair ✅.**
+> The existing signature → 2D Study → 3D → Final Plans → Quantity contract-level outcome is
+> preserved, but transitions now complete the exact active level transactionally and start the
+> next configured stage by order, skipping omitted levels safely. Repeat completion is idempotent,
+> terminal stages close correctly, and all matching active contracts in the same lead/project group
+> advance independently; cancelled contracts never advance. Stage activation still creates/upserts
+> an internal delivery schedule at `startDate + deptDeliveryDays` in **calendar days**. The broken
+> `ContractStage.createdAt` recalculation was replaced by `startDate` with a legacy schedule fallback,
+> and schedules from cancelled/not-started contract stages are hidden without deleting history.
+> ADMIN/SUPER_ADMIN now have a dedicated `contract.stage.override_status` action with a required
+> reason, whole-chain reconciliation, lead scope + child ownership checks, and a
+> `CONTRACT_STAGE_STATUS_OVERRIDDEN` audit event; the normal stage edit still cannot change status.
+> Design/plan: `docs/superpowers/{specs,plans}/2026-08-18-contract-stage-chain-hardening*`.
+> Verification: **82/82 focused workflow/permission/schedule tests**, the full repository suite
+> (**1340/1340 across 164/164 files**), touched `StageRow` lint, and the main web production build
+> (**45 routes**) passed. No schema, migration, database, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — Work-stage View Lead Details icon remains visible for Admin, Super Admin, and 3D Designer ✅.**
+> The shared Kanban card header was rendering the full-width Image Sessions button for exactly these profiles,
+> which pushed the Preview and Actions icons outside narrow cards. Kanban cards now use a compact Image Sessions
+> icon and a non-shrinking action group, while detail/dialog surfaces keep the full button. The shared card fix
+> covers the main Work stages board plus Study, Final Plans, Quantity, and Modification. Verification: **5/5
+> focused component tests**, the full repository suite (**1322/1322 across 162/162 files**), and the main web
+> production build passed. No permission, scope, backend, schema, migration, database, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — designer lead details, Image Sessions, attachments, and profile landing restored ✅.**
+> The redesigned work-stage UI is preserved, while its preview now opens on Details and exposes a clear
+> View Lead Details action for every in-scope card viewer, including Admin and Super Sales. Assigned 2D/3D
+> designers can pass the exact lead-detail client route; server assignment scope remains authoritative.
+> Image Session read/manage and durable lead-file/note downloads now accept the same assigned-project fallback,
+> without granting unassigned designers or ordinary lead mutation access. The Image Session UI no longer turns
+> a denial into a false empty list, and the generic attachment-error page no longer crashes at the Server/Client
+> boundary. Profile switching now lands 3D on Work stages, 2D on its first Work-stage sub-link (Study fallback),
+> and Sales profiles on Deals. Direct `master` parity was retained for detail data: 3D sees all lead files/notes,
+> 2D sees only their own, and both see only calls assigned to themselves. Design and plan:
+> `docs/superpowers/specs/2026-08-18-designer-details-image-session-profile-switch.md` and
+> `docs/superpowers/plans/2026-08-18-designer-details-image-session-profile-switch.md`. Verification: **109/109
+> focused tests**, **335/335 adjacent-module tests**, the full repository suite (**1317/1317 across 160/160 files**),
+> and the main web production build passed. No schema, migration, database, permission grant, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — Projects board contract-level filter added ✅.**
+> `/dashboard/projects` now exposes the same Contract Level selector used by Deals. Because
+> the Projects board columns are themselves contract levels, choosing a level narrows the
+> board to that single column and clearing the filter restores every level, avoiding duplicate
+> cross-column results. Verification: **3/3 focused filter tests**, the main web production
+> build, and scoped `git diff --check` passed. No backend, schema, migration, permission,
+> contract-stage automation, delivery-schedule, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — Arabic image-session step navigation order fixed ✅.**
+> The shared bottom step navigation now follows the page's RTL direction naturally, placing Previous
+> on the right and Next on the left in Arabic while preserving the existing English layout. No tests
+> were run per user request; no backend, schema, migration, permission, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — design-session PDFs can use a dedicated page frame ✅.**
+> Per explicit user authorization to change the frozen image-session PDF behavior, Website Utility now
+> exposes `General PDF Intro`, `Contract PDF Frame`, and `Design Session PDF Frame`. The new nullable
+> `SiteUtility.imageSessionPdfFrame` schema field is used by image-session PDFs, with `pdfFrame` and then
+> the shared default as fallbacks; the shared intro remains unchanged for both contracts and image sessions.
+> Every non-intro image-session page also receives 30 points of additional top spacing. Prisma validation,
+> targeted Node syntax checks, and scoped `git diff --check` passed. The Prisma migration and database
+> application are intentionally left to the user; no permission or contract-PDF behavior changed.
+>
+> **LATEST (2026-08-18) — public booking hides booked/past slots and handles timezone days correctly ✅.**
+> Client slot queries now retain their client-only predicates when a date is supplied: only
+> unbooked, unreserved slots whose start time is still in the future are returned. Selected-day
+> boundaries are calculated from the client's IANA timezone using local midnights (including DST),
+> and final reservation rejects past, cross-owner, wrong-local-day, and concurrently claimed slots.
+> A stale slot-details/booking 409 now displays the resolved English message, refreshes the slot list,
+> and returns the client to time selection. Verification: **72/72 focused calendar/UI tests**, the
+> full repository suite (**1300/1300 across 158/158 files**), and the main web production build passed.
+> No schema, migration, database, permission, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — NEW leads open directly from shared search autocomplete ✅.**
+> Scoped lead-search results now include the lead status. A `NEW` result carries a compact outlined
+> `New lead` badge; selecting it navigates directly to `/dashboard/deals/:id` without applying it as a
+> list/board filter. Every non-NEW lead and every non-lead search resource keeps the existing filter behavior.
+> Verification: **40/40 focused search/utility tests**, server syntax check, and the main web production build
+> passed. No search scope, permission, schema, migration, database, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — 2D/3D designer observable behavior matches `master` ✅.**
+> A role-by-role sweep covered navigation/direct routes, dashboard metrics, every 2D/3D work-stage type,
+> assigned and archived data scope, lead/project fields, project/task actions, chat, and work-stage activity.
+> Two migrated permission gaps were fixed: assigned designers can again move their own non-terminal project
+> status, and the assigned work-stage lead again exposes working notes, calls, and file uploads. Both use
+> assignment-scoped server checks; designers still cannot mutate ordinary lead fields, manage designer
+> assignments, see another designer's projects, or enter admin/accounting surfaces. The legacy delete time
+> window and all existing terminal-status guards remain enforced. Design/spec and plan:
+> `docs/superpowers/specs/2026-08-18-designer-master-parity-design.md` and
+> `docs/superpowers/plans/2026-08-18-designer-master-parity.md`. Verification: **36/36 focused parity tests**,
+> **378/378 designer-adjacent project/lead/dashboard/navigation/route-contract tests**, the full repository suite
+> (**1292/1292 across 157/157 files**), the main web production build, server syntax checks, and `git diff --check`
+> passed. No schema, migration, database, PDF, or navigation contract changed.
+>
+> **LATEST (2026-08-18) — concurrent access-token refresh no longer revokes the live session ✅.**
+> The frontend already single-flights explicit refresh requests, but protected backend requests also perform silent
+> refresh. When several requests arrived with the same expired access cookie, strict one-time refresh rotation treated
+> the second in-flight request as token theft and revoked the newly issued family, causing repeated `INVALID_TOKEN`
+> responses and forcing a new login. Refresh consumption now uses a Redis-atomic 30-second reuse grace window for both
+> current and rollout-era legacy tokens: concurrent rotations remain valid, while reuse after the window still revokes
+> the complete family. Family-revocation TTL now covers the configured refresh-token lifetime. Verification: focused
+> auth/session and silent-refresh tests, the full repository suite (**1284/1284 tests across 156/156 files**), and scoped
+> `git diff --check` passed. No API contract, cookie options, schema, database, permission, frontend, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — contract payment-condition picker now follows contract and lead scope ✅.**
+> Contract creation and cloning now load payment-condition presets through a contract-context endpoint.
+> The endpoint requires `contract.create` and the same lead mutate-scope check used by contract creation,
+> so PRIMARY_SALES, SUPER_SALES, and other profiles can select presets only for leads they may contract.
+> The admin-only site-utility management endpoint and create/edit/delete grants remain unchanged.
+> Verification: **80/80 contract + site-utility tests**, **7/7 frontend/backend endpoint-parity tests**,
+> the main web production build, and `git diff --check` passed. No schema, migration, database,
+> permission grant, or frozen PDF-generation behavior changed.
+>
+> **LATEST (2026-08-18) — project designer removal fixed ✅.**
+> Removing a designer no longer runs the add-path duplicate check with an undefined user ID. The assignment action
+> now validates branch-specific identifiers, skips the duplicate query on removal, and verifies that the assignment
+> belongs to the scoped project before deleting it. Verification: **73/73 project tests across 6/6 files** and
+> `git diff --check` passed. No schema, migration, permission grant, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — attachment access failures now open a generic frontend error page ✅.**
+> Browser requests to authenticated lead-file/note attachment links now redirect attachment-route errors only to
+> the public `/error` page with a safe language-neutral code and HTTP status. The page resolves existing frontend
+> message maps, so lead-scope denial displays `You do not have access to this lead`; unauthenticated users receive
+> a sign-in action, and malformed or unexpected values fall back without exposing backend error text. All other
+> `/v2` endpoints, including signed `/files/content/*` delivery, retain their existing JSON/error behavior.
+> Verification: **36/36 focused tests across 5/5 files** and the main web production build passed. No schema,
+> migration, database, permission grant, attachment authorization, upload-storage, Telegram, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — lead reminder result update crash fixed ✅.**
+> Updating a call or meeting result no longer throws when the lead-card payload omits the corresponding reminder array.
+> Reminder replacement now treats a missing collection as empty and updates lead state immutably. Focused verification:
+> **2/2 tests**, the main web production build, and `git diff --check` passed. No API, schema, permission, or PDF change.
+>
+> **LATEST (2026-08-18) — Telegram project-delivery reminder observability verified ✅.**
+> The server-owned two-hour delivery cron is regression-tested to query projects through the canonical Prisma client
+> and dispatch the expected Telegram reminder payload. Reminder delivery failures are no longer silently swallowed:
+> they log the affected project ID and original error while preserving the existing non-throwing cron flow.
+> Focused verification passed: **3/3 tests across 2/2 files**. No Telegram trigger, message content, schema,
+> database, permission, or PDF behavior changed.
+>
+> **LATEST (2026-08-18) — deal-card preview action parity ✅.**
+> Deal cards now show the direct preview eye to sales employees as well as admins; non-admin users retain
+> the adjacent actions menu, so both actions remain immediately available without changing lead access or
+> backend permissions. Verification: targeted ESLint and the main web production build passed.
+>
+> **LATEST (2026-08-18) — scoped lead search, sales project visibility, and durable attachment links ✅.**
+> Shared lead search now follows `master` parity: normal/primary sales search only their owned leads,
+> super-sales/admin retain their broader scope, designers remain assignment-scoped, result IDs are deduplicated,
+> and every lead option displays the seven-digit lead ID plus lead code used by lead details. Sales-family users
+> with access to a lead can read that lead's project list/groups for contract create/edit without gaining any
+> project mutation authority. Telegram now sends durable record URLs for lead notes/files; opening one requires
+> authentication, `lead.view`, and object-level lead access before a fresh short-lived asset URL is generated.
+> Existing signed content URLs remain unchanged. Shared file presentation now renders images inline and PDFs or
+> other documents as named open/download links across lead notes/files, price offers, contract utility/drawings,
+> contract PDFs, client drawings, and payment attachments. Verification: **1260/1260 tests across 150/150 files**,
+> targeted **102/102** regression tests, the main web production build, and `git diff --check` passed. Main-web
+> standalone ESLint remains unavailable because the repository has no ESLint v9 flat config. No schema,
+> migration, production DB, permission grant, or frozen PDF-generation behavior changed. Design and plan:
+> `docs/superpowers/specs/2026-08-18-scoped-search-project-attachments-design.md` and
+> `docs/superpowers/plans/2026-08-18-scoped-search-project-attachments.md`.
 >
 > **LATEST (2026-08-17) — PDF frame/footer cleanup and durable intro assets ✅.**
 > Per explicit user authorization to change frozen PDF behavior, image-session PDFs no longer draw the hand-built

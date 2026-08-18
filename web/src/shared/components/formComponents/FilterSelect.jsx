@@ -19,6 +19,7 @@ const FilterSelect = ({
   setFilters,
   reset,
   withAll = true,
+  size,
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -46,6 +47,7 @@ const FilterSelect = ({
       <FormControl
         variant="outlined"
         margin="normal"
+        size={size}
         sx={{
           mb: 2,
           minWidth: "120px",

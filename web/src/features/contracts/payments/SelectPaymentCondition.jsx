@@ -7,6 +7,7 @@ export default function SelectPaymentCondition({
   initialCondition,
   onConditionChange,
   disabled,
+  clientLeadId,
 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +15,9 @@ export default function SelectPaymentCondition({
   useEffect(() => {
     const fetchData = async () => {
       const req = await getDataAndSet({
-        url: "site-utilities/contract-payment-conditions",
+        url: clientLeadId
+          ? `contracts/client-lead/${clientLeadId}/payment-conditions`
+          : "site-utilities/contract-payment-conditions",
         setData,
         setLoading,
       });
@@ -28,7 +31,7 @@ export default function SelectPaymentCondition({
       }
     };
     fetchData();
-  }, []);
+  }, [clientLeadId]);
 
   const handleConditionChange = (event, newValue) => {
     console.log(newValue, "condition changed");

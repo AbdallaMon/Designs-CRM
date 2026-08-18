@@ -42,6 +42,7 @@ export default function AuthProvider({ children }) {
       setProfiles(nextUser?.profiles ?? []);
       setCurrentProfileId(nextUser?.currentProfileId ?? null);
       setIsLoggedIn(true);
+      return nextUser;
     } catch (err) {
       setIsLoggedIn(false);
       setPermissions([]);
@@ -50,6 +51,7 @@ export default function AuthProvider({ children }) {
       setProfiles([]);
       setCurrentProfileId(null);
       setUser({ profile: null, emailConfirmed: null, accountStatus: null });
+      return null;
     } finally {
       setValidatingAuth(false);
     }

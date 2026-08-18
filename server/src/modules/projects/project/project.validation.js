@@ -5,6 +5,7 @@
 // consume, so observable behavior is unchanged while every mutating route still gets a
 // schema.
 import { z } from "zod";
+import { generalMessagesCodes } from "@dms/shared";
 
 const idParam = z.coerce.number().int().positive();
 
@@ -67,7 +68,16 @@ export class ProjectValidation {
     addToModification: z.boolean().optional(),
     removeFromModification: z.boolean().optional(),
     groupId: optionalId,
-  }).passthrough();
+  }).passthrough().superRefine((data, ctx) => {
+    const requiredField = data.deleteDesigner ? "assignmentId" : "designerId";
+    if (!data[requiredField]) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [requiredField],
+        message: generalMessagesCodes.VALIDATION_ERROR,
+      });
+    }
+  });
 
   // POST /designers/:leadId/actions/change-status — the project id travels in the body.
   static changeStatus = z.object({

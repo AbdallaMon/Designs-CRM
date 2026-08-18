@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // `deals()` now calls the module-level `getClientLeadsByDateRange` directly (no DI bag),
 // so spy on it via a module mock. The lead repo is left REAL — `hasFullScope` is a pure
@@ -16,10 +16,79 @@ vi.mock("../lead.assign-status.usecase.js", () => ({
 
 import { LeadUsecase } from "../lead.usecase.js";
 import { leadRepository } from "../lead.repo.js";
+import { projectRepository } from "../../../projects/project/project.repo.js";
 import { getClientLeadsByDateRange } from "../lead.assign-status.usecase.js";
 import { authMessagesCodes, PERMISSIONS } from "@dms/shared";
 
 const uc = new LeadUsecase();
+
+describe("designer work-stage activity scope", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(["DESIGNER_3D", "DESIGNER_2D"])(
+    "allows an assigned %s profile to mutate notes/calls/files for the project lead",
+    async (currentProfileKey) => {
+      vi.spyOn(leadRepository, "findScopedLead").mockResolvedValue(null);
+      const assigned = vi
+        .spyOn(projectRepository, "clientLeadHasAssignedProject")
+        .mockResolvedValue(true);
+
+      await expect(
+        uc.checkIfUserCanMutateLeadActivity({
+          id: 42,
+          authUser: { id: 7, currentProfileKey },
+        }),
+      ).resolves.toMatchObject({ clientLeadId: 42, assignedProject: true });
+
+      expect(assigned).toHaveBeenCalledWith({ clientLeadId: 42, userId: 7 });
+    },
+  );
+
+  it("denies a designer who is not assigned to any project under the lead", async () => {
+    vi.spyOn(leadRepository, "findScopedLead").mockResolvedValue(null);
+    vi.spyOn(projectRepository, "clientLeadHasAssignedProject").mockResolvedValue(false);
+
+    await expect(
+      uc.checkIfUserCanMutateLeadActivity({
+        id: 42,
+        authUser: { id: 7, currentProfileKey: "DESIGNER_3D" },
+      }),
+    ).rejects.toMatchObject({ code: "LEAD_MUTATE_DENIED", statusCode: 403 });
+  });
+
+  it.each(["DESIGNER_3D", "DESIGNER_2D"])(
+    "allows an assigned %s profile through the related-lead read scope",
+    async (currentProfileKey) => {
+      vi.spyOn(leadRepository, "findScopedLead").mockResolvedValue(null);
+      const assigned = vi
+        .spyOn(projectRepository, "clientLeadHasAssignedProject")
+        .mockResolvedValue(true);
+
+      await expect(
+        uc.checkIfUserCanAccessLeadOrAssignedProject({
+          id: 42,
+          authUser: { id: 7, currentProfileKey },
+          mode: "view",
+        }),
+      ).resolves.toMatchObject({ clientLeadId: 42, assignedProject: true });
+
+      expect(assigned).toHaveBeenCalledWith({ clientLeadId: 42, userId: 7 });
+    },
+  );
+
+  it("keeps an unassigned designer denied from related lead resources", async () => {
+    vi.spyOn(leadRepository, "findScopedLead").mockResolvedValue(null);
+    vi.spyOn(projectRepository, "clientLeadHasAssignedProject").mockResolvedValue(false);
+
+    await expect(
+      uc.checkIfUserCanAccessLeadOrAssignedProject({
+        id: 42,
+        authUser: { id: 7, currentProfileKey: "DESIGNER_3D" },
+        mode: "view",
+      }),
+    ).rejects.toMatchObject({ code: "LEAD_ACCESS_DENIED", statusCode: 403 });
+  });
+});
 
 describe("LeadUsecase profile scope signals", () => {
   it("treats the active SUPER_SALES profile as a lead workflow supervisor", () => {

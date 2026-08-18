@@ -2,9 +2,10 @@
 "use client";
 
 import React from "react";
-import { Box, Card, CardHeader, CardContent, Grid } from "@mui/material";
+import { Card, CardHeader, CardContent, Grid } from "@mui/material";
 import { FIXED_TEXT } from "@/features/contracts/client/wittenBlocksData.js";
 import { SectionCard } from "@/features/contracts/client/sections/primitives.jsx";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 
 export default function DrawingsSection({ session, lng }) {
   const drawings = session?.drawings || [];
@@ -20,11 +21,9 @@ export default function DrawingsSection({ session, lng }) {
                 title={d.fileName || (lng === "ar" ? "مخطط" : "Drawing")}
               />
               <CardContent>
-                <Box
-                  component="img"
-                  src={d.url}
-                  alt={d.fileName || "drawing"}
-                  sx={{ width: "100%", borderRadius: 1 }}
+                <FilePreview
+                  file={{ url: d.url, name: d.fileName || undefined }}
+                  imageMaxHeight={320}
                 />
               </CardContent>
             </Card>

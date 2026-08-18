@@ -9,13 +9,14 @@ datasource db {
 
 /// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
 model SiteUtility {
-  id               Int      @id @default(1)
-  pdfFrame         String?  @db.VarChar(1024)
-  pdfHeader        String?  @db.VarChar(1024)
-  updatedAt        DateTime @default(now()) @updatedAt @db.DateTime(0)
-  introPage        String?
-  pageTitle        String?
-  pdfSignaturePart String?
+  id                   Int      @id @default(1)
+  pdfFrame             String?  @db.VarChar(1024)
+  imageSessionPdfFrame String?  @db.VarChar(1024)
+  pdfHeader            String?  @db.VarChar(1024)
+  updatedAt            DateTime @default(now()) @updatedAt @db.DateTime(0)
+  introPage            String?
+  pageTitle            String?
+  pdfSignaturePart     String?
 }
 
 model ContractUtility {

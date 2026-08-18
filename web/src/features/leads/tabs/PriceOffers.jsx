@@ -19,11 +19,11 @@ import {
   FaUserAlt,
   FaCalendarAlt,
 } from "react-icons/fa";
-import { RiExternalLinkLine } from "react-icons/ri";
 import { AddPriceOffers } from "@/features/leads/dialogs/PriceOffersDialog.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import DeleteModelButton from "@/shared/components/common/DeleteModelButton.jsx";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 
 import LeadContractList from "@/features/contracts/ContractsList.jsx";
 import { EmptyState } from "@/features/leads/shared/EmptyState.jsx";
@@ -138,19 +138,6 @@ export function PriceOffersList({ admin, lead, notUser }) {
                     }
                     actions={
                       <>
-                        {offer.url && (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            component="a"
-                            href={offer.url}
-                            target="_blank"
-                            startIcon={<RiExternalLinkLine size={15} />}
-                            sx={{ textTransform: "none", fontWeight: 600 }}
-                          >
-                            File
-                          </Button>
-                        )}
                         <PriceOfferSwitch priceOffer={offer} setPriceOffers={setOffers} />
                         <DeleteModelButton
                           item={offer}
@@ -164,6 +151,7 @@ export function PriceOffersList({ admin, lead, notUser }) {
                     }
                   >
                     {offer.note && <CardBlock label="Note">{offer.note}</CardBlock>}
+                    {offer.url && <FilePreview file={{ url: offer.url }} />}
                   </RecordCard>
                 );
               })}

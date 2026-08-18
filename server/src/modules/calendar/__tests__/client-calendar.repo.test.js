@@ -12,13 +12,14 @@ import { clientCalendarRepository } from "../client/client-calendar.repo.js";
 describe("client calendar atomic reservation repository", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("constrains the slot lookup to the token owner and requested date", async () => {
+  it("constrains the slot lookup to the token owner, requested local date, and current time", async () => {
     const findFirst = vi.fn().mockResolvedValue(null);
     prismaMock.$transaction.mockImplementation((work) =>
       work({ availableSlot: { findFirst } }),
     );
     const start = new Date("2026-06-09T20:00:00Z");
     const end = new Date("2026-06-10T20:00:00Z");
+    const bookingNotBefore = new Date("2026-06-10T08:00:00Z");
 
     await expect(
       clientCalendarRepository.reserveSlotAndUpdateReminder({
@@ -27,6 +28,7 @@ describe("client calendar atomic reservation repository", () => {
         expectedOwnerId: 30,
         requestedDateStart: start,
         requestedDateEnd: end,
+        bookingNotBefore,
         userTimezone: "Asia/Dubai",
       }),
     ).resolves.toEqual({ outcome: "not-found" });
@@ -34,10 +36,9 @@ describe("client calendar atomic reservation repository", () => {
     expect(findFirst).toHaveBeenCalledWith({
       where: {
         id: 5,
-        startTime: { gte: start, lt: end },
+        startTime: { gte: start, lt: end, gt: bookingNotBefore },
         availableDay: {
           userId: 30,
-          date: { gte: start, lt: end },
         },
       },
     });
@@ -77,6 +78,7 @@ describe("client calendar atomic reservation repository", () => {
       expectedOwnerId: 30,
       requestedDateStart: new Date("2026-06-09T20:00:00Z"),
       requestedDateEnd: new Date("2026-06-10T20:00:00Z"),
+      bookingNotBefore: new Date("2026-06-10T08:00:00Z"),
       userTimezone: "Asia/Dubai",
     });
 

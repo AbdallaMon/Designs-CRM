@@ -53,10 +53,9 @@ import {
   STAGE_STATUS,
   PAYMENT_STATUS_AR,
 } from "@/app/helpers/constants";
-import { Link as MUILink } from "@mui/material";
-
 // Upload helpers (for Drawings)
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.jsx";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import LoadingOverlay from "@/shared/components/feedback/loaders/LoadingOverlay.jsx";
@@ -288,14 +287,11 @@ function ContractBasics({ id, contract, onReload }) {
                   flexWrap="wrap"
                   sx={{ mt: 1 }}
                 >
-                  <MUILink
-                    href={pdfUrl}
-                    target="_blank"
-                    rel="noopener"
-                    sx={{ fontSize: "0.875rem", wordBreak: "break-all" }}
-                  >
-                    {pdfUrl}
-                  </MUILink>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <FilePreview
+                      file={{ url: pdfUrl, name: `${label}.pdf` }}
+                    />
+                  </Box>
                   <Tooltip title="Copy PDF link">
                     <IconButton
                       size="small"

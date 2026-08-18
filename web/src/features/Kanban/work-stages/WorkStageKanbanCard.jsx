@@ -106,16 +106,22 @@ const WorkStageKanbanCard = ({
 
         <CardContent sx={{ pt: 3, pb: "12px !important" }}>
           {/* header: client + unseen dot + actions */}
-          <Box display="flex" gap={1} justifyContent="space-between" alignItems="center">
-            <Badge color="secondary" variant="dot" invisible={!hasUnseen} overlap="rectangular">
-              <Typography variant="h6" component="div" noWrap>
+          <Box display="flex" gap={1} justifyContent="space-between" alignItems="center" minWidth={0}>
+            <Badge
+              color="secondary"
+              variant="dot"
+              invisible={!hasUnseen}
+              overlap="rectangular"
+              sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}
+            >
+              <Typography variant="h6" component="div" noWrap sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                 {lead.client.name}
               </Typography>
             </Badge>
-            <ClientImageSessionManager clientLeadId={lead.id} />
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <Tooltip title="Preview">
-                <IconButton size="small" onClick={openPreview}>
+            <Box display="flex" alignItems="center" gap={0.5} flexShrink={0}>
+              <ClientImageSessionManager clientLeadId={lead.id} compact />
+              <Tooltip title="View lead details">
+                <IconButton size="small" aria-label="View lead details" onClick={openPreview}>
                   <PreviewIcon />
                 </IconButton>
               </Tooltip>
@@ -172,7 +178,7 @@ const WorkStageKanbanCard = ({
 
       <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={() => setMenuAnchorEl(null)}>
         <MenuItem onClick={() => { setMenuAnchorEl(null); openPreview(); }}>
-          <PreviewIcon fontSize="small" style={{ marginRight: 8 }} /> Preview
+          <PreviewIcon fontSize="small" style={{ marginRight: 8 }} /> View Lead Details
         </MenuItem>
         <MenuItem component={Link} href={`/dashboard/projects/${project.id}`} onClick={() => setMenuAnchorEl(null)}>
           <MdOpenInNew fontSize="small" style={{ marginRight: 8 }} /> Open project page

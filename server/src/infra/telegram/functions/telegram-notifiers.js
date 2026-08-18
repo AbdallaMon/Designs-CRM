@@ -75,5 +75,10 @@ export async function handleProjectReminder({
       },
     };
     await uploadANote(note);
-  } catch {}
+  } catch (error) {
+    console.error(
+      `❌ Failed to handle reminder for project ${projectId}:`,
+      error,
+    );
+  }
 }

@@ -5,6 +5,15 @@ import { generalMessagesCodes, messagesNames } from "@dms/shared";
 const TK = messagesNames.generalMessages;
 
 class UploadController {
+  authorizeAttachment = (req) =>
+    uploadUsecase.authorizeAttachment({
+      type: req.params.type,
+      id: req.params.id,
+      authUser: req.auth,
+    });
+
+  redirectAttachment = (req, res) => res.redirect(302, req.scoped.url);
+
   authorizePublicUpload = (req) =>
     uploadUsecase.authorizePublicUpload({
       purpose: req.query.purpose,

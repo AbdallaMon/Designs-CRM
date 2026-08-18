@@ -15,6 +15,7 @@ export class SiteUtilityValidation {
   static updatePdfConfigSchema = z
     .object({
       pdfFrame: z.string().nullable().optional(),
+      imageSessionPdfFrame: z.string().nullable().optional(),
       pdfHeader: z.string().nullable().optional(),
       introPage: z.string().nullable().optional(),
       pageTitle: z.string().nullable().optional(),

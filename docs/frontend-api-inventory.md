@@ -413,6 +413,7 @@ Every request flows through `apiRequest` → `mapLegacyPathToV2` (`web/src/app/h
 | GET | shared/contracts/${sourceId} | Load source contract to clone | CloneContract.jsx:80 |
 | POST | shared/contracts/${id}/actions/cancel | Cancel contract | ContractMenu.jsx:33 |
 | PUT/DELETE | shared/contracts/${contractId}/stages/${stage.id} | Update/delete stage | view/StageRow.jsx:59,76 |
+| POST | shared/contracts/${contractId}/stages/${stage.id}/actions/override-status | Audited admin stage-chain repair | view/StageRow.jsx |
 | PUT/DELETE | shared/contracts/${contractId}/special-items/${item.id} | Update/delete special item | view/SpecialItemRow.jsx:45,62 |
 | PUT/DELETE | shared/contracts/${contractId}/drawings/${row.id} | Update/delete drawing | view/DrawingRow.jsx:48,65 |
 
@@ -425,7 +426,8 @@ Every request flows through `apiRequest` → `mapLegacyPathToV2` (`web/src/app/h
 | POST | shared/contracts/${contractId}/payments/${id}/actions/change-status | Change payment status (nested) | view/PaymentRow.jsx:73 |
 | PUT/DELETE | shared/contracts/${contractId}/payments/${id} | Update/delete payment | view/PaymentRow.jsx:112,129 |
 | POST | shared/contracts/${contractId}/payments | Add payment | payments/AddPaymentDialog.jsx:68 |
-| GET | shared/site-utilities/contract-payment-conditions | Payment-condition presets | payments/SelectPaymentCondition.jsx:17 |
+| GET | shared/contracts/client-lead/${clientLeadId}/payment-conditions | Lead-scoped payment-condition presets during contract create/clone | payments/SelectPaymentCondition.jsx:19 |
+| GET | shared/site-utilities/contract-payment-conditions | Admin site-utility payment-condition presets | payments/SelectPaymentCondition.jsx:20 |
 
 ## Contract-utility (clauses/obligations)
 | Method | Endpoint | Purpose | Source |

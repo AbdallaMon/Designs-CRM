@@ -17,6 +17,7 @@ import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { SectionHeader, EditorCard, EmptyState, AddButton } from "@/features/contracts/shared/formKit.jsx";
+import { FilePreview } from "@/shared/components/utility/Files.jsx";
 
 export default function ContractDrawingsEditor({ drawings, setDrawings }) {
   const { setProgress, setOverlay } = useUploadContext();
@@ -119,7 +120,7 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                       label="File"
                       id={`file-${idx}`}
                       variant="outlined"
-                      input={{ accept: "image/*" }}
+                      input={{ accept: "image/*,application/pdf" }}
                       handleUpload={(file) => {
                         handleUploadFile(file, idx);
                       }}
@@ -134,6 +135,13 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                   fullWidth
                   size="small"
                 />
+
+                {d.url && (
+                  <FilePreview
+                    file={{ url: d.url, name: d.fileName || undefined }}
+                    imageMaxHeight={260}
+                  />
+                )}
 
                 {(d.file || d.url) && (
                   <Box

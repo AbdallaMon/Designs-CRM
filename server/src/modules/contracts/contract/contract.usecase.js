@@ -34,6 +34,7 @@ import {
   generatePdfSessionToken,
   createContractStage,
   updateContractStage,
+  overrideContractStageStatus,
   deleteContractStage,
   getContractPaymentsGroupedService,
   updateContractPaymentStatus,
@@ -49,6 +50,7 @@ import {
   deleteContractSpecialItem,
 } from "./contract.workflow.repo.js";
 import { markContractAsCancelled } from "../services/contract-pdf.service.js";
+import { siteUtilityUsecase } from "../../site-utility/site-utility.usecase.js";
 
 class ContractUsecase {
   // ── scope helpers ─────────────────────────────────────────────────────────────────
@@ -90,6 +92,13 @@ class ContractUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  CONTRACT-LEVEL
   // ════════════════════════════════════════════════════════════════════════════
+
+  // Contract-create lookup: the route supplies the coarse CONTRACT.CREATE gate;
+  // this usecase adds the same lead mutate-scope required by createContract itself.
+  async listPaymentConditionsForLead({ leadId, authUser }) {
+    await this.assertLeadMutate({ clientLeadId: leadId, authUser });
+    return siteUtilityUsecase.listPaymentConditions({ authUser });
+  }
 
   // GET /client-lead/:leadId — lead-scoped list (READ scope on the lead directly).
   async listLeadContracts({ leadId, authUser }) {
@@ -182,6 +191,41 @@ class ContractUsecase {
     });
     this.#assertChildContract({ row, contractId });
     return updateContractStage({ stageId, newStage });
+  }
+
+  async overrideStageStatus({ contractId, stageId, status, reason, authUser, auditCtx }) {
+    const row = await this.#scopeByResolved({
+      resolver: () => contractRepository.getStageClientLeadId({ stageId }),
+      authUser,
+      mode: "mutate",
+    });
+    this.#assertChildContract({ row, contractId });
+
+    const result = await overrideContractStageStatus({
+      contractId: Number(contractId),
+      stageId: Number(stageId),
+      status,
+    });
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.CONTRACT,
+      action: AUDIT_ACTIONS.CONTRACT_STAGE_STATUS_OVERRIDDEN,
+      entityType: "ContractStage",
+      entityId: Number(stageId),
+      clientLeadId: row.clientLeadId,
+      summary: `Contract stage #${stageId} overridden from ${result.previousStatus} to ${status}`,
+      detail: {
+        contractId: Number(contractId),
+        stageId: Number(stageId),
+        stageLevel: result.stage?.title ?? null,
+        previousStatus: result.previousStatus,
+        requestedStatus: status,
+        resultingStatus: result.stage?.stageStatus ?? null,
+        activeStageId: result.activeStage?.id ?? null,
+        activeStageLevel: result.activeStage?.title ?? null,
+        reason,
+      },
+    });
+    return result;
   }
 
   async deleteStage({ contractId, stageId, authUser }) {

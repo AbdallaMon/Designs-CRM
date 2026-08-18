@@ -563,6 +563,9 @@ export const CONTRACT_PERMISSIONS = {
   GENERATE_PDF_TOKEN: "contract.generate_pdf_token", // POST /:contractId/actions/generate-pdf-token
   // writes — stages / payments / drawings / special-items (all lead-scoped via the contract)
   STAGE_MANAGE: "contract.stage.manage", // create / update / delete a contract stage
+  // Additive repair action. ADMIN/SUPER_ADMIN receive it through ALL_PERMISSIONS; it is
+  // deliberately absent from SHARED_AUTHED and SUPER_SALES extras.
+  STAGE_OVERRIDE_STATUS: "contract.stage.override_status",
   PAYMENT_MANAGE: "contract.payment.manage", // create / update / delete a payment, status + amounts
   DRAWING_MANAGE: "contract.drawing.manage", // create / update / delete a drawing
   SPECIAL_ITEM_MANAGE: "contract.special_item.manage", // create / update / delete a special item

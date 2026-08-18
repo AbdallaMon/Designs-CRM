@@ -20,7 +20,12 @@ import {
   assertChunkUploadBounds,
   validatePublicUploadContent,
 } from "./upload.security.js";
-import { verifyAssetAccess } from "../../infra/upload/asset-access.js";
+import {
+  buildAssetAccessUrl,
+  verifyAssetAccess,
+} from "../../infra/upload/asset-access.js";
+import { normalizeUploadReference } from "../../infra/upload/upload-reference.js";
+import { leadUsecase } from "../leads/lead/lead.usecase.js";
 
 function normalizeFolder(folder) {
   return sanitizeRelativeSegment(folder || "");
@@ -51,6 +56,33 @@ function mapStoredUpload(result, originalName, uploadSessionId, purpose) {
 }
 
 export class UploadUsecase {
+  async authorizeAttachment({ type, id, authUser }) {
+    const row =
+      type === "note"
+        ? await uploadRepository.findLeadNoteAttachment({ id })
+        : await uploadRepository.findLeadFileAttachment({ id });
+    const reference = type === "note" ? row?.attachment : row?.url;
+    const canonical = normalizeUploadReference(reference);
+    if (!row || !canonical || row.clientLeadId == null) {
+      throw new AppError({
+        code: generalMessagesCodes.NOT_FOUND,
+        statusCode: 404,
+        translationKey: messagesNames.generalMessages,
+      });
+    }
+
+    await leadUsecase.checkIfUserCanAccessLeadOrAssignedProject({
+      id: row.clientLeadId,
+      authUser,
+      mode: "view",
+    });
+
+    return {
+      url: buildAssetAccessUrl(canonical),
+      filename: row.name || canonical.split("/").pop(),
+    };
+  }
+
   async issuePublicCapability({ purpose, funnelToken }) {
     if (purpose !== PUBLIC_FUNNEL_PURPOSES.PUBLIC_LEAD_UPLOAD) {
       throw new AppError({

@@ -12,7 +12,12 @@ export default function PdfUtility({
   fields = [
     {
       key: "pdfFrame",
-      label: "PDF Frame",
+      label: "Contract PDF Frame",
+      endpoint: "site-utilities/pdf-utility",
+    },
+    {
+      key: "imageSessionPdfFrame",
+      label: "Design Session PDF Frame",
       endpoint: "site-utilities/pdf-utility",
     },
     // {
@@ -22,7 +27,7 @@ export default function PdfUtility({
     // },
     {
       key: "introPage",
-      label: "Intro Page",
+      label: "General PDF Intro",
       endpoint: "site-utilities/pdf-utility",
     },
     // {

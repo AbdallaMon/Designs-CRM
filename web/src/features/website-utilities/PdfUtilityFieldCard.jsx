@@ -19,22 +19,16 @@ import {
   Avatar,
   Grid,
 } from "@mui/material";
-import { FaEdit, FaLink, FaSave, FaTimes } from "react-icons/fa";
+import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
-
-function isImageUrl(u) {
-  if (!u) return false;
-  try {
-    const ext = u.split(".").pop()?.toLowerCase();
-    return ["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext);
-  } catch (e) {
-    return false;
-  }
-}
+import {
+  FilePreview,
+  getFileType,
+} from "@/shared/components/utility/Files.jsx";
 
 function ImgOrLink({ label, url }) {
   if (!url) {
@@ -47,35 +41,9 @@ function ImgOrLink({ label, url }) {
       </Stack>
     );
   }
-  const showImg = isImageUrl(url);
-  console.log(showImg, "showImg");
-  console.log(url, "url");
-
   return (
     <Stack spacing={1}>
-      {showImg ? (
-        <Box
-          component="img"
-          src={url}
-          alt={label}
-          sx={{
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
-            width: "100%",
-            maxHeight: 280,
-            objectFit: "contain",
-            bgcolor: "background.default",
-          }}
-        />
-      ) : (
-        <Stack direction="row" spacing={1} alignItems="center">
-          <FaLink />
-          <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
-            {url}
-          </Typography>
-        </Stack>
-      )}
+      <FilePreview file={{ url, name: label }} imageMaxHeight={280} />
       <Stack direction="row" spacing={1} alignItems="center">
         <Avatar sx={{ width: 24, height: 24 }}>
           {label?.[0]?.toUpperCase() || "U"}
@@ -201,7 +169,7 @@ export default function PdfUtilityFieldCard({
             </Grid>
             {url && (
               <Typography variant="caption" color="text.secondary">
-                Will use {isImageUrl(url) ? "uploaded image URL" : "URL"} when
+                Will use {getFileType(url) === "image" ? "uploaded image" : "file"} when
                 saving.
               </Typography>
             )}

@@ -25,7 +25,14 @@ const P = PERMISSIONS;
 // Effective-permission arrays exactly as the auth middleware attaches them on
 // req.auth.permissions (auth.middleware.js: req.auth = { ...payload, permissions }).
 const ADMIN_PERMS = [P.PROJECT.EDIT, P.PROJECT.MANAGE, P.TASK.CREATE, P.DELIVERY.CREATE];
-const DESIGNER_PERMS = [P.PROJECT.EDIT, P.TASK.CREATE, P.DELIVERY.CREATE]; // NO project.manage
+const DESIGNER_PERMS = [
+  P.PROJECT.EDIT,
+  P.TASK.CREATE,
+  P.DELIVERY.CREATE,
+  P.LEAD.NOTE_MANAGE,
+  P.LEAD.CALL_MANAGE,
+  P.LEAD.FILE_MANAGE,
+]; // NO project.manage
 
 const admin = {
   id: 1,
@@ -93,13 +100,25 @@ describe("withProjectDetailCapabilities (designer/project detail)", () => {
 
   it("assigned designer → canEdit true, canAssignDesigner false on their project", () => {
     const out = withProjectDetailCapabilities(makeDetailRecord(), assignedDesigner);
+    expect(out.capabilities).toMatchObject({
+      canAddNote: true,
+      canAddCall: true,
+      canAddFile: true,
+    });
     expect(out.projects[0].capabilities.canEdit).toBe(true);
+    expect(out.projects[0].capabilities.canChangeStatus).toBe(true);
     expect(out.projects[0].capabilities.canAssignDesigner).toBe(false);
   });
 
   it("non-assigned non-admin → canEdit false on the nested project (scope gate)", () => {
     const out = withProjectDetailCapabilities(makeDetailRecord(), otherDesigner);
+    expect(out.capabilities).toMatchObject({
+      canAddNote: false,
+      canAddCall: false,
+      canAddFile: false,
+    });
     expect(out.projects[0].capabilities.canEdit).toBe(false);
+    expect(out.projects[0].capabilities.canChangeStatus).toBe(false);
     expect(out.projects[0].capabilities.canAssignDesigner).toBe(false);
   });
 });
@@ -108,7 +127,14 @@ describe("computeProjectCapabilities (single project row)", () => {
   it("assigned designer can edit their own project row; a stranger cannot", () => {
     const project = { id: 10, status: "In Progress", assignments: [{ user: { id: 4 } }] };
     expect(computeProjectCapabilities(project, assignedDesigner).canEdit).toBe(true);
+    expect(computeProjectCapabilities(project, assignedDesigner).canChangeStatus).toBe(true);
     expect(computeProjectCapabilities(project, otherDesigner).canEdit).toBe(false);
+    expect(computeProjectCapabilities(project, otherDesigner).canChangeStatus).toBe(false);
+  });
+
+  it("keeps terminal project statuses locked for an assigned designer", () => {
+    const project = { id: 10, status: "Completed", assignments: [{ user: { id: 4 } }] };
+    expect(computeProjectCapabilities(project, assignedDesigner).canChangeStatus).toBe(false);
   });
 
   it("SUPER_SALES has full project scope and the admin workflow lock behavior", () => {

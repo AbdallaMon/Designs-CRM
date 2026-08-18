@@ -50,6 +50,7 @@ class ClientCalendarRepository {
     expectedOwnerId,
     requestedDateStart,
     requestedDateEnd,
+    bookingNotBefore,
     userTimezone,
   }) {
     try {
@@ -57,10 +58,13 @@ class ClientCalendarRepository {
         const slot = await tx.availableSlot.findFirst({
           where: {
             id: Number(slotId),
-            startTime: { gte: requestedDateStart, lt: requestedDateEnd },
+            startTime: {
+              gte: requestedDateStart,
+              lt: requestedDateEnd,
+              gt: bookingNotBefore,
+            },
             availableDay: {
               userId: Number(expectedOwnerId),
-              date: { gte: requestedDateStart, lt: requestedDateEnd },
             },
           },
         });
