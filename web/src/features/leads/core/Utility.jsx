@@ -95,10 +95,9 @@ export function EmailRedirect({ email }) {
 
       // Redirect after a short delay
       setTimeout(() => {
-        window.open(
-          "https://panel.dreamstudiio.com:8090/snappymail/",
-          "_blank"
-        );
+        if (process.env.NEXT_PUBLIC_WEBMAIL_URL) {
+          window.open(process.env.NEXT_PUBLIC_WEBMAIL_URL, "_blank");
+        }
       }, 1500);
     });
   };

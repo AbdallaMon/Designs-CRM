@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { buildAssetAccessUrl } from "../upload/asset-access.js";
 import { env } from "../../config/env.js";
 import { REMINDER_TYPES } from "@dms/shared";
+import { brandData } from "../../shared/brand.js";
 dotenv.config();
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -40,7 +41,7 @@ export async function sendEmailToClient({
       <tr>
         <td align="center" style="padding:20px;">
           <img
-            src="https://dreamstudiio.com/main-logo.jpg"
+            src="${brandData.logoUrl}"
             alt="Dream Studio"
             width="90"
             style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
@@ -95,7 +96,7 @@ export async function sendEmailForStaff({
       <tr>
         <td align="center" style="padding:20px;">
           <img
-            src="https://dreamstudiio.com/main-logo.jpg"
+            src="${brandData.logoUrl}"
             alt="Dream Studio"
             width="90"
             style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
@@ -150,7 +151,7 @@ export async function sendReminderCreatedToClient({
       <tr>
         <td align="center" style="padding:20px;">
           <img
-            src="https://dreamstudiio.com/main-logo.jpg"
+            src="${brandData.logoUrl}"
             alt="Dream Studio"
             width="90"
             style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
@@ -207,7 +208,7 @@ export async function sendReminderToUser({
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
+          <img src="${brandData.dreamLogoUrl}" alt="Dream Studio" style="max-height: 60px;" />
         </div>
         <div style="padding: 30px;">
           <h2 style="color: #383028;">📞 ${label} Reminder - ${minutesLabel}</h2>
@@ -263,7 +264,7 @@ export async function sendReminderToClient({
       <tr>
         <td align="center" style="padding:20px;">
           <img
-            src="https://dreamstudiio.com/main-logo.jpg"
+            src="${brandData.logoUrl}"
             alt="Dream Studio"
             width="90"
             style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"

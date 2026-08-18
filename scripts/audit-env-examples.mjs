@@ -25,7 +25,6 @@ const productionFiles = [
       "ASSET_URL_MAX_TTL_SECONDS",
       "ASSET_CONTENT_RATE_LIMIT",
       "UPLOAD_LEGACY_ORIGINS",
-      "LEGACY_UPLOAD_DIR",
     ],
   },
 ];

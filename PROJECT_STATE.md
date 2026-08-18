@@ -5,6 +5,28 @@
 >
 > Last updated: **2026-08-18** · Branch: `feat/workstage-flow-redesign`
 >
+> **LATEST (2026-08-18) — runtime environment files excluded from Git ✅.**
+> The root ignore policy now excludes `.env` and every `.env.*` variant at every workspace depth,
+> while explicitly retaining sanitized `.env.example` templates. Current-index and full-history audits
+> found no real environment file in Git; historical matches are example templates only, so moving the
+> existing history to a new private remote does not require an environment-file history rewrite.
+> `git check-ignore` verified production/test/staging variants are excluded. The local environment-template
+> parity audit still reports pre-existing key drift in the ignored runtime files; those server/frontend
+> runtime files must be updated independently and remain outside Git. `LEGACY_UPLOAD_DIR` is now explicitly
+> migration-only: production readiness validates it when present but no longer requires it after the old
+> store has passed its final checksum comparison and been retired.
+>
+> **LATEST (2026-08-18) — first-party domains are environment-driven; legacy DB URL audit complete ✅.**
+> A master/current-schema audit found no additional persisted-domain backfill category beyond the
+> completed upload references, SiteUtility assets, and notification links: contract/image-session PDFs
+> were stored as relative upload paths, while email/logo URLs are generated at send/render time rather
+> than stored in the database. Remaining live email logos, CRM/Courses metadata, contract-email logos,
+> image-session branding, and the optional webmail redirect now derive from explicit environment origins.
+> Runtime source contains no hardcoded root/www/panel `dreamstudiio.com` origin; remaining occurrences are
+> intentional legacy migration matchers, their tests, and historical documentation. Verification: focused
+> origin/upload/notification/PDF tests, targeted lint, both production builds, and `git diff --check`
+> passed. No production storage was changed or deleted.
+>
 > **LATEST (2026-08-18) — legacy notification dashboard-link backfill added ✅.**
 > `npm run notifications:normalize` now scans `Notification.content` and `Notification.link`
 > in bounded batches and rewrites only legacy `dreamstudiio.com/dashboard/...` URLs to an explicit

@@ -28,10 +28,15 @@ yarn-error.log*
 .build-log.txt
 .dev-log.txt
 
-# local env files
-.env*.local
-.env.production
-**/.env.production
+# Environment files — never commit runtime configuration or secrets.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Keep sanitized templates in Git so deployments know which keys are required.
+!.env.example
+!**/.env.example
 
 # vercel
 .vercel
@@ -40,7 +45,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.env
 .cookies.txt
 .server.log
 db-snapshot.mjs

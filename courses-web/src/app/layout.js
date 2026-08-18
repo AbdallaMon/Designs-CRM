@@ -8,6 +8,9 @@ import colors from "@/app/helpers/colors.js";
 import UploadingProvider from "./providers/UploadingProgressProvider";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 
+const coursesOrigin = process.env.NEXT_PUBLIC_COURSES_URL || "http://localhost:4011";
+const coursesLogoUrl = new URL("/main-logo.jpg", `${coursesOrigin}/`).toString();
+
 export const metadata = {
   // Clear and benefit-focused for educational platform
   title: "Courses, Training & Skill Development | Dream Studio Learning",
@@ -31,17 +34,17 @@ export const metadata = {
 
   creator: "Dream Studio",
 
-  metadataBase: new URL("https://dreamstudiio.com"),
+  metadataBase: new URL(coursesOrigin),
 
   openGraph: {
     title: "Courses & Professional Training | Dream Studio Learning",
     description:
       "Elevate your career with expert-led courses and practical training at Dream Studio Learning.",
-    url: "https://dreamstudiio.com", // Update to courses subdomain if needed
+    url: coursesOrigin,
     siteName: "Dream Studio Learning",
     images: [
       {
-        url: "https://dreamstudiio.com/dream-logo.jpg",
+        url: coursesLogoUrl,
         width: 1200,
         height: 630,
         alt: "Courses & Training | Dream Studio Learning",
@@ -56,7 +59,7 @@ export const metadata = {
     title: "Courses & Training | Dream Studio Learning",
     description:
       "Expert-led learning experiences designed for growth, creativity, and career advancement.",
-    images: ["https://dreamstudiio.com/dream-logo.jpg"],
+    images: [coursesLogoUrl],
   },
 
   icons: {

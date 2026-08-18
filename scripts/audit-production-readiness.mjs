@@ -130,12 +130,15 @@ for (const key of ["TEMP_UPLOAD_DIR", "THUMBNAIL_DIR"]) {
     `set ${key} to a child of UPLOAD_DIR`,
   );
 }
-requireCheck(
-  "LEGACY_UPLOAD_DIR",
-  path.posix.isAbsolute(process.env.LEGACY_UPLOAD_DIR || "") &&
-    !isPosixChild(storageRoot || "", process.env.LEGACY_UPLOAD_DIR || ""),
-  "set the temporary old-store mount, such as /legacy-uploads",
-);
+const legacyUploadDir = process.env.LEGACY_UPLOAD_DIR;
+if (legacyUploadDir) {
+  requireCheck(
+    "LEGACY_UPLOAD_DIR",
+    path.posix.isAbsolute(legacyUploadDir) &&
+      !isPosixChild(storageRoot || "", legacyUploadDir),
+    "when configured for migration, use an absolute path outside ASSET_STORAGE_ROOT",
+  );
+}
 
 const ttl = Number(process.env.ASSET_URL_TTL_SECONDS);
 const emailTtl = Number(process.env.ASSET_EMAIL_URL_TTL_SECONDS);

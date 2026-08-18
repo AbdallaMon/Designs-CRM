@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { MdArrowBack, MdArrowForward } from "react-icons/md";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
+import { webUrl } from "@/app/helpers/public-origin.js";
 
 // Height reserved at the bottom of every scrollable step so the sticky action
 // bar never covers the last row of content. Steps set this as bottom padding.
@@ -160,7 +161,7 @@ export function ClientImageAppBar() {
               }}
             >
               <Avatar
-                src="https://dreamstudiio.com/dream-logo.jpg"
+                src={webUrl("/dream-logo.jpg")}
                 alt={`${label} logo`}
                 sx={{
                   width: { xs: 40, sm: 48 },

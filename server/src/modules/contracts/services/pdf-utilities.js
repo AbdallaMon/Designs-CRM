@@ -2,6 +2,7 @@ import prisma from "../../../infra/prisma/prisma.js";
 import { sendEmail } from "../../../infra/mail/send-mail.js";
 import { buildAssetAccessUrl } from "../../../infra/upload/asset-access.js";
 import { env } from "../../../config/env.js";
+import { brandData } from "../../../shared/brand.js";
 
 export async function sendSuccessEmailAfterContractSigned({
   token,
@@ -99,7 +100,7 @@ export async function sendContractEmailToClient({
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
         <tr>
           <td align="center" style="padding:16px;">
-            <img src="https://dreamstudiio.com/main-logo.jpg" alt="Dream Studio" width="90" style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;" />
+            <img src="${brandData.logoUrl}" alt="Dream Studio" width="90" style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;" />
           </td>
         </tr>
       </table>
@@ -194,7 +195,7 @@ export async function sendContractEmailForStaff({
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
         <tr>
           <td align="center" style="padding:20px;">
-            <img src="https://dreamstudiio.com/main-logo.jpg" alt="Dream Studio" width="90" style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;" />
+            <img src="${brandData.logoUrl}" alt="Dream Studio" width="90" style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;" />
           </td>
         </tr>
       </table>

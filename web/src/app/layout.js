@@ -13,6 +13,7 @@ import UploadingProvider, {
 import { Suspense } from "react";
 import ServiceWorkerRegister from "@/shared/components/common/RegisterServiceWorker.jsx";
 import SocketProvider from "./providers/SocketProvider";
+import { WEB_ORIGIN, webUrl } from "@/app/helpers/public-origin.js";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -49,16 +50,16 @@ export const metadata = {
     "modern decor Abu Dhabi",
   ],
   creator: "Dream Studio",
-  metadataBase: new URL("https://dreamstudiio.com"),
+  metadataBase: new URL(WEB_ORIGIN),
   openGraph: {
     title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
     description:
       "نحوّل الرؤى إلى مساحات فاخرة وأنيقة وعملية للمنازل والفلل والمشاريع التجارية  الإمارات مع خبراء Dream Studio.",
-    url: "https://dreamstudiio.com",
+    url: WEB_ORIGIN,
     siteName: "Dream Studio",
     images: [
       {
-        url: "https://dreamstudiio.com/main-logo.jpg",
+        url: webUrl("/main-logo.jpg"),
         width: 1200,
         height: 630,
         alt: "Dream Studio - تصميم داخلي فاخر وتصميم عمراني",
@@ -72,7 +73,7 @@ export const metadata = {
     title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
     description:
       "تصميم داخلي فاخر، تصميم عمراني مبتكر، وأثاث مُصمّم خصيصًا للمنازل والفلل والمساحات التجارية في الإمارات.",
-    images: ["https://dreamstudiio.com/main-logo.jpg"],
+    images: [webUrl("/main-logo.jpg")],
   },
   icons: {
     icon: "/favicon.ico",

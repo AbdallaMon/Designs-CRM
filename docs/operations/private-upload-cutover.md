@@ -200,7 +200,10 @@ After the new signed route is proven:
 
 1. Deny `/uploads/*` on the old `dreamstudiio.com` vhost (or disable that old vhost/static mapping entirely). Confirm a known old direct URL returns `403` or `404`.
 2. Purge any CDN/reverse-proxy cache for the old `/uploads/*` path.
-3. Remove the temporary `/legacy-uploads:ro` mount from the new backend and restart it. This proves the app is using only `/data/uploads`.
+3. Remove the temporary `/legacy-uploads:ro` mount from the new backend, remove `LEGACY_UPLOAD_DIR`
+   from the production environment, and restart it. This proves the app is using only `/data/uploads`.
+   Direct-host/PM2 deployments likewise remove `LEGACY_UPLOAD_DIR` after the retired source has passed
+   its final comparison; the running application does not read that migration-only variable.
 4. Keep the old physical folder read-only for the agreed rollback retention period. It is a backup, not an active store. After backup retention and a final checksum/restore check, archive it outside `public_html` or delete it manually.
 
 Existing browser caches cannot be remotely erased, but denying the old route and purging shared caches prevents new unauthenticated retrieval. New signed responses are private-cache only, and the service worker no longer stores chat/documents.
