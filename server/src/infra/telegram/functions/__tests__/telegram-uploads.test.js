@@ -3,12 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getJob = vi.fn();
 const add = vi.fn();
 const sendMessage = vi.fn();
+const sendTelegramBotMessage = vi.fn();
 
 vi.mock("../../../queues/telegram-message.queue.js", () => ({
   telegramMessageQueue: { getJob, add },
 }));
 vi.mock("../../connect-to-telegram.js", () => ({
   getTeleClient: vi.fn(() => ({ sendMessage })),
+}));
+vi.mock("../../telegram-bot.js", () => ({
+  sendTelegramBotMessage,
 }));
 vi.mock("../../../prisma/prisma.js", () => ({
   default: {},
@@ -43,6 +47,7 @@ describe("Telegram upload queue scheduling", () => {
     getJob.mockReset().mockResolvedValue(null);
     add.mockReset().mockResolvedValue({ id: "queued" });
     sendMessage.mockReset().mockResolvedValue({ id: 1 });
+    sendTelegramBotMessage.mockReset().mockResolvedValue(false);
   });
 
   it("enqueues notes immediately with a delayed job", async () => {
@@ -100,5 +105,33 @@ describe("Telegram upload queue scheduling", () => {
     expect(message).toContain("https://api.example.test/v2/files/attachments/lead-file/21");
     expect(message).not.toContain("expires=");
     expect(message).not.toContain("signature=");
+  });
+
+  it("uses the bot button while preserving uploader details when the bot is available", async () => {
+    sendTelegramBotMessage.mockResolvedValue(true);
+
+    await uploadAQueueAttachment(
+      {
+        id: 21,
+        clientLeadId: 9,
+        name: "drawing.jpg",
+        description: "Final drawing",
+        url: "/uploads/leads/drawing.jpg",
+        isUserFile: true,
+        user: { name: "Mona" },
+      },
+      "channel",
+    );
+
+    expect(sendTelegramBotMessage).toHaveBeenCalledWith({
+      channel: "channel",
+      message: expect.stringContaining("File from Mona"),
+      button: {
+        text: "Open File",
+        url: "https://api.example.test/v2/files/attachments/lead-file/21",
+      },
+    });
+    expect(sendTelegramBotMessage.mock.calls[0][0].message).toContain("Final drawing");
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 });

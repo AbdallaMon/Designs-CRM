@@ -8,6 +8,7 @@ import {
   inviteUserToAChannel,
 } from "./telegram-members.js";
 import { getLeadsWithOutChannel } from "./telegram-lead-data.js";
+import { ensureTelegramBotInChannel } from "../telegram-bot.js";
 
 export async function createChannelAndAddUsers({ clientLeadId }) {
   const isUserAuthorized = await getTeleClient().checkAuthorization();
@@ -81,6 +82,15 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
           }),
         );
       }
+    }
+
+    try {
+      await ensureTelegramBotInChannel(channel);
+    } catch (error) {
+      console.error(
+        "Telegram bot could not be added to the new lead channel:",
+        error?.message,
+      );
     }
 
     const channelId = channel.id;

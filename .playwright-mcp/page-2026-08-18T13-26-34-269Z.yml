@@ -1,0 +1,115 @@
+- generic [active] [ref=f1e1]:
+  - region "Notifications Alt+T"
+  - generic [ref=f1e8]:
+    - heading "Deals" [level=5] [ref=f1e9]
+    - region "Board filters" [ref=f1e10]:
+      - generic [ref=f1e11]:
+        - heading "Find & filter" [level=6] [ref=f1e16]
+        - button "See all deals" [ref=f1e18] [cursor=pointer]
+      - generic [ref=f1e19]:
+        - generic [ref=f1e23]:
+          - generic: Search lead by ID, code, name or phone
+          - generic [ref=f1e24]:
+            - combobox "Search lead by ID, code, name or phone" [ref=f1e25]
+            - button "Open" [ref=f1e27] [cursor=pointer]
+            - group:
+              - generic: Search lead by ID, code, name or phone
+        - generic [ref=f1e33]:
+          - generic: Search staff by name or email
+          - generic [ref=f1e34]:
+            - combobox "Search staff by name or email" [ref=f1e35]
+            - button "Open" [ref=f1e37] [cursor=pointer]
+            - group:
+              - generic: Search staff by name or email
+      - generic [ref=f1e40]:
+        - generic [ref=f1e43]:
+          - generic [ref=f1e44]:
+            - generic [ref=f1e45]: Created from
+            - group "Created from" [ref=f1e46]:
+              - generic [ref=f1e47]:
+                - generic [ref=f1e48]:
+                  - spinbutton "Day" [ref=f1e49]: "01"
+                  - text: /
+                - generic [ref=f1e50]:
+                  - spinbutton "Month" [ref=f1e51]: "05"
+                  - text: /
+                - spinbutton "Year" [ref=f1e53]: "2026"
+              - button "Choose date, selected date is May 1, 2026" [ref=f1e55] [cursor=pointer]
+              - group:
+                - generic: Created from
+              - textbox [ref=f1e58]: 01/05/2026
+          - generic [ref=f1e59]:
+            - generic [ref=f1e60]: Created to
+            - group "Created to" [ref=f1e61]:
+              - generic [ref=f1e62]:
+                - generic [ref=f1e63]:
+                  - spinbutton "Day" [ref=f1e64]: "18"
+                  - text: /
+                - generic [ref=f1e65]:
+                  - spinbutton "Month" [ref=f1e66]: "08"
+                  - text: /
+                - spinbutton "Year" [ref=f1e68]: "2026"
+              - button "Choose date, selected date is Aug 18, 2026" [ref=f1e70] [cursor=pointer]
+              - group:
+                - generic: Created to
+              - textbox [ref=f1e73]: 18/08/2026
+        - generic [ref=f1e76]:
+          - generic: Contract Level
+          - generic [ref=f1e77]:
+            - combobox [ref=f1e78] [cursor=pointer]
+            - textbox
+            - group:
+              - generic: Contract Level
+        - generic [ref=f1e81]:
+          - generic [ref=f1e82]:
+            - generic: Finalized from
+            - group "Finalized from" [ref=f1e83]:
+              - generic [ref=f1e84]:
+                - generic [ref=f1e85]:
+                  - spinbutton "Day" [ref=f1e86]: DD
+                  - text: /
+                - generic [ref=f1e87]:
+                  - spinbutton "Month" [ref=f1e88]: MM
+                  - text: /
+                - spinbutton "Year" [ref=f1e90]: YYYY
+              - button "Choose date" [ref=f1e92] [cursor=pointer]
+              - group:
+                - generic: Finalized from
+              - textbox [ref=f1e95]
+          - generic [ref=f1e96]:
+            - generic: Finalized to
+            - group "Finalized to" [ref=f1e97]:
+              - generic [ref=f1e98]:
+                - generic [ref=f1e99]:
+                  - spinbutton "Day" [ref=f1e100]: DD
+                  - text: /
+                - generic [ref=f1e101]:
+                  - spinbutton "Month" [ref=f1e102]: MM
+                  - text: /
+                - spinbutton "Year" [ref=f1e104]: YYYY
+              - button "Choose date" [ref=f1e106] [cursor=pointer]
+              - group:
+                - generic: Finalized to
+              - textbox [ref=f1e109]
+          - button "Clear finalizedRange date range" [ref=f1e110] [cursor=pointer]
+    - heading "Work stages" [level=5] [ref=f1e114]
+    - region "Board filters" [ref=f1e115]:
+      - generic [ref=f1e116]:
+        - heading "Find & filter" [level=6] [ref=f1e121]
+        - button "See all deals" [ref=f1e123] [cursor=pointer]
+      - generic [ref=f1e124]:
+        - generic [ref=f1e128]:
+          - generic: Search lead by ID, code, name or phone
+          - generic [ref=f1e129]:
+            - combobox "Search lead by ID, code, name or phone" [ref=f1e130]
+            - button "Open" [ref=f1e132] [cursor=pointer]
+            - group:
+              - generic: Search lead by ID, code, name or phone
+        - generic [ref=f1e138]:
+          - generic: Search staff by name or email
+          - generic [ref=f1e139]:
+            - combobox "Search staff by name or email" [ref=f1e140]
+            - button "Open" [ref=f1e142] [cursor=pointer]
+            - group:
+              - generic: Search staff by name or email
+  - button "Open Next.js Dev Tools" [ref=f1e150] [cursor=pointer]

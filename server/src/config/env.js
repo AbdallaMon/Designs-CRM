@@ -33,6 +33,7 @@ export const env = {
   TELE_API_ID: Number(process.env.TELE_API_ID),
   TELE_API_HASH: process.env.TELE_API_HASH,
   TELEGRAM_SESSION: process.env.TELEGRAM_SESSION,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   BACKFILL_SECRET: process.env.BACKFILL_SECRET,
   ALLOWED_DOMAINS: process.env.ALLOWED_DOMAINS,
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,

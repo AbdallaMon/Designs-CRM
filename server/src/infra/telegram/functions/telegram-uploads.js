@@ -8,6 +8,7 @@ import {
 } from "../../upload/asset-access.js";
 import { normalizeUploadReference } from "../../upload/upload-reference.js";
 import { env } from "../../../config/env.js";
+import { sendTelegramBotMessage } from "../telegram-bot.js";
 
 function telegramAssetUrl(reference) {
   return buildAssetAccessUrl(reference, {
@@ -186,11 +187,27 @@ export async function uploadAQueueAttachment(file, channel) {
     message += `\n\n📝 ${file.description}`;
   }
 
-  message += `\n\n🔗 [Open File](${telegramAttachmentUrl({
+  const attachmentUrl = telegramAttachmentUrl({
     type: "lead-file",
     id: file.id,
     reference: file.url,
-  })})`;
+  });
+
+  try {
+    const sentByBot = await sendTelegramBotMessage({
+      channel,
+      message,
+      button: { text: "Open File", url: attachmentUrl },
+    });
+    if (sentByBot) return;
+  } catch (error) {
+    console.error(
+      "Telegram bot file message failed; using the existing link fallback:",
+      error?.message,
+    );
+  }
+
+  message += `\n\n🔗 [Open File](${attachmentUrl})`;
 
   await getTeleClient().sendMessage(channel, {
     message,

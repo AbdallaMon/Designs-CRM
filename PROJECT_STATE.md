@@ -23,9 +23,11 @@
 > When `TELEGRAM_BOT_TOKEN` is configured, the existing user-session integration now invites the
 > bot into each newly created lead megagroup and repairs missing membership before sending a file.
 > Lead files are sent by the bot with an inline `Open File` URL button while preserving the existing
-> uploader, filename, and description text. Missing configuration or any bot/API failure falls back
+> uploader, filename, and description text. Stable attachment buttons use the public
+> `ASSET_DELIVERY_ORIGIN` (an HTTPS tunnel is required for local Telegram testing), and safe Bot API
+> failure descriptions remain visible in server logs. Missing configuration or any bot/API failure falls back
 > to the existing authenticated Markdown link, so channel creation and file notifications continue
-> without interruption. Verification: **11/11 Telegram tests**, Node syntax checks, and repository
+> without interruption. Verification: **12/12 Telegram tests**, Node syntax checks, and repository
 > `git diff --check` passed. No schema, migration, database, permission, upload-storage, attachment-
 > authorization, or PDF behavior changed.
 >

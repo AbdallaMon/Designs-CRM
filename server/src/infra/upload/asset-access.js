@@ -38,14 +38,10 @@ function deliveryOrigin() {
   return String(env.ASSET_DELIVERY_ORIGIN || env.SERVER_URL || "").replace(/\/+$/, "");
 }
 
-function serverOrigin() {
-  return String(env.SERVER_URL || "").replace(/\/+$/, "");
-}
-
 export function buildAuthenticatedAttachmentUrl({ type, id }) {
   const safeType = encodeURIComponent(String(type || ""));
   const safeId = encodeURIComponent(String(id || ""));
-  return `${serverOrigin()}/v2/files/attachments/${safeType}/${safeId}`;
+  return `${deliveryOrigin()}/v2/files/attachments/${safeType}/${safeId}`;
 }
 
 export function buildAssetAccessUrl(reference, { ttlSeconds } = {}) {

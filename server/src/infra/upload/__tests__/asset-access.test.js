@@ -68,7 +68,7 @@ describe("private asset access", () => {
   it("builds durable authenticated links on the API server without expiry", () => {
     const url = buildAuthenticatedAttachmentUrl({ type: "lead-file", id: 21 });
     expect(url).toBe(
-      "https://server.example.test/v2/files/attachments/lead-file/21",
+      "https://api.example.test/v2/files/attachments/lead-file/21",
     );
     expect(url).not.toContain("expires=");
     expect(url).not.toContain("signature=");
